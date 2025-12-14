@@ -1,0 +1,157 @@
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../utils/api';
+import toast from 'react-hot-toast';
+import { API_ROUTES } from '../config/apiRoutes';
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const token = localStorage.getItem('admin_token');
+    const demoUser = localStorage.getItem('demo_user');
+    
+    if (token && demoUser) {
+      // Demo mode - use stored demo user
+      setUser(JSON.parse(demoUser));
+      setLoading(false);
+      return;
+    }
+    
+    if (token) {
+      try {
+        const response = await api.get(API_ROUTES.AUTH.ME);
+        // Handle nested response structure
+        const userData = response.data?.data?.user || response.data?.user || response.data;
+        setUser(userData);
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || '';
+        const isRouteNotFound = error.response?.status === 404 || 
+                               errorMessage?.toLowerCase().includes('route not found');
+        
+        // Silently handle 404 errors (route not found) - endpoint might not exist
+        // Only clear auth if it's an actual auth error (401), not a missing route
+        if (error.response?.status === 401) {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('demo_user');
+        } else if (!isRouteNotFound) {
+          // Only log non-404/route-not-found errors for debugging
+          console.error('Auth check error:', error);
+        }
+        // For 404 or route not found errors, just keep the token and let the user proceed
+        // The token might still be valid even if /auth/me endpoint doesn't exist
+      }
+    }
+    setLoading(false);
+  };
+
+  const login = async (email, password) => {
+    // Check for demo credentials - use demo mode directly (no API call needed)
+    if (email === 'admin@test.com' && password === 'admin123') {
+      // Use demo mode directly
+      const demoUser = {
+        id: 1,
+        email: 'admin@test.com',
+        first_name: 'Admin',
+        last_name: 'User',
+        role: 'admin',
+        is_active: true
+      };
+      
+      const demoToken = 'demo_token_' + Date.now();
+      localStorage.setItem('admin_token', demoToken);
+      localStorage.setItem('demo_user', JSON.stringify(demoUser));
+      setUser(demoUser);
+      toast.success('✅ Login successful! (Demo Mode)');
+      return true;
+    }
+    
+    // For non-demo credentials, try real API
+    try {
+      const response = await api.post(API_ROUTES.AUTH.LOGIN, { email, password });
+      
+      // Handle nested response structure: response.data.data.user, response.data.data.token, response.data.data.refreshToken
+      // API response: { success: true, message: "...", data: { user: {...}, token: "...", refreshToken: "..." } }
+      const responseData = response.data?.data || response.data;
+      const userData = responseData?.user;
+      const token = responseData?.token || responseData?.access_token;
+      const refreshToken = responseData?.refreshToken;
+      
+      if (!userData) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      if (userData.role !== 'admin') {
+        throw new Error('Access denied. Admin privileges required.');
+      }
+      
+      if (!token) {
+        throw new Error('No token received from server');
+      }
+      
+      localStorage.setItem('admin_token', token);
+      // Store refresh token if available
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+      }
+      setUser(userData);
+      toast.success(response.data?.message || 'Login successful!');
+      return true;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      
+      // Suppress "Route not found" errors (404) - these are expected if endpoint doesn't exist
+      if (error.response?.status === 404 || errorMessage?.toLowerCase().includes('route not found')) {
+        // Silently handle route not found errors
+        console.warn('Login endpoint not found - this might be expected');
+        return false;
+      }
+      
+      // If it's a network error with non-demo credentials, suggest using demo mode
+      if (error.code === 'ECONNABORTED' || error.message.includes('Network Error') || error.message.includes('timeout')) {
+        toast.error('Backend not available. Try demo credentials: admin@test.com / admin123');
+      } else {
+        toast.error(errorMessage || 'Invalid credentials');
+      }
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.post(API_ROUTES.AUTH.LOGOUT);
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('demo_user');
+      setUser(null);
+      toast.success('Logged out successfully');
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+
+

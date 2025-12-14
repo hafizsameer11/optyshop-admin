@@ -128,7 +128,7 @@ const BannerModal = ({ banner, onClose }) => {
           ? API_ROUTES.ADMIN.BANNERS.CREATE
           : API_ROUTES.CMS.BANNERS.CREATE;
         console.log('Creating banner - URL:', requestUrl);
-        console.log('Full URL will be: https://piro-optyshopbackend-muhs96-c5eb95-72-61-22-134.traefik.me/api' + requestUrl);
+        console.log('Full URL will be: https://optyshop-frontend.hmstech.org/api' + requestUrl);
         response = await api.post(requestUrl, submitData);
         // Handle response structure: { success, message, data: { banner: {...} } }
         if (response.data?.success) {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://piro-optyshopbackend-muhs96-c5eb95-72-61-22-134.traefik.me/api',
+  baseURL: 'https://optyshop-frontend.hmstech.org/api',
   headers: {
     'Content-Type': 'application/json',
   },

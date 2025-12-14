@@ -26,7 +26,7 @@
  * const url = API_ROUTES.AUTH.LOGIN;
  */
 
-// NOTE: baseURL in api.js is 'http://localhost:5000/api'
+// NOTE: baseURL in api.js is 'https://piro-optyshopbackend-muhs96-c5eb95-72-61-22-134.traefik.me/api'
 // So routes here should NOT include '/api' prefix
 // They will be appended to the baseURL
 const API_BASE = '';

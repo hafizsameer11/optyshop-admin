@@ -14,7 +14,7 @@ const buildQuery = (params) => {
 
 // Public API client for endpoints that don't require authentication
 const publicApi = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'https://piro-optyshopbackend-muhs96-c5eb95-72-61-22-134.traefik.me/api',
     headers: {
         'Content-Type': 'application/json',
     },

@@ -110,10 +110,8 @@ const BannerModal = ({ banner, onClose }) => {
       let response;
       let requestUrl;
       if (banner) {
-        // Use admin route if available, otherwise fallback to CMS route
-        requestUrl = (API_ROUTES.ADMIN.BANNERS && API_ROUTES.ADMIN.BANNERS.UPDATE) 
-          ? API_ROUTES.ADMIN.BANNERS.UPDATE(banner.id) 
-          : API_ROUTES.CMS.BANNERS.UPDATE(banner.id);
+        // Use admin route for updating
+        requestUrl = API_ROUTES.ADMIN.BANNERS.UPDATE(banner.id);
         console.log('Updating banner - URL:', requestUrl);
         response = await api.put(requestUrl, submitData);
         // Handle response structure: { success, message, data: { banner: {...} } }
@@ -123,12 +121,9 @@ const BannerModal = ({ banner, onClose }) => {
           toast.success('Banner updated successfully');
         }
       } else {
-        // Use admin route if available, otherwise fallback to CMS route
-        requestUrl = (API_ROUTES.ADMIN.BANNERS && API_ROUTES.ADMIN.BANNERS.CREATE)
-          ? API_ROUTES.ADMIN.BANNERS.CREATE
-          : API_ROUTES.CMS.BANNERS.CREATE;
+        // Use admin route for creating
+        requestUrl = API_ROUTES.ADMIN.BANNERS.CREATE;
         console.log('Creating banner - URL:', requestUrl);
-        console.log('Full URL will be: https://optyshop-frontend.hmstech.org/api' + requestUrl);
         response = await api.post(requestUrl, submitData);
         // Handle response structure: { success, message, data: { banner: {...} } }
         if (response.data?.success) {

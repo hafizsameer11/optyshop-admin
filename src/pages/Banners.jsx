@@ -1,9 +1,122 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import BannerModal from '../components/BannerModal';
 import { API_ROUTES } from '../config/apiRoutes';
+
+// Helper function to normalize image URLs
+const normalizeImageUrl = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) return null;
+  
+  // Skip test/example URLs that will cause CORS errors
+  const testDomains = ['example.com', 'localhost', '127.0.0.1', 'test.com', 'placeholder.com'];
+  try {
+    const urlObj = new URL(trimmedUrl);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // Check if it's a test domain
+    if (testDomains.some(domain => hostname.includes(domain))) {
+      return null;
+    }
+    
+    // Valid external URL - return as is
+    return trimmedUrl;
+  } catch (e) {
+    // Not a valid absolute URL, might be relative
+    if (trimmedUrl.startsWith('/')) {
+      // Relative path - try to construct full URL using API base URL
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optyshop-frontend.hmstech.org/api';
+      // Remove /api suffix if present, then append the relative path
+      const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+      return `${baseUrl}${trimmedUrl}`;
+    }
+    
+    // Invalid URL format
+    return null;
+  }
+};
+
+// Banner Image Component with error handling
+const BannerImage = ({ banner }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(true);
+    
+    if (!banner) {
+      setImageSrc(null);
+      setImageLoading(false);
+      return;
+    }
+    
+    // Check multiple possible image fields
+    const imageUrl = banner.image_url || banner.image || banner.imageUrl;
+    const normalizedUrl = normalizeImageUrl(imageUrl);
+    
+    if (normalizedUrl) {
+      setImageSrc(normalizedUrl);
+    } else {
+      setImageSrc(null);
+      setImageLoading(false);
+    }
+  }, [banner]);
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = (e) => {
+    if (import.meta.env.DEV) {
+      console.warn('Banner image failed to load:', {
+        imageSrc,
+        bannerId: banner?.id,
+        bannerTitle: banner?.title,
+      });
+    }
+    setImageError(true);
+    setImageLoading(false);
+    if (e.target) {
+      e.target.style.display = 'none';
+    }
+  };
+
+  if (!imageSrc || imageError) {
+    return (
+      <div className="h-16 w-24 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+        <FiImage className="w-5 h-5 text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-16 w-24 flex-shrink-0">
+      {imageLoading && !imageError && (
+        <div className="absolute inset-0 bg-gray-200 rounded flex items-center justify-center z-10">
+          <div className="w-4 h-4 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin"></div>
+        </div>
+      )}
+      {imageSrc && !imageError && (
+        <img
+          src={imageSrc}
+          alt={banner?.title || 'Banner'}
+          className="h-16 w-24 object-cover rounded transition-opacity duration-200"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          loading="lazy"
+          style={{ display: imageError ? 'none' : 'block' }}
+        />
+      )}
+    </div>
+  );
+};
 
 const Banners = () => {
   const [banners, setBanners] = useState([]);
@@ -18,8 +131,8 @@ const Banners = () => {
   const fetchBanners = async () => {
     try {
       setLoading(true);
-      // Try CMS route first (public), fallback not needed as CMS route should work for GET
-      const response = await api.get(API_ROUTES.CMS.BANNERS.LIST);
+      // Use admin route for listing banners
+      const response = await api.get(API_ROUTES.ADMIN.BANNERS.LIST);
       console.log('Banners API Response:', response.data);
       
       // Handle response structure: { success, message, data: { banners: [...] } }
@@ -39,8 +152,19 @@ const Banners = () => {
     } catch (error) {
       console.error('Banners API error:', error);
       console.error('Error details:', error.response?.data);
-      // Use empty array as fallback
       setBanners([]);
+      
+      // Show error message
+      const isDemoMode = localStorage.getItem('demo_user') !== null;
+      if (!isDemoMode) {
+        if (!error.response) {
+          toast.error('Failed to load banners: Network error. Please check your connection.');
+        } else if (error.response.status === 401) {
+          toast.error('Authentication failed. Please log in again.');
+        } else {
+          toast.error(`Failed to load banners: ${error.response?.data?.message || error.message}`);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -62,10 +186,8 @@ const Banners = () => {
     }
 
     try {
-      // Use admin route if available, otherwise fallback to CMS route
-      const deleteUrl = (API_ROUTES.ADMIN.BANNERS && API_ROUTES.ADMIN.BANNERS.DELETE)
-        ? API_ROUTES.ADMIN.BANNERS.DELETE(id)
-        : API_ROUTES.CMS.BANNERS.DELETE(id);
+      // Use admin route for deletion
+      const deleteUrl = API_ROUTES.ADMIN.BANNERS.DELETE(id);
       const response = await api.delete(deleteUrl);
       // Handle response structure
       if (response.data?.success) {
@@ -150,17 +272,7 @@ const Banners = () => {
                 banners.map((banner) => (
                   <tr key={banner.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {banner.image_url ? (
-                        <img
-                          src={banner.image_url}
-                          alt={banner.title}
-                          className="h-16 w-24 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="h-16 w-24 bg-gray-200 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">No Image</span>
-                        </div>
-                      )}
+                      <BannerImage banner={banner} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {banner.title || 'N/A'}

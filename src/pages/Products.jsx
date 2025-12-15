@@ -202,9 +202,20 @@ const Products = () => {
       setTotalPages(pages);
     } catch (error) {
       console.error('Products API error:', error);
-      // Use empty array as fallback - silent for all errors (demo mode, offline, etc.)
       setProducts([]);
       setTotalPages(1);
+      
+      // Show error message for network/API errors (but not for demo mode)
+      const isDemoMode = localStorage.getItem('demo_user') !== null;
+      if (!isDemoMode) {
+        if (!error.response) {
+          toast.error('Failed to load products: Network error. Please check your connection.');
+        } else if (error.response.status === 401) {
+          toast.error('Authentication failed. Please log in again.');
+        } else {
+          toast.error(`Failed to load products: ${error.response?.data?.message || error.message}`);
+        }
+      }
     } finally {
       setLoading(false);
     }

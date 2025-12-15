@@ -94,8 +94,12 @@ const Banners = () => {
   const fetchBanners = async () => {
     try {
       setLoading(true);
-      // Use ADMIN route for listing banners
-      const response = await api.get(API_ROUTES.ADMIN.BANNERS.LIST);
+      // Use ADMIN route for listing banners with safety check
+      const bannersRoute = API_ROUTES.ADMIN?.BANNERS?.LIST || API_ROUTES.BANNERS?.LIST || '/admin/banners';
+      console.log('Fetching banners from route:', bannersRoute);
+      console.log('API_ROUTES.ADMIN:', API_ROUTES.ADMIN);
+      console.log('API_ROUTES.ADMIN.BANNERS:', API_ROUTES.ADMIN?.BANNERS);
+      const response = await api.get(bannersRoute);
       console.log('Banners API Response:', response.data);
       
       // Handle response structure: { success, message, data: { banners: [...] } }
@@ -150,8 +154,8 @@ const Banners = () => {
     }
 
     try {
-      // Use admin route for deletion
-      const deleteUrl = API_ROUTES.ADMIN.BANNERS.DELETE(id);
+      // Use admin route for deletion with safety check
+      const deleteUrl = API_ROUTES.ADMIN?.BANNERS?.DELETE?.(id) || `/admin/banners/${id}`;
       const response = await api.delete(deleteUrl);
       // Handle response structure
       if (response.data?.success) {

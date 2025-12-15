@@ -141,8 +141,8 @@ const BannerModal = ({ banner, onClose }) => {
       let response;
       let requestUrl;
       if (banner) {
-        // Use admin route for updating
-        requestUrl = API_ROUTES.ADMIN.BANNERS.UPDATE(banner.id);
+        // Use admin route for updating with safety check
+        requestUrl = API_ROUTES.ADMIN?.BANNERS?.UPDATE?.(banner.id) || `/admin/banners/${banner.id}`;
         console.log('Updating banner - URL:', requestUrl);
         response = await api.put(requestUrl, submitData);
         // Handle response structure: { success, message, data: { banner: {...} } }
@@ -152,8 +152,8 @@ const BannerModal = ({ banner, onClose }) => {
           toast.success('Banner updated successfully');
         }
       } else {
-        // Use admin route for creating
-        requestUrl = API_ROUTES.ADMIN.BANNERS.CREATE;
+        // Use admin route for creating with safety check
+        requestUrl = API_ROUTES.ADMIN?.BANNERS?.CREATE || '/admin/banners';
         console.log('Creating banner - URL:', requestUrl);
         response = await api.post(requestUrl, submitData);
         // Handle response structure: { success, message, data: { banner: {...} } }

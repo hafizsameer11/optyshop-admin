@@ -5,6 +5,45 @@ import toast from 'react-hot-toast';
 import BannerModal from '../components/BannerModal';
 import { API_ROUTES } from '../config/apiRoutes';
 
+// Banner Image Component with error handling
+const BannerImage = ({ banner }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
+
+  useEffect(() => {
+    if (banner?.image_url) {
+      const normalizedUrl = normalizeImageUrl(banner.image_url);
+      setImageSrc(normalizedUrl);
+      setImageError(!normalizedUrl);
+    } else {
+      setImageSrc(null);
+      setImageError(true);
+    }
+  }, [banner]);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  if (!imageSrc || imageError) {
+    return (
+      <div className="h-16 w-24 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+        <FiImage className="w-5 h-5 text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={imageSrc}
+      alt={banner?.title || 'Banner'}
+      className="h-16 w-24 object-cover rounded"
+      onError={handleImageError}
+      loading="lazy"
+    />
+  );
+};
+
 // Helper function to normalize image URLs
 const normalizeImageUrl = (url) => {
   if (!url || typeof url !== 'string') return null;
@@ -20,6 +59,7 @@ const normalizeImageUrl = (url) => {
     
     // Check if it's a test domain
     if (testDomains.some(domain => hostname.includes(domain))) {
+      console.warn(`Skipping test/example image URL: ${trimmedUrl}`);
       return null;
     }
     
@@ -36,86 +76,9 @@ const normalizeImageUrl = (url) => {
     }
     
     // Invalid URL format
+    console.warn(`Invalid image URL format: ${trimmedUrl}`);
     return null;
   }
-};
-
-// Banner Image Component with error handling
-const BannerImage = ({ banner }) => {
-  const [imageError, setImageError] = useState(false);
-  const [imageSrc, setImageSrc] = useState(null);
-  const [imageLoading, setImageLoading] = useState(true);
-
-  useEffect(() => {
-    setImageError(false);
-    setImageLoading(true);
-    
-    if (!banner) {
-      setImageSrc(null);
-      setImageLoading(false);
-      return;
-    }
-    
-    // Check multiple possible image fields
-    const imageUrl = banner.image_url || banner.image || banner.imageUrl;
-    const normalizedUrl = normalizeImageUrl(imageUrl);
-    
-    if (normalizedUrl) {
-      setImageSrc(normalizedUrl);
-    } else {
-      setImageSrc(null);
-      setImageLoading(false);
-    }
-  }, [banner]);
-
-  const handleImageLoad = () => {
-    setImageLoading(false);
-    setImageError(false);
-  };
-
-  const handleImageError = (e) => {
-    if (import.meta.env.DEV) {
-      console.warn('Banner image failed to load:', {
-        imageSrc,
-        bannerId: banner?.id,
-        bannerTitle: banner?.title,
-      });
-    }
-    setImageError(true);
-    setImageLoading(false);
-    if (e.target) {
-      e.target.style.display = 'none';
-    }
-  };
-
-  if (!imageSrc || imageError) {
-    return (
-      <div className="h-16 w-24 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
-        <FiImage className="w-5 h-5 text-gray-400" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative h-16 w-24 flex-shrink-0">
-      {imageLoading && !imageError && (
-        <div className="absolute inset-0 bg-gray-200 rounded flex items-center justify-center z-10">
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin"></div>
-        </div>
-      )}
-      {imageSrc && !imageError && (
-        <img
-          src={imageSrc}
-          alt={banner?.title || 'Banner'}
-          className="h-16 w-24 object-cover rounded transition-opacity duration-200"
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          loading="lazy"
-          style={{ display: imageError ? 'none' : 'block' }}
-        />
-      )}
-    </div>
-  );
 };
 
 const Banners = () => {
@@ -131,7 +94,7 @@ const Banners = () => {
   const fetchBanners = async () => {
     try {
       setLoading(true);
-      // Use admin route for listing banners
+      // Use ADMIN route for listing banners
       const response = await api.get(API_ROUTES.ADMIN.BANNERS.LIST);
       console.log('Banners API Response:', response.data);
       
@@ -140,6 +103,7 @@ const Banners = () => {
       let bannersData = [];
       
       if (response.data?.data) {
+        // Handle nested structure: { data: { banners: [...] } } or { data: [...] }
         bannersData = response.data.data.banners || response.data.data || [];
       } else if (Array.isArray(response.data)) {
         bannersData = response.data;
@@ -154,7 +118,7 @@ const Banners = () => {
       console.error('Error details:', error.response?.data);
       setBanners([]);
       
-      // Show error message
+      // Show error message (but not for demo mode)
       const isDemoMode = localStorage.getItem('demo_user') !== null;
       if (!isDemoMode) {
         if (!error.response) {

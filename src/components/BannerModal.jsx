@@ -17,6 +17,35 @@ const BannerModal = ({ banner, onClose }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Helper function to normalize image URLs
+  const normalizeImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) return null;
+    
+    // Skip test/example URLs
+    const testDomains = ['example.com', 'localhost', '127.0.0.1', 'test.com', 'placeholder.com'];
+    try {
+      const urlObj = new URL(trimmedUrl);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      if (testDomains.some(domain => hostname.includes(domain))) {
+        return null;
+      }
+      
+      return trimmedUrl;
+    } catch (e) {
+      // Relative path
+      if (trimmedUrl.startsWith('/')) {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optyshop-frontend.hmstech.org/api';
+        const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+        return `${baseUrl}${trimmedUrl}`;
+      }
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (banner) {
       setFormData({
@@ -27,7 +56,9 @@ const BannerModal = ({ banner, onClose }) => {
         sort_order: banner.sort_order || 0,
         is_active: banner.is_active !== undefined ? banner.is_active : true,
       });
-      setImagePreview(banner.image_url || null);
+      // Normalize image URL for preview
+      const normalizedUrl = normalizeImageUrl(banner.image_url);
+      setImagePreview(normalizedUrl);
     } else {
       setFormData({
         title: '',
@@ -223,6 +254,10 @@ const BannerModal = ({ banner, onClose }) => {
                   src={imagePreview}
                   alt="Preview"
                   className="w-full h-48 object-cover rounded-lg border"
+                  onError={(e) => {
+                    console.warn('Image preview failed to load:', imagePreview);
+                    e.target.style.display = 'none';
+                  }}
                 />
               </div>
             )}

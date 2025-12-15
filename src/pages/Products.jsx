@@ -182,8 +182,11 @@ const Products = () => {
         page: page.toString(),
         limit: '12',
       });
-      if (searchTerm) {
-        params.append('search', searchTerm);
+      
+      // Trim search term and only send if not empty
+      const trimmedSearch = searchTerm?.trim();
+      if (trimmedSearch) {
+        params.append('search', trimmedSearch);
       }
       
       const response = await api.get(`${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`);
@@ -211,6 +214,14 @@ const Products = () => {
           toast.error('Failed to load products: Network error. Please check your connection.');
         } else if (error.response.status === 401) {
           toast.error('Authentication failed. Please log in again.');
+        } else if (error.response.status === 500) {
+          // Handle backend/database errors
+          const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Server error';
+          if (errorMessage.includes('prisma') || errorMessage.includes('Prisma') || errorMessage.includes('database')) {
+            toast.error('Database error: Please try a different search term or contact support.');
+          } else {
+            toast.error(`Failed to load products: ${errorMessage}`);
+          }
         } else {
           toast.error(`Failed to load products: ${error.response?.data?.message || error.message}`);
         }

@@ -29,6 +29,7 @@ import BlogPosts from './pages/BlogPosts';
 import FAQs from './pages/FAQs';
 import Pages from './pages/Pages';
 import Testimonials from './pages/Testimonials';
+import Menus from './pages/Menus';
 import Simulations from './pages/Simulations';
 import Jobs from './pages/Jobs';
 import Transactions from './pages/Transactions';
@@ -105,6 +106,7 @@ function App() {
                     <Route path="/blog" element={<BlogPosts />} />
                     <Route path="/faqs" element={<FAQs />} />
                     <Route path="/pages" element={<Pages />} />
+                    <Route path="/menus" element={<Menus />} />
                     <Route path="/testimonials" element={<Testimonials />} />
                     <Route path="/simulations" element={<Simulations />} />
                     <Route path="/jobs" element={<Jobs />} />

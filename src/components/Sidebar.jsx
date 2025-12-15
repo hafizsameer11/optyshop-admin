@@ -83,6 +83,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { path: '/blog', icon: FiFileText, label: 'Blog Posts' },
     { path: '/faqs', icon: FiMessageSquare, label: 'FAQs' },
     { path: '/pages', icon: FiFile, label: 'Pages' },
+    { path: '/menus', icon: FiMenu, label: 'Navigation Menus' },
     { path: '/testimonials', icon: FiStar, label: 'Testimonials' },
     { path: '/simulations', icon: FiZap, label: 'Simulations' },
     { path: '/transactions', icon: FiDollarSign, label: 'Transactions' },

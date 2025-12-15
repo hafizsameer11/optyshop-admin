@@ -3624,6 +3624,240 @@
 					]
 				  }
 				}
+			  },
+			  {
+				"name": "Get All Navigation Menus (Admin)",
+				"request": {
+				  "method": "GET",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/admin/menus",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "menus"
+					]
+				  },
+				  "description": "List all navigation menus for admin (header, footer, etc.)."
+				}
+			  },
+			  {
+				"name": "Create Navigation Menu (Admin)",
+				"request": {
+				  "method": "POST",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Main Header\",\n  \"code\": \"header_main\",\n  \"description\": \"Top navigation bar\",\n  \"is_active\": true\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/admin/menus",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "menus"
+					]
+				  },
+				  "description": "Create a new navigation menu, e.g. header_main."
+				}
+			  },
+			  {
+				"name": "Update Navigation Menu (Admin)",
+				"request": {
+				  "method": "PUT",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Main Header Updated\",\n  \"description\": \"Updated description\",\n  \"is_active\": true\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/admin/menus/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "menus",
+					  "1"
+					]
+				  },
+				  "description": "Update a navigation menu by id."
+				}
+			  },
+			  {
+				"name": "Delete Navigation Menu (Admin)",
+				"request": {
+				  "method": "DELETE",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/admin/menus/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "menus",
+					  "1"
+					]
+				  },
+				  "description": "Delete a navigation menu (and its items)."
+				}
+			  },
+			  {
+				"name": "Get Navigation Menu Items (Admin)",
+				"request": {
+				  "method": "GET",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/admin/menu-items?menu_id=1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "menu-items"
+					],
+					"query": [
+					  {
+						"key": "menu_id",
+						"value": "1"
+					  }
+					]
+				  },
+				  "description": "List navigation items for a given menu id."
+				}
+			  },
+			  {
+				"name": "Create Navigation Menu Item (Admin)",
+				"request": {
+				  "method": "POST",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"menu_id\": 1,\n  \"label\": \"Eyeglasses\",\n  \"slug\": \"eyeglasses\",\n  \"sort_order\": 10,\n  \"meta\": {\n    \"categorySlug\": \"eyeglasses\",\n    \"productType\": \"frame\"\n  }\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/admin/menu-items",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "menu-items"
+					]
+				  },
+				  "description": "Create a navigation item (top-level or child) for a menu."
+				}
+			  },
+			  {
+				"name": "Update Navigation Menu Item (Admin)",
+				"request": {
+				  "method": "PUT",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"label\": \"Eyeglasses Updated\",\n  \"sort_order\": 5\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/admin/menu-items/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "menu-items",
+					  "1"
+					]
+				  },
+				  "description": "Update a navigation item by id."
+				}
+			  },
+			  {
+				"name": "Delete Navigation Menu Item (Admin)",
+				"request": {
+				  "method": "DELETE",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/admin/menu-items/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "menu-items",
+					  "1"
+					]
+				  },
+				  "description": "Delete a navigation item (and any children)."
+				}
 			  }
 			]
 		  },

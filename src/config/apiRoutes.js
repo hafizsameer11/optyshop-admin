@@ -366,6 +366,24 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/configs/${id}`,
       DELETE: (id) => `/admin/configs/${id}`,
     },
+
+    // Navigation Menus Management
+    MENUS: {
+      LIST: `/admin/menus`,
+      CREATE: `/admin/menus`,
+      BY_ID: (id) => `/admin/menus/${id}`,
+      UPDATE: (id) => `/admin/menus/${id}`,
+      DELETE: (id) => `/admin/menus/${id}`,
+    },
+
+    // Navigation Menu Items Management
+    MENU_ITEMS: {
+      LIST: `/admin/menu-items`,
+      CREATE: `/admin/menu-items`,
+      BY_ID: (id) => `/admin/menu-items/${id}`,
+      UPDATE: (id) => `/admin/menu-items/${id}`,
+      DELETE: (id) => `/admin/menu-items/${id}`,
+    },
     
     // Coupons Management
     COUPONS: {

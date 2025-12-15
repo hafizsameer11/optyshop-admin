@@ -5,6 +5,43 @@ import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import { API_ROUTES } from '../config/apiRoutes';
 
+// Helper function to normalize image URLs
+const normalizeImageUrl = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) return null;
+  
+  // Skip test/example URLs that will cause CORS errors
+  const testDomains = ['example.com', 'localhost', '127.0.0.1', 'test.com', 'placeholder.com'];
+  try {
+    const urlObj = new URL(trimmedUrl);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // Check if it's a test domain
+    if (testDomains.some(domain => hostname.includes(domain))) {
+      console.warn(`Skipping test/example image URL: ${trimmedUrl}`);
+      return null;
+    }
+    
+    // Valid external URL - return as is
+    return trimmedUrl;
+  } catch (e) {
+    // Not a valid absolute URL, might be relative
+    if (trimmedUrl.startsWith('/')) {
+      // Relative path - try to construct full URL using API base URL
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optyshop-frontend.hmstech.org/api';
+      // Remove /api suffix if present, then append the relative path
+      const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+      return `${baseUrl}${trimmedUrl}`;
+    }
+    
+    // Invalid URL format
+    console.warn(`Invalid image URL format: ${trimmedUrl}`);
+    return null;
+  }
+};
+
 // Product Image Component with error handling
 const ProductImage = ({ product }) => {
   const [imageError, setImageError] = useState(false);
@@ -48,43 +85,16 @@ const ProductImage = ({ product }) => {
       imageUrl = product.image_url;
     }
     
-    // Debug: Always log image data for troubleshooting
-    if (product.id) {
-      console.log(`Product ${product.id} image data:`, {
-        foundUrl: imageUrl,
-        images: product.images,
-        image: product.image,
-        image_url: product.image_url,
-        fullProduct: product
-      });
-    }
+    // Normalize and validate the URL
+    const normalizedUrl = normalizeImageUrl(imageUrl);
     
-    // Validate and set URL
-    if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '') {
-      const trimmedUrl = imageUrl.trim();
-      
-      // Test if URL is accessible (optional - can be removed if too verbose)
-      // This helps identify if it's a URL format issue
-      try {
-        new URL(trimmedUrl); // Validate URL format
-        setImageSrc(trimmedUrl);
-        console.log(`✅ Setting image source for product ${product.id}:`, trimmedUrl);
-      } catch (urlError) {
-        // If it's a relative path, that's okay too
-        if (trimmedUrl.startsWith('/')) {
-          setImageSrc(trimmedUrl);
-          console.log(`✅ Setting relative image path for product ${product.id}:`, trimmedUrl);
-        } else {
-          console.error(`❌ Invalid image URL format for product ${product.id}:`, trimmedUrl, urlError);
-          setImageSrc(null);
-          setImageLoading(false);
-        }
-      }
+    if (normalizedUrl) {
+      setImageSrc(normalizedUrl);
     } else {
       setImageSrc(null);
       setImageLoading(false);
-      if (product.id) {
-        console.warn(`⚠️ Product ${product.id} has no valid image URL`);
+      if (product.id && imageUrl) {
+        console.warn(`⚠️ Product ${product.id} has invalid or test image URL: ${imageUrl}`);
       }
     }
   }, [product]);
@@ -97,29 +107,19 @@ const ProductImage = ({ product }) => {
 
   // Handle image load error
   const handleImageError = (e) => {
-    console.error('Product image failed to load:', {
-      imageSrc,
-      productId: product?.id,
-      productName: product?.name,
-      error: e,
-      // Try to get more details about the error
-      imageElement: e.target
-    });
-    
-    // Check if it's a network/CORS error or 404
-    const img = e.target;
-    if (img) {
-      console.error('Image element details:', {
-        src: img.src,
-        complete: img.complete,
-        naturalWidth: img.naturalWidth,
-        naturalHeight: img.naturalHeight
+    // Silently handle image errors - just show placeholder
+    // Only log in development mode
+    if (import.meta.env.DEV) {
+      console.warn('Product image failed to load:', {
+        imageSrc,
+        productId: product?.id,
+        productName: product?.name,
       });
     }
     
     setImageError(true);
     setImageLoading(false);
-    // Don't show broken image icon
+    // Hide the broken image
     if (e.target) {
       e.target.style.display = 'none';
     }
@@ -150,7 +150,6 @@ const ProductImage = ({ product }) => {
           onLoad={handleImageLoad}
           onError={handleImageError}
           loading="lazy"
-          crossOrigin="anonymous"
           style={{ display: imageError ? 'none' : 'block' }}
         />
       )}

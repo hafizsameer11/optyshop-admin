@@ -175,7 +175,7 @@ const JobApplicationDrawer = ({ isOpen, onClose, application, onAccept, onReject
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className="fixed inset-0 z-[9999] overflow-hidden">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm transition-opacity duration-300"

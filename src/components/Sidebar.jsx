@@ -209,12 +209,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
           onClick={toggleSidebar}
+          style={{ pointerEvents: 'auto' }}
         />
       )}
 
       {/* Sidebar Container */}
       <div
-        className={`fixed top-0 left-0 h-full bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white transition-all duration-300 z-30 shadow-2xl overflow-hidden flex flex-col
+        className={`fixed top-0 left-0 h-full bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white transition-all duration-300 z-40 shadow-2xl overflow-hidden flex flex-col
           ${isOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0 lg:w-20'}
         `}
         style={{

@@ -66,7 +66,7 @@ const SubmissionDrawer = ({ isOpen, onClose, title, data, fields = [], formType 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className="fixed inset-0 z-[9999] overflow-hidden">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm transition-opacity duration-300"

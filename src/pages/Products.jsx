@@ -170,10 +170,34 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [subCategoriesMap, setSubCategoriesMap] = useState({});
 
   useEffect(() => {
     fetchProducts();
+    fetchSubCategories();
   }, [page, searchTerm]);
+
+  const fetchSubCategories = async () => {
+    try {
+      const response = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.LIST);
+      const responseData = response.data?.data || response.data || {};
+      const subCatData = responseData.subcategories || responseData || [];
+      
+      if (Array.isArray(subCatData)) {
+        // Create a map of subcategory ID to name for quick lookup
+        const map = {};
+        subCatData.forEach(subCat => {
+          if (subCat.id) {
+            map[subCat.id] = subCat.name || subCat.name;
+          }
+        });
+        setSubCategoriesMap(map);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch subcategories for lookup:', error);
+      // Don't show error to user, just use IDs if names aren't available
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -195,6 +219,11 @@ const Products = () => {
       // Response structure: { success, message, data: { products: [], pagination: {} } }
       const responseData = response.data?.data || response.data || {};
       const productsData = responseData.products || responseData || [];
+      
+      // Log first product to debug structure
+      if (Array.isArray(productsData) && productsData.length > 0) {
+        console.log('Sample product data structure:', productsData[0]);
+      }
       
       // Extract pagination info
       const pagination = responseData.pagination || {};
@@ -371,10 +400,30 @@ const Products = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.sub_category_id || product.subcategory_id ? String(product.sub_category_id || product.subcategory_id) : '-'}
-                      {product.subcategory?.name && (
-                        <div className="text-xs text-gray-400 mt-1">{product.subcategory.name}</div>
-                      )}
+                      {(() => {
+                        // Check multiple possible field names for subcategory ID
+                        const subCatId = product.sub_category_id || product.subcategory_id || product.subCategoryId;
+                        
+                        if (!subCatId) {
+                          return '-';
+                        }
+                        
+                        // Check multiple possible field names for subcategory name
+                        const subCatName = product.subcategory?.name || 
+                                         product.sub_category?.name || 
+                                         product.SubCategory?.name ||
+                                         product.subCategory?.name ||
+                                         subCategoriesMap[subCatId]; // Fallback to lookup map
+                        
+                        return (
+                          <>
+                            <div>{String(subCatId)}</div>
+                            {subCatName && (
+                              <div className="text-xs text-gray-400 mt-1">{subCatName}</div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}

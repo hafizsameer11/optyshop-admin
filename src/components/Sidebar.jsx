@@ -45,6 +45,68 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const menuItems = [
     { path: '/', icon: FiHome, label: 'Dashboard' },
 
+    // Catalog Group
+    {
+      key: 'catalog',
+      label: 'Catalog',
+      icon: FiGrid,
+      children: [
+        { path: '/products', label: 'Products' },
+        { path: '/categories', label: 'Categories' },
+        { path: '/subcategories', label: 'SubCategories' },
+        { path: '/frame-sizes', label: 'Frame Sizes' },
+      ]
+    },
+
+    // Sales & Orders Group
+    {
+      key: 'sales',
+      label: 'Sales & Orders',
+      icon: FiShoppingCart,
+      children: [
+        { path: '/orders', label: 'Orders' },
+        { path: '/transactions', label: 'Transactions' },
+        { path: '/prescriptions', label: 'Prescriptions' },
+      ]
+    },
+
+    // Lens Management Group
+    {
+      key: 'lens',
+      label: 'Lens Management',
+      icon: FiEye,
+      children: [
+        { path: '/lens-options', label: 'Lens Options' },
+        { path: '/lens-types', label: 'Lens Types' },
+        { path: '/lens-coatings', label: 'Lens Coatings' },
+        { path: '/lens-colors', label: 'Lens Colors' },
+        { path: '/lens-finishes', label: 'Lens Finishes' },
+        { path: '/lens-treatments', label: 'Lens Treatments' },
+        { path: '/lens-thickness-materials', label: 'Thickness Materials' },
+        { path: '/lens-thickness-options', label: 'Thickness Options' },
+        { path: '/prescription-lens-types', label: 'Rx Lens Types' },
+        { path: '/prescription-lens-variants', label: 'Rx Lens Variants' },
+      ]
+    },
+
+    // Marketing & Content Group
+    {
+      key: 'marketing',
+      label: 'Marketing & Content',
+      icon: FiBriefcase,
+      children: [
+        { path: '/coupons', label: 'Coupons' },
+        { path: '/campaigns', label: 'Campaigns' },
+        { path: '/banners', label: 'Banners' },
+        { path: '/blog', label: 'Blog Posts' },
+        { path: '/faqs', label: 'FAQs' },
+        { path: '/pages', label: 'Pages' },
+        { path: '/menus', label: 'Navigation Menus' },
+        { path: '/testimonials', label: 'Testimonials' },
+        { path: '/jobs', label: 'Jobs' },
+      ]
+    },
+
     // Website Forms Group
     {
       key: 'forms',
@@ -60,36 +122,18 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       ]
     },
 
-    { path: '/products', icon: FiShoppingBag, label: 'Products' },
-    { path: '/orders', icon: FiShoppingCart, label: 'Orders' },
-    { path: '/users', icon: FiUsers, label: 'Users' },
-    { path: '/categories', icon: FiGrid, label: 'Categories' },
-    { path: '/subcategories', icon: FiGrid, label: 'SubCategories' },
-    { path: '/frame-sizes', icon: FiLayers, label: 'Frame Sizes' },
-    { path: '/lens-options', icon: FiSettings, label: 'Lens Options' },
-    { path: '/lens-types', icon: FiEye, label: 'Lens Types' },
-    { path: '/lens-coatings', icon: FiBox, label: 'Lens Coatings' },
-    { path: '/lens-colors', icon: FiDroplet, label: 'Lens Colors' },
-    { path: '/lens-finishes', icon: FiLayers, label: 'Lens Finishes' },
-    { path: '/lens-treatments', icon: FiShield, label: 'Lens Treatments' },
-    { path: '/lens-thickness-materials', icon: FiBox, label: 'Lens Thickness Materials' },
-    { path: '/lens-thickness-options', icon: FiLayers, label: 'Lens Thickness Options' },
-    { path: '/prescriptions', icon: FiFileText, label: 'Prescriptions' },
-    { path: '/prescription-lens-types', icon: FiEye, label: 'Prescription Lens Types' },
-    { path: '/prescription-lens-variants', icon: FiLayers, label: 'Prescription Lens Variants' },
-    { path: '/coupons', icon: FiTag, label: 'Coupons' },
-    { path: '/campaigns', icon: FiTrendingUp, label: 'Campaigns' },
-    { path: '/jobs', icon: FiBriefcase, label: 'Jobs' },
-    { path: '/banners', icon: FiImage, label: 'Banners' },
-    { path: '/blog', icon: FiFileText, label: 'Blog Posts' },
-    { path: '/faqs', icon: FiMessageSquare, label: 'FAQs' },
-    { path: '/pages', icon: FiFile, label: 'Pages' },
-    { path: '/menus', icon: FiMenu, label: 'Navigation Menus' },
-    { path: '/testimonials', icon: FiStar, label: 'Testimonials' },
-    { path: '/simulations', icon: FiZap, label: 'Simulations' },
-    { path: '/transactions', icon: FiDollarSign, label: 'Transactions' },
-    { path: '/analytics', icon: FiBarChart2, label: 'Analytics' },
-    { path: '/overview', icon: FiGlobe, label: 'Overview' },
+    // System Group
+    {
+      key: 'system',
+      label: 'System',
+      icon: FiSettings,
+      children: [
+        { path: '/users', label: 'Users' },
+        { path: '/analytics', label: 'Analytics' },
+        { path: '/simulations', label: 'Simulations' },
+        { path: '/overview', label: 'Overview' },
+      ]
+    },
   ];
 
   return (

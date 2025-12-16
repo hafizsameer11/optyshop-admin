@@ -14,6 +14,7 @@ const ProductModal = ({ product, onClose }) => {
     description: '',
     short_description: '',
     category_id: '',
+    sub_category_id: '',
     frame_shape: '',
     frame_material: '',
     frame_color: '',
@@ -30,6 +31,7 @@ const ProductModal = ({ product, onClose }) => {
     is_featured: false,
   });
   const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [frameShapes, setFrameShapes] = useState([]);
   const [frameMaterials, setFrameMaterials] = useState([]);
   const [genders, setGenders] = useState([]);
@@ -50,6 +52,7 @@ const ProductModal = ({ product, onClose }) => {
         description: product.description || '',
         short_description: product.short_description || '',
         category_id: product.category_id || '',
+        sub_category_id: product.sub_category_id || product.subcategory_id || '',
         frame_shape: product.frame_shape || '',
         frame_material: product.frame_material || '',
         frame_color: product.frame_color || '',
@@ -65,6 +68,10 @@ const ProductModal = ({ product, onClose }) => {
         is_active: product.is_active !== undefined ? product.is_active : true,
         is_featured: product.is_featured || false,
       });
+      // Fetch subcategories if category is set
+      if (product.category_id) {
+        fetchSubCategories(product.category_id);
+      }
       // Set image preview if product has images array or image_url
       if (product.images && product.images.length > 0) {
         setImagePreview(product.images[0]);
@@ -82,6 +89,7 @@ const ProductModal = ({ product, onClose }) => {
         description: '',
         short_description: '',
         category_id: '',
+        sub_category_id: '',
         frame_shape: '',
         frame_material: '',
         frame_color: '',
@@ -97,6 +105,7 @@ const ProductModal = ({ product, onClose }) => {
         is_active: true,
         is_featured: false,
       });
+      setSubCategories([]);
       setImageFile(null);
       setImagePreview(null);
     }
@@ -131,12 +140,53 @@ const ProductModal = ({ product, onClose }) => {
     }
   };
 
+  const fetchSubCategories = async (categoryId) => {
+    if (!categoryId) {
+      setSubCategories([]);
+      return;
+    }
+
+    try {
+      // Try to fetch subcategories by category ID
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+      const responseData = response.data?.data || response.data || {};
+      const subCatData = responseData.subcategories || responseData || [];
+      setSubCategories(Array.isArray(subCatData) ? subCatData : []);
+    } catch (error) {
+      console.warn('Failed to fetch subcategories for category', categoryId, error);
+      // Try alternative: fetch all subcategories and filter by category_id
+      try {
+        const response = await api.get(`${API_ROUTES.SUBCATEGORIES.LIST}?category_id=${categoryId}`);
+        const responseData = response.data?.data || response.data || {};
+        const subCatData = responseData.subcategories || responseData || [];
+        const filtered = Array.isArray(subCatData) 
+          ? subCatData.filter(sub => sub.category_id === parseInt(categoryId))
+          : [];
+        setSubCategories(filtered);
+      } catch (altError) {
+        console.warn('Alternative subcategories fetch also failed', altError);
+        setSubCategories([]);
+      }
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({ 
-      ...formData, 
-      [name]: type === 'checkbox' ? checked : value 
-    });
+    
+    // If category changes, fetch subcategories and reset subcategory selection
+    if (name === 'category_id') {
+      setFormData({ 
+        ...formData, 
+        [name]: type === 'checkbox' ? checked : value,
+        sub_category_id: '' // Reset subcategory when category changes
+      });
+      fetchSubCategories(value);
+    } else {
+      setFormData({ 
+        ...formData, 
+        [name]: type === 'checkbox' ? checked : value 
+      });
+    }
   };
 
   const handleImageChange = (e) => {
@@ -241,6 +291,12 @@ const ProductModal = ({ product, onClose }) => {
         const categoryId = parseInt(formData.category_id);
         if (!isNaN(categoryId)) {
           dataToSend.category_id = categoryId;
+        }
+      }
+      if (formData.sub_category_id) {
+        const subCategoryId = parseInt(formData.sub_category_id);
+        if (!isNaN(subCategoryId)) {
+          dataToSend.sub_category_id = subCategoryId;
         }
       }
       if (formData.cost_price && formData.cost_price !== '') {
@@ -644,19 +700,39 @@ const ProductModal = ({ product, onClose }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Type
+                SubCategory
               </label>
               <select
-                name="product_type"
-                value={formData.product_type}
+                name="sub_category_id"
+                value={formData.sub_category_id}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                disabled={!formData.category_id}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <option value="frame">Frame</option>
-                {/* Note: Only "frame" is currently a valid ProductType enum value in Prisma */}
-                {/* Other values like "lens" and "accessory" are not valid and will cause errors */}
+                <option value="">{formData.category_id ? 'Select SubCategory' : 'Select Category First'}</option>
+                {subCategories.map((subCat) => (
+                  <option key={subCat.id} value={subCat.id}>
+                    {subCat.name}
+                  </option>
+                ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Product Type
+            </label>
+            <select
+              name="product_type"
+              value={formData.product_type}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="frame">Frame</option>
+              {/* Note: Only "frame" is currently a valid ProductType enum value in Prisma */}
+              {/* Other values like "lens" and "accessory" are not valid and will cause errors */}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

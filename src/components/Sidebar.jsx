@@ -18,7 +18,6 @@ import {
   FiStar,
   FiZap,
   FiBox,
-  FiMenu,
   FiX,
   FiChevronDown,
   FiChevronRight,
@@ -28,7 +27,8 @@ import {
   FiBarChart2,
   FiGlobe,
   FiDroplet,
-  FiShield
+  FiShield,
+  FiPackage
 } from 'react-icons/fi';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -43,6 +43,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   };
 
   const menuItems = [
+    // Dashboard
     { path: '/', icon: FiHome, label: 'Dashboard' },
 
     // Website Forms Group
@@ -60,36 +61,55 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       ]
     },
 
+    // Core Management
     { path: '/products', icon: FiShoppingBag, label: 'Products' },
     { path: '/orders', icon: FiShoppingCart, label: 'Orders' },
     { path: '/users', icon: FiUsers, label: 'Users' },
+    
+    // Categories
     { path: '/categories', icon: FiGrid, label: 'Categories' },
     { path: '/subcategories', icon: FiGrid, label: 'SubCategories' },
+    
+    // Frame & Lens Management
     { path: '/frame-sizes', icon: FiLayers, label: 'Frame Sizes' },
-    { path: '/lens-options', icon: FiSettings, label: 'Lens Options' },
     { path: '/lens-types', icon: FiEye, label: 'Lens Types' },
     { path: '/lens-coatings', icon: FiBox, label: 'Lens Coatings' },
+    { path: '/lens-options', icon: FiSettings, label: 'Lens Options' },
     { path: '/lens-colors', icon: FiDroplet, label: 'Lens Colors' },
     { path: '/lens-finishes', icon: FiLayers, label: 'Lens Finishes' },
     { path: '/lens-treatments', icon: FiShield, label: 'Lens Treatments' },
     { path: '/lens-thickness-materials', icon: FiBox, label: 'Lens Thickness Materials' },
     { path: '/lens-thickness-options', icon: FiLayers, label: 'Lens Thickness Options' },
+    
+    // Prescription Management
     { path: '/prescriptions', icon: FiFileText, label: 'Prescriptions' },
     { path: '/prescription-lens-types', icon: FiEye, label: 'Prescription Lens Types' },
     { path: '/prescription-lens-variants', icon: FiLayers, label: 'Prescription Lens Variants' },
+    
+    // Marketing
     { path: '/coupons', icon: FiTag, label: 'Coupons' },
     { path: '/campaigns', icon: FiTrendingUp, label: 'Campaigns' },
-    { path: '/jobs', icon: FiBriefcase, label: 'Jobs' },
     { path: '/banners', icon: FiImage, label: 'Banners' },
+    
+    // Content Management
     { path: '/blog', icon: FiFileText, label: 'Blog Posts' },
     { path: '/faqs', icon: FiMessageSquare, label: 'FAQs' },
     { path: '/pages', icon: FiFile, label: 'Pages' },
-    { path: '/menus', icon: FiMenu, label: 'Navigation Menus' },
     { path: '/testimonials', icon: FiStar, label: 'Testimonials' },
-    { path: '/simulations', icon: FiZap, label: 'Simulations' },
+    
+    // Jobs
+    { path: '/jobs', icon: FiBriefcase, label: 'Jobs' },
+    
+    // Shipping & Logistics
+    { path: '/shipping-methods', icon: FiPackage, label: 'Shipping Methods' },
+    
+    // Financial & Analytics
     { path: '/transactions', icon: FiDollarSign, label: 'Transactions' },
     { path: '/analytics', icon: FiBarChart2, label: 'Analytics' },
     { path: '/overview', icon: FiGlobe, label: 'Overview' },
+    
+    // Simulations
+    { path: '/simulations', icon: FiZap, label: 'Simulations' },
   ];
 
   return (

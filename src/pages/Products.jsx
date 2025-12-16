@@ -318,6 +318,9 @@ const Products = () => {
                   Category
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  SubCategory
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -337,7 +340,7 @@ const Products = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
                     No products found. {searchTerm && 'Try a different search term.'}
                   </td>
                 </tr>
@@ -363,6 +366,15 @@ const Products = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {product.category_id ? String(product.category_id) : '-'}
+                      {product.category?.name && (
+                        <div className="text-xs text-gray-400 mt-1">{product.category.name}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {product.sub_category_id || product.subcategory_id ? String(product.sub_category_id || product.subcategory_id) : '-'}
+                      {product.subcategory?.name && (
+                        <div className="text-xs text-gray-400 mt-1">{product.subcategory.name}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}

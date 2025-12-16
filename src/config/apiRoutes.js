@@ -75,6 +75,7 @@ export const API_ROUTES = {
     LIST: `/subcategories`,                     // PUBLIC
     BY_ID: (id) => `/subcategories/${id}`,       // PUBLIC
     BY_SLUG: (slug) => `/subcategories/slug/${slug}`, // PUBLIC
+    BY_CATEGORY: (categoryId) => `/subcategories/by-category/${categoryId}`, // PUBLIC
   },
 
   // ============================================

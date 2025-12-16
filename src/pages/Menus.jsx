@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiList } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -137,22 +137,16 @@ const Menus = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${menu.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                          }`}
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          menu.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
                       >
                         {menu.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => window.location.href = `/menus/${menu.id}/items`}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                        title="Manage Items"
-                      >
-                        <FiList />
-                      </button>
                       <button
                         onClick={() => handleEdit(menu)}
                         className="text-primary-600 hover:text-primary-900 mr-4"

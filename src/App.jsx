@@ -10,7 +10,6 @@ import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Users from './pages/Users';
 import Categories from './pages/Categories';
-import SubCategories from './pages/SubCategories';
 import FrameSizes from './pages/FrameSizes';
 import LensOptions from './pages/LensOptions';
 import LensTypes from './pages/LensTypes';
@@ -31,7 +30,6 @@ import FAQs from './pages/FAQs';
 import Pages from './pages/Pages';
 import Testimonials from './pages/Testimonials';
 import Menus from './pages/Menus';
-import MenuItems from './pages/MenuItems';
 import Simulations from './pages/Simulations';
 import Jobs from './pages/Jobs';
 import Transactions from './pages/Transactions';
@@ -90,7 +88,6 @@ function App() {
                     <Route path="/orders" element={<Orders />} />
                     <Route path="/users" element={<Users />} />
                     <Route path="/categories" element={<Categories />} />
-                    <Route path="/subcategories" element={<SubCategories />} />
                     <Route path="/frame-sizes" element={<FrameSizes />} />
                     <Route path="/lens-options" element={<LensOptions />} />
                     <Route path="/lens-types" element={<LensTypes />} />
@@ -110,7 +107,6 @@ function App() {
                     <Route path="/faqs" element={<FAQs />} />
                     <Route path="/pages" element={<Pages />} />
                     <Route path="/menus" element={<Menus />} />
-                    <Route path="/menus/:menuId/items" element={<MenuItems />} />
                     <Route path="/testimonials" element={<Testimonials />} />
                     <Route path="/simulations" element={<Simulations />} />
                     <Route path="/jobs" element={<Jobs />} />

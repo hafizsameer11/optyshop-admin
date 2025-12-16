@@ -47,8 +47,21 @@ const SubCategories = () => {
 
         } catch (error) {
             console.error('API error:', error);
-            toast.error('Failed to fetch data');
             setSubCategories([]);
+            
+            // Show error message (but not for demo mode)
+            const isDemoMode = localStorage.getItem('demo_user') !== null;
+            if (!isDemoMode) {
+                if (!error.response) {
+                    toast.error('Failed to fetch data: Network error. Please check your connection.');
+                } else if (error.response.status === 404) {
+                    toast.error('Subcategories endpoint not found. The backend may not support this feature yet.');
+                } else if (error.response.status === 401) {
+                    toast.error('Authentication failed. Please log in again.');
+                } else {
+                    toast.error(`Failed to fetch data: ${error.response?.data?.message || error.message}`);
+                }
+            }
         } finally {
             setLoading(false);
         }

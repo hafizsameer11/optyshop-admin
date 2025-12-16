@@ -214,35 +214,55 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
       {/* Sidebar Container */}
       <div
-        className={`fixed top-0 left-0 h-full bg-gradient-to-b from-indigo-800 to-purple-900 text-white transition-all duration-300 z-30 shadow-xl overflow-hidden flex flex-col
+        className={`fixed top-0 left-0 h-full bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white transition-all duration-300 z-30 shadow-2xl overflow-hidden flex flex-col
           ${isOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0 lg:w-20'}
         `}
+        style={{
+          backgroundImage: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #581c87 100%)',
+        }}
       >
+        {/* Decorative gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-pink-600/10 pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/20 to-indigo-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+        
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-indigo-700/50 bg-indigo-900/30 backdrop-blur-sm shrink-0">
+        <div className="relative flex items-center justify-between h-20 px-4 border-b border-white/10 bg-white/5 backdrop-blur-xl shrink-0 shadow-lg">
           <div className={`flex items-center ${!isOpen && 'lg:justify-center w-full'}`}>
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center shadow-lg">
-              <span className="font-bold text-white text-lg">O</span>
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 flex items-center justify-center shadow-lg shadow-pink-500/50 ring-2 ring-white/20">
+              <span className="font-extrabold text-white text-xl">O</span>
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent"></div>
             </div>
-            {isOpen && <h1 className="ml-3 text-xl font-bold tracking-wide bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">OptyShop</h1>}
+            {isOpen && (
+              <div className="ml-3">
+                <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+                  OptyShop
+                </h1>
+                <p className="text-xs text-white/60 font-medium">Admin Panel</p>
+            </div>
+            )}
           </div>
           {isOpen && (
-            <button onClick={toggleSidebar} className="lg:hidden text-gray-300 hover:text-white">
-              <FiX className="w-6 h-6" />
+            <button 
+              onClick={toggleSidebar} 
+              className="lg:hidden text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+            >
+              <FiX className="w-5 h-5" />
             </button>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-indigo-600 scrollbar-track-transparent py-4">
+        <nav className="relative flex-1 overflow-y-auto overflow-x-hidden sidebar-scrollbar py-6">
           <div className="px-3 space-y-1">
             {menuSections.map((section, index) => {
               // Render Divider
               if (section.type === 'divider') {
                 if (!isOpen) return null;
                 return (
-                  <div key={`divider-${index}`} className="px-3 py-2 mt-4 mb-2">
-                    <span className="text-xs font-semibold text-indigo-300/60 uppercase tracking-wider">
+                  <div key={`divider-${index}`} className="px-3 py-3 mt-6 mb-2 relative">
+                    <div className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                    <span className="relative text-xs font-bold text-white/40 uppercase tracking-widest px-2 bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900">
                       {section.label}
                     </span>
                   </div>
@@ -259,24 +279,31 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   <div key={section.key} className="mb-1">
                     <button
                       onClick={() => toggleSubmenu(section.key)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200
-                                ${hasActiveChild ? 'bg-indigo-700/40 text-white' : 'text-indigo-200 hover:bg-white/5 hover:text-white'}
+                      className={`relative w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all duration-300 group
+                                ${hasActiveChild 
+                                  ? 'bg-gradient-to-r from-indigo-600/40 to-purple-600/40 text-white shadow-lg shadow-indigo-500/20' 
+                                  : 'text-white/70 hover:bg-white/10 hover:text-white hover:shadow-md'
+                                }
                                 ${!isOpen && 'justify-center lg:px-0'}
                             `}
                       title={!isOpen ? section.label : ''}
                     >
                       <div className={`flex items-center ${!isOpen && 'justify-center w-full'}`}>
-                        <GroupIcon className={`w-5 h-5 ${hasActiveChild ? 'text-pink-400' : ''} ${!isOpen ? 'mx-auto' : 'mr-2.5'}`} />
-                        {isOpen && <span className="text-sm font-medium tracking-wide">{section.label}</span>}
+                        <div className={`p-1.5 rounded-lg transition-all duration-300 ${
+                          hasActiveChild ? 'bg-white/20' : 'bg-white/5 group-hover:bg-white/10'
+                        }`}>
+                          <GroupIcon className={`w-4 h-4 ${hasActiveChild ? 'text-pink-300' : 'text-white/80'} transition-all duration-300`} />
+                        </div>
+                        {isOpen && <span className="ml-2.5 text-sm font-semibold tracking-wide">{section.label}</span>}
                       </div>
                       {isOpen && (
-                        <FiChevronRight className={`text-xs text-indigo-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                        <FiChevronRight className={`text-xs text-white/50 transition-all duration-300 ${isExpanded ? 'rotate-90 text-white' : 'group-hover:text-white'}`} />
                       )}
                     </button>
 
                     {/* Submenu Items */}
                     {isOpen && isExpanded && (
-                      <div className="mt-1 ml-2 pl-3 border-l-2 border-indigo-700/30 space-y-0.5">
+                      <div className="mt-2 ml-2 pl-4 border-l-2 border-gradient-to-b from-pink-500/30 to-purple-500/30 space-y-1 animate-in slide-in-from-top-2">
                         {section.children.map((child, cIdx) => {
                           const ChildIcon = child.icon;
                           const isChildActive = location.pathname === child.path;
@@ -284,15 +311,19 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             <Link
                               key={cIdx}
                               to={child.path}
-                              className={`flex items-center px-3 py-2 rounded-md text-sm transition-all duration-150
+                              className={`flex items-center px-3 py-2.5 rounded-lg text-sm transition-all duration-200 group
                                                 ${isChildActive 
-                                                  ? 'text-white bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-l-2 border-pink-400 font-medium' 
-                                                  : 'text-indigo-300 hover:text-white hover:bg-white/5'
+                                                  ? 'text-white bg-gradient-to-r from-pink-500/30 via-purple-500/20 to-transparent border-l-2 border-pink-400 font-semibold shadow-md shadow-pink-500/10' 
+                                                  : 'text-white/60 hover:text-white hover:bg-white/5 hover:translate-x-1'
                                                 }
                                             `}
                             >
-                              {ChildIcon && <ChildIcon className="w-4 h-4 mr-2 flex-shrink-0" />}
-                              <span>{child.label}</span>
+                              {ChildIcon && (
+                                <ChildIcon className={`w-4 h-4 mr-2.5 flex-shrink-0 transition-all duration-200 ${
+                                  isChildActive ? 'text-pink-300 scale-110' : 'text-white/50 group-hover:text-white/80'
+                                }`} />
+                              )}
+                              <span className="transition-all duration-200">{child.label}</span>
                             </Link>
                           );
                         })}
@@ -312,10 +343,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 <Link
                     key={`item-${index}`}
                   to={item.path}
-                    className={`relative group flex items-center px-3 py-2.5 rounded-lg transition-all duration-200
+                    className={`relative group flex items-center px-3 py-3 rounded-xl transition-all duration-300
                     ${isActive
-                        ? 'bg-gradient-to-r from-indigo-600/40 to-purple-600/40 text-white shadow-md'
-                      : 'text-indigo-200 hover:bg-white/5 hover:text-white'
+                        ? 'bg-gradient-to-r from-indigo-600/50 via-purple-600/40 to-pink-600/30 text-white shadow-lg shadow-indigo-500/30 scale-[1.02]'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white hover:shadow-md hover:scale-[1.01]'
                     }
                     ${!isOpen && 'justify-center lg:px-0'}
                   `}
@@ -323,22 +354,29 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 >
                     {/* Active Indicator */}
                   {isActive && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-pink-400 rounded-r-full shadow-[0_0_8px_rgba(236,72,153,0.6)]" />
-                  )}
+                      <>
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-gradient-to-b from-pink-400 to-purple-400 rounded-r-full shadow-[0_0_12px_rgba(236,72,153,0.8)]" />
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/10 to-transparent"></div>
+                      </>
+                    )}
 
-                    <Icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-pink-300 scale-110' : 'group-hover:scale-110'} ${!isOpen ? 'mx-auto' : 'mr-2.5'}`} />
+                    <div className={`p-1.5 rounded-lg transition-all duration-300 ${
+                      isActive ? 'bg-white/20' : 'bg-white/5 group-hover:bg-white/10'
+                    }`}>
+                      <Icon className={`w-4 h-4 transition-all duration-300 ${isActive ? 'text-pink-200 scale-110' : 'text-white/80 group-hover:scale-110 group-hover:text-white'} ${!isOpen ? 'mx-auto' : ''}`} />
+                    </div>
 
                   {isOpen && (
-                      <span className={`text-sm font-medium tracking-wide ${isActive ? 'text-white' : ''}`}>
+                      <span className={`ml-2.5 text-sm font-semibold tracking-wide transition-all duration-300 ${isActive ? 'text-white' : 'group-hover:text-white'}`}>
                       {item.label}
                     </span>
                   )}
 
                   {/* Tooltip for collapsed state */}
                   {!isOpen && (
-                      <div className="absolute left-full ml-4 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                      <div className="absolute left-full ml-4 px-3 py-2 bg-slate-900/95 backdrop-blur-md text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap z-50 pointer-events-none shadow-2xl border border-white/10 transform translate-x-2 group-hover:translate-x-0">
                       {item.label}
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 border-l border-b border-gray-700 rotate-45"></div>
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-900/95 border-l border-b border-white/10 rotate-45"></div>
                     </div>
                   )}
                 </Link>

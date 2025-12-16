@@ -64,6 +64,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { path: '/orders', icon: FiShoppingCart, label: 'Orders' },
     { path: '/users', icon: FiUsers, label: 'Users' },
     { path: '/categories', icon: FiGrid, label: 'Categories' },
+    { path: '/subcategories', icon: FiGrid, label: 'SubCategories' },
     { path: '/frame-sizes', icon: FiLayers, label: 'Frame Sizes' },
     { path: '/lens-options', icon: FiSettings, label: 'Lens Options' },
     { path: '/lens-types', icon: FiEye, label: 'Lens Types' },

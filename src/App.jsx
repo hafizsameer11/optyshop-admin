@@ -10,6 +10,7 @@ import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Users from './pages/Users';
 import Categories from './pages/Categories';
+import SubCategories from './pages/SubCategories';
 import FrameSizes from './pages/FrameSizes';
 import LensOptions from './pages/LensOptions';
 import LensTypes from './pages/LensTypes';
@@ -88,6 +89,7 @@ function App() {
                     <Route path="/orders" element={<Orders />} />
                     <Route path="/users" element={<Users />} />
                     <Route path="/categories" element={<Categories />} />
+                    <Route path="/subcategories" element={<SubCategories />} />
                     <Route path="/frame-sizes" element={<FrameSizes />} />
                     <Route path="/lens-options" element={<LensOptions />} />
                     <Route path="/lens-types" element={<LensTypes />} />

@@ -1,9 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 const Layout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    // Check localStorage for saved preference, default to true on desktop
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebarOpen');
+      if (saved !== null) return saved === 'true';
+      // Default: open on desktop, closed on mobile
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
+
+  // Handle window resize for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      // On mobile/tablet, close sidebar by default
+      if (window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      } else {
+        // On desktop, restore saved preference or default to open
+        const saved = localStorage.getItem('sidebarOpen');
+        if (saved !== null) {
+          setSidebarOpen(saved === 'true');
+        } else {
+          setSidebarOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    // Initial check
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Save sidebar state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebarOpen', sidebarOpen.toString());
+    }
+  }, [sidebarOpen]);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/60 relative overflow-hidden">
@@ -16,10 +56,14 @@ const Layout = ({ children }) => {
       
       <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
-      <div className={`relative flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0 lg:ml-20'}`}>
+      <div className={`relative flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out
+        ${sidebarOpen 
+          ? 'lg:ml-64' 
+          : 'ml-0 lg:ml-20'
+        }`}>
         <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8 lg:p-10">
-          <div className="max-w-7xl mx-auto relative z-10">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10">
+          <div className="max-w-7xl mx-auto relative z-10 w-full">
             {children}
           </div>
         </main>

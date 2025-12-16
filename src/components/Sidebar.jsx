@@ -216,7 +216,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       {/* Sidebar Container */}
       <div
         className={`fixed top-0 left-0 h-full bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white transition-all duration-300 z-40 shadow-2xl overflow-hidden flex flex-col
-          ${isOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0 lg:w-20'}
+          ${isOpen 
+            ? 'w-64 translate-x-0' 
+            : 'w-64 -translate-x-full lg:translate-x-0 lg:w-20'
+          }
         `}
         style={{
           backgroundImage: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #581c87 100%)',
@@ -227,26 +230,27 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/20 to-indigo-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
         
-        {/* Header */}
-        <div className="relative flex items-center justify-between h-20 px-4 border-b border-white/10 bg-white/5 backdrop-blur-xl shrink-0 shadow-lg">
+        {/* Header - Responsive */}
+        <div className="relative flex items-center justify-between h-16 sm:h-20 px-3 sm:px-4 border-b border-white/10 bg-white/5 backdrop-blur-xl shrink-0 shadow-lg">
           <div className={`flex items-center ${!isOpen && 'lg:justify-center w-full'}`}>
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 flex items-center justify-center shadow-lg shadow-pink-500/50 ring-2 ring-white/20">
-              <span className="font-extrabold text-white text-xl">O</span>
+            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 flex items-center justify-center shadow-lg shadow-pink-500/50 ring-2 ring-white/20 flex-shrink-0">
+              <span className="font-extrabold text-white text-lg sm:text-xl">O</span>
               <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent"></div>
             </div>
             {isOpen && (
-              <div className="ml-3">
-                <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+              <div className="ml-2 sm:ml-3 min-w-0">
+                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent truncate">
                   OptyShop
                 </h1>
-                <p className="text-xs text-white/60 font-medium">Admin Panel</p>
+                <p className="text-xs text-white/60 font-medium hidden sm:block">Admin Panel</p>
             </div>
             )}
           </div>
           {isOpen && (
             <button 
               onClick={toggleSidebar} 
-              className="lg:hidden text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+              className="lg:hidden text-gray-300 hover:text-white p-1.5 sm:p-2 rounded-lg hover:bg-white/10 transition-all flex-shrink-0"
+              aria-label="Close sidebar"
             >
               <FiX className="w-5 h-5" />
             </button>

@@ -304,117 +304,134 @@ const Products = () => {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Enhanced Header Section - Responsive */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="page-title">Products</h1>
+          <p className="page-subtitle">Manage your product inventory</p>
+        </div>
         <button
           onClick={handleAdd}
-          className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+          className="flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 font-semibold text-sm sm:text-base w-full sm:w-auto"
         >
-          <FiPlus />
+          <FiPlus className="w-5 h-5" />
           <span>Add Product</span>
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="p-4 border-b">
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+      {/* Enhanced Search and Table Card - Responsive */}
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden">
+        {/* Search Bar */}
+        <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50/50 to-indigo-50/30">
+          <div className="relative max-w-md">
+            <FiSearch className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern pl-10 sm:pl-12 w-full"
             />
           </div>
         </div>
 
+        {/* Responsive Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+          <table className="w-full min-w-[800px]">
+            <thead className="bg-gradient-to-r from-gray-50 via-indigo-50/30 to-purple-50/30 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
                   ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
                   Product
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
                   SKU
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
                   SubCategory
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
                   Price
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
                   Stock
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
-                    No products found. {searchTerm && 'Try a different search term.'}
+                  <td colSpan="10" className="table-cell-responsive text-center">
+                    <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4">
+                        <FiSearch className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500 font-semibold text-base sm:text-lg">No products found</p>
+                      <p className="text-gray-400 text-sm mt-1">
+                        {searchTerm ? 'Try a different search term.' : 'Get started by adding your first product.'}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <tr 
+                    key={product.id} 
+                    className="hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 transition-all duration-200 group"
+                  >
+                    <td className="table-cell-responsive text-sm text-gray-500 font-medium">
                       {product.id}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
+                    <td className="table-cell-responsive">
+                      <div className="flex items-center min-w-0">
                         <ProductImage product={product} />
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                        <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                          <div className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-indigo-700 transition-colors truncate">
+                            {product.name}
+                          </div>
                           {product.slug && (
-                            <div className="text-xs text-gray-500">{product.slug}</div>
+                            <div className="text-xs text-gray-500 truncate mt-0.5">{product.slug}</div>
                           )}
+                          {/* Show SKU on mobile */}
+                          <div className="md:hidden text-xs text-gray-400 mt-1">
+                            SKU: {product.sku ? String(product.sku) : '-'}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="table-cell-responsive text-sm text-gray-500 hidden md:table-cell">
                       {product.sku ? String(product.sku) : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="table-cell-responsive text-sm text-gray-500 hidden lg:table-cell">
                       {product.category_id ? String(product.category_id) : '-'}
                       {product.category?.name && (
                         <div className="text-xs text-gray-400 mt-1">{product.category.name}</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="table-cell-responsive text-sm text-gray-500 hidden lg:table-cell">
                       {(() => {
-                        // Check multiple possible field names for subcategory ID
                         const subCatId = product.sub_category_id || product.subcategory_id || product.subCategoryId;
-                        
-                        if (!subCatId) {
-                          return '-';
-                        }
-                        
-                        // Check multiple possible field names for subcategory name
+                        if (!subCatId) return '-';
                         const subCatName = product.subcategory?.name || 
                                          product.sub_category?.name || 
                                          product.SubCategory?.name ||
                                          product.subCategory?.name ||
-                                         subCategoriesMap[subCatId]; // Fallback to lookup map
-                        
+                                         subCategoriesMap[subCatId];
                         return (
                           <>
                             <div>{String(subCatId)}</div>
@@ -425,18 +442,18 @@ const Products = () => {
                         );
                       })()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="table-cell-responsive text-sm sm:text-base font-bold text-gray-900">
                       ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
                       {product.compare_at_price && (
-                        <div className="text-xs text-gray-400 line-through">
+                        <div className="text-xs text-gray-400 line-through mt-0.5">
                           ${parseFloat(product.compare_at_price).toFixed(2)}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>{product.stock_quantity !== null && product.stock_quantity !== undefined ? Number(product.stock_quantity) : 0}</div>
+                    <td className="table-cell-responsive text-sm text-gray-500 hidden sm:table-cell">
+                      <div className="font-semibold">{product.stock_quantity !== null && product.stock_quantity !== undefined ? Number(product.stock_quantity) : 0}</div>
                       {product.stock_status && (
-                        <div className={`text-xs ${
+                        <div className={`text-xs mt-1 ${
                           product.stock_status === 'in_stock' ? 'text-green-600' : 
                           product.stock_status === 'out_of_stock' ? 'text-red-600' : 
                           'text-yellow-600'
@@ -445,42 +462,46 @@ const Products = () => {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex flex-col gap-1">
+                    <td className="table-cell-responsive">
+                      <div className="flex flex-col gap-1.5">
                         {product.is_active ? (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          <span className="inline-flex px-2 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
                             Active
                           </span>
                         ) : (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                          <span className="inline-flex px-2 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border border-gray-200">
                             Inactive
                           </span>
                         )}
                         {product.is_featured && (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          <span className="inline-flex px-2 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
                             Featured
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="table-cell-responsive text-sm text-gray-500 hidden xl:table-cell">
                       {product.product_type ? String(product.product_type) : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(product)}
-                        className="text-primary-600 hover:text-primary-900 mr-4"
-                        title="Edit"
-                      >
-                        <FiEdit2 />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Delete"
-                      >
-                        <FiTrash2 />
-                      </button>
+                    <td className="table-cell-responsive">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <button
+                          onClick={() => handleEdit(product)}
+                          className="p-2 rounded-lg text-indigo-600 hover:text-white hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                          title="Edit"
+                          aria-label="Edit product"
+                        >
+                          <FiEdit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product.id)}
+                          className="p-2 rounded-lg text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                          title="Delete"
+                          aria-label="Delete product"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -489,24 +510,27 @@ const Products = () => {
           </table>
         </div>
 
-        <div className="px-6 py-4 border-t flex items-center justify-between">
-          <button
-            onClick={() => setPage(Math.max(1, page - 1))}
-            disabled={page === 1}
-            className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-gray-600">
+        {/* Pagination - Responsive */}
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-gray-600 font-medium">
             Page {page} of {totalPages}
-          </span>
-          <button
-            onClick={() => setPage(Math.min(totalPages, page + 1))}
-            disabled={page === totalPages}
-            className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 

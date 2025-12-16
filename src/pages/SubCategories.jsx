@@ -20,48 +20,45 @@ const SubCategories = () => {
         try {
             setLoading(true);
 
-            // Fetch both subcategories and categories (for parent mapping)
-            const [subCatResponse, catResponse] = await Promise.all([
-                api.get(API_ROUTES.ADMIN.SUBCATEGORIES.LIST),
-                api.get(API_ROUTES.ADMIN.CATEGORIES.LIST)
-            ]);
-
-            // Handle SubCategories Response
-            const subCatData = subCatResponse.data?.data?.subcategories || subCatResponse.data?.data || subCatResponse.data || [];
-
-            // Handle Categories Response
-            const catData = catResponse.data?.data?.categories || catResponse.data?.data || catResponse.data || [];
-
-            if (Array.isArray(subCatData)) {
-                setSubCategories(subCatData);
-            } else {
-                console.error('SubCategories data is not an array:', subCatData);
-                setSubCategories([]);
-            }
-
-            if (Array.isArray(catData)) {
-                setCategories(catData);
-            } else {
+            // Fetch categories first (always needed for parent mapping)
+            let catData = [];
+            try {
+                const catResponse = await api.get(API_ROUTES.ADMIN.CATEGORIES.LIST);
+                const responseData = catResponse.data?.data || catResponse.data || {};
+                catData = responseData.categories || responseData || [];
+                setCategories(Array.isArray(catData) ? catData : []);
+            } catch (catError) {
+                console.error('Categories fetch error:', catError);
                 setCategories([]);
             }
 
-        } catch (error) {
-            console.error('API error:', error);
-            setSubCategories([]);
-            
-            // Show error message (but not for demo mode)
-            const isDemoMode = localStorage.getItem('demo_user') !== null;
-            if (!isDemoMode) {
-                if (!error.response) {
-                    toast.error('Failed to fetch data: Network error. Please check your connection.');
-                } else if (error.response.status === 404) {
-                    toast.error('Subcategories endpoint not found. The backend may not support this feature yet.');
-                } else if (error.response.status === 401) {
-                    toast.error('Authentication failed. Please log in again.');
-                } else {
-                    toast.error(`Failed to fetch data: ${error.response?.data?.message || error.message}`);
+            // Fetch subcategories separately - handle 404 gracefully
+            try {
+                const subCatResponse = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.LIST);
+                const responseData = subCatResponse.data?.data || subCatResponse.data || {};
+                const subCatData = responseData.subcategories || responseData || [];
+                setSubCategories(Array.isArray(subCatData) ? subCatData : []);
+            } catch (subCatError) {
+                console.warn('SubCategories endpoint not available:', subCatError.response?.status);
+                setSubCategories([]);
+                
+                // Only show error if it's not a 404 (endpoint doesn't exist yet)
+                const isDemoMode = localStorage.getItem('demo_user') !== null;
+                if (!isDemoMode && subCatError.response?.status !== 404) {
+                    if (!subCatError.response) {
+                        toast.error('Failed to fetch subcategories: Network error.');
+                    } else if (subCatError.response.status === 401) {
+                        toast.error('Authentication failed. Please log in again.');
+                    } else {
+                        toast.error(`Failed to fetch subcategories: ${subCatError.response?.data?.message || subCatError.message}`);
+                    }
                 }
             }
+
+        } catch (error) {
+            console.error('Unexpected error:', error);
+            setSubCategories([]);
+            setCategories([]);
         } finally {
             setLoading(false);
         }

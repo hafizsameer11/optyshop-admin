@@ -69,6 +69,15 @@ export const API_ROUTES = {
   },
 
   // ============================================
+  // SUBCATEGORIES (PUBLIC - all GET routes)
+  // ============================================
+  SUBCATEGORIES: {
+    LIST: `/subcategories`,                     // PUBLIC
+    BY_ID: (id) => `/subcategories/${id}`,       // PUBLIC
+    BY_SLUG: (slug) => `/subcategories/slug/${slug}`, // PUBLIC
+  },
+
+  // ============================================
   // CART (USER - requires access_token)
   // ============================================
   // NOTE: Admin panel typically doesn't use cart endpoints

@@ -82,12 +82,14 @@ const SubCategoryModal = ({ subCategory, categories, onClose }) => {
             }
 
             let response;
+            // API Response: { success, message, data: { subcategory: {} } }
             if (subCategory) {
                 response = await api.put(API_ROUTES.ADMIN.SUBCATEGORIES.UPDATE(subCategory.id), dataToSend);
             } else {
                 response = await api.post(API_ROUTES.ADMIN.SUBCATEGORIES.CREATE, dataToSend);
             }
 
+            // Handle response structure: { success, message, data: { subcategory: {} } }
             const successMessage = response.data?.message || (subCategory ? 'SubCategory updated successfully' : 'SubCategory created successfully');
 
             toast.success(successMessage);

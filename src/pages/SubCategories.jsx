@@ -33,10 +33,12 @@ const SubCategories = () => {
             }
 
             // Fetch subcategories separately - handle 404 gracefully
+            // API Response: { success, message, data: { subcategories: [], pagination: {} } }
             try {
                 const subCatResponse = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.LIST);
-                const responseData = subCatResponse.data?.data || subCatResponse.data || {};
-                const subCatData = responseData.subcategories || responseData || [];
+                // Handle response structure: { success, message, data: { subcategories: [], pagination: {} } }
+                const responseData = subCatResponse.data?.data || {};
+                const subCatData = responseData.subcategories || [];
                 setSubCategories(Array.isArray(subCatData) ? subCatData : []);
             } catch (subCatError) {
                 console.warn('SubCategories endpoint not available:', subCatError.response?.status);
@@ -68,15 +70,18 @@ const SubCategories = () => {
         if (!window.confirm('Are you sure you want to delete this subcategory?')) return;
 
         try {
-            await api.delete(API_ROUTES.ADMIN.SUBCATEGORIES.DELETE(id));
-            toast.success('SubCategory deleted successfully');
+            // API Response: { success, message, data: {} }
+            const response = await api.delete(API_ROUTES.ADMIN.SUBCATEGORIES.DELETE(id));
+            const successMessage = response.data?.message || 'SubCategory deleted successfully';
+            toast.success(successMessage);
             fetchData();
         } catch (error) {
             console.error('Delete error:', error);
             if (error.response?.status === 401) {
                 toast.error('❌ Demo mode - Cannot delete');
             } else {
-                toast.error('Failed to delete subcategory');
+                const errorMessage = error.response?.data?.message || 'Failed to delete subcategory';
+                toast.error(errorMessage);
             }
         }
     };

@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
               try {
                 const cachedUser = JSON.parse(authCheckCache);
                 setUser(cachedUser);
-                console.warn('Rate limited - using cached user data');
+                // Silently use cached data - no console logging
                 setLoading(false);
                 checkingAuthRef.current = false;
                 return;
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }) => {
             }
             // If no cache but rate limited, just continue with existing token
             // Don't make more requests that will fail
-            console.warn('Rate limited on auth check - continuing with existing token (no cache available)');
+            // Silently handle - no console logging
             setLoading(false);
             checkingAuthRef.current = false;
             return;

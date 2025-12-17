@@ -49,6 +49,8 @@ api.interceptors.response.use(
     // Handle rate limiting (429) - no retries, fail immediately
     if (error.response?.status === 429) {
       // Silently fail - no retries for rate limited requests
+      // Suppress console errors for rate limiting
+      error.suppressErrorLog = true;
       return Promise.reject(error);
     }
     

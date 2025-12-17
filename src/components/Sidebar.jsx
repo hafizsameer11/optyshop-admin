@@ -33,11 +33,15 @@ import {
   FiFolderPlus,
   FiAperture,
   FiActivity,
-  FiTruck
+  FiTruck,
+  FiLogOut,
+  FiMenu
 } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [openSubmenus, setOpenSubmenus] = useState({
     catalog: false,
     lens: false,
@@ -237,14 +241,17 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 </div>
               )}
             </div>
-            {isOpen && (
-              <button
-                onClick={toggleSidebar}
-                className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
+            <button
+              onClick={toggleSidebar}
+              className={`p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${!isOpen && 'lg:mx-auto'}`}
+              aria-label="Toggle sidebar"
+            >
+              {isOpen ? (
                 <FiX className="w-5 h-5" />
-              </button>
-            )}
+              ) : (
+                <FiMenu className="w-5 h-5" />
+              )}
+            </button>
           </div>
 
           {/* Navigation */}
@@ -352,6 +359,35 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               })}
             </div>
           </nav>
+
+          {/* User Section & Logout */}
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4 mt-auto">
+            {isOpen && user && (
+              <div className="mb-3 px-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                    {user?.first_name?.charAt(0) || 'U'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {user?.first_name} {user?.last_name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <button
+              onClick={logout}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 ${
+                !isOpen && 'lg:justify-center'
+              }`}
+              title={!isOpen ? 'Logout' : ''}
+            >
+              <FiLogOut className="w-5 h-5 flex-shrink-0" />
+              {isOpen && <span className="text-sm font-medium">Logout</span>}
+            </button>
+          </div>
         </div>
       </aside>
     </>

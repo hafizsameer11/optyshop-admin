@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import Header from './Header';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -56,9 +55,7 @@ const Layout = ({ children }) => {
             : 'ml-0 lg:ml-20'
         }`}
       >
-        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 pt-6">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

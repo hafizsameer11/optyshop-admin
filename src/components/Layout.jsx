@@ -62,8 +62,8 @@ const Layout = ({ children }) => {
           : 'ml-0 lg:ml-20'
         }`}>
         <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10">
-          <div className="max-w-7xl mx-auto relative z-10 w-full">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10 pt-4 sm:pt-6 md:pt-8 lg:pt-10">
+          <div className="max-w-7xl mx-auto relative z-0 w-full">
             {children}
           </div>
         </main>

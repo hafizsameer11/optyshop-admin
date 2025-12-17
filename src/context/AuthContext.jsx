@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -8,48 +8,100 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const checkingAuthRef = useRef(false);
 
   useEffect(() => {
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('admin_token');
-    const demoUser = localStorage.getItem('demo_user');
-    
-    if (token && demoUser) {
-      // Demo mode - use stored demo user
-      setUser(JSON.parse(demoUser));
-      setLoading(false);
+    // Prevent concurrent auth checks
+    if (checkingAuthRef.current) {
       return;
     }
     
-    if (token) {
-      try {
-        const response = await api.get(API_ROUTES.AUTH.ME);
-        // Handle nested response structure
-        const userData = response.data?.data?.user || response.data?.user || response.data;
-        setUser(userData);
-      } catch (error) {
-        const errorMessage = error.response?.data?.message || '';
-        const isRouteNotFound = error.response?.status === 404 || 
-                               errorMessage?.toLowerCase().includes('route not found');
-        
-        // Silently handle 404 errors (route not found) - endpoint might not exist
-        // Only clear auth if it's an actual auth error (401), not a missing route
-        if (error.response?.status === 401) {
-          localStorage.removeItem('admin_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('demo_user');
-        } else if (!isRouteNotFound) {
-          // Only log non-404/route-not-found errors for debugging
-          console.error('Auth check error:', error);
+    checkingAuthRef.current = true;
+    
+    try {
+      const token = localStorage.getItem('admin_token');
+      const demoUser = localStorage.getItem('demo_user');
+      
+      // Check if we have a cached auth check result (to prevent rate limiting)
+      const lastAuthCheck = localStorage.getItem('last_auth_check');
+      const authCheckCache = localStorage.getItem('auth_check_cache');
+      const now = Date.now();
+      
+      // If we have a valid cache (less than 5 minutes old), use it
+      if (lastAuthCheck && authCheckCache && (now - parseInt(lastAuthCheck)) < 5 * 60 * 1000) {
+        try {
+          const cachedUser = JSON.parse(authCheckCache);
+          setUser(cachedUser);
+          setLoading(false);
+          return;
+        } catch (e) {
+          // Cache invalid, continue with fresh check
         }
-        // For 404 or route not found errors, just keep the token and let the user proceed
-        // The token might still be valid even if /auth/me endpoint doesn't exist
       }
+      
+      if (token && demoUser) {
+        // Demo mode - use stored demo user
+        setUser(JSON.parse(demoUser));
+        setLoading(false);
+        return;
+      }
+      
+      if (token) {
+        try {
+          const response = await api.get(API_ROUTES.AUTH.ME);
+          // Handle nested response structure
+          const userData = response.data?.data?.user || response.data?.user || response.data;
+          setUser(userData);
+          
+          // Cache the result to prevent rate limiting
+          localStorage.setItem('last_auth_check', now.toString());
+          localStorage.setItem('auth_check_cache', JSON.stringify(userData));
+        } catch (error) {
+          const errorMessage = error.response?.data?.message || '';
+          const isRouteNotFound = error.response?.status === 404 || 
+                                 errorMessage?.toLowerCase().includes('route not found');
+          const isRateLimited = error.response?.status === 429;
+          
+          // Handle rate limiting gracefully - use cached user if available
+          if (isRateLimited && authCheckCache) {
+            try {
+              const cachedUser = JSON.parse(authCheckCache);
+              setUser(cachedUser);
+              console.warn('Rate limited - using cached user data');
+              setLoading(false);
+              return;
+            } catch (e) {
+              // Cache invalid, continue
+            }
+          }
+          
+          // Silently handle 404 errors (route not found) - endpoint might not exist
+          // Only clear auth if it's an actual auth error (401), not a missing route
+          if (error.response?.status === 401) {
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('demo_user');
+            localStorage.removeItem('last_auth_check');
+            localStorage.removeItem('auth_check_cache');
+          } else if (isRateLimited) {
+            // For rate limiting, just log a warning and continue with token
+            console.warn('Rate limited on auth check - continuing with existing token');
+          } else if (!isRouteNotFound) {
+            // Only log non-404/route-not-found errors for debugging
+            console.error('Auth check error:', error);
+          }
+          // For 404 or route not found errors, just keep the token and let the user proceed
+          // The token might still be valid even if /auth/me endpoint doesn't exist
+        }
+      }
+    } finally {
+      checkingAuthRef.current = false;
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const login = async (email, password) => {

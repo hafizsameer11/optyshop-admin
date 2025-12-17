@@ -46,14 +46,21 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     
-    // Handle rate limiting (429) with automatic retry
+    // Handle rate limiting (429) - skip retry for auth/me to prevent cascading failures
     if (error.response?.status === 429) {
-      const retryAfter = parseInt(error.response.headers['retry-after']) || 1;
       const config = error.config;
+      const isAuthMeEndpoint = config?.url?.includes('/auth/me');
       
-      // Check if this request has already been retried
+      // For auth/me endpoint, don't retry - just fail gracefully
+      if (isAuthMeEndpoint) {
+        console.warn('Rate limited on /auth/me - skipping retry to prevent cascading failures');
+        return Promise.reject(error);
+      }
+      
+      // For other endpoints, use limited retry with exponential backoff
+      const retryAfter = parseInt(error.response.headers['retry-after']) || 1;
       const retryCount = config.__retryCount || 0;
-      const maxRetries = 3;
+      const maxRetries = 2; // Reduced from 3 to 2
       
       if (retryCount < maxRetries) {
         config.__retryCount = retryCount + 1;

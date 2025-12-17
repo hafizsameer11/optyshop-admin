@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
+import Header from './Header';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -38,15 +39,7 @@ const Layout = ({ children }) => {
   }, [sidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Modern gradient background with animated elements */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"></div>
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-purple-300/10 to-pink-300/10 rounded-full blur-3xl"></div>
-      </div>
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       <div 
@@ -56,7 +49,9 @@ const Layout = ({ children }) => {
             : 'ml-0 lg:ml-20'
         }`}
       >
-        <main className="p-4 sm:p-6 lg:p-8 pt-6">
+        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        
+        <main className="p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

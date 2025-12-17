@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -112,7 +113,7 @@ const CategoryModal = ({ category, onClose }) => {
     }
   };
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
       <div className="bg-white/95 backdrop-blur-xl rounded-2xl max-w-md w-full shadow-2xl border border-gray-200/50 animate-fade-in">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
@@ -217,6 +218,8 @@ const CategoryModal = ({ category, onClose }) => {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CategoryModal;

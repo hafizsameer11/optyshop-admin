@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -216,7 +217,7 @@ const BannerModal = ({ banner, onClose }) => {
     }
   };
 
-  return (
+  const modalContent = (
     <div 
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" 
       style={{ zIndex: 9999 }}
@@ -366,6 +367,8 @@ const BannerModal = ({ banner, onClose }) => {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default BannerModal;

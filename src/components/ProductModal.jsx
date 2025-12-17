@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiUpload } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -489,7 +490,7 @@ const ProductModal = ({ product, onClose }) => {
     }
   };
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
@@ -952,6 +953,8 @@ const ProductModal = ({ product, onClose }) => {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ProductModal;

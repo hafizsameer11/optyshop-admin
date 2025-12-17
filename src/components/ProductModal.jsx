@@ -490,30 +490,34 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
-          <h2 className="text-2xl font-bold">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+          <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
             {product ? 'Edit Product' : 'Add Product'}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+            aria-label="Close"
+          >
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Image Upload */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Image Upload - Enhanced Design */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
               Product Image
             </label>
-            <div className="flex items-center space-x-4">
+            <div className="space-y-3">
               {imagePreview && (
-                <div className="relative flex-shrink-0">
+                <div className="relative inline-block">
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200"
+                    className="w-32 h-32 object-cover rounded-xl border-2 border-gray-200 shadow-md"
                     onError={(e) => {
                       console.error('Image preview error:', e);
                       toast.error('Failed to display image preview');
@@ -526,31 +530,29 @@ const ProductModal = ({ product, onClose }) => {
                     onClick={() => {
                       setImagePreview(null);
                       setImageFile(null);
-                      // Reset file input using the specific input ID
                       const fileInput = document.getElementById('product-image-input');
                       if (fileInput) fileInput.value = '';
                     }}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg"
                     title="Remove image"
                   >
                     <FiX className="w-4 h-4" />
                   </button>
                 </div>
               )}
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all duration-200 bg-gray-50/50">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <FiUpload className="w-8 h-8 text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">
+                  <FiUpload className="w-10 h-10 text-gray-400 mb-3" />
+                  <p className="text-sm font-medium text-gray-600">
                     {imagePreview ? 'Change Image' : 'Click to upload'}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
                 </div>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   onClick={(e) => {
-                    // Allow selecting the same file again by resetting value
                     e.target.value = '';
                   }}
                   className="hidden"
@@ -561,21 +563,21 @@ const ProductModal = ({ product, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Product Name *
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Product Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Slug
             </label>
             <input
@@ -583,29 +585,29 @@ const ProductModal = ({ product, onClose }) => {
               name="slug"
               value={formData.slug}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               placeholder="product-slug"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                SKU *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                SKU <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="sku"
                 value={formData.sku}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Price <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -613,15 +615,15 @@ const ProductModal = ({ product, onClose }) => {
                 value={formData.price}
                 onChange={handleChange}
                 step="0.01"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 required
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Compare at Price
               </label>
               <input
@@ -630,13 +632,13 @@ const ProductModal = ({ product, onClose }) => {
                 value={formData.compare_at_price}
                 onChange={handleChange}
                 step="0.01"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Original price"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Cost Price
               </label>
               <input
@@ -645,14 +647,14 @@ const ProductModal = ({ product, onClose }) => {
                 value={formData.cost_price}
                 onChange={handleChange}
                 step="0.01"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Wholesale cost"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Short Description
             </label>
             <input
@@ -660,13 +662,13 @@ const ProductModal = ({ product, onClose }) => {
               name="short_description"
               value={formData.short_description}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               placeholder="Brief product description"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Description
             </label>
             <textarea
@@ -674,20 +676,21 @@ const ProductModal = ({ product, onClose }) => {
               value={formData.description}
               onChange={handleChange}
               rows="4"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern resize-none"
+              placeholder="Enter product description..."
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Category
               </label>
               <select
                 name="category_id"
                 value={formData.category_id}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
               >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
@@ -699,7 +702,7 @@ const ProductModal = ({ product, onClose }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 SubCategory
               </label>
               <select
@@ -707,7 +710,7 @@ const ProductModal = ({ product, onClose }) => {
                 value={formData.sub_category_id}
                 onChange={handleChange}
                 disabled={!formData.category_id}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="input-modern disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="">{formData.category_id ? 'Select SubCategory' : 'Select Category First'}</option>
                 {subCategories.map((subCat) => (
@@ -720,24 +723,22 @@ const ProductModal = ({ product, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Product Type
             </label>
             <select
               name="product_type"
               value={formData.product_type}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
             >
               <option value="frame">Frame</option>
-              {/* Note: Only "frame" is currently a valid ProductType enum value in Prisma */}
-              {/* Other values like "lens" and "accessory" are not valid and will cause errors */}
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Stock Quantity
               </label>
               <input
@@ -746,19 +747,19 @@ const ProductModal = ({ product, onClose }) => {
                 value={formData.stock_quantity}
                 onChange={handleChange}
                 min="0"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Stock Status
               </label>
               <select
                 name="stock_status"
                 value={formData.stock_status}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
               >
                 <option value="in_stock">In Stock</option>
                 <option value="out_of_stock">Out of Stock</option>
@@ -767,16 +768,16 @@ const ProductModal = ({ product, onClose }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Frame Shape
               </label>
               <select
                 name="frame_shape"
                 value={formData.frame_shape}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
               >
                 <option value="">Select Frame Shape</option>
                 {frameShapes.map((shape) => (
@@ -788,14 +789,14 @@ const ProductModal = ({ product, onClose }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Frame Material
               </label>
               <select
                 name="frame_material"
                 value={formData.frame_material}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
               >
                 <option value="">Select Frame Material</option>
                 {frameMaterials.map((material) => (
@@ -807,9 +808,9 @@ const ProductModal = ({ product, onClose }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Frame Color
               </label>
               <input
@@ -817,20 +818,20 @@ const ProductModal = ({ product, onClose }) => {
                 name="frame_color"
                 value={formData.frame_color}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="e.g., Black, Gold"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Gender
               </label>
               <select
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
               >
                 <option value="">Select Gender</option>
                 {genders.map((gender) => (
@@ -843,14 +844,14 @@ const ProductModal = ({ product, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Lens Type
             </label>
             <select
               name="lens_type"
               value={formData.lens_type}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
             >
               <option value="">Select Lens Type</option>
               {lensTypes.map((type) => (
@@ -862,11 +863,11 @@ const ProductModal = ({ product, onClose }) => {
           </div>
 
           {/* SEO Fields */}
-          <div className="border-t pt-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">SEO Settings</h3>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">SEO Settings</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Meta Title
                 </label>
                 <input
@@ -874,12 +875,12 @@ const ProductModal = ({ product, onClose }) => {
                   name="meta_title"
                   value={formData.meta_title}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="input-modern"
                   placeholder="SEO title"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Meta Description
                 </label>
                 <textarea
@@ -887,12 +888,12 @@ const ProductModal = ({ product, onClose }) => {
                   value={formData.meta_description}
                   onChange={handleChange}
                   rows="2"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="input-modern resize-none"
                   placeholder="SEO description"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Meta Keywords
                 </label>
                 <input
@@ -900,7 +901,7 @@ const ProductModal = ({ product, onClose }) => {
                   name="meta_keywords"
                   value={formData.meta_keywords}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="input-modern"
                   placeholder="keyword1, keyword2, keyword3"
                 />
               </div>
@@ -908,43 +909,43 @@ const ProductModal = ({ product, onClose }) => {
           </div>
 
           {/* Status Checkboxes */}
-          <div className="flex items-center space-x-6 border-t pt-4">
-            <label className="flex items-center">
+          <div className="flex items-center space-x-6 border-t border-gray-200 pt-6">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 name="is_active"
                 checked={formData.is_active}
                 onChange={handleChange}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
               />
-              <span className="ml-2 text-sm text-gray-700">Active</span>
+              <span className="ml-2 text-sm font-medium text-gray-700">Active</span>
             </label>
-            <label className="flex items-center">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 name="is_featured"
                 checked={formData.is_featured}
                 onChange={handleChange}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
               />
-              <span className="ml-2 text-sm text-gray-700">Featured</span>
+              <span className="ml-2 text-sm font-medium text-gray-700">Featured</span>
             </label>
           </div>
 
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
+              className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? 'Saving...' : 'Save Product'}
             </button>
           </div>
         </form>

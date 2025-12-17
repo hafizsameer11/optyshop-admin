@@ -167,50 +167,54 @@ const BlogPostModal = ({ post, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
-          <h2 className="text-2xl font-bold">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+          <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
             {post ? 'Edit Blog Post' : 'Add Blog Post'}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+            aria-label="Close"
+          >
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Title *
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               required
               placeholder="e.g., The Future of Optical Retail"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Slug *
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Slug <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="slug"
               value={formData.slug}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern font-mono"
               required
               placeholder="e.g., future-of-optical-retail"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Excerpt
             </label>
             <textarea
@@ -218,13 +222,13 @@ const BlogPostModal = ({ post, onClose }) => {
               value={formData.excerpt}
               onChange={handleChange}
               rows="2"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern resize-none"
               placeholder="Brief summary of the post (optional)..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Thumbnail URL
             </label>
             <input
@@ -232,13 +236,13 @@ const BlogPostModal = ({ post, onClose }) => {
               name="thumbnail"
               value={formData.thumbnail}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               placeholder="https://example.com/image.jpg (optional)"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Tags
             </label>
             <input
@@ -246,15 +250,15 @@ const BlogPostModal = ({ post, onClose }) => {
               name="tags"
               value={formData.tags}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               placeholder="tag1, tag2, tag3 (comma-separated, optional)"
             />
             <p className="mt-1 text-sm text-gray-500">Separate multiple tags with commas</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content *
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Content <span className="text-red-500">*</span>
             </label>
             {/* Formatting Toolbar */}
             <div className="flex items-center space-x-2 mb-2 p-2 border rounded-t-lg bg-gray-50">
@@ -332,25 +336,25 @@ const BlogPostModal = ({ post, onClose }) => {
               id="is_published"
               checked={formData.is_published}
               onChange={handleChange}
-              className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
-            <label htmlFor="is_published" className="ml-2 text-sm text-gray-700">
+            <label htmlFor="is_published" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
               Publish immediately
             </label>
           </div>
 
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
+              className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Saving...' : 'Save'}
             </button>

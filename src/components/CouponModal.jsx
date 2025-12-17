@@ -238,37 +238,39 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
-          <h2 className="text-2xl font-bold">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+          <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
             {coupon ? 'Edit Coupon' : 'Add Coupon'}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+            aria-label="Close"
+          >
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Code */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Coupon Code *
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Coupon Code <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="code"
               value={formData.code}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               required
               placeholder="e.g., SAVE20"
             />
           </div>
 
-          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Description
             </label>
             <textarea
@@ -276,22 +278,21 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
               value={formData.description}
               onChange={handleChange}
               rows="2"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern resize-none"
               placeholder="Optional description"
             />
           </div>
 
-          {/* Discount Type and Value */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Discount Type *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Discount Type <span className="text-red-500">*</span>
               </label>
               <select
                 name="discount_type"
                 value={formData.discount_type}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 required
               >
                 <option value="percentage">Percentage (%)</option>
@@ -299,8 +300,8 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Discount Value *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Discount Value <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -309,17 +310,16 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
                 onChange={handleChange}
                 step="0.01"
                 min="0"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 required
                 placeholder={formData.discount_type === 'percentage' ? '20' : '10.00'}
               />
             </div>
           </div>
 
-          {/* Max Discount (for percentage) */}
           {formData.discount_type === 'percentage' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Max Discount ($)
               </label>
               <input
@@ -329,15 +329,14 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
                 onChange={handleChange}
                 step="0.01"
                 min="0"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Optional maximum discount amount"
               />
             </div>
           )}
 
-          {/* Min Order Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Minimum Order Amount ($)
             </label>
             <input
@@ -347,15 +346,14 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
               onChange={handleChange}
               step="0.01"
               min="0"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               placeholder="Optional minimum order amount"
             />
           </div>
 
-          {/* Usage Limits */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Usage Limit (Total)
               </label>
               <input
@@ -364,12 +362,12 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
                 value={formData.usage_limit}
                 onChange={handleChange}
                 min="1"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Optional total usage limit"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Usage Per User
               </label>
               <input
@@ -378,45 +376,43 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
                 value={formData.usage_per_user}
                 onChange={handleChange}
                 min="1"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Optional per-user limit"
               />
             </div>
           </div>
 
-          {/* Date Range */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Start Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 name="starts_at"
                 value={formData.starts_at}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Date *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                End Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 name="ends_at"
                 value={formData.ends_at}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 required
               />
             </div>
           </div>
 
-          {/* Applicable To */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Applicable To
             </label>
             <input
@@ -424,14 +420,13 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
               name="applicable_to"
               value={formData.applicable_to}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               placeholder="Optional: e.g., specific products, categories"
             />
           </div>
 
-          {/* Conditions */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Conditions
             </label>
             <textarea
@@ -439,12 +434,11 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
               value={formData.conditions}
               onChange={handleChange}
               rows="2"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern resize-none"
               placeholder="Optional additional conditions"
             />
           </div>
 
-          {/* Active Status */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -452,26 +446,25 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
               id="is_active"
               checked={formData.is_active}
               onChange={handleChange}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
-            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="is_active" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
               Active
             </label>
           </div>
 
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
+              className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Saving...' : 'Save'}
             </button>

@@ -368,24 +368,28 @@ const OrderModal = ({ order, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <div>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
               {isCreateMode ? 'Create New Order' : `Order #${orderData?.id || order?.id}`}
             </h2>
             {!isCreateMode && orderData?.order_number && (
               <p className="text-sm text-gray-500 mt-1">Order Number: {orderData.order_number}</p>
             )}
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+            aria-label="Close"
+          >
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
         {isCreateMode ? (
-          <form onSubmit={handleCreateOrder} className="p-6 space-y-6">
+          <form onSubmit={handleCreateOrder} className="p-6 space-y-5">
             {/* User ID */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

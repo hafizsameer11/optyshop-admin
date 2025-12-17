@@ -69,72 +69,86 @@ const UserModal = ({ user, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-lg max-w-md w-full">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold">{isEditMode ? 'Edit User' : 'Add New User'}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+          <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
+            {isEditMode ? 'Edit User' : 'Add New User'}
+          </h2>
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+            aria-label="Close"
+          >
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Email <span className="text-red-500">*</span>
+            </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               disabled={isEditMode}
-              className={`w-full px-4 py-2 border rounded-lg ${isEditMode ? 'bg-gray-50' : 'focus:ring-2 focus:ring-primary-500 focus:border-transparent'}`}
+              className={`input-modern ${isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                First Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={formData.first_name}
                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                 disabled={isEditMode}
-                className={`w-full px-4 py-2 border rounded-lg ${isEditMode ? 'bg-gray-50' : 'focus:ring-2 focus:ring-primary-500 focus:border-transparent'}`}
+                className={`input-modern ${isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Last Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                 disabled={isEditMode}
-                className={`w-full px-4 py-2 border rounded-lg ${isEditMode ? 'bg-gray-50' : 'focus:ring-2 focus:ring-primary-500 focus:border-transparent'}`}
+                className={`input-modern ${isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               disabled={isEditMode}
-              className={`w-full px-4 py-2 border rounded-lg ${isEditMode ? 'bg-gray-50' : 'focus:ring-2 focus:ring-primary-500 focus:border-transparent'}`}
+              className={`input-modern ${isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
             />
           </div>
 
           {!isEditMode && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Password <span className="text-red-500">*</span>
+              </label>
               <input
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-modern"
                 required={!isEditMode}
                 minLength={6}
               />
@@ -142,11 +156,13 @@ const UserModal = ({ user, onClose }) => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Role <span className="text-red-500">*</span>
+            </label>
             <select
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-modern"
               required
             >
               <option value="customer">Customer</option>
@@ -161,25 +177,25 @@ const UserModal = ({ user, onClose }) => {
               id="is_active"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
-            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="is_active" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
               Active Account
             </label>
           </div>
 
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
+              className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Saving...' : 'Save'}
             </button>

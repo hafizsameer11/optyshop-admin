@@ -1,84 +1,125 @@
-import React from 'react';
-import { FiMenu, FiLogOut, FiUser, FiBell, FiSearch } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { FiMenu, FiLogOut, FiBell, FiSearch, FiUser, FiSettings, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const isDemoMode = localStorage.getItem('demo_user') !== null;
 
   return (
-    <header className="relative bg-white/90 backdrop-blur-2xl shadow-xl border-b border-gray-200/60 h-16 sm:h-20 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 z-[1] flex-shrink-0">
-      {/* Enhanced decorative gradient line */}
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-rose-500 shadow-lg"></div>
-      {/* Subtle inner glow */}
-      <div className="absolute top-0 left-0 right-0 h-full bg-gradient-to-b from-white/50 to-transparent pointer-events-none"></div>
-      
-      <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-        <button
-          onClick={toggleSidebar}
-          className="p-2 sm:p-2.5 rounded-xl text-gray-700 hover:text-indigo-600 hover:bg-gradient-to-br hover:from-indigo-50 hover:to-purple-50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm hover:shadow-md flex-shrink-0"
-          aria-label="Toggle sidebar"
-        >
-          <FiMenu className="w-5 h-5" />
-        </button>
-        
-        {/* Enhanced Search Bar - Responsive */}
-        <div className="hidden sm:flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100/80 rounded-xl hover:from-white hover:to-gray-50 transition-all duration-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-500/30 focus-within:shadow-lg border border-gray-200/50 flex-1 max-w-md">
-          <FiSearch className="w-4 h-4 text-gray-500 flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Search anything..."
-            className="bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400 w-full font-medium"
-          />
-        </div>
-      </div>
+    <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Left Section */}
+          <div className="flex items-center gap-4 flex-1">
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <FiMenu className="w-5 h-5" />
+            </button>
 
-      <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 flex-shrink-0">
-        {isDemoMode && (
-          <div className="hidden sm:flex items-center space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-amber-100 to-yellow-100 border border-amber-300/50 rounded-lg shadow-sm">
-            <span className="text-xs font-bold text-amber-800">
-              🔒 DEMO
-            </span>
+            {/* Search Bar */}
+            <div className="hidden md:flex items-center flex-1 max-w-md">
+              <div className="relative w-full">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search anything..."
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
+                />
+              </div>
+            </div>
           </div>
-        )}
-        
-        {/* Enhanced Notifications */}
-        <button 
-          className="relative p-2 sm:p-2.5 rounded-xl text-gray-700 hover:text-indigo-600 hover:bg-gradient-to-br hover:from-indigo-50 hover:to-purple-50 transition-all duration-300 group shadow-sm hover:shadow-md flex-shrink-0"
-          aria-label="Notifications"
-        >
-          <FiBell className="w-5 h-5" />
-          <span className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-gradient-to-r from-red-500 to-rose-500 rounded-full ring-2 ring-white shadow-sm animate-pulse"></span>
-        </button>
-        
-        {/* Enhanced User Profile - Responsive */}
-        <div className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-300 cursor-pointer group border border-transparent hover:border-indigo-200/50 shadow-sm hover:shadow-md">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg ring-2 ring-white group-hover:ring-indigo-200 transition-all duration-300 flex-shrink-0">
-            {user?.first_name?.charAt(0) || 'U'}
-          </div>
-          <div className="hidden lg:block">
-            <p className="text-sm font-bold text-gray-800 group-hover:text-indigo-700 transition-colors leading-tight">
-              {user?.first_name} {user?.last_name}
-            </p>
-            <p className="text-xs text-gray-500 font-medium leading-tight">Administrator</p>
+
+          {/* Right Section */}
+          <div className="flex items-center gap-3">
+            {/* Demo Mode Badge */}
+            {isDemoMode && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg">
+                <span className="text-xs font-semibold text-amber-800 dark:text-amber-200">
+                  🔒 DEMO MODE
+                </span>
+              </div>
+            )}
+
+            {/* Notifications */}
+            <button 
+              className="relative p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Notifications"
+            >
+              <FiBell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-800"></span>
+            </button>
+
+            {/* User Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                  {user?.first_name?.charAt(0) || 'U'}
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {user?.first_name} {user?.last_name}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
+                </div>
+                <FiChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showUserMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowUserMenu(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        // Navigate to profile if needed
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <FiUser className="w-4 h-4" />
+                      Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        // Navigate to settings if needed
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <FiSettings className="w-4 h-4" />
+                      Settings
+                    </button>
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        logout();
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                    >
+                      <FiLogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
-        
-        {/* Enhanced Logout Button - Responsive */}
-        <button
-          onClick={logout}
-          className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:via-rose-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/40 hover:-translate-y-0.5 font-semibold text-sm sm:text-base flex-shrink-0"
-          aria-label="Logout"
-        >
-          <FiLogOut className="w-4 h-4" />
-          <span className="hidden sm:inline">Logout</span>
-        </button>
       </div>
     </header>
   );
 };
 
 export default Header;
-
-
-

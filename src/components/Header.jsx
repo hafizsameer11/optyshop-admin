@@ -7,7 +7,7 @@ const Header = ({ toggleSidebar }) => {
   const isDemoMode = localStorage.getItem('demo_user') !== null;
 
   return (
-    <header className="relative bg-white/90 backdrop-blur-2xl shadow-xl border-b border-gray-200/60 h-16 sm:h-20 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 z-10 flex-shrink-0">
+    <header className="relative bg-white/90 backdrop-blur-2xl shadow-xl border-b border-gray-200/60 h-16 sm:h-20 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 z-[1] flex-shrink-0">
       {/* Enhanced decorative gradient line */}
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-rose-500 shadow-lg"></div>
       {/* Subtle inner glow */}

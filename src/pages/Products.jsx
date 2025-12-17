@@ -89,7 +89,10 @@ const ProductImage = ({ product }) => {
     const normalizedUrl = normalizeImageUrl(imageUrl);
     
     if (normalizedUrl) {
-      setImageSrc(normalizedUrl);
+      // Add cache-busting parameter to ensure fresh image loads after updates
+      const separator = normalizedUrl.includes('?') ? '&' : '?';
+      const cacheBustUrl = `${normalizedUrl}${separator}_t=${Date.now()}`;
+      setImageSrc(cacheBustUrl);
     } else {
       setImageSrc(null);
       setImageLoading(false);
@@ -292,7 +295,10 @@ const Products = () => {
   const handleModalClose = () => {
     setModalOpen(false);
     setEditingProduct(null);
-    fetchProducts();
+    // Add a small delay to ensure backend has processed the update
+    setTimeout(() => {
+      fetchProducts();
+    }, 500);
   };
 
   if (loading) {

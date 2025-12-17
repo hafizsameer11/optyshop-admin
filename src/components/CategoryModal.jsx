@@ -114,24 +114,24 @@ const CategoryModal = ({ category, onClose }) => {
   };
 
   const modalContent = (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white/95 backdrop-blur-xl rounded-2xl max-w-md w-full shadow-2xl border border-gray-200/50 animate-fade-in">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
-          <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
+    <div className="fixed inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-indigo-200/50 overflow-hidden animate-fade-in">
+        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+          <h2 className="text-2xl font-extrabold text-white">
             {category ? 'Edit Category' : 'Add Category'}
           </h2>
           <button 
             onClick={onClose} 
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-white/80 transition-all duration-200"
+            className="p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/20 transition-all duration-200"
           >
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-gray-50/50">
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2.5">
-              Name *
+            <label className="block text-sm font-bold text-gray-800 mb-2">
+              Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -144,8 +144,8 @@ const CategoryModal = ({ category, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2.5">
-              Slug *
+            <label className="block text-sm font-bold text-gray-800 mb-2">
+              Slug <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -158,7 +158,7 @@ const CategoryModal = ({ category, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2.5">
+            <label className="block text-sm font-bold text-gray-800 mb-2">
               Description
             </label>
             <textarea
@@ -171,7 +171,7 @@ const CategoryModal = ({ category, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2.5">
+            <label className="block text-sm font-bold text-gray-800 mb-2">
               Sort Order
             </label>
             <input
@@ -184,25 +184,25 @@ const CategoryModal = ({ category, onClose }) => {
             />
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center p-3 rounded-lg bg-white border border-gray-200">
             <input
               type="checkbox"
               name="is_active"
               id="is_active"
               checked={formData.is_active}
               onChange={handleChange}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
-            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="is_active" className="ml-3 block text-sm font-semibold text-gray-800 cursor-pointer">
               Active
             </label>
           </div>
 
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 bg-white rounded-b-2xl -mx-6 -mb-6 px-6 pb-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-semibold text-gray-700"
+              className="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold text-gray-700"
             >
               Cancel
             </button>

@@ -74,11 +74,14 @@ const ProductModal = ({ product, onClose }) => {
         fetchSubCategories(product.category_id);
       }
       // Set image preview if product has images array or image_url
+      // But don't set imageFile - that should only be set when user selects a new file
       if (product.images && product.images.length > 0) {
         setImagePreview(product.images[0]);
       } else if (product.image || product.image_url) {
         setImagePreview(product.image || product.image_url);
       }
+      // Reset imageFile when editing - user must explicitly select a new image to update it
+      setImageFile(null);
     } else {
       // Reset form for new product
       setFormData({
@@ -206,46 +209,53 @@ const ProductModal = ({ product, onClose }) => {
         return;
       }
       
-      setImageFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      
-      reader.onload = () => {
-        if (reader.result) {
-          setImagePreview(reader.result);
-          console.log('Image preview loaded successfully');
-        } else {
-          console.error('FileReader result is empty');
-          toast.error('Failed to load image preview');
+      // Set the image file - this is critical for updates
+      // Make sure we're setting a File object, not a string
+      if (file instanceof File) {
+        setImageFile(file);
+        
+        // Create preview
+        const reader = new FileReader();
+        
+        reader.onload = () => {
+          if (reader.result) {
+            setImagePreview(reader.result);
+            // Show success message when image is selected
+            if (product) {
+              toast.success('New image selected. Click Save to update.');
+            }
+          } else {
+            toast.error('Failed to load image preview');
+          }
+        };
+        
+        reader.onerror = (error) => {
+          console.error('FileReader error:', error);
+          toast.error('Error reading image file');
+          setImageFile(null);
+          setImagePreview(null);
+          e.target.value = ''; // Reset input
+        };
+        
+        try {
+          reader.readAsDataURL(file);
+        } catch (error) {
+          console.error('Error reading file:', error);
+          toast.error('Failed to read image file');
+          setImageFile(null);
+          setImagePreview(null);
+          e.target.value = '';
         }
-      };
-      
-      reader.onerror = (error) => {
-        console.error('FileReader error:', error);
-        toast.error('Error reading image file');
-        setImageFile(null);
-        setImagePreview(null);
-        e.target.value = ''; // Reset input
-      };
-      
-      reader.onloadend = () => {
-        console.log('FileReader loadend');
-      };
-      
-      try {
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error('Error reading file:', error);
-        toast.error('Failed to read image file');
-        setImageFile(null);
-        setImagePreview(null);
+      } else {
+        toast.error('Invalid file selected');
         e.target.value = '';
       }
     } else {
-      // No file selected
-      setImageFile(null);
-      setImagePreview(null);
+      // No file selected - don't clear if editing (keep existing preview)
+      if (!product) {
+        setImageFile(null);
+        setImagePreview(null);
+      }
     }
   };
 
@@ -352,7 +362,7 @@ const ProductModal = ({ product, onClose }) => {
       let imageUploadFailed = false;
       
       // If we have an image file, try to upload with FormData first
-      if (imageFile) {
+      if (imageFile && imageFile instanceof File) {
         try {
           const submitData = new FormData();
           
@@ -376,7 +386,21 @@ const ProductModal = ({ product, onClose }) => {
           });
 
           // Add image file - API expects 'images' (plural)
+          // Make sure we're appending the actual File object
           submitData.append('images', imageFile);
+          
+          // For updates, also send a flag to replace existing images
+          if (product) {
+            submitData.append('replace_images', 'true');
+          }
+          
+          // Debug: Log that we're sending an image
+          console.log('Sending image update:', {
+            fileName: imageFile.name,
+            fileSize: imageFile.size,
+            fileType: imageFile.type,
+            isUpdate: !!product
+          });
 
           if (product) {
             response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), submitData);
@@ -426,6 +450,8 @@ const ProductModal = ({ product, onClose }) => {
         toast.success(successMessage);
       }
       
+      // Reset image file after successful save
+      setImageFile(null);
       onClose();
     } catch (error) {
       console.error('Product save error:', error);
@@ -553,9 +579,6 @@ const ProductModal = ({ product, onClose }) => {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  onClick={(e) => {
-                    e.target.value = '';
-                  }}
                   className="hidden"
                   id="product-image-input"
                 />

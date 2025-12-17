@@ -46,36 +46,10 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     
-    // Handle rate limiting (429) - skip retry for auth/me to prevent cascading failures
+    // Handle rate limiting (429) - no retries, fail immediately
     if (error.response?.status === 429) {
-      const config = error.config;
-      const isAuthMeEndpoint = config?.url?.includes('/auth/me');
-      
-      // For auth/me endpoint, don't retry - just fail gracefully
-      if (isAuthMeEndpoint) {
-        console.warn('Rate limited on /auth/me - skipping retry to prevent cascading failures');
-        return Promise.reject(error);
-      }
-      
-      // For other endpoints, use limited retry with exponential backoff
-      const retryAfter = parseInt(error.response.headers['retry-after']) || 1;
-      const retryCount = config.__retryCount || 0;
-      const maxRetries = 2; // Reduced from 3 to 2
-      
-      if (retryCount < maxRetries) {
-        config.__retryCount = retryCount + 1;
-        const delay = retryAfter * 1000 * Math.pow(2, retryCount); // Exponential backoff
-        
-        console.log(`Rate limited. Retrying request in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
-        
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
-        // Retry the request
-        return api(config);
-      } else {
-        console.warn(`Rate limit exceeded after ${maxRetries} retries. Request failed.`);
-      }
+      // Silently fail - no retries for rate limited requests
+      return Promise.reject(error);
     }
     
     // Only redirect to login for actual 401 responses, not network errors

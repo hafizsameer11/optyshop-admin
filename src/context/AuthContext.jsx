@@ -31,8 +31,8 @@ export const AuthProvider = ({ children }) => {
       const authCheckCache = localStorage.getItem('auth_check_cache');
       const now = Date.now();
       
-      // If we have a valid cache (less than 5 minutes old), use it
-      if (lastAuthCheck && authCheckCache && (now - parseInt(lastAuthCheck)) < 5 * 60 * 1000) {
+      // If we have a valid cache (less than 10 minutes old), use it to reduce API calls
+      if (lastAuthCheck && authCheckCache && (now - parseInt(lastAuthCheck)) < 10 * 60 * 1000) {
         try {
           const cachedUser = JSON.parse(authCheckCache);
           setUser(cachedUser);
@@ -67,16 +67,26 @@ export const AuthProvider = ({ children }) => {
           const isRateLimited = error.response?.status === 429;
           
           // Handle rate limiting gracefully - use cached user if available
-          if (isRateLimited && authCheckCache) {
-            try {
-              const cachedUser = JSON.parse(authCheckCache);
-              setUser(cachedUser);
-              console.warn('Rate limited - using cached user data');
-              setLoading(false);
-              return;
-            } catch (e) {
-              // Cache invalid, continue
+          if (isRateLimited) {
+            // Always use cache if available when rate limited
+            if (authCheckCache) {
+              try {
+                const cachedUser = JSON.parse(authCheckCache);
+                setUser(cachedUser);
+                console.warn('Rate limited - using cached user data');
+                setLoading(false);
+                checkingAuthRef.current = false;
+                return;
+              } catch (e) {
+                // Cache invalid, continue
+              }
             }
+            // If no cache but rate limited, just continue with existing token
+            // Don't make more requests that will fail
+            console.warn('Rate limited on auth check - continuing with existing token (no cache available)');
+            setLoading(false);
+            checkingAuthRef.current = false;
+            return;
           }
           
           // Silently handle 404 errors (route not found) - endpoint might not exist
@@ -87,9 +97,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('demo_user');
             localStorage.removeItem('last_auth_check');
             localStorage.removeItem('auth_check_cache');
-          } else if (isRateLimited) {
-            // For rate limiting, just log a warning and continue with token
-            console.warn('Rate limited on auth check - continuing with existing token');
           } else if (!isRouteNotFound) {
             // Only log non-404/route-not-found errors for debugging
             console.error('Auth check error:', error);

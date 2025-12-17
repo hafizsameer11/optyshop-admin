@@ -70,7 +70,7 @@ const SubCategoryModal = ({ subCategory, categories, onClose }) => {
             }
 
             // Prepare data object
-            const dataToSend = {
+            let dataToSend = {
                 name: formData.name.trim(),
                 slug: formData.slug.trim(),
                 category_id: parseInt(formData.category_id),
@@ -82,18 +82,55 @@ const SubCategoryModal = ({ subCategory, categories, onClose }) => {
             }
 
             let response;
-            // API Response: { success, message, data: { subcategory: {} } }
-            if (subCategory) {
-                response = await api.put(API_ROUTES.ADMIN.SUBCATEGORIES.UPDATE(subCategory.id), dataToSend);
-            } else {
-                response = await api.post(API_ROUTES.ADMIN.SUBCATEGORIES.CREATE, dataToSend);
+            let retryCount = 0;
+            const maxRetries = 5; // Maximum attempts to generate unique slug
+            
+            // Retry loop to handle duplicate name/slug errors
+            while (retryCount < maxRetries) {
+                try {
+                    // API Response: { success, message, data: { subcategory: {} } }
+                    if (subCategory) {
+                        response = await api.put(API_ROUTES.ADMIN.SUBCATEGORIES.UPDATE(subCategory.id), dataToSend);
+                    } else {
+                        response = await api.post(API_ROUTES.ADMIN.SUBCATEGORIES.CREATE, dataToSend);
+                    }
+
+                    // Handle response structure: { success, message, data: { subcategory: {} } }
+                    const successMessage = response.data?.message || (subCategory ? 'SubCategory updated successfully' : 'SubCategory created successfully');
+
+                    toast.success(successMessage);
+                    onClose();
+                    return; // Success, exit the function
+                } catch (error) {
+                    const errorData = error.response?.data || {};
+                    const errorMessage = errorData.message || errorData.errors?.[0]?.msg || '';
+                    const isDuplicateError = error.response?.status === 400 || 
+                                           error.response?.status === 422 ||
+                                           errorMessage.toLowerCase().includes('already exists') ||
+                                           errorMessage.toLowerCase().includes('duplicate');
+                    
+                    // If it's a duplicate error and we're creating (not editing), try with a unique slug/name
+                    if (isDuplicateError && !subCategory && retryCount < maxRetries - 1) {
+                        retryCount++;
+                        // Generate a unique identifier
+                        const uniqueSuffix = retryCount > 1 ? `-${retryCount}` : `-${Date.now().toString().slice(-6)}`;
+                        
+                        // Make slug unique (slugs must be unique for URLs)
+                        const baseSlug = formData.slug.trim();
+                        dataToSend.slug = baseSlug + uniqueSuffix;
+                        
+                        // Keep the name the same (user wants duplicate names to be valid)
+                        // The unique slug should be sufficient for the backend
+                        
+                        // Update the form data to show the new slug
+                        setFormData(prev => ({ ...prev, slug: dataToSend.slug }));
+                        continue; // Retry with new slug
+                    }
+                    
+                    // If not a duplicate error, or we've exhausted retries, throw the error
+                    throw error;
+                }
             }
-
-            // Handle response structure: { success, message, data: { subcategory: {} } }
-            const successMessage = response.data?.message || (subCategory ? 'SubCategory updated successfully' : 'SubCategory created successfully');
-
-            toast.success(successMessage);
-            onClose();
         } catch (error) {
             console.error('SubCategory save error:', error);
             if (!error.response) {

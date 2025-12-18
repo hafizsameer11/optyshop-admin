@@ -2,6 +2,9 @@
  * API Routes Configuration
  * Complete route definitions based on OptyShop API Postman Collection
  * 
+ * SOURCE: OptyShop_API.postman_collection.json (root directory)
+ * This file is synchronized with the Postman collection to ensure all endpoints are available.
+ * 
  * AUTHENTICATION RULES:
  * - PUBLIC: No Authorization header required
  * - USER: Requires Authorization: Bearer {{access_token}} (customer token)
@@ -24,6 +27,9 @@
  * Usage:
  * import { API_ROUTES } from '../config/apiRoutes';
  * const url = API_ROUTES.AUTH.LOGIN;
+ * 
+ * To validate endpoints against Postman collection:
+ * import { validateRoutesAgainstPostman } from '../utils/postmanValidator';
  */
 
 // NOTE: baseURL in api.js is 'https://optyshop-frontend.hmstech.org/api'
@@ -72,10 +78,13 @@ export const API_ROUTES = {
   // SUBCATEGORIES (PUBLIC - all GET routes)
   // ============================================
   SUBCATEGORIES: {
-    LIST: `/subcategories`,                     // PUBLIC
-    BY_ID: (id) => `/subcategories/${id}`,       // PUBLIC
+    LIST: `/subcategories`,                     // PUBLIC - Get all subcategories (returns subcategories, topLevelSubcategories, subSubcategories arrays)
+    BY_ID: (id) => `/subcategories/${id}`,       // PUBLIC - Get single subcategory (includes parent if sub-subcategory, and children if parent)
     BY_SLUG: (slug) => `/subcategories/slug/${slug}`, // PUBLIC
-    BY_CATEGORY: (categoryId) => `/subcategories/by-category/${categoryId}`, // PUBLIC
+    BY_CATEGORY: (categoryId) => `/subcategories/by-category/${categoryId}`, // PUBLIC - Get top-level subcategories with their nested children
+    BY_PARENT: (parentId) => `/subcategories/by-parent/${parentId}`, // PUBLIC - Get sub-subcategories by parent ID (returns parent info + array of sub-subcategories)
+    NESTED: (subCategoryId) => `/subcategories/${subCategoryId}/subcategories`, // PUBLIC - Get nested subcategories (alternative endpoint)
+    PRODUCTS: (id) => `/subcategories/${id}/products`, // PUBLIC - Get products (includes sub-subcategory products if parent)
   },
 
   // ============================================
@@ -279,30 +288,34 @@ export const API_ROUTES = {
   // ============================================
   // FORMS (PUBLIC - all routes)
   // ============================================
+  // Form configs and submissions are PUBLIC (no auth required)
+  // Admin endpoints for viewing/managing submissions are under ADMIN.REQUESTS.*
+  // See docs/FORMS_INTEGRATION.md for complete forms integration guide
+  // Use src/utils/formUtils.js for form operations
   FORMS: {
     CONTACT: {
-      CONFIG: `/forms/contact`,                         // PUBLIC
-      SUBMIT: `/forms/contact/submissions`,             // PUBLIC
+      CONFIG: `/forms/contact`,                         // PUBLIC - Get contact form configuration
+      SUBMIT: `/forms/contact/submissions`,             // PUBLIC - Submit contact form
     },
     DEMO: {
-      CONFIG: `/forms/demo`,                            // PUBLIC
-      SUBMIT: `/forms/demo/submissions`,                 // PUBLIC
+      CONFIG: `/forms/demo`,                            // PUBLIC - Get demo form configuration
+      SUBMIT: `/forms/demo/submissions`,                 // PUBLIC - Submit demo request
     },
     PRICING: {
-      CONFIG: `/forms/pricing`,                         // PUBLIC
-      SUBMIT: `/forms/pricing/submissions`,             // PUBLIC
+      CONFIG: `/forms/pricing`,                         // PUBLIC - Get pricing form configuration
+      SUBMIT: `/forms/pricing/submissions`,             // PUBLIC - Submit pricing request
     },
     JOB_APPLICATION: {
-      CONFIG: `/forms/job-application`,                  // PUBLIC
-      SUBMIT: `/forms/job-application/submissions`,     // PUBLIC
+      CONFIG: `/forms/job-application`,                  // PUBLIC - Get job application form configuration
+      SUBMIT: `/forms/job-application/submissions`,     // PUBLIC - Submit job application
     },
     CREDENTIALS: {
-      CONFIG: `/forms/credentials`,                     // PUBLIC
-      SUBMIT: `/forms/credentials/submissions`,         // PUBLIC
+      CONFIG: `/forms/credentials`,                     // PUBLIC - Get credentials form configuration
+      SUBMIT: `/forms/credentials/submissions`,         // PUBLIC - Submit credentials request
     },
     SUPPORT: {
-      CONFIG: `/forms/support`,                         // PUBLIC
-      SUBMIT: `/forms/support/submissions`,             // PUBLIC (supports file uploads)
+      CONFIG: `/forms/support`,                         // PUBLIC - Get support form configuration
+      SUBMIT: `/forms/support/submissions`,             // PUBLIC - Submit support request (supports file uploads via FormData)
     },
   },
 
@@ -346,11 +359,15 @@ export const API_ROUTES = {
     
     // SubCategories Management
     SUBCATEGORIES: {
-      LIST: `/admin/subcategories`,
-      BY_ID: (id) => `/admin/subcategories/${id}`,
-      CREATE: `/admin/subcategories`,
-      UPDATE: (id) => `/admin/subcategories/${id}`,
-      DELETE: (id) => `/admin/subcategories/${id}`,
+      LIST: `/admin/subcategories`, // ADMIN - Get all subcategories with pagination
+      BY_ID: (id) => `/admin/subcategories/${id}`, // ADMIN - Get single subcategory with full details
+      CREATE: `/admin/subcategories`, // ADMIN - Create subcategory/sub-subcategory (set parent_id: null for top-level, or parent_id: <number> for sub-subcategory)
+      UPDATE: (id) => `/admin/subcategories/${id}`, // ADMIN - Update subcategory (can change parent_id to convert between top-level and sub-subcategory)
+      DELETE: (id) => `/admin/subcategories/${id}`, // ADMIN - Delete subcategory
+      TOP_LEVEL: `/admin/subcategories/top-level`, // ADMIN - Get only top-level subcategories (parent_id = null)
+      NESTED: `/admin/subcategories/nested`, // ADMIN - Get all sub-subcategories with pagination (filtered list of sub-subcategories only)
+      BY_PARENT: (parentId) => `/admin/subcategories/by-parent/${parentId}`, // ADMIN - Get sub-subcategories by parent ID (returns parent info + sub-subcategories with full details)
+      AVAILABLE_PARENTS: (categoryId) => `/admin/subcategories/available-parents/${categoryId}`, // ADMIN - Get available parents (includes "None" option, returns array with "None (Top-level subcategory)" as first item)
     },
     
     // Frame Sizes Management
@@ -439,39 +456,37 @@ export const API_ROUTES = {
       DELETE: (id) => `/admin/job-applications/${id}`,
     },
     
-    // Contact Requests Management
+    // Form Requests Management (Admin view of form submissions)
+    // These endpoints manage submissions from public forms (FORMS.*)
+    // See docs/FORMS_INTEGRATION.md for complete integration guide
     CONTACT_REQUESTS: {
-      LIST: `/admin/requests/contact`,
-      BY_ID: (id) => `/admin/requests/contact/${id}`,
-      DELETE: (id) => `/admin/requests/contact/${id}`,
+      LIST: `/admin/requests/contact`,                    // ADMIN - List all contact form submissions
+      BY_ID: (id) => `/admin/requests/contact/${id}`,     // ADMIN - Get contact submission by ID
+      DELETE: (id) => `/admin/requests/contact/${id}`,     // ADMIN - Delete contact submission
     },
     
-    // Demo Requests Management
     DEMO_REQUESTS: {
-      LIST: `/admin/requests/demo`,
-      BY_ID: (id) => `/admin/requests/demo/${id}`,
-      DELETE: (id) => `/admin/requests/demo/${id}`,
+      LIST: `/admin/requests/demo`,                       // ADMIN - List all demo form submissions
+      BY_ID: (id) => `/admin/requests/demo/${id}`,        // ADMIN - Get demo submission by ID
+      DELETE: (id) => `/admin/requests/demo/${id}`,       // ADMIN - Delete demo submission
     },
     
-    // Pricing Requests Management
     PRICING_REQUESTS: {
-      LIST: `/admin/requests/pricing`,
-      BY_ID: (id) => `/admin/requests/pricing/${id}`,
-      DELETE: (id) => `/admin/requests/pricing/${id}`,
+      LIST: `/admin/requests/pricing`,                    // ADMIN - List all pricing form submissions
+      BY_ID: (id) => `/admin/requests/pricing/${id}`,     // ADMIN - Get pricing submission by ID
+      DELETE: (id) => `/admin/requests/pricing/${id}`,    // ADMIN - Delete pricing submission
     },
     
-    // Credentials Requests Management
     CREDENTIALS_REQUESTS: {
-      LIST: `/admin/requests/credentials`,
-      BY_ID: (id) => `/admin/requests/credentials/${id}`,
-      DELETE: (id) => `/admin/requests/credentials/${id}`,
+      LIST: `/admin/requests/credentials`,                // ADMIN - List all credentials form submissions
+      BY_ID: (id) => `/admin/requests/credentials/${id}`,  // ADMIN - Get credentials submission by ID
+      DELETE: (id) => `/admin/requests/credentials/${id}`, // ADMIN - Delete credentials submission
     },
     
-    // Support Requests Management
     SUPPORT_REQUESTS: {
-      LIST: `/admin/requests/support`,
-      BY_ID: (id) => `/admin/requests/support/${id}`,
-      DELETE: (id) => `/admin/requests/support/${id}`,
+      LIST: `/admin/requests/support`,                    // ADMIN - List all support form submissions (with attachments)
+      BY_ID: (id) => `/admin/requests/support/${id}`,     // ADMIN - Get support submission by ID (includes attachments)
+      DELETE: (id) => `/admin/requests/support/${id}`,     // ADMIN - Delete support submission
     },
     
     // Transactions Management

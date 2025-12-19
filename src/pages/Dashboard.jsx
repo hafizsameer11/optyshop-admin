@@ -8,6 +8,7 @@ import {
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 // Premium Stat Card with Gradient
 const StatCard = ({ title, value, icon: Icon, gradient, trend }) => (
@@ -161,7 +162,8 @@ const Dashboard = () => {
           </h1>
           <p className="text-gray-500 mt-1 font-medium">Welcome back! Here's what's happening today.</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex items-center space-x-3">
+          <LanguageSwitcher variant="compact" />
           <button className="px-4 py-2 bg-white text-gray-600 rounded-lg text-sm font-semibold shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors">
             Share Report
           </button>

@@ -3,6 +3,7 @@ import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const NestedSubCategoryModal = ({ subCategory, categories, topLevelSubCategories, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -266,13 +267,16 @@ const NestedSubCategoryModal = ({ subCategory, categories, topLevelSubCategories
                     <h2 className="text-2xl font-extrabold text-white">
                         {subCategory ? 'Edit Nested SubCategory' : 'Add Nested SubCategory'}
                     </h2>
-                    <button 
-                        onClick={onClose} 
-                        className="p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/20 transition-all duration-200"
-                        aria-label="Close"
-                    >
-                        <FiX className="w-6 h-6" />
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <LanguageSwitcher variant="compact" onGradient={true} />
+                        <button 
+                            onClick={onClose} 
+                            className="p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/20 transition-all duration-200"
+                            aria-label="Close"
+                        >
+                            <FiX className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Scrollable Form Content */}

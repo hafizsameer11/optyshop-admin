@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { FiX, FiCheckCircle, FiXCircle, FiClock, FiDollarSign, FiFileText, FiCreditCard } from 'react-icons/fi';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 const TransactionDetailsModal = ({ transaction, onClose }) => {
   const getStatusColor = (status) => {
@@ -66,13 +67,16 @@ const TransactionDetailsModal = ({ transaction, onClose }) => {
               {transaction.transaction_number || `TXN-${transaction.id}`}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
-            aria-label="Close"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="compact" />
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+              aria-label="Close"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">

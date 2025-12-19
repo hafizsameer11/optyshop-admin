@@ -3,6 +3,7 @@ import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const FrameSizeModal = ({ frameSize, onClose }) => {
   const [formData, setFormData] = useState({
@@ -94,21 +95,23 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10 flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
             {frameSize ? 'Edit Frame Size' : 'Add Frame Size'}
           </h2>
-          <button 
-            onClick={onClose} 
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="compact" />
+            <button 
+              onClick={onClose} 
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
             aria-label="Close"
           >
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Product ID <span className="text-red-500">*</span>
@@ -219,7 +222,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
             </select>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white flex-shrink-0">
             <button
               type="button"
               onClick={onClose}

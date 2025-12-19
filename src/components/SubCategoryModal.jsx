@@ -361,7 +361,7 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
 
     return (
         <div className="fixed inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 backdrop-blur-md flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-indigo-200/50 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-indigo-200/50 overflow-hidden flex flex-col max-h-[90vh] animate-fade-in">
                 {/* Fixed Header */}
                 <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex-shrink-0">
                     <h2 className="text-2xl font-extrabold text-white">
@@ -377,11 +377,11 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                 </div>
 
                 {/* Scrollable Form Content */}
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(90vh - 140px)' }}>
-                    <div className="p-6 space-y-5 bg-gray-50/50 flex-1">
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col custom-scrollbar" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+                    <div className="p-6 space-y-6 bg-gray-50/50 flex-1 min-h-0">
 
                         {/* Category Selection - Required */}
-                    <div>
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                         <label className="block text-sm font-bold text-gray-800 mb-2">
                             Category <span className="text-red-500">*</span>
                         </label>
@@ -389,7 +389,7 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                             name="category_id"
                             value={formData.category_id}
                             onChange={handleChange}
-                            className="input-modern"
+                            className="input-modern w-full"
                                 required
                         >
                             <option value="">Select a Category</option>
@@ -403,19 +403,19 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
 
                         {/* Parent SubCategory Selection - Optional (for nested subcategories) */}
                         {formData.category_id && (
-                        <div>
+                        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                             <label className="block text-sm font-bold text-gray-800 mb-2">
-                                    Parent SubCategory <span className="text-gray-500 text-xs">(Optional)</span>
+                                    Parent SubCategory <span className="text-gray-500 text-xs font-normal">(Optional)</span>
                             </label>
                                 {loadingParents ? (
-                                    <div className="input-modern text-gray-500">Loading parent options...</div>
+                                    <div className="input-modern text-gray-500 w-full">Loading parent options...</div>
                                 ) : availableParents.length > 0 ? (
                                     <>
                             <select
                                             name="parent_id"
                                             value={formData.parent_id}
                                 onChange={handleChange}
-                                            className="input-modern"
+                                            className="input-modern w-full"
                                         >
                                             <option value="">None (Top-level subcategory)</option>
                                             {availableParents.map(parent => (
@@ -424,9 +424,9 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                                     </option>
                                 ))}
                             </select>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 mt-2 px-1">
                                             {formData.parent_id 
-                                                ? 'This will be a nested subcategory (sub-subcategory)'
+                                                ? '✓ This will be a nested subcategory (sub-subcategory)'
                                                 : 'Leave empty to create a top-level subcategory, or select a parent to create a nested subcategory'}
                                         </p>
                                     </>
@@ -436,11 +436,11 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                                             name="parent_id"
                                             value=""
                                             disabled
-                                            className="input-modern bg-gray-100 text-gray-400 cursor-not-allowed"
+                                            className="input-modern bg-gray-100 text-gray-400 cursor-not-allowed w-full"
                                         >
                                             <option value="">None (No parent subcategories available)</option>
                                         </select>
-                                        <p className="text-xs text-amber-600 mt-1">
+                                        <p className="text-xs text-amber-600 mt-2 px-1">
                                             No top-level subcategories found in this category. Create a top-level subcategory first, then you can create nested subcategories.
                                         </p>
                                     </>
@@ -448,7 +448,7 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                         </div>
                     )}
 
-                    <div>
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                         <label className="block text-sm font-bold text-gray-800 mb-2">
                             Name <span className="text-red-500">*</span>
                         </label>
@@ -457,12 +457,12 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            className="input-modern"
+                            className="input-modern w-full"
                             required
                         />
                     </div>
 
-                    <div>
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                         <label className="block text-sm font-bold text-gray-800 mb-2">
                             Slug <span className="text-red-500">*</span>
                         </label>
@@ -471,12 +471,12 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                             name="slug"
                             value={formData.slug}
                             onChange={handleChange}
-                            className="input-modern font-mono"
+                            className="input-modern font-mono w-full"
                             required
                         />
                     </div>
 
-                    <div>
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                         <label className="block text-sm font-bold text-gray-800 mb-2">
                             Description
                         </label>
@@ -485,11 +485,12 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                             value={formData.description}
                             onChange={handleChange}
                             rows="3"
-                            className="input-modern resize-none"
+                            className="input-modern resize-none w-full"
+                            placeholder="Enter subcategory description (optional)"
                         />
                     </div>
 
-                    <div>
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                         <label className="block text-sm font-bold text-gray-800 mb-2">
                             Sort Order
                         </label>
@@ -499,13 +500,13 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                             value={formData.sort_order}
                             onChange={handleChange}
                             min="0"
-                            className="input-modern"
+                            className="input-modern w-full"
                             placeholder="0"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Lower numbers appear first (default: 0)</p>
+                        <p className="text-xs text-gray-500 mt-2 px-1">Lower numbers appear first (default: 0)</p>
                     </div>
 
-                    <div className="flex items-center p-3 rounded-lg bg-white border border-gray-200">
+                    <div className="flex items-center p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
                         <input
                             type="checkbox"
                             name="is_active"

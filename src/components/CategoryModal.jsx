@@ -114,91 +114,100 @@ const CategoryModal = ({ category, onClose }) => {
   };
 
   const modalContent = (
-    <div className="fixed inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-indigo-200/50 overflow-hidden animate-fade-in">
-        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+    <div className="fixed inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 backdrop-blur-md flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-indigo-200/50 overflow-hidden flex flex-col max-h-[90vh] animate-fade-in">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex-shrink-0">
           <h2 className="text-2xl font-extrabold text-white">
             {category ? 'Edit Category' : 'Add Category'}
           </h2>
           <button 
             onClick={onClose} 
             className="p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/20 transition-all duration-200"
+            aria-label="Close"
           >
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-gray-50/50">
-          <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="input-modern"
-              required
-            />
+        {/* Scrollable Form Content */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col custom-scrollbar" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+          <div className="p-6 space-y-6 bg-gray-50/50 flex-1 min-h-0">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
+                Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="input-modern w-full"
+                required
+              />
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
+                Slug <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="slug"
+                value={formData.slug}
+                onChange={handleChange}
+                className="input-modern font-mono w-full"
+                required
+              />
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="3"
+                className="input-modern resize-none w-full"
+                placeholder="Enter category description (optional)"
+              />
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
+                Sort Order
+              </label>
+              <input
+                type="number"
+                name="sort_order"
+                value={formData.sort_order}
+                onChange={handleChange}
+                min="0"
+                className="input-modern w-full"
+                placeholder="0"
+              />
+              <p className="text-xs text-gray-500 mt-2 px-1">Lower numbers appear first (default: 0)</p>
+            </div>
+
+            <div className="flex items-center p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+              <input
+                type="checkbox"
+                name="is_active"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={handleChange}
+                className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
+              />
+              <label htmlFor="is_active" className="ml-3 block text-sm font-semibold text-gray-800 cursor-pointer">
+                Active
+              </label>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2">
-              Slug <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="slug"
-              value={formData.slug}
-              onChange={handleChange}
-              className="input-modern font-mono"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="3"
-              className="input-modern resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2">
-              Sort Order
-            </label>
-            <input
-              type="number"
-              name="sort_order"
-              value={formData.sort_order}
-              onChange={handleChange}
-              min="0"
-              className="input-modern"
-            />
-          </div>
-
-          <div className="flex items-center p-3 rounded-lg bg-white border border-gray-200">
-            <input
-              type="checkbox"
-              name="is_active"
-              id="is_active"
-              checked={formData.is_active}
-              onChange={handleChange}
-              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
-            />
-            <label htmlFor="is_active" className="ml-3 block text-sm font-semibold text-gray-800 cursor-pointer">
-              Active
-            </label>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 bg-white rounded-b-2xl -mx-6 -mb-6 px-6 pb-6">
+          {/* Fixed Footer with Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 p-6 border-t border-gray-200 bg-white flex-shrink-0">
             <button
               type="button"
               onClick={onClose}

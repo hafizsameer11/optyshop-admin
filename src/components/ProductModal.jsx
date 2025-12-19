@@ -16,6 +16,7 @@ const ProductModal = ({ product, onClose }) => {
     short_description: '',
     category_id: '',
     sub_category_id: '',
+    parent_subcategory_id: '', // For nested subcategories
     frame_shape: '',
     frame_material: '',
     frame_color: '',
@@ -33,13 +34,14 @@ const ProductModal = ({ product, onClose }) => {
   });
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
+  const [nestedSubCategories, setNestedSubCategories] = useState([]);
   const [frameShapes, setFrameShapes] = useState([]);
   const [frameMaterials, setFrameMaterials] = useState([]);
   const [genders, setGenders] = useState([]);
   const [lensTypes, setLensTypes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
 
   useEffect(() => {
     fetchProductOptions();
@@ -54,6 +56,7 @@ const ProductModal = ({ product, onClose }) => {
         short_description: product.short_description || '',
         category_id: product.category_id || '',
         sub_category_id: product.sub_category_id || product.subcategory_id || '',
+        parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
         frame_shape: product.frame_shape || '',
         frame_material: product.frame_material || '',
         frame_color: product.frame_color || '',
@@ -72,16 +75,24 @@ const ProductModal = ({ product, onClose }) => {
       // Fetch subcategories if category is set
       if (product.category_id) {
         fetchSubCategories(product.category_id);
+        // Check if the product's subcategory is a sub-subcategory (has a parent)
+        const productSubCategoryId = product.sub_category_id || product.subcategory_id;
+        if (productSubCategoryId) {
+          // Check if this subcategory is a sub-subcategory and set form accordingly
+          checkAndSetSubSubCategory(productSubCategoryId);
+        }
       }
-      // Set image preview if product has images array or image_url
-      // But don't set imageFile - that should only be set when user selects a new file
-      if (product.images && product.images.length > 0) {
-        setImagePreview(product.images[0]);
+      // Set image previews if product has images array or image_url
+      // But don't set imageFiles - that should only be set when user selects new files
+      if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        setImagePreviews(product.images.filter(img => img && typeof img === 'string'));
       } else if (product.image || product.image_url) {
-        setImagePreview(product.image || product.image_url);
+        setImagePreviews([product.image || product.image_url].filter(Boolean));
+      } else {
+        setImagePreviews([]);
       }
-      // Reset imageFile when editing - user must explicitly select a new image to update it
-      setImageFile(null);
+      // Reset imageFiles when editing - user must explicitly select new images to update them
+      setImageFiles([]);
     } else {
       // Reset form for new product
       setFormData({
@@ -94,6 +105,7 @@ const ProductModal = ({ product, onClose }) => {
         short_description: '',
         category_id: '',
         sub_category_id: '',
+        parent_subcategory_id: '',
         frame_shape: '',
         frame_material: '',
         frame_color: '',
@@ -110,10 +122,58 @@ const ProductModal = ({ product, onClose }) => {
         is_featured: false,
       });
       setSubCategories([]);
-      setImageFile(null);
-      setImagePreview(null);
+      setNestedSubCategories([]);
+      setImageFiles([]);
+      setImagePreviews([]);
     }
   }, [product]);
+
+  // Helper function to check if a subcategory is a sub-subcategory and set form correctly
+  const checkAndSetSubSubCategory = async (subCategoryId) => {
+    if (!subCategoryId) return;
+    
+    try {
+      // Fetch the subcategory to check if it has a parent (is a sub-subcategory)
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(subCategoryId));
+      const subCatData = response.data?.data?.subcategory || response.data?.data || response.data?.subcategory || response.data || {};
+      
+      // Check if this subcategory has a parent (is a sub-subcategory)
+      const parentId = subCatData.parent_id !== undefined ? subCatData.parent_id : 
+                       subCatData.parentId || 
+                       subCatData.parent_subcategory_id || 
+                       subCatData.parentSubcategoryId ||
+                       subCatData.parent?.id;
+      
+      if (parentId && parentId !== null && parentId !== '') {
+        // This is a sub-subcategory - set parent as sub_category_id and this as parent_subcategory_id
+        // The useEffect will automatically fetch nested subcategories when sub_category_id changes
+        console.log(`📊 Product is assigned to sub-subcategory ${subCategoryId}, parent is ${parentId}`);
+        setFormData(prev => ({
+          ...prev,
+          sub_category_id: parentId.toString(),
+          parent_subcategory_id: subCategoryId.toString()
+        }));
+        // Note: fetchNestedSubCategories will be called automatically by the useEffect when sub_category_id changes
+      } else {
+        // This is a top-level subcategory - the useEffect will fetch nested subcategories automatically
+        console.log(`📊 Product is assigned to top-level subcategory ${subCategoryId}`);
+      }
+    } catch (error) {
+      console.warn('Failed to check subcategory parent, assuming top-level:', error);
+      // If we can't check, assume it's top-level - the useEffect will handle fetching nested subcategories
+    }
+  };
+
+  // Fetch nested subcategories when subcategory is selected
+  useEffect(() => {
+    if (formData.sub_category_id) {
+      // Fetch nested subcategories when subcategory is selected
+      fetchNestedSubCategories(formData.sub_category_id);
+    } else {
+      // Clear nested subcategories when no subcategory is selected
+      setNestedSubCategories([]);
+    }
+  }, [formData.sub_category_id]);
 
   const fetchProductOptions = async () => {
     try {
@@ -147,15 +207,31 @@ const ProductModal = ({ product, onClose }) => {
   const fetchSubCategories = async (categoryId) => {
     if (!categoryId) {
       setSubCategories([]);
+      setNestedSubCategories([]);
       return;
     }
 
     try {
-      // Try to fetch subcategories by category ID
+      // Per Postman collection: Use /subcategories/by-category/:categoryId
+      // This returns top-level subcategories with their nested children
       const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
-      setSubCategories(Array.isArray(subCatData) ? subCatData : []);
+      
+      // Filter to get only top-level subcategories (parent_id = null)
+      // Per Postman: top-level subcategories have parent_id = null
+      const topLevel = Array.isArray(subCatData) 
+        ? subCatData.filter(sub => {
+            const parentId = sub.parent_id !== undefined ? sub.parent_id : 
+                           sub.parentId || 
+                           sub.parent_subcategory_id || 
+                           sub.parentSubcategoryId;
+            return parentId === null || parentId === undefined || parentId === '';
+          })
+        : [];
+      
+      console.log(`📊 Fetched ${topLevel.length} top-level subcategories for category ${categoryId}`);
+      setSubCategories(topLevel);
     } catch (error) {
       console.warn('Failed to fetch subcategories for category', categoryId, error);
       // Try alternative: fetch all subcategories and filter by category_id
@@ -163,8 +239,17 @@ const ProductModal = ({ product, onClose }) => {
         const response = await api.get(`${API_ROUTES.SUBCATEGORIES.LIST}?category_id=${categoryId}`);
         const responseData = response.data?.data || response.data || {};
         const subCatData = responseData.subcategories || responseData || [];
+        // Filter to get only top-level subcategories (parent_id = null)
         const filtered = Array.isArray(subCatData) 
-          ? subCatData.filter(sub => sub.category_id === parseInt(categoryId))
+          ? subCatData.filter(sub => {
+              const categoryMatch = sub.category_id === parseInt(categoryId);
+              const parentId = sub.parent_id !== undefined ? sub.parent_id : 
+                             sub.parentId || 
+                             sub.parent_subcategory_id || 
+                             sub.parentSubcategoryId;
+              const isTopLevel = parentId === null || parentId === undefined || parentId === '';
+              return categoryMatch && isTopLevel;
+            })
           : [];
         setSubCategories(filtered);
       } catch (altError) {
@@ -174,17 +259,57 @@ const ProductModal = ({ product, onClose }) => {
     }
   };
 
+  const fetchNestedSubCategories = async (subCategoryId) => {
+    if (!subCategoryId) {
+      setNestedSubCategories([]);
+      return;
+    }
+
+    try {
+      // Per Postman collection: Use /subcategories/by-parent/:parentId to get nested subcategories
+      // This is the recommended endpoint for cascading dropdowns
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_PARENT(subCategoryId));
+      const responseData = response.data?.data || response.data || {};
+      const nestedData = responseData.subcategories || responseData || [];
+      
+      console.log(`📊 Fetched ${nestedData.length} nested subcategories for parent ${subCategoryId}`);
+      setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);
+    } catch (error) {
+      console.warn('Failed to fetch nested subcategories using by-parent, trying alternative endpoint...', error);
+      // Fallback to alternative endpoint: /subcategories/:id/subcategories
+      try {
+        const response = await api.get(API_ROUTES.SUBCATEGORIES.NESTED(subCategoryId));
+        const responseData = response.data?.data || response.data || {};
+        const nestedData = responseData.subcategories || responseData || [];
+        setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);
+      } catch (altError) {
+        console.warn('Alternative nested subcategories fetch also failed', altError);
+      setNestedSubCategories([]);
+      }
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    // If category changes, fetch subcategories and reset subcategory selection
+    // If category changes, fetch subcategories and reset subcategory selections
     if (name === 'category_id') {
       setFormData({ 
         ...formData, 
         [name]: type === 'checkbox' ? checked : value,
-        sub_category_id: '' // Reset subcategory when category changes
+        sub_category_id: '', // Reset subcategory when category changes
+        parent_subcategory_id: '' // Reset nested subcategory
       });
       fetchSubCategories(value);
+      setNestedSubCategories([]);
+    } else if (name === 'sub_category_id') {
+      // When subcategory changes, reset nested subcategory
+      // The useEffect will automatically fetch nested subcategories when sub_category_id changes
+      setFormData({ 
+        ...formData, 
+        [name]: type === 'checkbox' ? checked : value,
+        parent_subcategory_id: '' // Reset nested subcategory when parent changes
+      });
     } else {
       setFormData({ 
         ...formData, 
@@ -194,69 +319,75 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate all files
+    const validFiles = [];
+    const invalidFiles = [];
+
+    files.forEach((file) => {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        toast.error('Please select a valid image file');
-        e.target.value = ''; // Reset input
+        invalidFiles.push(`${file.name}: Not an image file`);
         return;
       }
-      // Validate file size (max 5MB)
+      // Validate file size (max 5MB per image)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should be less than 5MB');
-        e.target.value = ''; // Reset input
+        invalidFiles.push(`${file.name}: Size exceeds 5MB`);
         return;
       }
-      
-      // Set the image file - this is critical for updates
-      // Make sure we're setting a File object, not a string
-      if (file instanceof File) {
-        setImageFile(file);
-        
-        // Create preview
-        const reader = new FileReader();
-        
-        reader.onload = () => {
-          if (reader.result) {
-            setImagePreview(reader.result);
-            // Show success message when image is selected
-            if (product) {
-              toast.success('New image selected. Click Save to update.');
-            }
-          } else {
-            toast.error('Failed to load image preview');
-          }
-        };
-        
-        reader.onerror = (error) => {
-          console.error('FileReader error:', error);
-          toast.error('Error reading image file');
-          setImageFile(null);
-          setImagePreview(null);
-          e.target.value = ''; // Reset input
-        };
-        
-        try {
-          reader.readAsDataURL(file);
-        } catch (error) {
-          console.error('Error reading file:', error);
-          toast.error('Failed to read image file');
-          setImageFile(null);
-          setImagePreview(null);
-          e.target.value = '';
-        }
-      } else {
-        toast.error('Invalid file selected');
-        e.target.value = '';
-      }
-    } else {
-      // No file selected - don't clear if editing (keep existing preview)
-      if (!product) {
-        setImageFile(null);
-        setImagePreview(null);
-      }
+      validFiles.push(file);
+    });
+
+    // Show errors for invalid files
+    if (invalidFiles.length > 0) {
+      toast.error(`Invalid files:\n${invalidFiles.join('\n')}`);
     }
+
+    if (validFiles.length > 0) {
+      // Add new files to existing ones (or replace if editing)
+      const newFiles = product ? validFiles : [...imageFiles, ...validFiles];
+      setImageFiles(newFiles);
+
+      // Create previews for all valid files
+      const previewPromises = validFiles.map((file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(previewPromises).then((previews) => {
+        const validPreviews = previews.filter(Boolean);
+        const newPreviews = product ? validPreviews : [...imagePreviews, ...validPreviews];
+        setImagePreviews(newPreviews);
+        
+        if (product) {
+          toast.success(`${validFiles.length} new image(s) selected. Click Save to update.`);
+        } else {
+          toast.success(`${validFiles.length} image(s) added`);
+        }
+      });
+    }
+
+    // Reset input to allow selecting the same file again
+    e.target.value = '';
+  };
+
+  const removeImage = (index) => {
+    const newFiles = [...imageFiles];
+    const newPreviews = [...imagePreviews];
+    
+    // Remove from both arrays
+    newFiles.splice(index, 1);
+    newPreviews.splice(index, 1);
+    
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+    toast.success('Image removed');
   };
 
   const handleSubmit = async (e) => {
@@ -304,7 +435,15 @@ const ProductModal = ({ product, onClose }) => {
           dataToSend.category_id = categoryId;
         }
       }
-      if (formData.sub_category_id) {
+      // Handle subcategory selection: if nested subcategory is selected, use it; otherwise use parent subcategory
+      if (formData.parent_subcategory_id) {
+        // Nested subcategory selected - use it as the final sub_category_id
+        const nestedSubCategoryId = parseInt(formData.parent_subcategory_id);
+        if (!isNaN(nestedSubCategoryId)) {
+          dataToSend.sub_category_id = nestedSubCategoryId;
+        }
+      } else if (formData.sub_category_id) {
+        // Only parent subcategory selected - use it
         const subCategoryId = parseInt(formData.sub_category_id);
         if (!isNaN(subCategoryId)) {
           dataToSend.sub_category_id = subCategoryId;
@@ -361,8 +500,8 @@ const ProductModal = ({ product, onClose }) => {
       let response;
       let imageUploadFailed = false;
       
-      // If we have an image file, try to upload with FormData first
-      if (imageFile && imageFile instanceof File) {
+      // If we have image files, try to upload with FormData first
+      if (imageFiles && imageFiles.length > 0 && imageFiles.every(file => file instanceof File)) {
         try {
           const submitData = new FormData();
           
@@ -385,20 +524,22 @@ const ProductModal = ({ product, onClose }) => {
             }
           });
 
-          // Add image file - API expects 'images' (plural)
-          // Make sure we're appending the actual File object
-          submitData.append('images', imageFile);
+          // Add all image files - API expects 'images' (plural) array
+          // Append each file to FormData
+          imageFiles.forEach((file) => {
+            submitData.append('images', file);
+          });
           
           // For updates, also send a flag to replace existing images
           if (product) {
             submitData.append('replace_images', 'true');
           }
           
-          // Debug: Log that we're sending an image
-          console.log('Sending image update:', {
-            fileName: imageFile.name,
-            fileSize: imageFile.size,
-            fileType: imageFile.type,
+          // Debug: Log that we're sending images
+          console.log('Sending images:', {
+            fileCount: imageFiles.length,
+            fileNames: imageFiles.map(f => f.name),
+            totalSize: imageFiles.reduce((sum, f) => sum + f.size, 0),
             isUpdate: !!product
           });
 
@@ -417,24 +558,24 @@ const ProductModal = ({ product, onClose }) => {
                            errorString.includes('upload failed');
           
           if (isS3Error) {
-            // If S3 upload fails, try saving without image
+            // If S3 upload fails, try saving without images
             imageUploadFailed = true;
-            toast.warning('Image upload failed. Saving product without image...');
+            toast.warning('Image upload failed. Saving product without images...');
             
-            // Retry without image
+            // Retry without images
             if (product) {
               response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), dataToSend);
             } else {
               response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
             }
-            toast.success('Product saved successfully (without image). Please configure S3 to enable image uploads.');
+            toast.success('Product saved successfully (without images). Please configure S3 to enable image uploads.');
           } else {
             // Re-throw if it's not an S3 error
             throw imageError;
           }
         }
       } else {
-        // No image - send as JSON
+        // No images - send as JSON
         if (product) {
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), dataToSend);
         } else {
@@ -450,8 +591,8 @@ const ProductModal = ({ product, onClose }) => {
         toast.success(successMessage);
       }
       
-      // Reset image file after successful save
-      setImageFile(null);
+      // Reset image files after successful save
+      setImageFiles([]);
       onClose();
     } catch (error) {
       console.error('Product save error:', error);
@@ -518,8 +659,9 @@ const ProductModal = ({ product, onClose }) => {
 
   const modalContent = (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200/50 overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
             {product ? 'Edit Product' : 'Add Product'}
           </h2>
@@ -532,57 +674,103 @@ const ProductModal = ({ product, onClose }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Image Upload - Enhanced Design */}
-          <div>
+        {/* Scrollable Form Content */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+          <div className="p-6 space-y-6">
+          {/* Multiple Images Upload - Enhanced Design */}
+          <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Product Image
+              Product Images <span className="text-indigo-600 font-bold">(Multiple Selection Supported)</span>
             </label>
-            <div className="space-y-3">
-              {imagePreview && (
-                <div className="relative inline-block">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-32 h-32 object-cover rounded-xl border-2 border-gray-200 shadow-md"
-                    onError={(e) => {
-                      console.error('Image preview error:', e);
-                      toast.error('Failed to display image preview');
-                      setImagePreview(null);
-                      setImageFile(null);
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImagePreview(null);
-                      setImageFile(null);
-                      const fileInput = document.getElementById('product-image-input');
-                      if (fileInput) fileInput.value = '';
-                    }}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg"
-                    title="Remove image"
-                  >
-                    <FiX className="w-4 h-4" />
-                  </button>
+            <div className="space-y-4">
+              {/* Display existing/preview images */}
+              {imagePreviews.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      Selected Images ({imagePreviews.length})
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageFiles([]);
+                        setImagePreviews([]);
+                        toast.success('All images cleared');
+                      }}
+                      className="text-xs text-red-600 hover:text-red-800 font-medium"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-xl border-2 border-gray-200 shadow-md hover:border-indigo-400 transition-all"
+                          onError={(e) => {
+                            console.error('Image preview error:', e);
+                            toast.error(`Failed to display image ${index + 1}`);
+                            // Remove failed image
+                            removeImage(index);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
+                          title="Remove image"
+                        >
+                          <FiX className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs text-center py-1.5 rounded-b-xl">
+                          Image {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all duration-200 bg-gray-50/50">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <FiUpload className="w-10 h-10 text-gray-400 mb-3" />
-                  <p className="text-sm font-medium text-gray-600">
-                    {imagePreview ? 'Change Image' : 'Click to upload'}
+              
+              {/* Upload area - Enhanced */}
+              <label 
+                htmlFor="product-image-input"
+                className="flex flex-col items-center justify-center w-full min-h-[180px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-200 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 group"
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                  <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-4 group-hover:bg-indigo-200 transition-colors">
+                    <FiUpload className="w-8 h-8 text-indigo-600" />
+                  </div>
+                  <p className="text-base font-semibold text-gray-700 mb-1">
+                    {imagePreviews.length > 0 ? 'Add More Images' : 'Click to Select Multiple Images'}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                  <p className="text-sm text-gray-600 text-center">
+                    You can select multiple images at once
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Supported formats: PNG, JPG, JPEG, WEBP • Max 5MB per image
+                  </p>
+                  {imagePreviews.length > 0 && (
+                    <div className="mt-3 px-4 py-2 bg-indigo-100 rounded-lg">
+                      <p className="text-sm text-indigo-700 font-semibold">
+                        ✓ {imagePreviews.length} image{imagePreviews.length !== 1 ? 's' : ''} selected
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleImageChange}
                   className="hidden"
                   id="product-image-input"
                 />
               </label>
+              <p className="text-xs text-gray-500 text-center">
+                💡 Tip: Hold Ctrl (Windows) or Cmd (Mac) to select multiple images, or drag and drop files
+              </p>
             </div>
           </div>
 
@@ -705,45 +893,82 @@ const ProductModal = ({ product, onClose }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Category
-              </label>
-              <select
-                name="category_id"
-                value={formData.category_id}
-                onChange={handleChange}
-                className="input-modern"
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="category_id"
+                  value={formData.category_id}
+                  onChange={handleChange}
+                  className="input-modern"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  SubCategory
+                </label>
+                <select
+                  name="sub_category_id"
+                  value={formData.sub_category_id}
+                  onChange={handleChange}
+                  disabled={!formData.category_id}
+                  className="input-modern disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">{formData.category_id ? 'Select SubCategory' : 'Select Category First'}</option>
+                  {subCategories.map((subCat) => (
+                    <option key={subCat.id} value={subCat.id}>
+                      {subCat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                SubCategory
-              </label>
-              <select
-                name="sub_category_id"
-                value={formData.sub_category_id}
-                onChange={handleChange}
-                disabled={!formData.category_id}
-                className="input-modern disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                <option value="">{formData.category_id ? 'Select SubCategory' : 'Select Category First'}</option>
-                {subCategories.map((subCat) => (
-                  <option key={subCat.id} value={subCat.id}>
-                    {subCat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Sub-SubCategory Selection - Show when subcategory is selected */}
+            {formData.sub_category_id && (
+              <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Sub-SubCategory <span className="text-gray-500 text-xs font-normal">(Optional - Nested Subcategory)</span>
+                </label>
+                {nestedSubCategories.length > 0 ? (
+                  <>
+                    <select
+                      name="parent_subcategory_id"
+                      value={formData.parent_subcategory_id}
+                      onChange={handleChange}
+                      className="input-modern border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      <option value="">None (Use parent SubCategory)</option>
+                      {nestedSubCategories.map((nestedSubCat) => (
+                        <option key={nestedSubCat.id} value={nestedSubCat.id}>
+                          {nestedSubCat.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-blue-600 mt-2 flex items-center">
+                      <span className="mr-1">ℹ️</span>
+                      Select a sub-subcategory if this product belongs to a nested subcategory under "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}"
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-sm text-gray-500 italic py-2 bg-white rounded px-3 border border-gray-200">
+                    No sub-subcategories available for "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}". This product will use the parent SubCategory.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -955,8 +1180,10 @@ const ProductModal = ({ product, onClose }) => {
               <span className="ml-2 text-sm font-medium text-gray-700">Featured</span>
             </label>
           </div>
+          </div>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
+          {/* Fixed Footer with Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 p-6 border-t border-gray-200 bg-white flex-shrink-0">
             <button
               type="button"
               onClick={onClose}

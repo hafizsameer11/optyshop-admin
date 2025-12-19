@@ -6,8 +6,10 @@ import { API_ROUTES } from '../../config/apiRoutes';
 import SubmissionsTable from '../../components/SubmissionsTable';
 import SubmissionDrawer from '../../components/SubmissionDrawer';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { useI18n } from '../../context/I18nContext';
 
 const DemoRequests = () => {
+    const { t } = useI18n();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
@@ -50,7 +52,7 @@ const DemoRequests = () => {
         } catch (error) {
             console.error("Failed to fetch demo requests", error);
             if (error.response?.status !== 404) {
-                toast.error("Failed to load demo requests");
+                toast.error(`${t('failedToLoad')} ${t('demoRequests').toLowerCase()}`);
             }
             setData([]);
         } finally {
@@ -74,12 +76,12 @@ const DemoRequests = () => {
 
     const handleDelete = async (id, e) => {
         e.stopPropagation();
-        if (!window.confirm('Are you sure you want to delete this demo request?')) {
+        if (!window.confirm(`${t('areYouSure')} ${t('demoRequests').toLowerCase()}?`)) {
             return;
         }
         try {
             await api.delete(API_ROUTES.ADMIN.DEMO_REQUESTS.DELETE(id));
-            toast.success('Demo request deleted successfully');
+            toast.success(`${t('demoRequests')} ${t('deletedSuccessfully')}`);
             fetchData();
             if (drawerOpen && selectedItem?.id === id) {
                 setDrawerOpen(false);
@@ -87,26 +89,26 @@ const DemoRequests = () => {
             }
         } catch (error) {
             console.error("Failed to delete demo request", error);
-            toast.error(error.response?.data?.message || "Failed to delete demo request");
+            toast.error(error.response?.data?.message || `${t('failedToDelete')} ${t('demoRequests').toLowerCase()}`);
         }
     };
 
     const columns = [
         { 
-            title: 'Date', 
+            title: t('date'), 
             dataIndex: 'createdAt', 
             render: (row) => row.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A' 
         },
         { 
-            title: 'Name', 
+            title: t('name'), 
             dataIndex: 'fullName',
             render: (row) => <span className="font-medium text-gray-900">{row.fullName || `${row.name} ${row.surname}`}</span> 
         },
-        { title: 'Email', dataIndex: 'email' },
-        { title: 'Company', dataIndex: 'companyName' },
-        { title: 'Village', dataIndex: 'village' },
+        { title: t('email'), dataIndex: 'email' },
+        { title: t('company'), dataIndex: 'companyName' },
+        { title: t('village'), dataIndex: 'village' },
         { 
-            title: 'Website', 
+            title: t('website'), 
             dataIndex: 'websiteUrl',
             render: (row) => row.websiteUrl ? (
                 <a href={row.websiteUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-indigo-600 hover:underline truncate max-w-xs block">
@@ -115,17 +117,17 @@ const DemoRequests = () => {
             ) : '-'
         },
         { 
-            title: 'Frames', 
+            title: t('framesInCatalog'), 
             dataIndex: 'framesInCatalog',
             render: (row) => row.framesInCatalog || '-'
         },
         {
-            title: 'Actions',
+            title: t('actions'),
             render: (row) => (
                 <button
                     onClick={(e) => handleDelete(row.id, e)}
                     className="text-red-600 hover:text-red-900"
-                    title="Delete"
+                    title={t('delete')}
                 >
                     <FiTrash2 className="w-5 h-5" />
                 </button>
@@ -134,28 +136,28 @@ const DemoRequests = () => {
     ];
 
     const drawerFields = [
-        { label: 'Full Name', key: 'fullName', icon: FiUser },
-        { label: 'Email Address', key: 'email', icon: FiMail },
-        { label: 'Company', key: 'companyName', icon: FiBriefcase },
-        { label: 'Village', key: 'village', icon: FiMapPin },
-        { label: 'Website URL', key: 'websiteUrl', icon: FiGlobe, type: 'link' },
-        { label: 'Frames in Catalog', key: 'framesInCatalog', icon: FiBriefcase },
-        { label: 'Message', key: 'message', icon: FiMessageSquare, type: 'long-text' },
+        { label: t('fullName'), key: 'fullName', icon: FiUser },
+        { label: t('emailAddress'), key: 'email', icon: FiMail },
+        { label: t('company'), key: 'companyName', icon: FiBriefcase },
+        { label: t('village'), key: 'village', icon: FiMapPin },
+        { label: t('websiteUrl'), key: 'websiteUrl', icon: FiGlobe, type: 'link' },
+        { label: t('framesInCatalog'), key: 'framesInCatalog', icon: FiBriefcase },
+        { label: t('message'), key: 'message', icon: FiMessageSquare, type: 'long-text' },
     ];
 
     return (
         <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Demo Requests</h1>
-                    <p className="text-sm text-gray-500">Manage live demo bookings</p>
+                    <h1 className="text-2xl font-bold text-gray-900">{t('demoRequests')}</h1>
+                    <p className="text-sm text-gray-500">{t('manageDemoBookings')}</p>
                 </div>
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <LanguageSwitcher variant="compact" />
                     <div className="w-full md:w-64">
                         <input
                             type="text"
-                            placeholder="Search requests..."
+                            placeholder={t('searchRequests')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
@@ -171,7 +173,7 @@ const DemoRequests = () => {
                 pagination={pagination}
                 onPageChange={(page) => setPagination(prev => ({ ...prev, page }))}
                 onRowClick={handleRowClick}
-                emptyMessage="No demo requests found."
+                emptyMessage={t('noDemoRequests')}
             />
 
             <SubmissionDrawer

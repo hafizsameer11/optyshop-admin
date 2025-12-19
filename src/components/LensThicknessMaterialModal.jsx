@@ -4,8 +4,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const LensThicknessMaterialModal = ({ material, onClose }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',

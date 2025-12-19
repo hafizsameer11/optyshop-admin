@@ -5,8 +5,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const UserModal = ({ user, onClose }) => {
+  const { t } = useI18n();
   const isEditMode = !!user;
   const [formData, setFormData] = useState({
     email: user?.email || '',
@@ -75,7 +77,7 @@ const UserModal = ({ user, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {isEditMode ? 'Edit User' : 'Add New User'}
+            {isEditMode ? t('editUser') : t('addNewUser')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -92,7 +94,7 @@ const UserModal = ({ user, onClose }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Email <span className="text-red-500">*</span>
+              {t('email')} <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -107,7 +109,7 @@ const UserModal = ({ user, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                First Name <span className="text-red-500">*</span>
+                {t('firstName')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -120,7 +122,7 @@ const UserModal = ({ user, onClose }) => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Last Name <span className="text-red-500">*</span>
+                {t('lastName')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -134,7 +136,7 @@ const UserModal = ({ user, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('phone')}</label>
             <input
               type="tel"
               value={formData.phone}
@@ -147,7 +149,7 @@ const UserModal = ({ user, onClose }) => {
           {!isEditMode && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password <span className="text-red-500">*</span>
+                {t('password')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
@@ -162,7 +164,7 @@ const UserModal = ({ user, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Role <span className="text-red-500">*</span>
+              {t('role')} <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.role}
@@ -185,7 +187,7 @@ const UserModal = ({ user, onClose }) => {
               className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
             <label htmlFor="is_active" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
-              Active Account
+              {t('active')}
             </label>
           </div>
 
@@ -195,14 +197,14 @@ const UserModal = ({ user, onClose }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

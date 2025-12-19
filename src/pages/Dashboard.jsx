@@ -9,6 +9,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 // Premium Stat Card with Gradient
 const StatCard = ({ title, value, icon: Icon, gradient, trend }) => (
@@ -36,6 +37,7 @@ const StatCard = ({ title, value, icon: Icon, gradient, trend }) => (
 );
 
 const Dashboard = () => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -158,17 +160,17 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between space-y-4 md:space-y-0 pb-4 border-b border-gray-200/50">
         <div>
           <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight font-display">
-            Dashboard
+            {t('dashboard')}
           </h1>
-          <p className="text-gray-500 mt-1 font-medium">Welcome back! Here's what's happening today.</p>
+          <p className="text-gray-500 mt-1 font-medium">{t('welcomeBack')}</p>
         </div>
         <div className="flex items-center space-x-3">
           <LanguageSwitcher variant="compact" />
           <button className="px-4 py-2 bg-white text-gray-600 rounded-lg text-sm font-semibold shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors">
-            Share Report
+            {t('shareReport')}
           </button>
           <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:-translate-y-0.5">
-            Export Data
+            {t('exportData')}
           </button>
         </div>
       </div>
@@ -176,27 +178,27 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Revenue"
+          title={t('totalRevenue')}
           value={`$${stats.totalRevenue?.toLocaleString() || 0}`}
           icon={FiDollarSign}
           gradient="bg-gradient-to-br from-emerald-400 to-teal-600"
           trend={12.5}
         />
         <StatCard
-          title="Total Orders"
+          title={t('totalOrders')}
           value={stats.totalOrders || 0}
           icon={FiShoppingCart}
           gradient="bg-gradient-to-br from-blue-400 to-indigo-600"
           trend={8.2}
         />
         <StatCard
-          title="Total Products"
+          title={t('totalProducts')}
           value={stats.totalProducts || 0}
           icon={FiShoppingBag}
           gradient="bg-gradient-to-br from-violet-400 to-purple-600"
         />
         <StatCard
-          title="Active Users"
+          title={t('activeUsers')}
           value={stats.totalUsers || 0}
           icon={FiUsers}
           gradient="bg-gradient-to-br from-orange-400 to-rose-500"
@@ -213,8 +215,8 @@ const Dashboard = () => {
           <div className="glass-card p-6 md:p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-xl font-bold text-gray-800">Revenue Analytics</h2>
-                <p className="text-sm text-gray-500">Monthly revenue performance</p>
+                <h2 className="text-xl font-bold text-gray-800">{t('revenueAnalytics')}</h2>
+                <p className="text-sm text-gray-500">{t('monthlyRevenuePerformance')}</p>
               </div>
               <select className="bg-gray-50 border-none text-sm font-medium text-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-100 cursor-pointer py-2 px-4 shadow-sm">
                 <option>Last 30 Days</option>
@@ -328,25 +330,25 @@ const Dashboard = () => {
           {/* Quick Actions */}
           <div className="glass-card p-6 bg-gradient-to-br from-indigo-600 to-violet-700 text-white border-none">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold">Quick Actions</h2>
+              <h2 className="text-lg font-bold">{t('quickActions')}</h2>
               <FiActivity className="w-5 h-5 text-indigo-200" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <button onClick={() => navigate('/products')} className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10 group">
                 <FiShoppingBag className="w-6 h-6 mb-2 text-indigo-100 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold">New Product</span>
+                <span className="text-xs font-semibold">{t('newProduct')}</span>
               </button>
               <button onClick={() => navigate('/orders')} className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10 group">
                 <FiShoppingCart className="w-6 h-6 mb-2 text-indigo-100 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold">New Order</span>
+                <span className="text-xs font-semibold">{t('newOrder')}</span>
               </button>
               <button onClick={() => navigate('/categories')} className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10 group">
                 <FiClock className="w-6 h-6 mb-2 text-indigo-100 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold">Categories</span>
+                <span className="text-xs font-semibold">{t('categories')}</span>
               </button>
               <button onClick={() => navigate('/users')} className="flex flex-col items-center justify-center p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10 group">
                 <FiUsers className="w-6 h-6 mb-2 text-indigo-100 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold">Users</span>
+                <span className="text-xs font-semibold">{t('users')}</span>
               </button>
             </div>
           </div>

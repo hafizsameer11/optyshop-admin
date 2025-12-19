@@ -1,0 +1,36 @@
+{
+  "totalPostmanEndpoints": 269,
+  "totalDefinedRoutes": 147,
+  "foundEndpoints": 248,
+  "missingEndpoints": 4,
+  "missingEndpointsList": [
+    {
+      "method": "GET",
+      "path": "auth/me",
+      "name": "Get Current User (Admin)",
+      "auth": "ADMIN",
+      "category": "Admin > Auth (Admin)"
+    },
+    {
+      "method": "PUT",
+      "path": "auth/profile",
+      "name": "Update Profile (Admin)",
+      "auth": "ADMIN",
+      "category": "Admin > Auth (Admin)"
+    },
+    {
+      "method": "PUT",
+      "path": "auth/change-password",
+      "name": "Change Password (Admin)",
+      "auth": "ADMIN",
+      "category": "Admin > Auth (Admin)"
+    },
+    {
+      "method": "POST",
+      "path": "auth/logout",
+      "name": "Logout (Admin)",
+      "auth": "ADMIN",
+      "category": "Admin > Auth (Admin)"
+    }
+  ]
+}

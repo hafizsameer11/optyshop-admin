@@ -3,13 +3,21 @@ import { FiGlobe, FiChevronDown } from 'react-icons/fi';
 import { useI18n } from '../context/I18nContext';
 
 const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
-  const { language, changeLanguage } = useI18n();
+  const { language, changeLanguage, t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
 
   const languages = [
     { code: 'en', name: 'English', flag: '🇬🇧' },
     { code: 'ar', name: 'العربية', flag: '🇸🇦' },
     { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'es', name: 'Español', flag: '🇪🇸' },
+    { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+    { code: 'pt', name: 'Português', flag: '🇵🇹' },
+    { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
+    { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+    { code: 'zh', name: '中文', flag: '🇨🇳' },
+    { code: 'ja', name: '日本語', flag: '🇯🇵' },
   ];
 
   const currentLanguage = languages.find((lang) => lang.code === language) || languages[0];
@@ -45,7 +53,7 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             ></div>
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50 max-h-80 overflow-y-auto">
               {languages.map((lang) => (
                 <button
                   key={lang.code}
@@ -89,9 +97,9 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           ></div>
-          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
-            <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Select Language
+          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50 max-h-96 overflow-y-auto">
+            <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-gray-800">
+              {t('selectLanguage')}
             </div>
             {languages.map((lang) => (
               <button

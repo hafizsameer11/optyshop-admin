@@ -4,8 +4,11 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import { sendFormSubmissionEmail } from '../utils/emailService';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const JobModal = ({ job, onClose, onSuccess }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -350,7 +353,7 @@ const JobModal = ({ job, onClose, onSuccess }) => {
               className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
             <label htmlFor="is_active" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
-              Active
+              {t('active')}
             </label>
           </div>
 
@@ -360,14 +363,14 @@ const JobModal = ({ job, onClose, onSuccess }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

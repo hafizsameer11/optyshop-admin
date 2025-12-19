@@ -5,8 +5,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const CategoryModal = ({ category, onClose }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -139,7 +141,7 @@ const CategoryModal = ({ category, onClose }) => {
           <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 custom-scrollbar">
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <label className="block text-sm font-bold text-gray-800 mb-2">
-                Name <span className="text-red-500">*</span>
+                {t('name')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -153,7 +155,7 @@ const CategoryModal = ({ category, onClose }) => {
 
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <label className="block text-sm font-bold text-gray-800 mb-2">
-                Slug <span className="text-red-500">*</span>
+                {t('slug')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -167,7 +169,7 @@ const CategoryModal = ({ category, onClose }) => {
 
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <label className="block text-sm font-bold text-gray-800 mb-2">
-                Description
+                {t('description')}
               </label>
               <textarea
                 name="description"
@@ -205,7 +207,7 @@ const CategoryModal = ({ category, onClose }) => {
                 className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
               />
               <label htmlFor="is_active" className="ml-3 block text-sm font-semibold text-gray-800 cursor-pointer">
-                Active
+                {t('active')}
               </label>
             </div>
           </div>
@@ -217,14 +219,14 @@ const CategoryModal = ({ category, onClose }) => {
               onClick={onClose}
               className="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-6 py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-200 font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

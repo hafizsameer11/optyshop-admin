@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 // Helper function to normalize image URLs
 const normalizeImageUrl = (url) => {
@@ -167,6 +168,7 @@ const ProductImage = ({ product }) => {
 };
 
 const Products = () => {
+  const { t } = useI18n();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -337,7 +339,7 @@ const Products = () => {
       {/* Enhanced Header Section - Responsive */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="page-title">Products</h1>
+          <h1 className="page-title">{t('products')}</h1>
           <p className="page-subtitle">Manage your product inventory</p>
         </div>
         <div className="flex items-center gap-3">
@@ -347,7 +349,7 @@ const Products = () => {
             className="flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 font-semibold text-sm sm:text-base w-full sm:w-auto"
           >
             <FiPlus className="w-5 h-5" />
-            <span>Add Product</span>
+            <span>{t('addProduct')}</span>
           </button>
         </div>
       </div>
@@ -360,7 +362,7 @@ const Products = () => {
             <FiSearch className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder={t('searchProducts')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="input-modern pl-10 sm:pl-12 w-full"

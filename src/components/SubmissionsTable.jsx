@@ -1,6 +1,7 @@
 import React from 'react';
 import { FiChevronLeft, FiChevronRight, FiSearch, FiFolder } from 'react-icons/fi';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const SubmissionsTable = ({
     data = [],
@@ -9,13 +10,15 @@ const SubmissionsTable = ({
     pagination = { page: 1, total: 0, limit: 10, totalPages: 1 },
     onPageChange,
     onRowClick,
-    emptyMessage = "No submissions found"
+    emptyMessage
 }) => {
+    const { t } = useI18n();
+    const defaultEmptyMessage = emptyMessage || t('noSubmissionsFound');
     if (loading) {
         return (
             <div className="w-full h-64 flex flex-col items-center justify-center space-y-4 glass-card">
                 <div className="spinner"></div>
-                <p className="text-gray-500 animate-pulse">Loading data...</p>
+                <p className="text-gray-500 animate-pulse">{t('loadingData')}</p>
             </div>
         );
     }
@@ -26,7 +29,7 @@ const SubmissionsTable = ({
                 <div className="p-4 bg-gray-50 rounded-full">
                     <FiFolder className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500">{emptyMessage}</p>
+                <p className="text-gray-500">{defaultEmptyMessage}</p>
             </div>
         );
     }
@@ -87,7 +90,7 @@ const SubmissionsTable = ({
                     </button>
 
                     <span className="px-4 py-1 bg-indigo-50 text-indigo-700 rounded-md font-medium text-sm">
-                        Page {pagination.page} of {pagination.totalPages}
+                        {t('page')} {pagination.page} {t('of')} {pagination.totalPages}
                     </span>
 
                     <button

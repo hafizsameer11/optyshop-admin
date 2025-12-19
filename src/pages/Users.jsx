@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import UserModal from '../components/UserModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const Users = () => {
+  const { t } = useI18n();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,7 +72,7 @@ const Users = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('users')}</h1>
         <div className="flex items-center gap-3">
           <LanguageSwitcher variant="compact" />
           <button
@@ -78,7 +80,7 @@ const Users = () => {
             className="flex items-center px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
           >
             <FiPlus className="mr-2" />
-            Add User
+            {t('addUser')}
           </button>
         </div>
       </div>
@@ -89,7 +91,7 @@ const Users = () => {
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder={t('searchUsers')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -102,22 +104,22 @@ const Users = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
+                  {t('name')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
+                  {t('email')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Phone
+                  {t('phone')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
+                  {t('role')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('actions')}
                 </th>
               </tr>
             </thead>
@@ -146,7 +148,7 @@ const Users = () => {
                           : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {user.is_active ? 'Active' : 'Inactive'}
+                      {user.is_active ? t('active') : t('inactive')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -169,17 +171,17 @@ const Users = () => {
             disabled={page === 1}
             className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Previous
+            {t('previous')}
           </button>
           <span className="text-sm text-gray-600">
-            Page {page} of {totalPages}
+            {t('page')} {page} {t('of')} {totalPages}
           </span>
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Next
+            {t('next')}
           </button>
         </div>
       </div>

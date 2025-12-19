@@ -19,20 +19,64 @@ const ShippingMethods = () => {
     try {
       setLoading(true);
       const response = await api.get(API_ROUTES.ADMIN.SHIPPING_METHODS.LIST);
-      console.log('Shipping methods API Response:', response.data);
+      console.log('Shipping methods API Response:', response);
+      console.log('Shipping methods API Response Data:', response.data);
       
-      const shippingMethodsData = response.data?.data?.shippingMethods || response.data?.shippingMethods || response.data?.data || response.data || [];
+      // Try multiple possible response structures
+      let shippingMethodsData = null;
+      
+      if (response.data) {
+        // Try different nested structures
+        if (Array.isArray(response.data)) {
+          shippingMethodsData = response.data;
+        } else if (Array.isArray(response.data.data)) {
+          shippingMethodsData = response.data.data;
+        } else if (Array.isArray(response.data.shippingMethods)) {
+          shippingMethodsData = response.data.shippingMethods;
+        } else if (response.data.data && Array.isArray(response.data.data.shippingMethods)) {
+          shippingMethodsData = response.data.data.shippingMethods;
+        } else if (response.data.results && Array.isArray(response.data.results)) {
+          shippingMethodsData = response.data.results;
+        } else {
+          // If it's an object, try to extract array from it
+          const keys = Object.keys(response.data);
+          for (const key of keys) {
+            if (Array.isArray(response.data[key])) {
+              shippingMethodsData = response.data[key];
+              break;
+            }
+          }
+        }
+      }
+      
       console.log('Parsed shipping methods:', shippingMethodsData);
       
-      if (Array.isArray(shippingMethodsData)) {
+      if (Array.isArray(shippingMethodsData) && shippingMethodsData.length > 0) {
         setShippingMethods(shippingMethodsData);
+      } else if (Array.isArray(shippingMethodsData)) {
+        // Empty array is valid
+        setShippingMethods([]);
       } else {
         console.error('Shipping methods data is not an array:', shippingMethodsData);
+        console.error('Full response structure:', JSON.stringify(response.data, null, 2));
         setShippingMethods([]);
+        toast.error('Failed to parse shipping methods data. Check console for details.');
       }
     } catch (error) {
       console.error('Shipping methods API error:', error);
+      console.error('Error response:', error.response?.data);
       setShippingMethods([]);
+      if (error.response) {
+        if (error.response.status === 401) {
+          toast.error('❌ Unauthorized - Please log in');
+        } else if (error.response.status === 403) {
+          toast.error('❌ Forbidden - Insufficient permissions');
+        } else {
+          toast.error(`Failed to load shipping methods: ${error.response?.data?.message || error.message}`);
+        }
+      } else {
+        toast.error('Backend unavailable - Cannot load shipping methods');
+      }
     } finally {
       setLoading(false);
     }

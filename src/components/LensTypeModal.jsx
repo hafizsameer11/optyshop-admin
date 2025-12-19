@@ -3,8 +3,11 @@ import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const LensTypeModal = ({ lensType, onClose }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -109,11 +112,12 @@ const LensTypeModal = ({ lensType, onClose }) => {
             <LanguageSwitcher variant="compact" />
             <button 
               onClick={onClose} 
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
-            aria-label="Close"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+              aria-label="Close"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
@@ -198,7 +202,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Description
+              {t('description')}
             </label>
             <textarea
               name="description"
@@ -220,7 +224,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
               className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
             <label htmlFor="is_active" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
-              Active
+              {t('active')}
             </label>
           </div>
 
@@ -230,14 +234,14 @@ const LensTypeModal = ({ lensType, onClose }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

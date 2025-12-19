@@ -4,6 +4,7 @@ import { FiX, FiDollarSign, FiXCircle, FiUser } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from './LanguageSwitcher';
 import { 
   sendOrderStatusUpdateEmail, 
   sendOrderRefundEmail, 

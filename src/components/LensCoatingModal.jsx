@@ -4,8 +4,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const LensCoatingModal = ({ lensCoating, onClose }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -120,16 +122,17 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
             <button 
               onClick={onClose} 
               className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
-            aria-label="Close"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+              aria-label="Close"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Name <span className="text-red-500">*</span>
+              {t('name')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -144,7 +147,7 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Slug <span className="text-red-500">*</span>
+              {t('slug')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -196,7 +199,7 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Description
+              {t('description')}
             </label>
             <textarea
               name="description"
@@ -218,7 +221,7 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
               className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
             <label htmlFor="is_active" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
-              Active
+              {t('active')}
             </label>
           </div>
 

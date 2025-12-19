@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import OrderModal from '../components/OrderModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const Orders = () => {
+  const { t } = useI18n();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -112,7 +114,7 @@ const Orders = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('orders')}</h1>
         <div className="flex items-center gap-3">
           <LanguageSwitcher variant="compact" />
           <button
@@ -120,7 +122,7 @@ const Orders = () => {
             className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
           >
             <FiPlus />
-            Create Order
+            {t('createOrder')}
           </button>
         </div>
       </div>
@@ -131,7 +133,7 @@ const Orders = () => {
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search orders..."
+              placeholder={t('searchOrders')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -142,12 +144,12 @@ const Orders = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="">{t('allStatus')}</option>
+            <option value="pending">{t('pending')}</option>
+            <option value="processing">{t('processing')}</option>
+            <option value="shipped">{t('shipped')}</option>
+            <option value="delivered">{t('delivered')}</option>
+            <option value="cancelled">{t('cancelled')}</option>
           </select>
         </div>
 
@@ -156,28 +158,28 @@ const Orders = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order ID
+                  {t('orderId')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order Number
+                  {t('orderNumber')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  User ID
+                  {t('userId')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
+                  {t('date')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
+                  {t('total')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Payment Status
+                  {t('paymentStatus')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('actions')}
                 </th>
               </tr>
             </thead>
@@ -185,7 +187,7 @@ const Orders = () => {
               {orders.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No orders found
+                    {t('noOrdersFound')}
                   </td>
                 </tr>
               ) : (

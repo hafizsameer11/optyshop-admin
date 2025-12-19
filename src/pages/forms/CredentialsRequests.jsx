@@ -149,8 +149,9 @@ const CredentialsRequests = () => {
                             placeholder="Search requests..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
-                    />
+                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
+                        />
+                    </div>
                 </div>
             </div>
 

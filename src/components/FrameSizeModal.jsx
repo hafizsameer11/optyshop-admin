@@ -4,8 +4,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const FrameSizeModal = ({ frameSize, onClose }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     product_id: '',
     lens_width: '',
@@ -105,10 +107,11 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
             <button 
               onClick={onClose} 
               className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
-            aria-label="Close"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+              aria-label="Close"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
@@ -228,14 +231,14 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

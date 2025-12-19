@@ -4,6 +4,7 @@ import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const CategoryModal = ({ category, onClose }) => {
   const [formData, setFormData] = useState({
@@ -121,13 +122,16 @@ const CategoryModal = ({ category, onClose }) => {
           <h2 className="text-2xl font-extrabold text-white">
             {category ? 'Edit Category' : 'Add Category'}
           </h2>
-          <button 
-            onClick={onClose} 
-            className="p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/20 transition-all duration-200"
-            aria-label="Close"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="compact" onGradient={true} />
+            <button 
+              onClick={onClose} 
+              className="p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/20 transition-all duration-200"
+              aria-label="Close"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Form Content */}

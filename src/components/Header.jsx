@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FiMenu, FiLogOut, FiBell, FiSearch, FiUser, FiSettings, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
@@ -36,6 +37,9 @@ const Header = ({ toggleSidebar }) => {
 
           {/* Right Section */}
           <div className="flex items-center gap-3">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Demo Mode Badge */}
             {isDemoMode && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg">

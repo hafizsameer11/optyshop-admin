@@ -4,6 +4,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import { sendFormSubmissionEmail } from '../utils/emailService';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const CampaignModal = ({ campaign, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -190,13 +191,16 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
             {campaign ? 'Edit Campaign' : 'Add Campaign'}
           </h2>
-          <button 
-            onClick={onClose} 
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
-            aria-label="Close"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="compact" />
+            <button 
+              onClick={onClose} 
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+              aria-label="Close"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">

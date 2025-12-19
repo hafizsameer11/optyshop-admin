@@ -133,14 +133,17 @@ const ContactRequests = () => {
                     <h1 className="text-2xl font-bold text-gray-900">Contact Requests</h1>
                     <p className="text-sm text-gray-500">Manage inquiries from the contact form</p>
                 </div>
-                <div className="w-full md:w-64">
-                    <input
-                        type="text"
-                        placeholder="Search requests..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
-                    />
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <LanguageSwitcher variant="compact" />
+                    <div className="w-full md:w-64">
+                        <input
+                            type="text"
+                            placeholder="Search requests..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
+                        />
+                    </div>
                 </div>
             </div>
 

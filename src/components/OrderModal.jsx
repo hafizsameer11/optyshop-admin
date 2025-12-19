@@ -380,13 +380,16 @@ const OrderModal = ({ order, onClose }) => {
               <p className="text-sm text-gray-500 mt-1">Order Number: {orderData.order_number}</p>
             )}
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
-            aria-label="Close"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="compact" />
+            <button 
+              onClick={onClose} 
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+              aria-label="Close"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {isCreateMode ? (

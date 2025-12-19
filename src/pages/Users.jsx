@@ -4,6 +4,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import UserModal from '../components/UserModal';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -70,13 +71,16 @@ const Users = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Users</h1>
-        <button
-          onClick={handleAddUser}
-          className="flex items-center px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
-        >
-          <FiPlus className="mr-2" />
-          Add User
-        </button>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher variant="compact" />
+          <button
+            onClick={handleAddUser}
+            className="flex items-center px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+          >
+            <FiPlus className="mr-2" />
+            Add User
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow mb-6">

@@ -4,6 +4,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 // Helper function to normalize image URLs
 const normalizeImageUrl = (url) => {
@@ -182,19 +183,41 @@ const Products = () => {
 
   const fetchSubCategories = async () => {
     try {
+      // Fetch all subcategories (including nested) to build a complete lookup map
+      // This includes both top-level and nested subcategories
       const response = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.LIST);
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
       
       if (Array.isArray(subCatData)) {
-        // Create a map of subcategory ID to name for quick lookup
+        // Create a map of subcategory ID to name and parent info for quick lookup
         const map = {};
         subCatData.forEach(subCat => {
           if (subCat.id) {
-            map[subCat.id] = subCat.name || subCat.name;
+            const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
+                           subCat.parentId || 
+                           subCat.parent_subcategory_id || 
+                           subCat.parentSubcategoryId;
+            const parentName = subCat.parent?.name || 
+                              (parentId && subCatData.find(p => p.id === parentId)?.name);
+            
+            // Build display name: if nested, show "Parent > Child" format
+            let displayName = subCat.name || '';
+            if (parentName && parentId) {
+              displayName = `${parentName} > ${displayName}`;
+            }
+            
+            map[subCat.id] = {
+              name: subCat.name || '',
+              displayName: displayName,
+              parentId: parentId || null,
+              parentName: parentName || null,
+              isNested: parentId !== null && parentId !== undefined
+            };
           }
         });
         setSubCategoriesMap(map);
+        console.log(`📊 Loaded ${Object.keys(map).length} subcategories for product lookup (including nested)`);
       }
     } catch (error) {
       console.warn('Failed to fetch subcategories for lookup:', error);
@@ -317,13 +340,16 @@ const Products = () => {
           <h1 className="page-title">Products</h1>
           <p className="page-subtitle">Manage your product inventory</p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 font-semibold text-sm sm:text-base w-full sm:w-auto"
-        >
-          <FiPlus className="w-5 h-5" />
-          <span>Add Product</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher variant="compact" />
+          <button
+            onClick={handleAdd}
+            className="flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 font-semibold text-sm sm:text-base w-full sm:w-auto"
+          >
+            <FiPlus className="w-5 h-5" />
+            <span>Add Product</span>
+          </button>
+        </div>
       </div>
 
       {/* Enhanced Search and Table Card - Responsive */}
@@ -433,17 +459,38 @@ const Products = () => {
                       {(() => {
                         const subCatId = product.sub_category_id || product.subcategory_id || product.subCategoryId;
                         if (!subCatId) return '-';
-                        const subCatName = product.subcategory?.name || 
-                                         product.sub_category?.name || 
-                                         product.SubCategory?.name ||
-                                         product.subCategory?.name ||
-                                         subCategoriesMap[subCatId];
+                        
+                        // Try to get subcategory info from product object first
+                        const subCatFromProduct = product.subcategory || 
+                                                 product.sub_category || 
+                                                 product.SubCategory ||
+                                                 product.subCategory;
+                        
+                        // Then try lookup map
+                        const subCatInfo = subCategoriesMap[subCatId];
+                        
+                        // Build display: show nested hierarchy if available
+                        let displayName = subCatFromProduct?.name || 
+                                        subCatInfo?.displayName || 
+                                        subCatInfo?.name || 
+                                        subCatId;
+                        
+                        const isNested = subCatInfo?.isNested || 
+                                        subCatFromProduct?.parent_id !== null && subCatFromProduct?.parent_id !== undefined;
+                        
                         return (
                           <>
-                            <div>{String(subCatId)}</div>
-                            {subCatName && (
-                              <div className="text-xs text-gray-400 mt-1">{subCatName}</div>
+                            <div className={isNested ? 'text-indigo-600 font-medium' : ''}>
+                              {displayName}
+                            </div>
+                            {isNested && subCatInfo?.parentName && (
+                              <div className="text-xs text-gray-400 mt-1">
+                                Nested under: {subCatInfo.parentName}
+                              </div>
                             )}
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              ID: {String(subCatId)}
+                            </div>
                           </>
                         );
                       })()}

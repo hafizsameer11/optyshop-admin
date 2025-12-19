@@ -4,6 +4,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import OrderModal from '../components/OrderModal';
 import { API_ROUTES } from '../config/apiRoutes';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -112,13 +113,16 @@ const Orders = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-        <button
-          onClick={handleCreateOrder}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
-        >
-          <FiPlus />
-          Create Order
-        </button>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher variant="compact" />
+          <button
+            onClick={handleCreateOrder}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+          >
+            <FiPlus />
+            Create Order
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow mb-6">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { FiChevronLeft, FiChevronRight, FiSearch, FiFolder } from 'react-icons/fi';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const SubmissionsTable = ({
     data = [],
@@ -32,6 +33,9 @@ const SubmissionsTable = ({
 
     return (
         <div className="glass-card overflow-hidden flex flex-col h-full">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-end">
+                <LanguageSwitcher variant="compact" />
+            </div>
             <div className="overflow-x-auto flex-1">
                 <table className="w-full text-left border-collapse">
                     <thead>

@@ -5,6 +5,7 @@ import api from '../../utils/api';
 import { API_ROUTES } from '../../config/apiRoutes';
 import SubmissionsTable from '../../components/SubmissionsTable';
 import JobApplicationDrawer from '../../components/JobApplicationDrawer';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 const JobApplications = () => {
     const [data, setData] = useState([]);
@@ -241,24 +242,27 @@ const JobApplications = () => {
                     <h1 className="text-2xl font-bold text-gray-900">Job Applications</h1>
                     <p className="text-sm text-gray-500">Review and manage job applications</p>
                 </div>
-                <div className="flex gap-4">
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                    <input
-                        type="text"
-                        placeholder="Search applicants..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full md:w-64 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
-                    />
+                <div className="flex items-center gap-3">
+                    <LanguageSwitcher variant="compact" />
+                    <div className="flex gap-4">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                        <input
+                            type="text"
+                            placeholder="Search applicants..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full md:w-64 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
+                        />
+                    </div>
                 </div>
             </div>
 

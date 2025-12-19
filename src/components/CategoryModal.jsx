@@ -135,8 +135,8 @@ const CategoryModal = ({ category, onClose }) => {
         </div>
 
         {/* Scrollable Form Content */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col custom-scrollbar" style={{ maxHeight: 'calc(90vh - 140px)' }}>
-          <div className="p-6 space-y-6 bg-gray-50/50 flex-1 min-h-0">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 custom-scrollbar">
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <label className="block text-sm font-bold text-gray-800 mb-2">
                 Name <span className="text-red-500">*</span>
@@ -211,7 +211,7 @@ const CategoryModal = ({ category, onClose }) => {
           </div>
 
           {/* Fixed Footer with Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 p-6 border-t border-gray-200 bg-white flex-shrink-0">
+          <div className="flex flex-row justify-between items-center gap-3 p-6 border-t border-gray-200 bg-white flex-shrink-0 mt-auto">
             <button
               type="button"
               onClick={onClose}
@@ -222,7 +222,7 @@ const CategoryModal = ({ category, onClose }) => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className="px-6 py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-200 font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Saving...' : 'Save'}
             </button>

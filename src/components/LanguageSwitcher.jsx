@@ -22,7 +22,7 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
   // Compact variant for tables and forms
   if (variant === 'compact') {
     const buttonClasses = onGradient
-      ? "flex items-center gap-2 px-3 py-1.5 text-sm bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm"
+      ? "flex items-center gap-2 px-3 py-1.5 text-sm bg-white/25 hover:bg-white/40 text-white rounded-lg transition-colors backdrop-blur-sm border border-white/30 shadow-sm"
       : "flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors";
     
     const iconClasses = onGradient ? "text-white" : "";
@@ -35,7 +35,7 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
           title="Change language"
         >
           <span className="text-base">{currentLanguage.flag}</span>
-          <span className={`hidden sm:inline ${onGradient ? 'text-white' : ''}`}>{currentLanguage.code.toUpperCase()}</span>
+          <span className={`hidden sm:inline font-medium ${onGradient ? 'text-white' : ''}`}>{currentLanguage.code.toUpperCase()}</span>
           <FiChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''} ${iconClasses}`} />
         </button>
 

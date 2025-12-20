@@ -10,16 +10,21 @@ const LensOptions = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLensOption, setSelectedLensOption] = useState(null);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'photochromic', 'prescription_sun', etc.
 
   useEffect(() => {
     fetchLensOptions();
-  }, []);
+  }, [filterType]);
 
   const fetchLensOptions = async () => {
     try {
       setLoading(true);
-      // Fetch with high limit to get all records
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_OPTIONS.LIST}?page=1&limit=1000`);
+      // Build query string with optional type filter
+      let queryString = 'page=1&limit=1000';
+      if (filterType !== 'all') {
+        queryString += `&type=${filterType}`;
+      }
+      const response = await api.get(`${API_ROUTES.ADMIN.LENS_OPTIONS.LIST}?${queryString}`);
       console.log('Lens options API Response:', JSON.stringify(response.data, null, 2));
       
       // Handle various response structures from the API
@@ -159,17 +164,43 @@ const LensOptions = () => {
     );
   }
 
+  // Filter options for the type dropdown
+  const typeFilters = [
+    { value: 'all', label: 'All Types' },
+    { value: 'photochromic', label: 'Photochromic' },
+    { value: 'prescription_sun', label: 'Prescription Sun' },
+    { value: 'prescription-sun', label: 'Prescription Sun (Alt)' },
+    { value: 'mirror', label: 'Mirror' },
+    { value: 'classic', label: 'Classic' },
+    { value: 'gradient', label: 'Gradient' },
+    { value: 'polarized', label: 'Polarized' },
+  ];
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Lens Options</h1>
-        <button
-          onClick={handleAdd}
-          className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
-        >
-          <FiPlus />
-          <span>Add Lens Option</span>
-        </button>
+        <div className="flex items-center gap-4">
+          {/* Type Filter */}
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {typeFilters.map((filter) => (
+              <option key={filter.value} value={filter.value}>
+                {filter.label}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleAdd}
+            className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+          >
+            <FiPlus />
+            <span>Add Lens Option</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">

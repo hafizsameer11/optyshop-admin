@@ -31,12 +31,18 @@ const ShippingMethods = () => {
           shippingMethodsData = response.data;
         } else if (Array.isArray(response.data.data)) {
           shippingMethodsData = response.data.data;
+        } else if (response.data.data && Array.isArray(response.data.data.methods)) {
+          // Handle structure: { data: { methods: [], pagination: {} } }
+          shippingMethodsData = response.data.data.methods;
         } else if (Array.isArray(response.data.shippingMethods)) {
           shippingMethodsData = response.data.shippingMethods;
         } else if (response.data.data && Array.isArray(response.data.data.shippingMethods)) {
           shippingMethodsData = response.data.data.shippingMethods;
         } else if (response.data.results && Array.isArray(response.data.results)) {
           shippingMethodsData = response.data.results;
+        } else if (Array.isArray(response.data.methods)) {
+          // Handle structure: { methods: [] }
+          shippingMethodsData = response.data.methods;
         } else {
           // If it's an object, try to extract array from it
           const keys = Object.keys(response.data);
@@ -44,6 +50,16 @@ const ShippingMethods = () => {
             if (Array.isArray(response.data[key])) {
               shippingMethodsData = response.data[key];
               break;
+            }
+          }
+          // Also check nested data object
+          if (!shippingMethodsData && response.data.data) {
+            const dataKeys = Object.keys(response.data.data);
+            for (const key of dataKeys) {
+              if (Array.isArray(response.data.data[key])) {
+                shippingMethodsData = response.data.data[key];
+                break;
+              }
             }
           }
         }
@@ -163,16 +179,16 @@ const ShippingMethods = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{method.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{method.type || 'N/A'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${method.price || '0.00'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{method.estimated_days || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{method.estimatedDays || method.estimated_days || 'N/A'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          method.is_active
+                          method.isActive || method.is_active
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        {method.is_active ? 'Active' : 'Inactive'}
+                        {method.isActive || method.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

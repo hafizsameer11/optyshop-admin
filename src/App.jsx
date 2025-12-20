@@ -37,6 +37,8 @@ import Transactions from './pages/Transactions';
 import ShippingMethods from './pages/ShippingMethods';
 import Analytics from './pages/Analytics';
 import Overview from './pages/Overview';
+import ProfileSettings from './pages/ProfileSettings';
+import Preferences from './pages/Preferences';
 
 // Forms Module
 import ContactRequests from './pages/forms/ContactRequests';
@@ -117,6 +119,8 @@ function App() {
                     <Route path="/transactions" element={<Transactions />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/overview" element={<Overview />} />
+                    <Route path="/profile" element={<ProfileSettings />} />
+                    <Route path="/preferences" element={<Preferences />} />
                   </Routes>
                 </Layout>
               </PrivateRoute>

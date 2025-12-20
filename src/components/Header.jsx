@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiMenu, FiLogOut, FiBell, FiSearch, FiUser, FiSettings, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const isDemoMode = localStorage.getItem('demo_user') !== null;
 
@@ -87,6 +89,7 @@ const Header = ({ toggleSidebar }) => {
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
+                        navigate('/profile');
                       }}
                       className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                     >
@@ -96,6 +99,7 @@ const Header = ({ toggleSidebar }) => {
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
+                        navigate('/preferences');
                       }}
                       className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                     >

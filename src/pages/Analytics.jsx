@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiTrendingUp, FiEye, FiShoppingCart, FiActivity, FiAlertCircle, FiBarChart2 } from 'react-icons/fi';
+import { FiTrendingUp, FiEye, FiShoppingCart, FiActivity, FiAlertCircle, FiBarChart2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -13,10 +13,12 @@ const Analytics = () => {
   const [errorLogs, setErrorLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
+  const [adminLogsPagination, setAdminLogsPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 1 });
+  const [errorLogsPagination, setErrorLogsPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 1 });
 
   useEffect(() => {
     fetchAnalytics();
-  }, [activeTab, period]);
+  }, [activeTab, period, adminLogsPagination.page, errorLogsPagination.page]);
 
   const fetchAnalytics = async () => {
     try {
@@ -35,13 +37,137 @@ const Analytics = () => {
         const data = response.data?.data || response.data || {};
         setConversionData(data);
       } else if (activeTab === 'admin-logs') {
-        const response = await api.get(API_ROUTES.ANALYTICS.LOGS.ADMIN);
-        const logs = response.data?.data || response.data || [];
+        const params = new URLSearchParams({
+          page: adminLogsPagination.page.toString(),
+          limit: adminLogsPagination.limit.toString(),
+        });
+        const response = await api.get(`${API_ROUTES.ANALYTICS.LOGS.ADMIN}?${params.toString()}`);
+        console.log('Admin logs API Response:', response.data);
+        
+        // Handle various response structures
+        let logs = [];
+        let pagination = { page: 1, limit: 50, total: 0, totalPages: 1 };
+        
+        if (response.data) {
+          // Try different nested structures
+          if (Array.isArray(response.data)) {
+            logs = response.data;
+          } else if (Array.isArray(response.data.data)) {
+            logs = response.data.data;
+          } else if (response.data.data && Array.isArray(response.data.data.logs)) {
+            logs = response.data.data.logs;
+            pagination = response.data.data.pagination || pagination;
+          } else if (response.data.data && Array.isArray(response.data.data.adminLogs)) {
+            logs = response.data.data.adminLogs;
+            pagination = response.data.data.pagination || pagination;
+          } else if (response.data.logs && Array.isArray(response.data.logs)) {
+            logs = response.data.logs;
+            pagination = response.data.pagination || pagination;
+          } else if (response.data.adminLogs && Array.isArray(response.data.adminLogs)) {
+            logs = response.data.adminLogs;
+            pagination = response.data.pagination || pagination;
+          } else {
+            // Try to find any array in the response
+            const keys = Object.keys(response.data);
+            for (const key of keys) {
+              if (Array.isArray(response.data[key])) {
+                logs = response.data[key];
+                break;
+              }
+            }
+            // Check nested data
+            if (logs.length === 0 && response.data.data) {
+              const dataKeys = Object.keys(response.data.data);
+              for (const key of dataKeys) {
+                if (Array.isArray(response.data.data[key])) {
+                  logs = response.data.data[key];
+                  pagination = response.data.data.pagination || response.data.pagination || pagination;
+                  break;
+                }
+              }
+            }
+          }
+          
+          // Extract pagination if available
+          if (response.data.pagination) {
+            pagination = { ...pagination, ...response.data.pagination };
+          } else if (response.data.data?.pagination) {
+            pagination = { ...pagination, ...response.data.data.pagination };
+          }
+        }
+        
         setAdminLogs(Array.isArray(logs) ? logs : []);
+        setAdminLogsPagination(prev => ({
+          ...prev,
+          ...pagination,
+          totalPages: pagination.pages || pagination.totalPages || Math.ceil((pagination.total || 0) / (pagination.limit || 50)) || 1
+        }));
       } else if (activeTab === 'error-logs') {
-        const response = await api.get(API_ROUTES.ANALYTICS.LOGS.ERRORS);
-        const logs = response.data?.data || response.data || [];
+        const params = new URLSearchParams({
+          page: errorLogsPagination.page.toString(),
+          limit: errorLogsPagination.limit.toString(),
+        });
+        const response = await api.get(`${API_ROUTES.ANALYTICS.LOGS.ERRORS}?${params.toString()}`);
+        console.log('Error logs API Response:', response.data);
+        
+        // Handle various response structures
+        let logs = [];
+        let pagination = { page: 1, limit: 50, total: 0, totalPages: 1 };
+        
+        if (response.data) {
+          // Try different nested structures
+          if (Array.isArray(response.data)) {
+            logs = response.data;
+          } else if (Array.isArray(response.data.data)) {
+            logs = response.data.data;
+          } else if (response.data.data && Array.isArray(response.data.data.logs)) {
+            logs = response.data.data.logs;
+            pagination = response.data.data.pagination || pagination;
+          } else if (response.data.data && Array.isArray(response.data.data.errorLogs)) {
+            logs = response.data.data.errorLogs;
+            pagination = response.data.data.pagination || pagination;
+          } else if (response.data.logs && Array.isArray(response.data.logs)) {
+            logs = response.data.logs;
+            pagination = response.data.pagination || pagination;
+          } else if (response.data.errorLogs && Array.isArray(response.data.errorLogs)) {
+            logs = response.data.errorLogs;
+            pagination = response.data.pagination || pagination;
+          } else {
+            // Try to find any array in the response
+            const keys = Object.keys(response.data);
+            for (const key of keys) {
+              if (Array.isArray(response.data[key])) {
+                logs = response.data[key];
+                break;
+              }
+            }
+            // Check nested data
+            if (logs.length === 0 && response.data.data) {
+              const dataKeys = Object.keys(response.data.data);
+              for (const key of dataKeys) {
+                if (Array.isArray(response.data.data[key])) {
+                  logs = response.data.data[key];
+                  pagination = response.data.data.pagination || response.data.pagination || pagination;
+                  break;
+                }
+              }
+            }
+          }
+          
+          // Extract pagination if available
+          if (response.data.pagination) {
+            pagination = { ...pagination, ...response.data.pagination };
+          } else if (response.data.data?.pagination) {
+            pagination = { ...pagination, ...response.data.data.pagination };
+          }
+        }
+        
         setErrorLogs(Array.isArray(logs) ? logs : []);
+        setErrorLogsPagination(prev => ({
+          ...prev,
+          ...pagination,
+          totalPages: pagination.pages || pagination.totalPages || Math.ceil((pagination.total || 0) / (pagination.limit || 50)) || 1
+        }));
       }
     } catch (error) {
       console.error('Analytics API error:', error);
@@ -333,20 +459,22 @@ const Analytics = () => {
                   </tr>
                 ) : (
                   adminLogs.map((log, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
+                    <tr key={log.id || index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.timestamp || log.created_at 
-                          ? new Date(log.timestamp || log.created_at).toLocaleString()
+                        {log.timestamp || log.createdAt || log.created_at 
+                          ? new Date(log.timestamp || log.createdAt || log.created_at).toLocaleString()
                           : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {log.user || log.user_id || log.email || 'N/A'}
+                        {log.user?.name || log.user?.email || log.userName || log.user_name || log.user || log.userId || log.user_id || log.email || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {log.action || log.type || 'N/A'}
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {log.action || log.actionType || log.type || 'N/A'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {log.details || log.message || log.description || 'N/A'}
+                        {log.details || log.message || log.description || log.data || JSON.stringify(log.metadata || log.meta || {}) || 'N/A'}
                       </td>
                     </tr>
                   ))
@@ -390,22 +518,22 @@ const Analytics = () => {
                   </tr>
                 ) : (
                   errorLogs.map((log, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
+                    <tr key={log.id || index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.timestamp || log.created_at 
-                          ? new Date(log.timestamp || log.created_at).toLocaleString()
+                        {log.timestamp || log.createdAt || log.created_at 
+                          ? new Date(log.timestamp || log.createdAt || log.created_at).toLocaleString()
                           : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                          {log.error_type || log.type || log.status || 'Error'}
+                          {log.errorType || log.error_type || log.type || log.status || 'Error'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
-                        {log.message || log.error || log.details || 'N/A'}
+                        {log.message || log.error || log.details || log.description || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.endpoint || log.path || log.url || 'N/A'}
+                        {log.endpoint || log.path || log.url || log.route || 'N/A'}
                       </td>
                     </tr>
                   ))
@@ -413,6 +541,34 @@ const Analytics = () => {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          {errorLogsPagination.totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {((errorLogsPagination.page - 1) * errorLogsPagination.limit) + 1} to {Math.min(errorLogsPagination.page * errorLogsPagination.limit, errorLogsPagination.total)} of {errorLogsPagination.total} results
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setErrorLogsPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  disabled={errorLogsPagination.page <= 1}
+                  className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <FiChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="px-4 py-1 bg-indigo-50 text-indigo-700 rounded-md font-medium text-sm">
+                  Page {errorLogsPagination.page} of {errorLogsPagination.totalPages}
+                </span>
+                <button
+                  onClick={() => setErrorLogsPagination(prev => ({ ...prev, page: Math.min(errorLogsPagination.totalPages, prev.page + 1) }))}
+                  disabled={errorLogsPagination.page >= errorLogsPagination.totalPages}
+                  className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <FiChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

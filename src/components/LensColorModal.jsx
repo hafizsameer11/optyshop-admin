@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
+import { FiX, FiUpload, FiTrash2, FiPlus } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -21,6 +21,18 @@ const LensColorModal = ({ lensColor, onClose }) => {
   const [lensOptions, setLensOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(true);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [colors, setColors] = useState([
+    {
+      name: '',
+      color_code: '',
+      hex_code: '#000000',
+      price_adjustment: '',
+      imageFile: null,
+      imagePreview: null,
+    }
+  ]);
 
   useEffect(() => {
     fetchLensOptions();
@@ -35,6 +47,19 @@ const LensColorModal = ({ lensColor, onClose }) => {
         is_active: lensColor.is_active !== undefined ? lensColor.is_active : true,
         sort_order: lensColor.sort_order !== null && lensColor.sort_order !== undefined ? lensColor.sort_order : 0,
       });
+      // Set image preview if URL exists
+      if (lensColor.image_url) {
+        setImagePreview(lensColor.image_url);
+      }
+      // Set single color for edit mode
+      setColors([{
+        name: lensColor.name || '',
+        color_code: lensColor.color_code || '',
+        hex_code: lensColor.hex_code || '#000000',
+        price_adjustment: lensColor.price_adjustment || '',
+        imageFile: null,
+        imagePreview: lensColor.image_url || null,
+      }]);
     } else {
       setFormData({
         lens_option_id: '',
@@ -46,6 +71,14 @@ const LensColorModal = ({ lensColor, onClose }) => {
         is_active: true,
         sort_order: 0,
       });
+      setColors([{
+        name: '',
+        color_code: '',
+        hex_code: '#000000',
+        price_adjustment: '',
+        imageFile: null,
+        imagePreview: null,
+      }]);
     }
   }, [lensColor]);
 
@@ -145,6 +178,72 @@ const LensColorModal = ({ lensColor, onClose }) => {
     setFormData({ ...formData, [name]: fieldValue });
   };
 
+  const handleImageChange = (e, colorIndex = null) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPG, PNG, GIF, or WEBP)');
+        e.target.value = '';
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        toast.error('Image file is too large. Please select a file smaller than 10MB.');
+        e.target.value = '';
+        return;
+      }
+      
+      if (colorIndex !== null) {
+        // Update specific color's image
+        const updatedColors = [...colors];
+        updatedColors[colorIndex].imageFile = file;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          updatedColors[colorIndex].imagePreview = reader.result;
+          setColors(updatedColors);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Legacy single image upload
+        setImageFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleColorChange = (index, field, value) => {
+    const updatedColors = [...colors];
+    updatedColors[index] = { ...updatedColors[index], [field]: value };
+    setColors(updatedColors);
+  };
+
+  const addColor = () => {
+    setColors([...colors, {
+      name: '',
+      color_code: '',
+      hex_code: '#000000',
+      price_adjustment: '',
+      imageFile: null,
+      imagePreview: null,
+    }]);
+  };
+
+  const removeColor = (index) => {
+    if (colors.length > 1) {
+      setColors(colors.filter((_, i) => i !== index));
+    } else {
+      toast.error('At least one color is required');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -152,41 +251,85 @@ const LensColorModal = ({ lensColor, onClose }) => {
       toast.error('Please select a lens option');
       return;
     }
+
+    // Validate colors
+    const validColors = colors.filter(color => color.name.trim() !== '');
+    if (validColors.length === 0) {
+      toast.error('Please add at least one color with a name');
+      return;
+    }
     
     setLoading(true);
 
     try {
-      // Prepare data with proper types
-      const submitData = {
-        lens_option_id: parseInt(formData.lens_option_id, 10),
-        name: formData.name,
-        color_code: formData.color_code || null,
-        hex_code: formData.hex_code || null,
-        image_url: formData.image_url || null,
-        price_adjustment: parseFloat(formData.price_adjustment) || 0,
-        is_active: formData.is_active,
-        sort_order: parseInt(formData.sort_order, 10) || 0,
-      };
-      
-      let response;
+      // If editing single color, use legacy approach
       if (lensColor) {
-        response = await api.put(API_ROUTES.ADMIN.LENS_COLORS.UPDATE(lensColor.id), submitData);
-        // Handle response structure: { success, message, data: { lensColor: {...} } }
+        const formDataToSend = new FormData();
+        formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
+        formDataToSend.append('name', validColors[0].name);
+        formDataToSend.append('color_code', validColors[0].color_code || '');
+        formDataToSend.append('hex_code', validColors[0].hex_code || '#000000');
+        formDataToSend.append('price_adjustment', parseFloat(validColors[0].price_adjustment) || 0);
+        formDataToSend.append('is_active', formData.is_active);
+        formDataToSend.append('sort_order', parseInt(formData.sort_order, 10) || 0);
+        
+        if (validColors[0].imageFile) {
+          formDataToSend.append('image', validColors[0].imageFile);
+        } else if (formData.image_url) {
+          formDataToSend.append('image_url', formData.image_url);
+        }
+
+        const response = await api.put(API_ROUTES.ADMIN.LENS_COLORS.UPDATE(lensColor.id), formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
         if (response.data?.success) {
           toast.success(response.data.message || 'Lens color updated successfully');
         } else {
           toast.success('Lens color updated successfully');
         }
+        onClose();
       } else {
-        response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, submitData);
-        // Handle response structure: { success, message, data: { lensColor: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens color created successfully');
-        } else {
-          toast.success('Lens color created successfully');
+        // Create multiple colors
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < validColors.length; i++) {
+          const color = validColors[i];
+          try {
+            const formDataToSend = new FormData();
+            formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
+            formDataToSend.append('name', color.name);
+            formDataToSend.append('color_code', color.color_code || '');
+            formDataToSend.append('hex_code', color.hex_code || '#000000');
+            formDataToSend.append('price_adjustment', parseFloat(color.price_adjustment) || 0);
+            formDataToSend.append('is_active', formData.is_active);
+            formDataToSend.append('sort_order', parseInt(formData.sort_order, 10) || 0);
+            
+            if (color.imageFile) {
+              formDataToSend.append('image', color.imageFile);
+            }
+
+            await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, formDataToSend, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to create color ${i + 1}:`, error);
+            errorCount++;
+          }
+        }
+
+        if (successCount > 0) {
+          toast.success(`Successfully created ${successCount} color(s)`);
+        }
+        if (errorCount > 0) {
+          toast.error(`Failed to create ${errorCount} color(s)`);
+        }
+        if (successCount > 0) {
+          onClose();
         }
       }
-      onClose();
     } catch (error) {
       console.error('Lens color save error:', error);
       if (!error.response) {
@@ -204,10 +347,10 @@ const LensColorModal = ({ lensColor, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {lensColor ? 'Edit Lens Color' : 'Add Lens Color'}
+            {lensColor ? 'Edit Lens Color' : 'Add Lens Color(s)'}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -257,89 +400,147 @@ const LensColorModal = ({ lensColor, onClose }) => {
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="input-modern"
-              required
-              placeholder="e.g., Blue Mirror"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Color Code
-            </label>
-            <input
-              type="text"
-              name="color_code"
-              value={formData.color_code}
-              onChange={handleChange}
-              className="input-modern"
-              placeholder="e.g., BLUE_MIRROR"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Hex Code <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="color"
-                name="hex_code"
-                value={formData.hex_code}
-                onChange={handleChange}
-                className="h-10 w-20 border rounded-lg cursor-pointer"
-              />
-              <input
-                type="text"
-                name="hex_code"
-                value={formData.hex_code}
-                onChange={handleChange}
-                className="input-modern font-mono flex-1"
-                placeholder="#000000"
-                pattern="^#[0-9A-Fa-f]{6}$"
-                required
-              />
+          {/* Multiple Colors Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-semibold text-gray-700">
+                Colors <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={addColor}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
+              >
+                <FiPlus className="w-4 h-4" />
+                Add Color
+              </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Select a color or enter hex code (e.g., #0066CC)</p>
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Image URL
-            </label>
-            <input
-              type="url"
-              name="image_url"
-              value={formData.image_url}
-              onChange={handleChange}
-              className="input-modern"
-              placeholder="https://example.com/images/blue-mirror.png"
-            />
-          </div>
+            {colors.map((color, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-4 bg-gray-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Color {index + 1}</span>
+                  {colors.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeColor(index)}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="Remove color"
+                    >
+                      <FiTrash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Price Adjustment <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              name="price_adjustment"
-              value={formData.price_adjustment}
-              onChange={handleChange}
-              step="0.01"
-              className="input-modern"
-              required
-              placeholder="e.g., 0.00"
-            />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={color.name}
+                    onChange={(e) => handleColorChange(index, 'name', e.target.value)}
+                    className="input-modern"
+                    required
+                    placeholder="e.g., Blue Mirror"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Color Code
+                  </label>
+                  <input
+                    type="text"
+                    value={color.color_code}
+                    onChange={(e) => handleColorChange(index, 'color_code', e.target.value)}
+                    className="input-modern"
+                    placeholder="e.g., BLUE_MIRROR"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Hex Code <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={color.hex_code}
+                      onChange={(e) => handleColorChange(index, 'hex_code', e.target.value)}
+                      className="h-10 w-20 border rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={color.hex_code}
+                      onChange={(e) => handleColorChange(index, 'hex_code', e.target.value)}
+                      className="input-modern font-mono flex-1"
+                      placeholder="#000000"
+                      pattern="^#[0-9A-Fa-f]{6}$"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Select a color or enter hex code (e.g., #0066CC)</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Image
+                  </label>
+                  <div className="space-y-2">
+                    {color.imagePreview && (
+                      <div className="relative w-32 h-32 border border-gray-200 rounded-lg overflow-hidden">
+                        <img
+                          src={color.imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedColors = [...colors];
+                            updatedColors[index].imageFile = null;
+                            updatedColors[index].imagePreview = null;
+                            setColors(updatedColors);
+                          }}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        >
+                          <FiX className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    <label className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                      <FiUpload className="w-5 h-5 text-gray-500" />
+                      <span className="text-sm text-gray-700">
+                        {color.imagePreview ? 'Change Image' : 'Upload Image'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(e, index)}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500">JPG, PNG, GIF, or WEBP (max 10MB)</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Price Adjustment <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={color.price_adjustment}
+                    onChange={(e) => handleColorChange(index, 'price_adjustment', e.target.value)}
+                    step="0.01"
+                    className="input-modern"
+                    required
+                    placeholder="e.g., 0.00"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
 
           <div>
@@ -376,14 +577,14 @@ const LensColorModal = ({ lensColor, onClose }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

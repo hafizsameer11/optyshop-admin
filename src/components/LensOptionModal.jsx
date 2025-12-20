@@ -166,6 +166,8 @@ const LensOptionModal = ({ lensOption, onClose }) => {
                 <option value="gradient">Gradient</option>
                 <option value="polarized">Polarized</option>
                 <option value="photochromic">Photochromic</option>
+                <option value="prescription_sun">Prescription Sun</option>
+                <option value="prescription-sun">Prescription Sun (Alt)</option>
               </select>
             </div>
 

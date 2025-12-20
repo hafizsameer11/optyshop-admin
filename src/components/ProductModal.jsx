@@ -347,7 +347,8 @@ const ProductModal = ({ product, onClose }) => {
     }
 
     if (validFiles.length > 0) {
-      // Add new files to existing ones (or replace if editing)
+      // When editing: replace all existing files/previews with new ones
+      // When creating: add to existing files/previews
       const newFiles = product ? validFiles : [...imageFiles, ...validFiles];
       setImageFiles(newFiles);
 
@@ -363,6 +364,8 @@ const ProductModal = ({ product, onClose }) => {
 
       Promise.all(previewPromises).then((previews) => {
         const validPreviews = previews.filter(Boolean);
+        // When editing: replace old previews (from existing product images) with new ones
+        // When creating: add to existing previews
         const newPreviews = product ? validPreviews : [...imagePreviews, ...validPreviews];
         setImagePreviews(newPreviews);
         

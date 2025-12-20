@@ -45,13 +45,13 @@ const normalizeImageUrl = (url) => {
 };
 
 // Product Image Component with error handling
-const ProductImage = ({ product }) => {
+const ProductImage = ({ product, refreshKey }) => {
   const [imageError, setImageError] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
   const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
-    // Reset error state when product changes
+    // Reset error state when product or images change
     setImageError(false);
     setImageLoading(true);
     
@@ -92,8 +92,10 @@ const ProductImage = ({ product }) => {
     
     if (normalizedUrl) {
       // Add cache-busting parameter to ensure fresh image loads after updates
+      // Use refreshKey if provided, otherwise use timestamp
       const separator = normalizedUrl.includes('?') ? '&' : '?';
-      const cacheBustUrl = `${normalizedUrl}${separator}_t=${Date.now()}`;
+      const cacheBust = refreshKey || Date.now();
+      const cacheBustUrl = `${normalizedUrl}${separator}_t=${cacheBust}`;
       setImageSrc(cacheBustUrl);
     } else {
       setImageSrc(null);
@@ -102,7 +104,8 @@ const ProductImage = ({ product }) => {
         console.warn(`⚠️ Product ${product.id} has invalid or test image URL: ${imageUrl}`);
       }
     }
-  }, [product]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id, product?.images, product?.image, product?.image_url, refreshKey]);
 
   // Handle image load success
   const handleImageLoad = () => {
@@ -177,6 +180,7 @@ const Products = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [subCategoriesMap, setSubCategoriesMap] = useState({});
+  const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
 
   useEffect(() => {
     fetchProducts();
@@ -259,6 +263,8 @@ const Products = () => {
       
       setProducts(Array.isArray(productsData) ? productsData : []);
       setTotalPages(pages);
+      // Update refresh key to force image reload after product list update
+      setImageRefreshKey(Date.now());
     } catch (error) {
       console.error('Products API error:', error);
       setProducts([]);
@@ -323,6 +329,8 @@ const Products = () => {
     // Add a small delay to ensure backend has processed the update
     setTimeout(() => {
       fetchProducts();
+      // Force image refresh by updating the refresh key
+      setImageRefreshKey(Date.now());
     }, 500);
   };
 
@@ -433,7 +441,7 @@ const Products = () => {
                     </td>
                     <td className="table-cell-responsive">
                       <div className="flex items-center min-w-0">
-                        <ProductImage product={product} />
+                        <ProductImage product={product} refreshKey={imageRefreshKey} />
                         <div className="ml-3 sm:ml-4 min-w-0 flex-1">
                           <div className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-indigo-700 transition-colors truncate">
                             {product.name}

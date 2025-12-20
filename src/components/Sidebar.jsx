@@ -38,10 +38,12 @@ import {
   FiMenu
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const [openSubmenus, setOpenSubmenus] = useState({
     catalog: false,
     lens: false,
@@ -59,150 +61,150 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const menuSections = [
     {
       type: 'item',
-      item: { path: '/', icon: FiHome, label: 'Dashboard' }
+      item: { path: '/', icon: FiHome, label: t('dashboard') }
     },
     {
       type: 'divider',
-      label: 'Core Management'
+      label: t('coreManagement')
     },
     {
       type: 'item',
-      item: { path: '/products', icon: FiShoppingBag, label: 'Products' }
+      item: { path: '/products', icon: FiShoppingBag, label: t('products') }
     },
     {
       type: 'item',
-      item: { path: '/orders', icon: FiShoppingCart, label: 'Orders' }
+      item: { path: '/orders', icon: FiShoppingCart, label: t('orders') }
     },
     {
       type: 'item',
-      item: { path: '/users', icon: FiUsers, label: 'Users' }
+      item: { path: '/users', icon: FiUsers, label: t('users') }
     },
     {
       type: 'divider',
-      label: 'Catalog'
+      label: t('catalog')
     },
     {
       type: 'group',
       key: 'catalog',
-      label: 'Categories',
+      label: t('categories'),
       icon: FiFolder,
       children: [
-        { path: '/categories', icon: FiGrid, label: 'Categories' },
-        { path: '/subcategories', icon: FiFolderPlus, label: 'SubCategories' },
+        { path: '/categories', icon: FiGrid, label: t('categories') },
+        { path: '/subcategories', icon: FiFolderPlus, label: t('subCategories') },
       ]
     },
     {
       type: 'divider',
-      label: 'Frame & Lens'
+      label: t('frameAndLens')
     },
     {
       type: 'group',
       key: 'lens',
-      label: 'Lens Management',
+      label: t('lensManagement'),
       icon: FiAperture,
       children: [
-        { path: '/frame-sizes', icon: FiLayers, label: 'Frame Sizes' },
-        { path: '/lens-types', icon: FiEye, label: 'Lens Types' },
-        { path: '/lens-options', icon: FiSettings, label: 'Lens Options' },
-        { path: '/lens-coatings', icon: FiBox, label: 'Lens Coatings' },
-        { path: '/lens-colors', icon: FiDroplet, label: 'Lens Colors' },
-        { path: '/lens-finishes', icon: FiLayers, label: 'Lens Finishes' },
-        { path: '/lens-treatments', icon: FiShield, label: 'Lens Treatments' },
-        { path: '/lens-thickness-materials', icon: FiBox, label: 'Thickness Materials' },
-        { path: '/lens-thickness-options', icon: FiLayers, label: 'Thickness Options' },
+        { path: '/frame-sizes', icon: FiLayers, label: t('frameSizes') },
+        { path: '/lens-types', icon: FiEye, label: t('lensTypes') },
+        { path: '/lens-options', icon: FiSettings, label: t('lensOptions') },
+        { path: '/lens-coatings', icon: FiBox, label: t('lensCoatings') },
+        { path: '/lens-colors', icon: FiDroplet, label: t('lensColors') },
+        { path: '/lens-finishes', icon: FiLayers, label: t('lensFinishes') },
+        { path: '/lens-treatments', icon: FiShield, label: t('lensTreatments') },
+        { path: '/lens-thickness-materials', icon: FiBox, label: t('thicknessMaterials') },
+        { path: '/lens-thickness-options', icon: FiLayers, label: t('thicknessOptions') },
       ]
     },
     {
       type: 'divider',
-      label: 'Prescriptions'
+      label: t('prescriptions')
     },
     {
       type: 'group',
       key: 'prescription',
-      label: 'Prescription',
+      label: t('prescription'),
       icon: FiFileText,
       children: [
-        { path: '/prescriptions', icon: FiFileText, label: 'Prescriptions' },
-        { path: '/prescription-lens-types', icon: FiEye, label: 'Lens Types' },
-        { path: '/prescription-lens-variants', icon: FiLayers, label: 'Lens Variants' },
+        { path: '/prescriptions', icon: FiFileText, label: t('prescriptions') },
+        { path: '/prescription-lens-types', icon: FiEye, label: t('lensTypes') },
+        { path: '/prescription-lens-variants', icon: FiLayers, label: t('lensVariants') },
       ]
     },
     {
       type: 'divider',
-      label: 'Marketing'
+      label: t('marketing')
     },
     {
       type: 'group',
       key: 'marketing',
-      label: 'Marketing',
+      label: t('marketing'),
       icon: FiTrendingUp,
       children: [
-        { path: '/coupons', icon: FiTag, label: 'Coupons' },
-        { path: '/campaigns', icon: FiTrendingUp, label: 'Campaigns' },
-        { path: '/banners', icon: FiImage, label: 'Banners' },
+        { path: '/coupons', icon: FiTag, label: t('coupons') },
+        { path: '/campaigns', icon: FiTrendingUp, label: t('campaigns') },
+        { path: '/banners', icon: FiImage, label: t('banners') },
       ]
     },
     {
       type: 'divider',
-      label: 'Content'
+      label: t('content')
     },
     {
       type: 'group',
       key: 'content',
-      label: 'Content Management',
+      label: t('contentManagement'),
       icon: FiFile,
       children: [
-        { path: '/blog', icon: FiFileText, label: 'Blog Posts' },
-        { path: '/faqs', icon: FiMessageSquare, label: 'FAQs' },
-        { path: '/pages', icon: FiFile, label: 'Pages' },
-        { path: '/testimonials', icon: FiStar, label: 'Testimonials' },
+        { path: '/blog', icon: FiFileText, label: t('blogPosts') },
+        { path: '/faqs', icon: FiMessageSquare, label: t('faqs') },
+        { path: '/pages', icon: FiFile, label: t('pages') },
+        { path: '/testimonials', icon: FiStar, label: t('testimonials') },
       ]
     },
     {
       type: 'divider',
-      label: 'Operations'
+      label: t('operations')
     },
     {
       type: 'item',
-      item: { path: '/shipping-methods', icon: FiTruck, label: 'Shipping Methods' }
+      item: { path: '/shipping-methods', icon: FiTruck, label: t('shippingMethods') }
     },
     {
       type: 'item',
-      item: { path: '/jobs', icon: FiBriefcase, label: 'Jobs' }
+      item: { path: '/jobs', icon: FiBriefcase, label: t('jobs') }
     },
     {
       type: 'group',
       key: 'forms',
-      label: 'Website Forms',
+      label: t('websiteForms'),
       icon: FiInbox,
       children: [
-        { path: '/forms/contact', label: 'Contact Requests' },
-        { path: '/forms/demo', label: 'Demo Requests' },
-        { path: '/forms/pricing', label: 'Pricing Requests' },
-        { path: '/forms/credentials', label: 'Credentials Requests' },
-        { path: '/forms/support', label: 'Support Requests' },
-        { path: '/forms/job-applications', label: 'Job Applications' },
+        { path: '/forms/contact', label: t('contactRequests') },
+        { path: '/forms/demo', label: t('demoRequests') },
+        { path: '/forms/pricing', label: t('pricingRequests') },
+        { path: '/forms/credentials', label: t('credentialsRequests') },
+        { path: '/forms/support', label: t('supportRequests') },
+        { path: '/forms/job-applications', label: t('jobApplications') },
       ]
     },
     {
       type: 'divider',
-      label: 'Analytics'
+      label: t('analytics')
     },
     {
       type: 'item',
-      item: { path: '/transactions', icon: FiDollarSign, label: 'Transactions' }
+      item: { path: '/transactions', icon: FiDollarSign, label: t('transactions') }
     },
     {
       type: 'item',
-      item: { path: '/analytics', icon: FiBarChart2, label: 'Analytics' }
+      item: { path: '/analytics', icon: FiBarChart2, label: t('analytics') }
     },
     {
       type: 'item',
-      item: { path: '/overview', icon: FiActivity, label: 'Overview' }
+      item: { path: '/overview', icon: FiActivity, label: t('overview') }
     },
     {
       type: 'item',
-      item: { path: '/simulations', icon: FiZap, label: 'Simulations' }
+      item: { path: '/simulations', icon: FiZap, label: t('simulations') }
     },
   ];
 
@@ -237,7 +239,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               {isOpen && (
                 <div className="min-w-0">
                   <h1 className="text-xl font-bold text-white drop-shadow-lg">OptyShop</h1>
-                  <p className="text-xs text-white/80 font-medium">Admin Panel</p>
+                  <p className="text-xs text-white/80 font-medium">{t('adminPanel')}</p>
                 </div>
               )}
             </div>
@@ -372,7 +374,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     <p className="text-sm font-bold text-white truncate drop-shadow-sm">
                       {user?.first_name} {user?.last_name}
                     </p>
-                    <p className="text-xs text-white/80 font-medium">Administrator</p>
+                    <p className="text-xs text-white/80 font-medium">{t('administrator')}</p>
                   </div>
                 </div>
               </div>
@@ -382,10 +384,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-white bg-gradient-to-r from-red-500/80 to-red-600/80 hover:from-red-500 hover:to-red-600 border border-red-400/30 hover:border-red-400/50 shadow-lg hover:shadow-xl backdrop-blur-sm ${
                 !isOpen && 'lg:justify-center'
               }`}
-              title={!isOpen ? 'Logout' : ''}
+              title={!isOpen ? t('logout') : ''}
             >
               <FiLogOut className="w-5 h-5 flex-shrink-0" />
-              {isOpen && <span className="text-sm font-semibold">Logout</span>}
+              {isOpen && <span className="text-sm font-semibold">{t('logout')}</span>}
             </button>
           </div>
         </div>

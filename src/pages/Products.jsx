@@ -175,6 +175,10 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [subCategoryFilter, setSubCategoryFilter] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [page, setPage] = useState(1);
@@ -183,9 +187,51 @@ const Products = () => {
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
 
   useEffect(() => {
-    fetchProducts();
+    fetchCategories();
     fetchSubCategories();
-  }, [page, searchTerm]);
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [page, searchTerm, categoryFilter, subCategoryFilter]);
+
+  // Fetch subcategories when category filter changes
+  useEffect(() => {
+    if (categoryFilter) {
+      fetchSubCategoriesForCategory(categoryFilter);
+    } else {
+      setSubCategories([]);
+      setSubCategoryFilter('');
+    }
+  }, [categoryFilter]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get(API_ROUTES.ADMIN.CATEGORIES.LIST);
+      const responseData = response.data?.data || response.data || {};
+      const categoriesData = responseData.categories || responseData || [];
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+    } catch (error) {
+      console.warn('Failed to fetch categories:', error);
+      setCategories([]);
+    }
+  };
+
+  const fetchSubCategoriesForCategory = async (categoryId) => {
+    if (!categoryId) {
+      setSubCategories([]);
+      return;
+    }
+    try {
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+      const responseData = response.data?.data || response.data || {};
+      const subCatData = responseData.subcategories || responseData || [];
+      setSubCategories(Array.isArray(subCatData) ? subCatData : []);
+    } catch (error) {
+      console.warn('Failed to fetch subcategories for category:', error);
+      setSubCategories([]);
+    }
+  };
 
   const fetchSubCategories = async () => {
     try {
@@ -243,6 +289,16 @@ const Products = () => {
       const trimmedSearch = searchTerm?.trim();
       if (trimmedSearch) {
         params.append('search', trimmedSearch);
+      }
+      
+      // Add category filter if selected (per Postman collection: category_id query param)
+      if (categoryFilter) {
+        params.append('category_id', categoryFilter);
+      }
+      
+      // Add subcategory filter if selected (per Postman collection: sub_category_id query param)
+      if (subCategoryFilter) {
+        params.append('sub_category_id', subCategoryFilter);
       }
       
       const response = await api.get(`${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`);
@@ -363,68 +419,131 @@ const Products = () => {
       </div>
 
       {/* Enhanced Search and Table Card - Responsive */}
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden">
-        {/* Search Bar */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50/50 to-indigo-50/30">
-          <div className="relative max-w-md">
-            <FiSearch className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-            <input
-              type="text"
-              placeholder={t('searchProducts')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-modern pl-10 sm:pl-12 w-full"
-            />
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden">
+        {/* Search and Filters Bar */}
+        <div className="p-6 border-b border-gray-200 bg-white">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <FiSearch className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+              <input
+                type="text"
+                placeholder={t('searchProducts')}
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1); // Reset to first page on search
+                }}
+                className="input-modern pl-10 sm:pl-12 w-full"
+              />
+            </div>
+            
+            {/* Category Filter */}
+            <div>
+              <select
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setSubCategoryFilter(''); // Reset subcategory when category changes
+                  setPage(1); // Reset to first page on filter change
+                }}
+                className="input-modern w-full"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* SubCategory Filter */}
+            <div>
+              <select
+                value={subCategoryFilter}
+                onChange={(e) => {
+                  setSubCategoryFilter(e.target.value);
+                  setPage(1); // Reset to first page on filter change
+                }}
+                disabled={!categoryFilter}
+                className="input-modern w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">All SubCategories</option>
+                {subCategories.map((subCat) => (
+                  <option key={subCat.id} value={subCat.id}>
+                    {subCat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Clear Filters Button */}
+            {(categoryFilter || subCategoryFilter || searchTerm) && (
+              <div>
+                <button
+                  onClick={() => {
+                    setCategoryFilter('');
+                    setSubCategoryFilter('');
+                    setSearchTerm('');
+                    setPage(1);
+                  }}
+                  className="w-full px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Responsive Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
-            <thead className="bg-gradient-to-r from-gray-50 via-indigo-50/30 to-purple-50/30 border-b border-gray-200">
+            <thead className="bg-white border-b border-gray-200">
               <tr>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
                   ID
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
                   Product
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden md:table-cell">
                   SKU
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden lg:table-cell">
                   Category
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden lg:table-cell">
                   SubCategory
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
                   Price
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden sm:table-cell">
                   Stock
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
                   Status
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden xl:table-cell">
                   Type
                 </th>
-                <th className="table-header-responsive font-bold text-gray-700 uppercase tracking-wider">
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-gray-200">
               {products.length === 0 ? (
                 <tr>
                   <td colSpan="10" className="table-cell-responsive text-center">
-                    <div className="flex flex-col items-center justify-center py-8 sm:py-12">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4">
+                    <div className="flex flex-col items-center justify-center py-12 sm:py-16">
+                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                         <FiSearch className="w-8 h-8 text-gray-400" />
                       </div>
-                      <p className="text-gray-500 font-semibold text-base sm:text-lg">No products found</p>
-                      <p className="text-gray-400 text-sm mt-1">
+                      <p className="text-gray-700 font-semibold text-base sm:text-lg">No products found</p>
+                      <p className="text-gray-500 text-sm mt-1">
                         {searchTerm ? 'Try a different search term.' : 'Get started by adding your first product.'}
                       </p>
                     </div>
@@ -434,7 +553,7 @@ const Products = () => {
                 products.map((product) => (
                   <tr 
                     key={product.id} 
-                    className="hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 transition-all duration-200 group"
+                    className="hover:bg-gray-50/50 transition-all duration-200 group border-b border-gray-100"
                   >
                     <td className="table-cell-responsive text-sm text-gray-500 font-medium">
                       {product.id}
@@ -443,7 +562,7 @@ const Products = () => {
                       <div className="flex items-center min-w-0">
                         <ProductImage product={product} refreshKey={imageRefreshKey} />
                         <div className="ml-3 sm:ml-4 min-w-0 flex-1">
-                          <div className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-indigo-700 transition-colors truncate">
+                          <div className="text-sm sm:text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
                             {product.name}
                           </div>
                           {product.slug && (
@@ -505,7 +624,7 @@ const Products = () => {
                         );
                       })()}
                     </td>
-                    <td className="table-cell-responsive text-sm sm:text-base font-bold text-gray-900">
+                    <td className="table-cell-responsive text-sm sm:text-base font-semibold text-gray-900">
                       ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
                       {product.compare_at_price && (
                         <div className="text-xs text-gray-400 line-through mt-0.5">
@@ -528,16 +647,16 @@ const Products = () => {
                     <td className="table-cell-responsive">
                       <div className="flex flex-col gap-1.5">
                         {product.is_active ? (
-                          <span className="inline-flex px-2 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                          <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 border border-green-200">
                             Active
                           </span>
                         ) : (
-                          <span className="inline-flex px-2 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border border-gray-200">
+                          <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200">
                             Inactive
                           </span>
                         )}
                         {product.is_featured && (
-                          <span className="inline-flex px-2 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
+                          <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
                             Featured
                           </span>
                         )}
@@ -550,7 +669,7 @@ const Products = () => {
                       <div className="flex items-center space-x-2 sm:space-x-3">
                         <button
                           onClick={() => handleEdit(product)}
-                          className="p-2 rounded-lg text-indigo-600 hover:text-white hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                          className="p-2 rounded-xl text-indigo-600 hover:text-white hover:bg-indigo-500 transition-all duration-200"
                           title="Edit"
                           aria-label="Edit product"
                         >
@@ -558,7 +677,7 @@ const Products = () => {
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="p-2 rounded-lg text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                          className="p-2 rounded-xl text-red-600 hover:text-white hover:bg-red-500 transition-all duration-200"
                           title="Delete"
                           aria-label="Delete product"
                         >
@@ -574,7 +693,7 @@ const Products = () => {
         </div>
 
         {/* Pagination - Responsive */}
-        <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-sm text-gray-600 font-medium">
             Page {page} of {totalPages}
           </div>
@@ -582,14 +701,14 @@ const Products = () => {
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all duration-200"
             >
               Previous
             </button>
             <button
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all duration-200"
             >
               Next
             </button>

@@ -43,6 +43,10 @@ const ProductModal = ({ product, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [model3DFile, setModel3DFile] = useState(null);
+  const [model3DPreview, setModel3DPreview] = useState(null);
+  const [colorImages, setColorImages] = useState({}); // { colorName: [files] }
+  const [colorImagePreviews, setColorImagePreviews] = useState({}); // { colorName: [previews] }
 
   useEffect(() => {
     fetchProductOptions();
@@ -94,6 +98,23 @@ const ProductModal = ({ product, onClose }) => {
       }
       // Reset imageFiles when editing - user must explicitly select new images to update them
       setImageFiles([]);
+      
+      // Set 3D model preview if exists
+      if (product.model_3d || product.model3d || product.model3D) {
+        const modelUrl = product.model_3d || product.model3d || product.model3D;
+        setModel3DPreview(modelUrl);
+      } else {
+        setModel3DPreview(null);
+      }
+      setModel3DFile(null);
+      
+      // Set color images if exists (from product.color_images or similar)
+      if (product.color_images && typeof product.color_images === 'object') {
+        setColorImagePreviews(product.color_images);
+      } else {
+        setColorImagePreviews({});
+      }
+      setColorImages({});
     } else {
       // Reset form for new product
       setFormData({
@@ -126,6 +147,10 @@ const ProductModal = ({ product, onClose }) => {
       setNestedSubCategories([]);
       setImageFiles([]);
       setImagePreviews([]);
+      setModel3DFile(null);
+      setModel3DPreview(null);
+      setColorImages({});
+      setColorImagePreviews({});
     }
   }, [product]);
 
@@ -394,6 +419,116 @@ const ProductModal = ({ product, onClose }) => {
     toast.success('Image removed');
   };
 
+  const handleModel3DChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (3D model formats)
+    const validExtensions = ['.glb', '.gltf', '.obj', '.fbx', '.dae'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!validExtensions.includes(fileExtension)) {
+      toast.error(`Invalid 3D model format. Supported: ${validExtensions.join(', ')}`);
+      e.target.value = '';
+      return;
+    }
+
+    // Validate file size (max 50MB for 3D models)
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('3D model file size exceeds 50MB limit');
+      e.target.value = '';
+      return;
+    }
+
+    setModel3DFile(file);
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setModel3DPreview(previewUrl);
+    toast.success('3D model selected');
+    e.target.value = '';
+  };
+
+  const removeModel3D = () => {
+    if (model3DPreview && model3DPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(model3DPreview);
+    }
+    setModel3DFile(null);
+    setModel3DPreview(null);
+    toast.success('3D model removed');
+  };
+
+  const handleColorImageChange = (colorName, e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name}: Not an image file`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name}: Size exceeds 5MB`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    // Add to existing files for this color
+    const existingFiles = colorImages[colorName] || [];
+    const newFiles = [...existingFiles, ...validFiles];
+    setColorImages({ ...colorImages, [colorName]: newFiles });
+
+    // Create previews
+    const previewPromises = validFiles.map((file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(previewPromises).then((previews) => {
+      const validPreviews = previews.filter(Boolean);
+      const existingPreviews = colorImagePreviews[colorName] || [];
+      const newPreviews = [...existingPreviews, ...validPreviews];
+      setColorImagePreviews({ ...colorImagePreviews, [colorName]: newPreviews });
+      toast.success(`${validFiles.length} image(s) added for ${colorName} color`);
+    });
+
+    e.target.value = '';
+  };
+
+  const removeColorImage = (colorName, index) => {
+    const newFiles = { ...colorImages };
+    const newPreviews = { ...colorImagePreviews };
+    
+    if (newFiles[colorName]) {
+      newFiles[colorName].splice(index, 1);
+      if (newFiles[colorName].length === 0) {
+        delete newFiles[colorName];
+      }
+    }
+    
+    if (newPreviews[colorName]) {
+      // Revoke blob URL if it's a blob
+      const preview = newPreviews[colorName][index];
+      if (preview && preview.startsWith('blob:')) {
+        URL.revokeObjectURL(preview);
+      }
+      newPreviews[colorName].splice(index, 1);
+      if (newPreviews[colorName].length === 0) {
+        delete newPreviews[colorName];
+      }
+    }
+    
+    setColorImages(newFiles);
+    setColorImagePreviews(newPreviews);
+    toast.success('Color image removed');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -504,26 +639,47 @@ const ProductModal = ({ product, onClose }) => {
       let response;
       let imageUploadFailed = false;
       
-      // If we have image files, try to upload with FormData first
-      if (imageFiles && imageFiles.length > 0 && imageFiles.every(file => file instanceof File)) {
+      // Check if we need to use FormData (images, 3D model, or color images)
+      const hasImageFiles = imageFiles && imageFiles.length > 0 && imageFiles.every(file => file instanceof File);
+      const has3DModel = model3DFile && model3DFile instanceof File;
+      const hasColorImages = Object.keys(colorImages).length > 0 && 
+                            Object.values(colorImages).some(files => files && files.length > 0);
+      
+      // If we have any files (images, 3D model, or color images), use FormData
+      if (hasImageFiles || has3DModel || hasColorImages) {
         try {
           const submitData = new FormData();
           
           // Add all fields to FormData with proper type conversion
+          // Required fields: name, sku, price, category_id
+          const requiredFields = ['name', 'sku', 'price', 'category_id'];
+          
           Object.keys(dataToSend).forEach((key) => {
             const value = dataToSend[key];
-            if (value !== null && value !== undefined) {
-              // Convert types properly for FormData
-              if (typeof value === 'boolean') {
-                // Booleans: send as "true" or "false" strings
-                submitData.append(key, value.toString());
-              } else if (typeof value === 'number') {
-                // Numbers: send as string (FormData requirement)
-                // Backend should parse these, but ensure it's a valid number string
-                submitData.append(key, value.toString());
+            const isRequired = requiredFields.includes(key);
+            
+            // For required fields, always send (even if empty, let backend validate)
+            // For optional fields, skip null, undefined, and empty strings
+            if (!isRequired && (value === null || value === undefined || value === '')) {
+              return; // Skip this optional field
+            }
+            
+            // Convert types properly for FormData
+            if (typeof value === 'boolean') {
+              // Booleans: send as "true" or "false" strings
+              submitData.append(key, value.toString());
+            } else if (typeof value === 'number') {
+              // Numbers: send as string (FormData requirement)
+              submitData.append(key, value.toString());
+            } else if (typeof value === 'string') {
+              // Strings: trim and send
+              submitData.append(key, value.trim());
+            } else {
+              // Other types (arrays, objects) - convert to JSON string if needed
+              if (Array.isArray(value) || typeof value === 'object') {
+                submitData.append(key, JSON.stringify(value));
               } else {
-                // Strings and other types
-                submitData.append(key, value);
+                submitData.append(key, String(value));
               }
             }
           });
@@ -534,18 +690,52 @@ const ProductModal = ({ product, onClose }) => {
             submitData.append('images', file);
           });
           
-          // For updates, also send a flag to replace existing images
-          if (product) {
-            submitData.append('replace_images', 'true');
+          // Add 3D model file if present (per Postman collection: model_3d field)
+          if (model3DFile) {
+            submitData.append('model_3d', model3DFile);
           }
           
-          // Debug: Log that we're sending images
-          console.log('Sending images:', {
-            fileCount: imageFiles.length,
-            fileNames: imageFiles.map(f => f.name),
-            totalSize: imageFiles.reduce((sum, f) => sum + f.size, 0),
-            isUpdate: !!product
+          // Add color-specific images (per Postman collection: color_images_{colorName} fields)
+          Object.keys(colorImages).forEach((colorName) => {
+            const files = colorImages[colorName];
+            if (files && files.length > 0) {
+              files.forEach((file) => {
+                submitData.append(`color_images_${colorName}`, file);
+              });
+            }
           });
+          
+          // Note: Removed 'replace_images' field as it's not in the Postman collection
+          // and may cause Multer "Unexpected field" errors
+          
+          // Debug: Log what we're sending
+          console.log('Sending FormData:', {
+            imageCount: imageFiles.length,
+            imageNames: imageFiles.map(f => f.name),
+            has3DModel: !!model3DFile,
+            model3DName: model3DFile?.name,
+            colorImages: Object.keys(colorImages).map(color => ({
+              color,
+              count: colorImages[color]?.length || 0
+            })),
+            totalSize: [
+              ...imageFiles,
+              ...(model3DFile ? [model3DFile] : []),
+              ...Object.values(colorImages).flat()
+            ].reduce((sum, f) => sum + (f?.size || 0), 0),
+            isUpdate: !!product,
+            formDataKeys: Object.keys(dataToSend)
+          });
+
+          // Log FormData entries for debugging
+          console.log('FormData entries:');
+          for (const [key, value] of submitData.entries()) {
+            if (value instanceof File) {
+              console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+            } else {
+              console.log(`  ${key}: ${value}`);
+            }
+          }
 
           if (product) {
             response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), submitData);
@@ -553,6 +743,26 @@ const ProductModal = ({ product, onClose }) => {
             response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
           }
         } catch (imageError) {
+          // Log full error details
+          console.error('Image upload error details:', {
+            message: imageError.message,
+            status: imageError.response?.status,
+            statusText: imageError.response?.statusText,
+            data: imageError.response?.data,
+            config: {
+              url: imageError.config?.url,
+              method: imageError.config?.method,
+              headers: imageError.config?.headers
+            }
+          });
+          
+          // Check for Multer "Unexpected field" error - might be due to color_images_{colorName} fields
+          const errorData = imageError.response?.data || {};
+          const errorMessage = errorData.message || errorData.error || '';
+          if (errorMessage.includes('Unexpected field') && Object.keys(colorImages).length > 0) {
+            console.warn('Multer "Unexpected field" error detected. This may be due to color-specific image fields not being accepted by the backend Multer configuration.');
+          }
+          
           // Check if it's an S3/upload error
           const errorString = JSON.stringify(imageError.response?.data || {}).toLowerCase();
           const isS3Error = errorString.includes('s3') || 
@@ -599,7 +809,14 @@ const ProductModal = ({ product, onClose }) => {
       setImageFiles([]);
       onClose();
     } catch (error) {
+      // Log full error details for debugging
       console.error('Product save error:', error);
+      console.error('Error response:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
       
       // Network errors (backend not available, timeout, etc.)
       if (!error.response) {
@@ -619,13 +836,30 @@ const ProductModal = ({ product, onClose }) => {
         const errorData = error.response?.data || {};
         const errorMessage = errorData.message || errorData.error || '';
         
+        // Log the full error for debugging
+        console.error('Server 500 error details:', {
+          message: errorMessage,
+          error: errorData.error,
+          stack: errorData.stack,
+          fullData: errorData
+        });
+        
         if (errorMessage.includes('Prisma') || errorMessage.includes('Invalid value provided')) {
           // Extract the field name from Prisma error
           const fieldMatch = errorMessage.match(/Argument `(\w+)`:/);
           const fieldName = fieldMatch ? fieldMatch[1] : 'field';
           toast.error(`Validation error: ${fieldName} has an invalid value. Please check the form data.`);
+        } else if (errorMessage.includes('multer') || errorMessage.includes('file upload') || errorMessage.includes('Unexpected field')) {
+          // Multer "Unexpected field" error - usually means backend doesn't accept the field name
+          if (errorMessage.includes('Unexpected field')) {
+            toast.error('File upload error: Backend does not recognize one of the file field names. This may be due to color-specific image fields. Please try uploading without color-specific images, or contact the backend team to update Multer configuration.');
+          } else {
+            toast.error(`File upload error: ${errorMessage}. Please check file formats and sizes.`);
+          }
         } else {
-          toast.error('Server error - Please try again or contact support if the issue persists.');
+          // Show more detailed error message
+          const detailedMessage = errorMessage || 'Server error occurred';
+          toast.error(`Server error: ${detailedMessage}. Check console for details.`);
         }
       } else {
         // Check for validation errors
@@ -778,6 +1012,143 @@ const ProductModal = ({ product, onClose }) => {
               <p className="text-xs text-gray-500 text-center">
                 💡 Tip: Hold Ctrl (Windows) or Cmd (Mac) to select multiple images, or drag and drop files
               </p>
+            </div>
+          </div>
+
+          {/* 3D Model Upload - Per Postman Collection */}
+          <div className="border-t border-gray-200 pt-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              3D Model <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+            </label>
+            <div className="space-y-4">
+              {/* Display existing/preview 3D model */}
+              {model3DPreview && (
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      3D Model Selected
+                    </p>
+                    <button
+                      type="button"
+                      onClick={removeModel3D}
+                      className="text-xs text-red-600 hover:text-red-800 font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="bg-gray-100 rounded-xl p-4 border-2 border-gray-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center">
+                        <span className="text-2xl">📦</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {model3DFile ? model3DFile.name : '3D Model'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {model3DFile ? `${(model3DFile.size / 1024 / 1024).toFixed(2)} MB` : 'Existing model'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Upload area */}
+              <label 
+                htmlFor="product-3d-model-input"
+                className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-200 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 group"
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-3 group-hover:bg-indigo-200 transition-colors">
+                    <span className="text-2xl">📦</span>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-700 mb-1">
+                    {model3DPreview ? 'Replace 3D Model' : 'Click to Upload 3D Model'}
+                  </p>
+                  <p className="text-xs text-gray-600 text-center">
+                    Supported: GLB, GLTF, OBJ, FBX, DAE
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1 text-center">
+                    Max size: 50MB
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept=".glb,.gltf,.obj,.fbx,.dae"
+                  onChange={handleModel3DChange}
+                  className="hidden"
+                  id="product-3d-model-input"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Color-Specific Images - Per Postman Collection */}
+          <div className="border-t border-gray-200 pt-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Color-Specific Images <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+            </label>
+            <p className="text-xs text-gray-600 mb-4">
+              Upload images for specific color variants (e.g., black, brown, blue). These images will be associated with the color name.
+            </p>
+            <div className="space-y-4">
+              {/* Common colors */}
+              {['black', 'brown', 'blue', 'red', 'green', 'gray', 'gold', 'silver'].map((colorName) => (
+                <div key={colorName} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                    {colorName} Color Images
+                  </label>
+                  
+                  {/* Display existing/preview images for this color */}
+                  {colorImagePreviews[colorName] && colorImagePreviews[colorName].length > 0 && (
+                    <div className="mb-3">
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                        {colorImagePreviews[colorName].map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={preview}
+                              alt={`${colorName} ${index + 1}`}
+                              className="w-full h-20 object-cover rounded-lg border-2 border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeColorImage(colorName, index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
+                            >
+                              <FiX className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Upload button for this color */}
+                  <label
+                    htmlFor={`color-image-${colorName}`}
+                    className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all text-sm text-gray-700"
+                  >
+                    <FiUpload className="w-4 h-4 mr-2" />
+                    Add {colorName} images
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleColorImageChange(colorName, e)}
+                    className="hidden"
+                    id={`color-image-${colorName}`}
+                  />
+                </div>
+              ))}
+              
+              {/* Custom color input */}
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <p className="text-xs text-blue-700 mb-2">
+                  💡 Tip: For custom colors, use the field name format: <code className="bg-white px-1 rounded">color_images_{'{colorName}'}</code>
+                </p>
+              </div>
             </div>
           </div>
 

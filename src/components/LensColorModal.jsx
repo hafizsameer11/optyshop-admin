@@ -252,10 +252,31 @@ const LensColorModal = ({ lensColor, onClose }) => {
       return;
     }
 
-    // Validate colors
-    const validColors = colors.filter(color => color.name.trim() !== '');
+    // Validate colors - both name and color_code are required
+    const validColors = colors.filter(color => 
+      color.name.trim() !== '' && color.color_code.trim() !== ''
+    );
     if (validColors.length === 0) {
-      toast.error('Please add at least one color with a name');
+      toast.error('Please add at least one color with both name and color code');
+      return;
+    }
+    
+    // Check if any color is missing required fields
+    const invalidColors = colors.filter(color => 
+      color.name.trim() !== '' && color.color_code.trim() === ''
+    );
+    if (invalidColors.length > 0) {
+      toast.error('Color code is required for all colors');
+      return;
+    }
+    
+    // Validate hex codes
+    const invalidHexCodes = validColors.filter(color => {
+      const hex = color.hex_code || '';
+      return !/^#[0-9A-Fa-f]{6}$/.test(hex);
+    });
+    if (invalidHexCodes.length > 0) {
+      toast.error('Please enter valid hex codes (format: #RRGGBB, e.g., #483232)');
       return;
     }
     
@@ -266,8 +287,8 @@ const LensColorModal = ({ lensColor, onClose }) => {
       if (lensColor) {
         const formDataToSend = new FormData();
         formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
-        formDataToSend.append('name', validColors[0].name);
-        formDataToSend.append('color_code', validColors[0].color_code || '');
+        formDataToSend.append('name', validColors[0].name.trim());
+        formDataToSend.append('color_code', validColors[0].color_code.trim());
         formDataToSend.append('hex_code', validColors[0].hex_code || '#000000');
         formDataToSend.append('price_adjustment', parseFloat(validColors[0].price_adjustment) || 0);
         formDataToSend.append('is_active', formData.is_active);
@@ -299,8 +320,8 @@ const LensColorModal = ({ lensColor, onClose }) => {
           try {
             const formDataToSend = new FormData();
             formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
-            formDataToSend.append('name', color.name);
-            formDataToSend.append('color_code', color.color_code || '');
+            formDataToSend.append('name', color.name.trim());
+            formDataToSend.append('color_code', color.color_code.trim());
             formDataToSend.append('hex_code', color.hex_code || '#000000');
             formDataToSend.append('price_adjustment', parseFloat(color.price_adjustment) || 0);
             formDataToSend.append('is_active', formData.is_active);
@@ -310,12 +331,52 @@ const LensColorModal = ({ lensColor, onClose }) => {
               formDataToSend.append('image', color.imageFile);
             }
 
-            await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, formDataToSend, {
+            // Log what we're sending for debugging
+            console.log(`Creating color ${i + 1}:`, {
+              lens_option_id: formData.lens_option_id,
+              name: color.name.trim(),
+              color_code: color.color_code.trim(),
+              hex_code: color.hex_code,
+              price_adjustment: parseFloat(color.price_adjustment) || 0,
+              is_active: formData.is_active,
+              sort_order: parseInt(formData.sort_order, 10) || 0,
+              hasImage: !!color.imageFile
+            });
+
+            const response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, formDataToSend, {
               headers: { 'Content-Type': 'multipart/form-data' }
             });
+            console.log(`Successfully created color ${i + 1}:`, response.data);
             successCount++;
           } catch (error) {
             console.error(`Failed to create color ${i + 1}:`, error);
+            console.error('Error response:', error.response);
+            console.error('Error response data:', error.response?.data);
+            console.error('Error response status:', error.response?.status);
+            
+            // Extract detailed error message
+            let errorMessage = `Failed to create color ${i + 1}`;
+            if (error.response?.data) {
+              if (error.response.data.message) {
+                errorMessage = error.response.data.message;
+              } else if (error.response.data.error) {
+                errorMessage = error.response.data.error;
+              } else if (error.response.data.errors) {
+                // Handle validation errors array
+                const errors = error.response.data.errors;
+                if (Array.isArray(errors)) {
+                  errorMessage = errors.map(e => e.message || e).join(', ');
+                } else if (typeof errors === 'object') {
+                  errorMessage = Object.entries(errors)
+                    .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+                    .join('; ');
+                } else {
+                  errorMessage = String(errors);
+                }
+              }
+            }
+            
+            toast.error(errorMessage);
             errorCount++;
           }
         }
@@ -448,13 +509,14 @@ const LensColorModal = ({ lensColor, onClose }) => {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Color Code
+                    Color Code <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={color.color_code}
                     onChange={(e) => handleColorChange(index, 'color_code', e.target.value)}
                     className="input-modern"
+                    required
                     placeholder="e.g., BLUE_MIRROR"
                   />
                 </div>
@@ -473,11 +535,40 @@ const LensColorModal = ({ lensColor, onClose }) => {
                     <input
                       type="text"
                       value={color.hex_code}
-                      onChange={(e) => handleColorChange(index, 'hex_code', e.target.value)}
+                      onChange={(e) => {
+                        let value = e.target.value;
+                        
+                        // Remove any existing # to start fresh
+                        value = value.replace(/#/g, '');
+                        
+                        // Only allow hex characters (0-9, A-F, a-f)
+                        value = value.replace(/[^0-9A-Fa-f]/g, '');
+                        
+                        // Limit to 6 hex digits
+                        if (value.length > 6) {
+                          value = value.substring(0, 6);
+                        }
+                        
+                        // Always add # prefix
+                        value = value.length > 0 ? '#' + value : '#';
+                        
+                        handleColorChange(index, 'hex_code', value);
+                      }}
+                      onBlur={(e) => {
+                        // Ensure we have exactly 7 characters on blur (# + 6 hex digits)
+                        let value = e.target.value;
+                        if (!value || value === '#') {
+                          value = '#000000';
+                        } else if (value.length < 7) {
+                          // Pad with zeros if incomplete
+                          const hexPart = value.substring(1);
+                          value = '#' + hexPart.padEnd(6, '0');
+                        }
+                        handleColorChange(index, 'hex_code', value);
+                      }}
                       className="input-modern font-mono flex-1"
                       placeholder="#000000"
-                      pattern="^#[0-9A-Fa-f]{6}$"
-                      required
+                      maxLength="7"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Select a color or enter hex code (e.g., #0066CC)</p>

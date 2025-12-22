@@ -554,6 +554,9 @@ const Products = () => {
                 <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
                   Status
                 </th>
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden md:table-cell">
+                  Product Type
+                </th>
                 <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden xl:table-cell">
                   Type
                 </th>
@@ -565,7 +568,7 @@ const Products = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="11" className="table-cell-responsive text-center">
+                  <td colSpan="12" className="table-cell-responsive text-center">
                     <div className="flex flex-col items-center justify-center py-12 sm:py-16">
                       <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                         <FiSearch className="w-8 h-8 text-gray-400" />
@@ -721,6 +724,15 @@ const Products = () => {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="table-cell-responsive text-sm text-gray-500 hidden md:table-cell">
+                      {product.product_type ? (
+                        <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-50 text-purple-700 border border-purple-200 capitalize">
+                          {String(product.product_type).replace('_', ' ')}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="table-cell-responsive text-sm text-gray-500 hidden xl:table-cell">
                       {product.product_type ? String(product.product_type) : '-'}

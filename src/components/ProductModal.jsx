@@ -19,7 +19,7 @@ const ProductModal = ({ product, onClose }) => {
     sub_category_id: '',
     parent_subcategory_id: '', // For nested subcategories
     frame_shape: '',
-    frame_material: '',
+    frame_material: [], // Changed to array for multiple selections
     frame_color: '',
     gender: '',
     lens_type: '',
@@ -63,7 +63,11 @@ const ProductModal = ({ product, onClose }) => {
         sub_category_id: product.sub_category_id || product.subcategory_id || '',
         parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
         frame_shape: product.frame_shape || '',
-        frame_material: product.frame_material || '',
+        frame_material: Array.isArray(product.frame_material) 
+          ? product.frame_material 
+          : product.frame_material 
+            ? [product.frame_material] 
+            : [],
         frame_color: product.frame_color || '',
         gender: product.gender || '',
         lens_type: product.lens_type || '',
@@ -129,7 +133,7 @@ const ProductModal = ({ product, onClose }) => {
         sub_category_id: '',
         parent_subcategory_id: '',
         frame_shape: '',
-        frame_material: '',
+        frame_material: [],
         frame_color: '',
         gender: '',
         lens_type: '',
@@ -209,7 +213,13 @@ const ProductModal = ({ product, onClose }) => {
       
       setCategories(optionsData.categories || []);
       setFrameShapes(optionsData.frameShapes || []);
-      setFrameMaterials(optionsData.frameMaterials || []);
+      
+      // Merge API frame materials with additional material types
+      const apiMaterials = optionsData.frameMaterials || [];
+      const additionalMaterials = ['plastic', 'glass', 'polycarbonate', 'trivex', 'high_index'];
+      const allMaterials = [...new Set([...apiMaterials, ...additionalMaterials])];
+      setFrameMaterials(allMaterials);
+      
       setGenders(optionsData.genders || []);
       setLensTypes(optionsData.lensTypeEnums || []);
     } catch (error) {
@@ -224,7 +234,8 @@ const ProductModal = ({ product, onClose }) => {
         setCategories([]);
       }
       setFrameShapes([]);
-      setFrameMaterials([]);
+      // Set fallback materials even if API fails
+      setFrameMaterials(['plastic', 'glass', 'polycarbonate', 'trivex', 'high_index']);
       setGenders([]);
       setLensTypes([]);
     }
@@ -342,6 +353,27 @@ const ProductModal = ({ product, onClose }) => {
         [name]: type === 'checkbox' ? checked : value 
       });
     }
+  };
+
+  const handleFrameMaterialChange = (material) => {
+    setFormData(prev => {
+      const currentMaterials = prev.frame_material || [];
+      const isSelected = currentMaterials.includes(material);
+      
+      if (isSelected) {
+        // Remove material if already selected
+        return {
+          ...prev,
+          frame_material: currentMaterials.filter(m => m !== material)
+        };
+      } else {
+        // Add material if not selected
+        return {
+          ...prev,
+          frame_material: [...currentMaterials, material]
+        };
+      }
+    });
   };
 
   const handleImageChange = (e) => {
@@ -607,7 +639,13 @@ const ProductModal = ({ product, onClose }) => {
       if (formData.frame_shape) {
         dataToSend.frame_shape = formData.frame_shape.replace(/_/g, '-');
       }
-      if (formData.frame_material) dataToSend.frame_material = formData.frame_material;
+      // Send frame_material as array (can be empty array if none selected)
+      if (formData.frame_material && Array.isArray(formData.frame_material) && formData.frame_material.length > 0) {
+        dataToSend.frame_material = formData.frame_material;
+      } else if (formData.frame_material && !Array.isArray(formData.frame_material)) {
+        // Handle legacy single value format
+        dataToSend.frame_material = [formData.frame_material];
+      }
       if (formData.frame_color) dataToSend.frame_color = formData.frame_color;
       if (formData.gender) dataToSend.gender = formData.gender;
       if (formData.lens_type) dataToSend.lens_type = formData.lens_type;
@@ -617,13 +655,10 @@ const ProductModal = ({ product, onClose }) => {
           dataToSend.compare_at_price = comparePrice;
         }
       }
-      // Only send product_type if it's "frame" (the only confirmed valid enum value)
-      // The Prisma ProductType enum appears to only accept "frame" currently
-      // Sending "lens" or "accessory" will cause a validation error
-      if (formData.product_type === 'frame') {
+      // Send product_type if it's provided
+      if (formData.product_type) {
         dataToSend.product_type = formData.product_type;
       }
-      // If product_type is not "frame", don't send it to avoid Prisma validation errors
       if (formData.meta_title && formData.meta_title.trim()) {
         dataToSend.meta_title = formData.meta_title.trim();
       }
@@ -1351,15 +1386,20 @@ const ProductModal = ({ product, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Product Type
+              Product Type <span className="text-red-500">*</span>
             </label>
             <select
               name="product_type"
               value={formData.product_type}
               onChange={handleChange}
               className="input-modern"
+              required
             >
+              <option value="">Select Product Type</option>
               <option value="frame">Frame</option>
+              <option value="lens">Lens</option>
+              <option value="contact_lens">Contact Lens</option>
+              <option value="accessory">Accessory</option>
             </select>
           </div>
 
@@ -1417,21 +1457,52 @@ const ProductModal = ({ product, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Material
+                Frame Material <span className="text-gray-500 text-xs font-normal">(Multiple Selection)</span>
               </label>
-              <select
-                name="frame_material"
-                value={formData.frame_material}
-                onChange={handleChange}
-                className="input-modern"
-              >
-                <option value="">Select Frame Material</option>
-                {frameMaterials.map((material) => (
-                  <option key={material} value={material}>
-                    {material.charAt(0).toUpperCase() + material.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 max-h-48 overflow-y-auto">
+                {frameMaterials.length === 0 ? (
+                  <p className="text-sm text-gray-500">No materials available</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {frameMaterials.map((material) => {
+                      const isSelected = formData.frame_material?.includes(material) || false;
+                      const displayName = material.split('_').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ');
+                      
+                      return (
+                        <label
+                          key={material}
+                          className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-white transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleFrameMaterialChange(material)}
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                          />
+                          <span className="text-sm text-gray-700 font-medium">{displayName}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {formData.frame_material && formData.frame_material.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="text-xs text-gray-600 font-medium">Selected:</span>
+                  {formData.frame_material.map((material) => (
+                    <span
+                      key={material}
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200"
+                    >
+                      {material.split('_').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ')}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

@@ -7,6 +7,31 @@ import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 
+// Helper function to convert color name to hex code
+const getColorHex = (colorName) => {
+  if (!colorName) return null;
+  const colorMap = {
+    'black': '#000000',
+    'white': '#FFFFFF',
+    'brown': '#8B4513',
+    'blue': '#0000FF',
+    'red': '#FF0000',
+    'green': '#008000',
+    'gray': '#808080',
+    'grey': '#808080',
+    'gold': '#FFD700',
+    'silver': '#C0C0C0',
+    'tortoise': '#8B4513',
+    'tortoiseshell': '#8B4513',
+    'navy': '#000080',
+    'burgundy': '#800020',
+    'clear': '#FFFFFF',
+    'transparent': '#FFFFFF',
+  };
+  const normalized = colorName.toLowerCase().trim();
+  return colorMap[normalized] || null;
+};
+
 // Helper function to normalize image URLs
 const normalizeImageUrl = (url) => {
   if (!url || typeof url !== 'string') return null;
@@ -517,6 +542,9 @@ const Products = () => {
                 <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden lg:table-cell">
                   SubCategory
                 </th>
+                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden md:table-cell">
+                  Color
+                </th>
                 <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
                   Price
                 </th>
@@ -537,7 +565,7 @@ const Products = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="table-cell-responsive text-center">
+                  <td colSpan="11" className="table-cell-responsive text-center">
                     <div className="flex flex-col items-center justify-center py-12 sm:py-16">
                       <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                         <FiSearch className="w-8 h-8 text-gray-400" />
@@ -623,6 +651,38 @@ const Products = () => {
                           </>
                         );
                       })()}
+                    </td>
+                    <td className="table-cell-responsive text-sm text-gray-500 hidden md:table-cell">
+                      {product.frame_color ? (
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="capitalize font-medium">{product.frame_color}</span>
+                            <div 
+                              className="w-5 h-5 rounded border border-gray-300 shadow-sm"
+                              style={{ 
+                                backgroundColor: getColorHex(product.frame_color) || '#000000'
+                              }}
+                              title={product.frame_color}
+                            />
+                          </div>
+                          {/* Show if product has color-specific images */}
+                          {product.color_images && typeof product.color_images === 'object' && Object.keys(product.color_images).length > 0 && (
+                            <div className="text-xs text-indigo-600 font-medium">
+                              {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-gray-400">-</span>
+                          {/* Show color images even if no frame_color */}
+                          {product.color_images && typeof product.color_images === 'object' && Object.keys(product.color_images).length > 0 && (
+                            <div className="text-xs text-indigo-600 font-medium">
+                              {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="table-cell-responsive text-sm sm:text-base font-semibold text-gray-900">
                       ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}

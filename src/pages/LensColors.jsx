@@ -8,12 +8,16 @@ import { API_ROUTES } from '../config/apiRoutes';
 const LensColors = () => {
   const [lensColors, setLensColors] = useState([]);
   const [lensOptions, setLensOptions] = useState([]);
+  const [lensFinishes, setLensFinishes] = useState([]);
+  const [prescriptionLensTypes, setPrescriptionLensTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLensColor, setSelectedLensColor] = useState(null);
 
   useEffect(() => {
     fetchLensOptions();
+    fetchLensFinishes();
+    fetchPrescriptionLensTypes();
     fetchLensColors();
   }, []);
 
@@ -59,20 +63,131 @@ const LensColors = () => {
     }
   };
 
-  const getLensOptionName = (color) => {
-    // First check if the color has nested lens_option data
-    if (color.lens_option && color.lens_option.name) {
-      return color.lens_option.name;
+  const fetchLensFinishes = async () => {
+    try {
+      const response = await api.get(`${API_ROUTES.ADMIN.LENS_FINISHES.LIST}?page=1&limit=1000`);
+      let lensFinishesData = [];
+      
+      if (response.data) {
+        if (response.data.data) {
+          const dataObj = response.data.data;
+          if (Array.isArray(dataObj)) {
+            lensFinishesData = dataObj;
+          } else if (dataObj.lensFinishes && Array.isArray(dataObj.lensFinishes)) {
+            lensFinishesData = dataObj.lensFinishes;
+          } else if (dataObj.finishes && Array.isArray(dataObj.finishes)) {
+            lensFinishesData = dataObj.finishes;
+          } else if (dataObj.data && Array.isArray(dataObj.data)) {
+            lensFinishesData = dataObj.data;
+          } else if (dataObj.results && Array.isArray(dataObj.results)) {
+            lensFinishesData = dataObj.results;
+          }
+        } else if (Array.isArray(response.data)) {
+          lensFinishesData = response.data;
+        } else {
+          if (response.data.lensFinishes && Array.isArray(response.data.lensFinishes)) {
+            lensFinishesData = response.data.lensFinishes;
+          } else if (response.data.finishes && Array.isArray(response.data.finishes)) {
+            lensFinishesData = response.data.finishes;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            lensFinishesData = response.data.data;
+          } else if (response.data.results && Array.isArray(response.data.results)) {
+            lensFinishesData = response.data.results;
+          }
+        }
+      }
+      
+      if (Array.isArray(lensFinishesData)) {
+        setLensFinishes(lensFinishesData);
+      }
+    } catch (error) {
+      console.error('Lens finishes fetch error:', error);
     }
-    if (color.lensOption && color.lensOption.name) {
-      return color.lensOption.name;
+  };
+
+  const fetchPrescriptionLensTypes = async () => {
+    try {
+      const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.LIST}?page=1&limit=1000`);
+      let prescriptionLensTypesData = [];
+      
+      if (response.data) {
+        if (response.data.data) {
+          const dataObj = response.data.data;
+          if (Array.isArray(dataObj)) {
+            prescriptionLensTypesData = dataObj;
+          } else if (dataObj.prescriptionLensTypes && Array.isArray(dataObj.prescriptionLensTypes)) {
+            prescriptionLensTypesData = dataObj.prescriptionLensTypes;
+          } else if (dataObj.data && Array.isArray(dataObj.data)) {
+            prescriptionLensTypesData = dataObj.data;
+          } else if (dataObj.results && Array.isArray(dataObj.results)) {
+            prescriptionLensTypesData = dataObj.results;
+          }
+        } else if (Array.isArray(response.data)) {
+          prescriptionLensTypesData = response.data;
+        } else {
+          if (response.data.prescriptionLensTypes && Array.isArray(response.data.prescriptionLensTypes)) {
+            prescriptionLensTypesData = response.data.prescriptionLensTypes;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            prescriptionLensTypesData = response.data.data;
+          } else if (response.data.results && Array.isArray(response.data.results)) {
+            prescriptionLensTypesData = response.data.results;
+          }
+        }
+      }
+      
+      if (Array.isArray(prescriptionLensTypesData)) {
+        setPrescriptionLensTypes(prescriptionLensTypesData);
+      }
+    } catch (error) {
+      console.error('Prescription lens types fetch error:', error);
+    }
+  };
+
+  const getParentName = (color) => {
+    // Check for prescription lens type first
+    if (color.prescription_lens_type_id || color.prescriptionLensTypeId) {
+      const typeId = color.prescription_lens_type_id || color.prescriptionLensTypeId;
+      if (color.prescription_lens_type && color.prescription_lens_type.name) {
+        return { name: color.prescription_lens_type.name, type: 'prescription', isSun: color.prescription_lens_type.name.toLowerCase().includes('sun') };
+      }
+      if (color.prescriptionLensType && color.prescriptionLensType.name) {
+        return { name: color.prescriptionLensType.name, type: 'prescription', isSun: color.prescriptionLensType.name.toLowerCase().includes('sun') };
+      }
+      const type = prescriptionLensTypes.find(t => t.id === typeId || t.id === parseInt(typeId));
+      if (type) {
+        return { name: type.name, type: 'prescription', isSun: type.name && type.name.toLowerCase().includes('sun') };
+      }
+      return { name: `Prescription Type ID: ${typeId}`, type: 'prescription', isSun: false };
     }
     
-    // Otherwise, look up by ID
+    // Check for lens finish
+    if (color.lens_finish_id || color.lensFinishId) {
+      const finishId = color.lens_finish_id || color.lensFinishId;
+      if (color.lens_finish && color.lens_finish.name) {
+        return { name: color.lens_finish.name, type: 'finish' };
+      }
+      if (color.lensFinish && color.lensFinish.name) {
+        return { name: color.lensFinish.name, type: 'finish' };
+      }
+      const finish = lensFinishes.find(f => f.id === finishId || f.id === parseInt(finishId));
+      if (finish) {
+        return { name: finish.name, type: 'finish' };
+      }
+      return { name: `Finish ID: ${finishId}`, type: 'finish' };
+    }
+    
+    // Default to lens option
+    if (color.lens_option && color.lens_option.name) {
+      return { name: color.lens_option.name, type: 'option' };
+    }
+    if (color.lensOption && color.lensOption.name) {
+      return { name: color.lensOption.name, type: 'option' };
+    }
+    
     const optionId = color.lens_option_id || color.lensOptionId;
-    if (!optionId) return 'N/A';
+    if (!optionId) return { name: 'N/A', type: 'unknown' };
     const option = lensOptions.find(o => o.id === optionId || o.id === parseInt(optionId));
-    return option ? option.name : `ID: ${optionId}`;
+    return { name: option ? option.name : `ID: ${optionId}`, type: 'option' };
   };
 
   const fetchLensColors = async () => {
@@ -249,7 +364,7 @@ const LensColors = () => {
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lens Option
+                  Parent
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
@@ -301,7 +416,26 @@ const LensColors = () => {
                         {colorId}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {getLensOptionName(color)}
+                        {(() => {
+                          const parent = getParentName(color);
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                parent.type === 'prescription' 
+                                  ? 'bg-purple-100 text-purple-800' 
+                                  : parent.type === 'finish'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {parent.type === 'prescription' ? 'Prescription' : parent.type === 'finish' ? 'Finish' : 'Option'}
+                              </span>
+                              <span>
+                                {parent.name}
+                                {parent.isSun && <span className="ml-1" title="Prescription Sun Color">☀️</span>}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {colorName}

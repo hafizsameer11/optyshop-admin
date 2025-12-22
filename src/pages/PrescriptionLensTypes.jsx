@@ -157,15 +157,28 @@ const PrescriptionLensTypes = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Prescription Lens Types</h1>
-        <button
-          onClick={handleAddLensType}
-          className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
-        >
-          <FiPlus />
-          <span>Add Prescription Lens Type</span>
-        </button>
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-gray-900">Prescription Lens Types</h1>
+          <button
+            onClick={handleAddLensType}
+            className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+          >
+            <FiPlus />
+            <span>Add Prescription Lens Type</span>
+          </button>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <strong>💡 How to Add Prescription Sun Colors:</strong>
+          </p>
+          <ol className="text-sm text-blue-700 mt-2 ml-4 list-decimal space-y-1">
+            <li>Create a Prescription Lens Type with "Sun" in the name (e.g., "Prescription Sun", "Distance Vision Sun")</li>
+            <li>Go to the <strong>Lens Colors</strong> page and create a new color</li>
+            <li>Select "Prescription Lens Type" as the Parent Type and choose the sun type you created</li>
+            <li>The colors will then be available via <code className="bg-blue-100 px-1 rounded">GET /api/lens/prescription-sun-colors</code> for website display</li>
+          </ol>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">
@@ -178,6 +191,9 @@ const PrescriptionLensTypes = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Slug
@@ -208,7 +224,7 @@ const PrescriptionLensTypes = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {lensTypes.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="11" className="px-6 py-4 text-center text-sm text-gray-500">
                     No prescription lens types found
                   </td>
                 </tr>
@@ -241,7 +257,26 @@ const PrescriptionLensTypes = () => {
                         {typeId}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {typeName}
+                        <div className="flex items-center gap-2">
+                          {typeName}
+                          {typeName && typeName.toLowerCase().includes('sun') && (
+                            <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full" title="Prescription Sun Type - Colors added to this type will be available as prescription sun colors">
+                              ☀️ Sun
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {typeName && typeName.toLowerCase().includes('sun') ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-purple-600 font-medium">Prescription Sun</span>
+                            <span className="text-xs text-gray-500">
+                              Colors available via <code className="bg-gray-100 px-1 rounded">/api/lens/prescription-sun-colors</code>
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-500">Standard</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {typeSlug}

@@ -9,7 +9,10 @@ import { useI18n } from '../context/I18nContext';
 const LensColorModal = ({ lensColor, onClose }) => {
   const { t } = useI18n();
   const [formData, setFormData] = useState({
+    parent_type: 'lens_option', // 'lens_option', 'lens_finish', or 'prescription_lens_type'
     lens_option_id: '',
+    lens_finish_id: '',
+    prescription_lens_type_id: '',
     name: '',
     color_code: '',
     hex_code: '#000000',
@@ -19,6 +22,8 @@ const LensColorModal = ({ lensColor, onClose }) => {
     sort_order: 0,
   });
   const [lensOptions, setLensOptions] = useState([]);
+  const [lensFinishes, setLensFinishes] = useState([]);
+  const [prescriptionLensTypes, setPrescriptionLensTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [imageFile, setImageFile] = useState(null);
@@ -36,9 +41,22 @@ const LensColorModal = ({ lensColor, onClose }) => {
 
   useEffect(() => {
     fetchLensOptions();
+    fetchLensFinishes();
+    fetchPrescriptionLensTypes();
     if (lensColor) {
+      // Determine parent type based on which ID is present
+      let parentType = 'lens_option';
+      if (lensColor.prescription_lens_type_id || lensColor.prescriptionLensTypeId) {
+        parentType = 'prescription_lens_type';
+      } else if (lensColor.lens_finish_id || lensColor.lensFinishId) {
+        parentType = 'lens_finish';
+      }
+      
       setFormData({
-        lens_option_id: lensColor.lens_option_id || '',
+        parent_type: parentType,
+        lens_option_id: lensColor.lens_option_id || lensColor.lensOptionId || '',
+        lens_finish_id: lensColor.lens_finish_id || lensColor.lensFinishId || '',
+        prescription_lens_type_id: lensColor.prescription_lens_type_id || lensColor.prescriptionLensTypeId || '',
         name: lensColor.name || '',
         color_code: lensColor.color_code || '',
         hex_code: lensColor.hex_code || '#000000',
@@ -62,7 +80,10 @@ const LensColorModal = ({ lensColor, onClose }) => {
       }]);
     } else {
       setFormData({
+        parent_type: 'lens_option',
         lens_option_id: '',
+        lens_finish_id: '',
+        prescription_lens_type_id: '',
         name: '',
         color_code: '',
         hex_code: '#000000',
@@ -81,6 +102,88 @@ const LensColorModal = ({ lensColor, onClose }) => {
       }]);
     }
   }, [lensColor]);
+
+  const fetchLensFinishes = async () => {
+    try {
+      const response = await api.get(`${API_ROUTES.ADMIN.LENS_FINISHES.LIST}?page=1&limit=1000`);
+      let lensFinishesData = [];
+      
+      if (response.data) {
+        if (response.data.data) {
+          const dataObj = response.data.data;
+          if (Array.isArray(dataObj)) {
+            lensFinishesData = dataObj;
+          } else if (dataObj.lensFinishes && Array.isArray(dataObj.lensFinishes)) {
+            lensFinishesData = dataObj.lensFinishes;
+          } else if (dataObj.finishes && Array.isArray(dataObj.finishes)) {
+            lensFinishesData = dataObj.finishes;
+          } else if (dataObj.data && Array.isArray(dataObj.data)) {
+            lensFinishesData = dataObj.data;
+          } else if (dataObj.results && Array.isArray(dataObj.results)) {
+            lensFinishesData = dataObj.results;
+          }
+        } else if (Array.isArray(response.data)) {
+          lensFinishesData = response.data;
+        } else {
+          if (response.data.lensFinishes && Array.isArray(response.data.lensFinishes)) {
+            lensFinishesData = response.data.lensFinishes;
+          } else if (response.data.finishes && Array.isArray(response.data.finishes)) {
+            lensFinishesData = response.data.finishes;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            lensFinishesData = response.data.data;
+          } else if (response.data.results && Array.isArray(response.data.results)) {
+            lensFinishesData = response.data.results;
+          }
+        }
+      }
+      
+      if (Array.isArray(lensFinishesData)) {
+        setLensFinishes(lensFinishesData);
+      }
+    } catch (error) {
+      console.error('Failed to fetch lens finishes:', error);
+      setLensFinishes([]);
+    }
+  };
+
+  const fetchPrescriptionLensTypes = async () => {
+    try {
+      const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.LIST}?page=1&limit=1000`);
+      let prescriptionLensTypesData = [];
+      
+      if (response.data) {
+        if (response.data.data) {
+          const dataObj = response.data.data;
+          if (Array.isArray(dataObj)) {
+            prescriptionLensTypesData = dataObj;
+          } else if (dataObj.prescriptionLensTypes && Array.isArray(dataObj.prescriptionLensTypes)) {
+            prescriptionLensTypesData = dataObj.prescriptionLensTypes;
+          } else if (dataObj.data && Array.isArray(dataObj.data)) {
+            prescriptionLensTypesData = dataObj.data;
+          } else if (dataObj.results && Array.isArray(dataObj.results)) {
+            prescriptionLensTypesData = dataObj.results;
+          }
+        } else if (Array.isArray(response.data)) {
+          prescriptionLensTypesData = response.data;
+        } else {
+          if (response.data.prescriptionLensTypes && Array.isArray(response.data.prescriptionLensTypes)) {
+            prescriptionLensTypesData = response.data.prescriptionLensTypes;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            prescriptionLensTypesData = response.data.data;
+          } else if (response.data.results && Array.isArray(response.data.results)) {
+            prescriptionLensTypesData = response.data.results;
+          }
+        }
+      }
+      
+      if (Array.isArray(prescriptionLensTypesData)) {
+        setPrescriptionLensTypes(prescriptionLensTypesData);
+      }
+    } catch (error) {
+      console.error('Failed to fetch prescription lens types:', error);
+      setPrescriptionLensTypes([]);
+    }
+  };
 
   const fetchLensOptions = async () => {
     try {
@@ -175,7 +278,18 @@ const LensColorModal = ({ lensColor, onClose }) => {
     const { name, value, type, checked } = e.target;
     const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (value === '' ? '' : parseFloat(value) || '') : value;
     
-    setFormData({ ...formData, [name]: fieldValue });
+    // When parent type changes, clear the other parent IDs
+    if (name === 'parent_type') {
+      setFormData({ 
+        ...formData, 
+        parent_type: fieldValue,
+        lens_option_id: '',
+        lens_finish_id: '',
+        prescription_lens_type_id: '',
+      });
+    } else {
+      setFormData({ ...formData, [name]: fieldValue });
+    }
   };
 
   const handleImageChange = (e, colorIndex = null) => {
@@ -247,8 +361,18 @@ const LensColorModal = ({ lensColor, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.lens_option_id) {
-      toast.error('Please select a lens option');
+    // Validate that at least one parent is selected
+    let parentId = null;
+    if (formData.parent_type === 'lens_option' && formData.lens_option_id) {
+      parentId = formData.lens_option_id;
+    } else if (formData.parent_type === 'lens_finish' && formData.lens_finish_id) {
+      parentId = formData.lens_finish_id;
+    } else if (formData.parent_type === 'prescription_lens_type' && formData.prescription_lens_type_id) {
+      parentId = formData.prescription_lens_type_id;
+    }
+    
+    if (!parentId) {
+      toast.error(`Please select a ${formData.parent_type === 'lens_option' ? 'lens option' : formData.parent_type === 'lens_finish' ? 'lens finish' : 'prescription lens type'}`);
       return;
     }
 
@@ -283,7 +407,21 @@ const LensColorModal = ({ lensColor, onClose }) => {
       // If editing single color, use legacy approach
       if (lensColor) {
         const formDataToSend = new FormData();
-        formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
+        
+        // Add the appropriate parent ID based on parent_type
+        if (formData.parent_type === 'lens_option') {
+          formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
+          formDataToSend.append('lens_finish_id', '');
+          formDataToSend.append('prescription_lens_type_id', '');
+        } else if (formData.parent_type === 'lens_finish') {
+          formDataToSend.append('lens_option_id', '');
+          formDataToSend.append('lens_finish_id', parseInt(formData.lens_finish_id, 10));
+          formDataToSend.append('prescription_lens_type_id', '');
+        } else if (formData.parent_type === 'prescription_lens_type') {
+          formDataToSend.append('lens_option_id', '');
+          formDataToSend.append('lens_finish_id', '');
+          formDataToSend.append('prescription_lens_type_id', parseInt(formData.prescription_lens_type_id, 10));
+        }
         
         // Use defaults if empty
         let name = (validColors[0].name || '').toString().trim();
@@ -352,18 +490,33 @@ const LensColorModal = ({ lensColor, onClose }) => {
               colorCode = `COLOR_${i + 1}`;
             }
             
-            const lensOptionId = parseInt(formData.lens_option_id, 10);
+            // Determine parent IDs based on parent_type
+            let lensOptionId = null;
+            let lensFinishId = null;
+            let prescriptionLensTypeId = null;
             
-            // Ensure lens_option_id is valid
-            if (!lensOptionId || isNaN(lensOptionId)) {
-              throw new Error(`Invalid lens_option_id: ${formData.lens_option_id}`);
+            if (formData.parent_type === 'lens_option') {
+              lensOptionId = parseInt(formData.lens_option_id, 10);
+              if (!lensOptionId || isNaN(lensOptionId)) {
+                throw new Error(`Invalid lens_option_id: ${formData.lens_option_id}`);
+              }
+            } else if (formData.parent_type === 'lens_finish') {
+              lensFinishId = parseInt(formData.lens_finish_id, 10);
+              if (!lensFinishId || isNaN(lensFinishId)) {
+                throw new Error(`Invalid lens_finish_id: ${formData.lens_finish_id}`);
+              }
+            } else if (formData.parent_type === 'prescription_lens_type') {
+              prescriptionLensTypeId = parseInt(formData.prescription_lens_type_id, 10);
+              if (!prescriptionLensTypeId || isNaN(prescriptionLensTypeId)) {
+                throw new Error(`Invalid prescription_lens_type_id: ${formData.prescription_lens_type_id}`);
+              }
             }
             
             // Prepare data object
             const dataToSend = {
               lens_option_id: lensOptionId,
-              lens_finish_id: null,
-              prescription_lens_type_id: null,
+              lens_finish_id: lensFinishId,
+              prescription_lens_type_id: prescriptionLensTypeId,
               name: name,
               color_code: colorCode,
               hex_code: color.hex_code || '#000000',
@@ -376,9 +529,9 @@ const LensColorModal = ({ lensColor, onClose }) => {
             let response;
             if (color.imageFile) {
               const formDataToSend = new FormData();
-              formDataToSend.append('lens_option_id', String(lensOptionId));
-              formDataToSend.append('lens_finish_id', ''); // Empty string for null
-              formDataToSend.append('prescription_lens_type_id', ''); // Empty string for null
+              formDataToSend.append('lens_option_id', lensOptionId ? String(lensOptionId) : '');
+              formDataToSend.append('lens_finish_id', lensFinishId ? String(lensFinishId) : '');
+              formDataToSend.append('prescription_lens_type_id', prescriptionLensTypeId ? String(prescriptionLensTypeId) : '');
               formDataToSend.append('name', name);
               formDataToSend.append('color_code', colorCode);
               formDataToSend.append('hex_code', color.hex_code || '#000000');
@@ -496,38 +649,140 @@ const LensColorModal = ({ lensColor, onClose }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Lens Option <span className="text-red-500">*</span>
+              Parent Type <span className="text-red-500">*</span>
             </label>
             <select
-              name="lens_option_id"
-              value={formData.lens_option_id}
+              name="parent_type"
+              value={formData.parent_type}
               onChange={handleChange}
               className="input-modern"
               required
-              disabled={loadingOptions || lensOptions.length === 0}
             >
-              <option value="">
-                {loadingOptions 
-                  ? 'Loading options...' 
-                  : lensOptions.length === 0 
-                    ? 'No lens options available' 
-                    : 'Select lens option'}
-              </option>
-              {lensOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name} {option.type ? `(${option.type})` : ''}
-                </option>
-              ))}
+              <option value="lens_option">Lens Option</option>
+              <option value="lens_finish">Lens Finish</option>
+              <option value="prescription_lens_type">Prescription Lens Type</option>
             </select>
-            {loadingOptions && (
-              <p className="text-xs text-gray-500 mt-1">Loading options...</p>
-            )}
-            {!loadingOptions && lensOptions.length === 0 && (
-              <p className="text-xs text-red-500 mt-1">
-                No lens options found. Please create lens options first in the Lens Options page.
-              </p>
-            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Select the type of parent this color belongs to. Choose "Prescription Lens Type" to create prescription sun colors.
+            </p>
           </div>
+
+          {formData.parent_type === 'lens_option' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Lens Option <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="lens_option_id"
+                value={formData.lens_option_id}
+                onChange={handleChange}
+                className="input-modern"
+                required
+                disabled={loadingOptions || lensOptions.length === 0}
+              >
+                <option value="">
+                  {loadingOptions 
+                    ? 'Loading options...' 
+                    : lensOptions.length === 0 
+                      ? 'No lens options available' 
+                      : 'Select lens option'}
+                </option>
+                {lensOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name} {option.type ? `(${option.type})` : ''}
+                  </option>
+                ))}
+              </select>
+              {loadingOptions && (
+                <p className="text-xs text-gray-500 mt-1">Loading options...</p>
+              )}
+              {!loadingOptions && lensOptions.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  No lens options found. Please create lens options first in the Lens Options page.
+                </p>
+              )}
+            </div>
+          )}
+
+          {formData.parent_type === 'lens_finish' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Lens Finish <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="lens_finish_id"
+                value={formData.lens_finish_id}
+                onChange={handleChange}
+                className="input-modern"
+                required
+                disabled={lensFinishes.length === 0}
+              >
+                <option value="">
+                  {lensFinishes.length === 0 
+                    ? 'No lens finishes available' 
+                    : 'Select lens finish'}
+                </option>
+                {lensFinishes.map((finish) => (
+                  <option key={finish.id} value={finish.id}>
+                    {finish.name}
+                  </option>
+                ))}
+              </select>
+              {lensFinishes.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  No lens finishes found. Please create lens finishes first in the Lens Finishes page.
+                </p>
+              )}
+            </div>
+          )}
+
+          {formData.parent_type === 'prescription_lens_type' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Prescription Lens Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="prescription_lens_type_id"
+                value={formData.prescription_lens_type_id}
+                onChange={handleChange}
+                className="input-modern"
+                required
+                disabled={prescriptionLensTypes.length === 0}
+              >
+                <option value="">
+                  {prescriptionLensTypes.length === 0 
+                    ? 'No prescription lens types available' 
+                    : 'Select prescription lens type'}
+                </option>
+                {prescriptionLensTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name} {type.name && type.name.toLowerCase().includes('sun') ? '☀️' : ''}
+                  </option>
+                ))}
+              </select>
+              {prescriptionLensTypes.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  No prescription lens types found. Please create prescription lens types first in the Prescription Lens Types page.
+                </p>
+              )}
+              {formData.prescription_lens_type_id && (() => {
+                const selectedType = prescriptionLensTypes.find(t => t.id === parseInt(formData.prescription_lens_type_id));
+                const isSunType = selectedType && selectedType.name && selectedType.name.toLowerCase().includes('sun');
+                return isSunType ? (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-800">
+                      <strong>📋 Prescription Sun Color:</strong> This color will be available via the public endpoint 
+                      <code className="bg-blue-100 px-1 rounded ml-1">GET /api/lens/prescription-sun-colors</code> for website display.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 <strong>Tip:</strong> To create prescription sun colors, select a prescription lens type with "Sun" in its name.
+                  </p>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Multiple Colors Section */}
           <div className="space-y-4">

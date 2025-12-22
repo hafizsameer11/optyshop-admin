@@ -125,7 +125,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: FiFileText,
       children: [
         { path: '/prescriptions', icon: FiFileText, label: t('prescriptions') },
-        { path: '/prescription-lens-types', icon: FiEye, label: t('lensTypes') },
+        { path: '/prescription-lens-types', icon: FiEye, label: t('prescriptionLensTypes') },
         { path: '/prescription-lens-variants', icon: FiLayers, label: t('lensVariants') },
       ]
     },

@@ -130,6 +130,9 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
               required
               placeholder="e.g., Distance Vision"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 <strong>Tip:</strong> To enable prescription sun colors, include "Sun" in the name (e.g., "Prescription Sun", "Distance Vision Sun")
+            </p>
           </div>
 
           <div>
@@ -194,6 +197,14 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
               className="input-modern"
               placeholder="e.g., For distance (Thin, anti-glare, blue-cut options)"
             />
+            {formData.name && formData.name.toLowerCase().includes('sun') && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-800">
+                  <strong>📋 Prescription Sun Type Detected:</strong> After creating this type, you can add colors to it via the Lens Colors page. 
+                  Set <code className="bg-blue-100 px-1 rounded">prescription_lens_type_id</code> to this type's ID when creating colors.
+                </p>
+              </div>
+            )}
           </div>
 
           <div>

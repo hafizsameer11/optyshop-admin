@@ -4,8 +4,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
+    const { t } = useI18n();
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
@@ -198,17 +200,17 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
         try {
             // Validate required fields
             if (!formData.name || !formData.name.trim()) {
-                toast.error('SubCategory name is required');
+                toast.error(t('subCategoryNameRequired'));
                 setLoading(false);
                 return;
             }
                 if (!formData.category_id) {
-                    toast.error('Category is required');
+                    toast.error(t('categoryRequired'));
                 setLoading(false);
                 return;
             }
             if (!formData.slug || !formData.slug.trim()) {
-                toast.error('SubCategory slug is required');
+                toast.error(t('subCategorySlugRequired'));
                 setLoading(false);
                 return;
             }
@@ -285,12 +287,12 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                     // Validate that the essential fields were saved
                     if (!createdSubCategory.id) {
                         console.error('❌ ERROR: API response missing subcategory ID!', response.data);
-                        toast.error('Warning: Subcategory may not have been saved correctly. Please refresh the page.');
+                        toast.error(t('subCategorySaveWarning'));
                     }
                     
 
                     // Handle response structure: { success, message, data: { subcategory: {} } }
-                    const successMessage = response.data?.message || (subCategory ? 'SubCategory updated successfully' : 'SubCategory created successfully');
+                    const successMessage = response.data?.message || (subCategory ? t('subCategoryUpdated') : t('subCategoryCreated'));
 
                     toast.success(successMessage);
                     
@@ -344,15 +346,15 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
         } catch (error) {
             console.error('SubCategory save error:', error);
             if (!error.response) {
-                toast.error('Backend unavailable - Cannot save subcategory');
+                toast.error(t('cannotSaveSubCategory'));
             } else if (error.response.status === 401) {
-                toast.error('❌ Demo mode - Please log in with real credentials');
+                toast.error(t('demoModeLogin'));
             } else if (error.response.status === 400 || error.response.status === 422) {
                 const errorData = error.response?.data || {};
-                const errorMessage = errorData.message || errorData.errors?.[0]?.msg || 'Validation failed';
+                const errorMessage = errorData.message || errorData.errors?.[0]?.msg || t('validationFailed');
                 toast.error(errorMessage);
             } else {
-                const errorMessage = error.response?.data?.message || 'Failed to save subcategory';
+                const errorMessage = error.response?.data?.message || t('failedToSaveSubCategory');
                 toast.error(errorMessage);
             }
         } finally {
@@ -361,186 +363,188 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 backdrop-blur-md flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-indigo-200/50 overflow-hidden flex flex-col max-h-[90vh] animate-fade-in">
+        <div className="fixed inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 backdrop-blur-md flex items-center justify-center z-[9999] p-2 sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-indigo-200/50 overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] animate-fade-in">
                 {/* Fixed Header */}
-                <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex-shrink-0">
-                    <h2 className="text-2xl font-extrabold text-white">
-                        {subCategory ? 'Edit SubCategory' : 'Add SubCategory'}
+                <div className="flex items-center justify-between p-4 sm:p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex-shrink-0">
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+                        {subCategory ? t('editSubCategory') : t('addSubCategory')}
                     </h2>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         <LanguageSwitcher variant="compact" onGradient={true} />
                         <button 
                             onClick={onClose} 
                             className="p-2 rounded-xl text-white/90 hover:text-white hover:bg-white/20 transition-all duration-200"
                             aria-label="Close"
                         >
-                            <FiX className="w-6 h-6" />
+                            <FiX className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                     </div>
                 </div>
 
                 {/* Scrollable Form Content */}
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col custom-scrollbar" style={{ maxHeight: 'calc(90vh - 140px)' }}>
-                    <div className="p-6 space-y-6 bg-gray-50/50 flex-1 min-h-0">
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50/50">
 
-                        {/* Category Selection - Required */}
-                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                        <label className="block text-sm font-bold text-gray-800 mb-2">
-                            Category <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            name="category_id"
-                            value={formData.category_id}
-                            onChange={handleChange}
-                            className="input-modern w-full"
-                                required
-                        >
-                            <option value="">Select a Category</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                            {/* Category Selection - Required */}
+                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <label className="block text-sm font-bold text-gray-800 mb-2">
+                                    {t('category')} <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    name="category_id"
+                                    value={formData.category_id}
+                                    onChange={handleChange}
+                                    className="input-modern w-full"
+                                    required
+                                >
+                                    <option value="">{t('selectCategory')}</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        {/* Parent SubCategory Selection - Optional (for nested subcategories) */}
-                        {formData.category_id && (
-                        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <label className="block text-sm font-bold text-gray-800 mb-2">
-                                    Parent SubCategory <span className="text-gray-500 text-xs font-normal">(Optional)</span>
-                            </label>
-                                {loadingParents ? (
-                                    <div className="input-modern text-gray-500 w-full">Loading parent options...</div>
-                                ) : availableParents.length > 0 ? (
-                                    <>
-                            <select
-                                            name="parent_id"
-                                            value={formData.parent_id}
-                                onChange={handleChange}
-                                            className="input-modern w-full"
-                                        >
-                                            <option value="">None (Top-level subcategory)</option>
-                                            {availableParents.map(parent => (
-                                                <option key={parent.id} value={parent.id}>
-                                                    {parent.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <p className="text-xs text-gray-500 mt-2 px-1">
-                                            {formData.parent_id 
-                                                ? '✓ This will be a nested subcategory (sub-subcategory)'
-                                                : 'Leave empty to create a top-level subcategory, or select a parent to create a nested subcategory'}
-                                        </p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <select
-                                            name="parent_id"
-                                            value=""
-                                            disabled
-                                            className="input-modern bg-gray-100 text-gray-400 cursor-not-allowed w-full"
-                                        >
-                                            <option value="">None (No parent subcategories available)</option>
-                                        </select>
-                                        <p className="text-xs text-amber-600 mt-2 px-1">
-                                            No top-level subcategories found in this category. Create a top-level subcategory first, then you can create nested subcategories.
-                                        </p>
-                                    </>
-                                )}
+                            {/* Parent SubCategory Selection - Optional (for nested subcategories) */}
+                            {formData.category_id && (
+                                <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">
+                                        {t('parentSubCategory')} <span className="text-gray-500 text-xs font-normal">{t('optional')}</span>
+                                    </label>
+                                    {loadingParents ? (
+                                        <div className="input-modern text-gray-500 w-full">{t('loadingParentOptions')}</div>
+                                    ) : availableParents.length > 0 ? (
+                                        <>
+                                            <select
+                                                name="parent_id"
+                                                value={formData.parent_id}
+                                                onChange={handleChange}
+                                                className="input-modern w-full"
+                                            >
+                                                <option value="">{t('noneTopLevel')}</option>
+                                                {availableParents.map(parent => (
+                                                    <option key={parent.id} value={parent.id}>
+                                                        {parent.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <p className="text-xs text-gray-500 mt-2 px-1">
+                                                {formData.parent_id 
+                                                    ? `✓ ${t('nestedSubCategoryNote')}`
+                                                    : t('topLevelSubCategoryNote')}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <select
+                                                name="parent_id"
+                                                value=""
+                                                disabled
+                                                className="input-modern bg-gray-100 text-gray-400 cursor-not-allowed w-full"
+                                            >
+                                                <option value="">{t('noneNoParents')}</option>
+                                            </select>
+                                            <p className="text-xs text-amber-600 mt-2 px-1">
+                                                {t('noTopLevelSubCategories')}
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <label className="block text-sm font-bold text-gray-800 mb-2">
+                                    {t('name')} <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    className="input-modern w-full"
+                                    required
+                                />
+                            </div>
+
+                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <label className="block text-sm font-bold text-gray-800 mb-2">
+                                    {t('slug')} <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="slug"
+                                    value={formData.slug}
+                                    onChange={handleChange}
+                                    className="input-modern font-mono w-full"
+                                    required
+                                />
+                            </div>
+
+                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <label className="block text-sm font-bold text-gray-800 mb-2">
+                                    {t('description')}
+                                </label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    rows="3"
+                                    className="input-modern resize-none w-full"
+                                    placeholder={t('enterSubCategoryDescription')}
+                                />
+                            </div>
+
+                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <label className="block text-sm font-bold text-gray-800 mb-2">
+                                    {t('sortOrder')}
+                                </label>
+                                <input
+                                    type="number"
+                                    name="sort_order"
+                                    value={formData.sort_order}
+                                    onChange={handleChange}
+                                    min="0"
+                                    className="input-modern w-full"
+                                    placeholder="0"
+                                />
+                                <p className="text-xs text-gray-500 mt-2 px-1">{t('sortOrderHint')}</p>
+                            </div>
+
+                            <div className="flex items-center p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+                                <input
+                                    type="checkbox"
+                                    name="is_active"
+                                    id="is_active"
+                                    checked={formData.is_active}
+                                    onChange={handleChange}
+                                    className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
+                                />
+                                <label htmlFor="is_active" className="ml-3 block text-sm font-semibold text-gray-800 cursor-pointer">
+                                    {t('active')}
+                                </label>
+                            </div>
+
                         </div>
-                    )}
-
-                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                        <label className="block text-sm font-bold text-gray-800 mb-2">
-                            Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            className="input-modern w-full"
-                            required
-                        />
                     </div>
 
-                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                        <label className="block text-sm font-bold text-gray-800 mb-2">
-                            Slug <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="slug"
-                            value={formData.slug}
-                            onChange={handleChange}
-                            className="input-modern font-mono w-full"
-                            required
-                        />
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                        <label className="block text-sm font-bold text-gray-800 mb-2">
-                            Description
-                        </label>
-                        <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows="3"
-                            className="input-modern resize-none w-full"
-                            placeholder="Enter subcategory description (optional)"
-                        />
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                        <label className="block text-sm font-bold text-gray-800 mb-2">
-                            Sort Order
-                        </label>
-                        <input
-                            type="number"
-                            name="sort_order"
-                            value={formData.sort_order}
-                            onChange={handleChange}
-                            min="0"
-                            className="input-modern w-full"
-                            placeholder="0"
-                        />
-                        <p className="text-xs text-gray-500 mt-2 px-1">Lower numbers appear first (default: 0)</p>
-                    </div>
-
-                    <div className="flex items-center p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
-                        <input
-                            type="checkbox"
-                            name="is_active"
-                            id="is_active"
-                            checked={formData.is_active}
-                            onChange={handleChange}
-                            className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
-                        />
-                        <label htmlFor="is_active" className="ml-3 block text-sm font-semibold text-gray-800 cursor-pointer">
-                            Active
-                        </label>
-                    </div>
-
-                    </div>
-
-                    {/* Fixed Footer with Action Buttons */}
-                    <div className="flex flex-col sm:flex-row justify-end gap-3 p-6 border-t border-gray-200 bg-white flex-shrink-0">
+                    {/* Fixed Footer with Action Buttons - Always at bottom */}
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-white flex-shrink-0">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold text-gray-700"
+                            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold text-gray-700 text-sm sm:text-base"
                         >
-                            Cancel
+                            {t('cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-indigo-500 disabled:hover:via-purple-500 disabled:hover:to-pink-500 text-sm sm:text-base"
                         >
-                            {loading ? 'Saving...' : 'Save'}
+                            {loading ? t('saving') : t('save')}
                         </button>
                     </div>
                 </form>

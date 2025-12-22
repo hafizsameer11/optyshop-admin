@@ -252,21 +252,18 @@ const LensColorModal = ({ lensColor, onClose }) => {
       return;
     }
 
-    // Validate colors - both name and color_code are required
-    const validColors = colors.filter(color => 
-      color.name.trim() !== '' && color.color_code.trim() !== ''
-    );
-    if (validColors.length === 0) {
-      toast.error('Please add at least one color with both name and color code');
-      return;
-    }
+    // Filter colors that have at least some data (name, color_code, or hex_code)
+    const validColors = colors.filter(color => {
+      const name = (color.name || '').trim();
+      const colorCode = (color.color_code || '').trim();
+      const hexCode = (color.hex_code || '').trim();
+      // At least one field should be filled
+      return name !== '' || colorCode !== '' || hexCode !== '';
+    });
     
-    // Check if any color is missing required fields
-    const invalidColors = colors.filter(color => 
-      color.name.trim() !== '' && color.color_code.trim() === ''
-    );
-    if (invalidColors.length > 0) {
-      toast.error('Color code is required for all colors');
+    if (validColors.length === 0) {
+      toast.error('Please add at least one color');
+      setLoading(false);
       return;
     }
     
@@ -287,8 +284,21 @@ const LensColorModal = ({ lensColor, onClose }) => {
       if (lensColor) {
         const formDataToSend = new FormData();
         formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
-        formDataToSend.append('name', validColors[0].name.trim());
-        formDataToSend.append('color_code', validColors[0].color_code.trim());
+        
+        // Use defaults if empty
+        let name = (validColors[0].name || '').toString().trim();
+        let colorCode = (validColors[0].color_code || '').toString().trim();
+        
+        // Apply defaults if empty
+        if (!name || name.length === 0) {
+          name = 'Color';
+        }
+        if (!colorCode || colorCode.length === 0) {
+          colorCode = 'COLOR';
+        }
+        
+        formDataToSend.append('name', name);
+        formDataToSend.append('color_code', colorCode);
         formDataToSend.append('hex_code', validColors[0].hex_code || '#000000');
         formDataToSend.append('price_adjustment', parseFloat(validColors[0].price_adjustment) || 0);
         formDataToSend.append('is_active', formData.is_active);
@@ -318,41 +328,95 @@ const LensColorModal = ({ lensColor, onClose }) => {
         for (let i = 0; i < validColors.length; i++) {
           const color = validColors[i];
           try {
-            const formDataToSend = new FormData();
-            formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
-            formDataToSend.append('name', color.name.trim());
-            formDataToSend.append('color_code', color.color_code.trim());
-            formDataToSend.append('hex_code', color.hex_code || '#000000');
-            formDataToSend.append('price_adjustment', parseFloat(color.price_adjustment) || 0);
-            formDataToSend.append('is_active', formData.is_active);
-            formDataToSend.append('sort_order', parseInt(formData.sort_order, 10) || 0);
+            // Extract values - use defaults if empty or whitespace
+            let name = (color.name || '').toString().trim();
+            let colorCode = (color.color_code || '').toString().trim();
             
-            if (color.imageFile) {
-              formDataToSend.append('image', color.imageFile);
+            // Apply defaults if empty - ensure we always have valid values
+            if (!name || name.length === 0) {
+              name = `Color ${i + 1}`;
             }
-
-            // Log what we're sending for debugging
-            console.log(`Creating color ${i + 1}:`, {
-              lens_option_id: formData.lens_option_id,
-              name: color.name.trim(),
-              color_code: color.color_code.trim(),
-              hex_code: color.hex_code,
+            if (!colorCode || colorCode.length === 0) {
+              colorCode = `COLOR_${i + 1}`;
+            }
+            
+            // Trim final values
+            name = name.trim();
+            colorCode = colorCode.trim();
+            
+            // Ensure we have valid non-empty strings
+            if (!name || name.length === 0) {
+              name = `Color ${i + 1}`;
+            }
+            if (!colorCode || colorCode.length === 0) {
+              colorCode = `COLOR_${i + 1}`;
+            }
+            
+            const lensOptionId = parseInt(formData.lens_option_id, 10);
+            
+            // Ensure lens_option_id is valid
+            if (!lensOptionId || isNaN(lensOptionId)) {
+              throw new Error(`Invalid lens_option_id: ${formData.lens_option_id}`);
+            }
+            
+            // Prepare data object
+            const dataToSend = {
+              lens_option_id: lensOptionId,
+              lens_finish_id: null,
+              prescription_lens_type_id: null,
+              name: name,
+              color_code: colorCode,
+              hex_code: color.hex_code || '#000000',
               price_adjustment: parseFloat(color.price_adjustment) || 0,
-              is_active: formData.is_active,
-              sort_order: parseInt(formData.sort_order, 10) || 0,
-              hasImage: !!color.imageFile
-            });
-
-            const response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, formDataToSend, {
-              headers: { 'Content-Type': 'multipart/form-data' }
-            });
+              is_active: formData.is_active !== false,
+              sort_order: parseInt(formData.sort_order, 10) || 0
+            };
+            
+            // If there's an image file, use FormData, otherwise use JSON
+            let response;
+            if (color.imageFile) {
+              const formDataToSend = new FormData();
+              formDataToSend.append('lens_option_id', String(lensOptionId));
+              formDataToSend.append('lens_finish_id', ''); // Empty string for null
+              formDataToSend.append('prescription_lens_type_id', ''); // Empty string for null
+              formDataToSend.append('name', name);
+              formDataToSend.append('color_code', colorCode);
+              formDataToSend.append('hex_code', color.hex_code || '#000000');
+              formDataToSend.append('price_adjustment', String(parseFloat(color.price_adjustment) || 0));
+              formDataToSend.append('is_active', String(formData.is_active !== false));
+              formDataToSend.append('sort_order', String(parseInt(formData.sort_order, 10) || 0));
+              formDataToSend.append('image', color.imageFile);
+              
+              // Log FormData contents
+              const formDataObj = {};
+              for (const [key, value] of formDataToSend.entries()) {
+                formDataObj[key] = value instanceof File ? `[File: ${value.name}]` : value;
+              }
+              console.log(`Creating color ${i + 1} with image (FormData):`, formDataObj);
+              
+              response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, formDataToSend, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+              });
+            } else {
+              console.log(`Creating color ${i + 1} without image (JSON):`, JSON.stringify(dataToSend, null, 2));
+              
+              response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, dataToSend, {
+                headers: { 'Content-Type': 'application/json' }
+              });
+            }
             console.log(`Successfully created color ${i + 1}:`, response.data);
             successCount++;
           } catch (error) {
             console.error(`Failed to create color ${i + 1}:`, error);
             console.error('Error response:', error.response);
-            console.error('Error response data:', error.response?.data);
+            console.error('Error response data:', JSON.stringify(error.response?.data, null, 2));
             console.error('Error response status:', error.response?.status);
+            console.error('Request config:', {
+              url: error.config?.url,
+              method: error.config?.method,
+              headers: error.config?.headers,
+              data: error.config?.data
+            });
             
             // Extract detailed error message
             let errorMessage = `Failed to create color ${i + 1}`;
@@ -373,9 +437,13 @@ const LensColorModal = ({ lensColor, onClose }) => {
                 } else {
                   errorMessage = String(errors);
                 }
+              } else {
+                // Log the entire error data object
+                errorMessage = JSON.stringify(error.response.data);
               }
             }
             
+            console.error('Final error message:', errorMessage);
             toast.error(errorMessage);
             errorCount++;
           }
@@ -495,30 +563,44 @@ const LensColorModal = ({ lensColor, onClose }) => {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Name <span className="text-red-500">*</span>
+                    Name <span className="text-gray-500 text-xs">(Auto-generated if empty)</span>
                   </label>
                   <input
                     type="text"
-                    value={color.name}
+                    value={color.name || ''}
                     onChange={(e) => handleColorChange(index, 'name', e.target.value)}
                     className="input-modern"
-                    required
-                    placeholder="e.g., Blue Mirror"
+                    placeholder="e.g., Blue Mirror (optional - will use 'Color 1' if empty)"
+                    onBlur={(e) => {
+                      // Ensure name is not just whitespace
+                      const value = e.target.value.trim();
+                      if (value !== color.name) {
+                        handleColorChange(index, 'name', value);
+                      }
+                    }}
                   />
+                  <p className="text-xs text-gray-500 mt-1">If left empty, will automatically use "Color {index + 1}"</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Color Code <span className="text-red-500">*</span>
+                    Color Code <span className="text-gray-500 text-xs">(Auto-generated if empty)</span>
                   </label>
                   <input
                     type="text"
-                    value={color.color_code}
+                    value={color.color_code || ''}
                     onChange={(e) => handleColorChange(index, 'color_code', e.target.value)}
                     className="input-modern"
-                    required
-                    placeholder="e.g., BLUE_MIRROR"
+                    placeholder="e.g., BLUE_MIRROR (optional - will use 'COLOR_1' if empty)"
+                    onBlur={(e) => {
+                      // Ensure color_code is not just whitespace
+                      const value = e.target.value.trim();
+                      if (value !== color.color_code) {
+                        handleColorChange(index, 'color_code', value);
+                      }
+                    }}
                   />
+                  <p className="text-xs text-gray-500 mt-1">If left empty, will automatically use "COLOR_{index + 1}"</p>
                 </div>
 
                 <div>

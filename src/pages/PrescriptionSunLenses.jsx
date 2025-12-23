@@ -133,8 +133,9 @@ const PrescriptionSunLenses = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Prescription Sun Lenses</h1>
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-gray-900">Prescription Sun Lenses</h1>
         <div className="flex items-center gap-4">
           <select
             value={filterType}
@@ -162,6 +163,20 @@ const PrescriptionSunLenses = () => {
             <FiPlus />
             <span>Add Prescription Sun Lens</span>
           </button>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+          <p className="text-sm text-blue-800 font-semibold mb-2">
+            📋 How Prescription Sun Lenses Work:
+          </p>
+          <ol className="text-sm text-blue-700 ml-4 list-decimal space-y-1">
+            <li><strong>Create the main lens option</strong> (e.g., "Polarized", "Classic", "Blokz") using the form above</li>
+            <li><strong>Go to Lens Finishes page</strong> and create finishes for this lens (e.g., "Classic", "Mirror", "Gradient", "Fashion")</li>
+            <li><strong>Go to Lens Colors page</strong> and add colors to those finishes</li>
+            <li>The structured data (lens → finishes → colors) will be available via <code className="bg-blue-100 px-1 rounded">GET /api/prescription-sun-lenses</code> for website display</li>
+          </ol>
+          <p className="text-xs text-blue-600 mt-2">
+            💡 <strong>Note:</strong> Prescription Sun Lenses use a 3-level structure: Lens Option → Finishes → Colors
+          </p>
         </div>
       </div>
 

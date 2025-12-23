@@ -129,8 +129,9 @@ const PhotochromicLenses = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Photochromic Lenses</h1>
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-gray-900">Photochromic Lenses</h1>
         <div className="flex items-center gap-4">
           <select
             value={filterActive}
@@ -148,6 +149,19 @@ const PhotochromicLenses = () => {
             <FiPlus />
             <span>Add Photochromic Lens</span>
           </button>
+        </div>
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-4">
+          <p className="text-sm text-purple-800 font-semibold mb-2">
+            📋 How Photochromic Lenses Work:
+          </p>
+          <ol className="text-sm text-purple-700 ml-4 list-decimal space-y-1">
+            <li><strong>Create the main lens option</strong> (e.g., "EyeQLenz™ with Zenni ID Guard™") using the form above</li>
+            <li><strong>Go to Lens Colors page</strong> and add colors directly to this lens option (no finishes needed)</li>
+            <li>The structured data (lens → colors) will be available via <code className="bg-purple-100 px-1 rounded">GET /api/photochromic-lenses</code> for website display</li>
+          </ol>
+          <p className="text-xs text-purple-600 mt-2">
+            💡 <strong>Note:</strong> Photochromic Lenses use a 2-level structure: Lens Option → Colors (simpler than Prescription Sun Lenses)
+          </p>
         </div>
       </div>
 

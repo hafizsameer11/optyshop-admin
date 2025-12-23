@@ -158,6 +158,14 @@ export const API_ROUTES = {
     PRESCRIPTION_LENS_VARIANTS: {
       BY_ID: (id) => `/lens/prescription-lens-variants/${id}`, // PUBLIC
     },
+    PRESCRIPTION_SUN_LENSES: {
+      LIST: `/prescription-sun-lenses`,          // PUBLIC
+      BY_ID: (id) => `/prescription-sun-lenses/${id}`, // PUBLIC
+    },
+    PHOTOCHROMIC_LENSES: {
+      LIST: `/photochromic-lenses`,              // PUBLIC
+      BY_ID: (id) => `/photochromic-lenses/${id}`, // PUBLIC
+    },
   },
 
   // ============================================
@@ -622,6 +630,24 @@ export const API_ROUTES = {
       CREATE: `/admin/prescription-lens-variants`,
       UPDATE: (id) => `/admin/prescription-lens-variants/${id}`,
       DELETE: (id) => `/admin/prescription-lens-variants/${id}`,
+    },
+
+    // Prescription Sun Lenses Management
+    PRESCRIPTION_SUN_LENSES: {
+      LIST: `/admin/prescription-sun-lenses`,
+      BY_ID: (id) => `/admin/prescription-sun-lenses/${id}`,
+      CREATE: `/admin/prescription-sun-lenses`,
+      UPDATE: (id) => `/admin/prescription-sun-lenses/${id}`,
+      DELETE: (id) => `/admin/prescription-sun-lenses/${id}`,
+    },
+
+    // Photochromic Lenses Management
+    PHOTOCHROMIC_LENSES: {
+      LIST: `/admin/photochromic-lenses`,
+      BY_ID: (id) => `/admin/photochromic-lenses/${id}`,
+      CREATE: `/admin/photochromic-lenses`,
+      UPDATE: (id) => `/admin/photochromic-lenses/${id}`,
+      DELETE: (id) => `/admin/photochromic-lenses/${id}`,
     },
     
     // VTO Settings (for Simulations page)

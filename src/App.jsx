@@ -21,6 +21,8 @@ import LensFinishes from './pages/LensFinishes';
 import LensTreatments from './pages/LensTreatments';
 import LensThicknessMaterials from './pages/LensThicknessMaterials';
 import LensThicknessOptions from './pages/LensThicknessOptions';
+import PrescriptionSunLenses from './pages/PrescriptionSunLenses';
+import PhotochromicLenses from './pages/PhotochromicLenses';
 import Prescriptions from './pages/Prescriptions';
 import PrescriptionLensTypes from './pages/PrescriptionLensTypes';
 import PrescriptionLensVariants from './pages/PrescriptionLensVariants';
@@ -103,6 +105,8 @@ function App() {
                     <Route path="/lens-treatments" element={<LensTreatments />} />
                     <Route path="/lens-thickness-materials" element={<LensThicknessMaterials />} />
                     <Route path="/lens-thickness-options" element={<LensThicknessOptions />} />
+                    <Route path="/prescription-sun-lenses" element={<PrescriptionSunLenses />} />
+                    <Route path="/photochromic-lenses" element={<PhotochromicLenses />} />
                     <Route path="/prescriptions" element={<Prescriptions />} />
                     <Route path="/prescription-lens-types" element={<PrescriptionLensTypes />} />
                     <Route path="/prescription-lens-variants" element={<PrescriptionLensVariants />} />

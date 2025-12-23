@@ -318,14 +318,46 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                 const errorData = error.response?.data || {};
                 const errorMessage = errorData.message || errorData.errors?.[0]?.msg || t('validationFailed');
                 
-                // Check if it's a duplicate error - backend now allows duplicates across different parents
-                // If we get a duplicate error, it means conflict within the same parent
+                // Check if it's a duplicate error
                 const isDuplicateError = errorMessage.toLowerCase().includes('already exists') ||
-                                       errorMessage.toLowerCase().includes('duplicate');
+                                       errorMessage.toLowerCase().includes('duplicate') ||
+                                       errorMessage.toLowerCase().includes('slug already exists') ||
+                                       errorMessage.toLowerCase().includes('name already exists') ||
+                                       errorMessage.toLowerCase().includes('subcategory with this slug') ||
+                                       errorMessage.toLowerCase().includes('subcategory with this name');
                 
-                if (isDuplicateError && formData.parent_id) {
-                    // For sub-subcategories, duplicates are only allowed under different parents
-                    toast.error(errorMessage || 'A subcategory with this name or slug already exists under the same parent subcategory.');
+                if (isDuplicateError) {
+                    // Check if error message is generic (doesn't mention parent context)
+                    const isGenericError = !errorMessage.toLowerCase().includes('same parent') && 
+                                         !errorMessage.toLowerCase().includes('parent') &&
+                                         !errorMessage.toLowerCase().includes('under');
+                    
+                    if (formData.parent_id) {
+                        // Sub-subcategory: duplicates should be allowed under different parents
+                        if (isGenericError) {
+                            // Generic error - backend might still have global uniqueness check
+                            toast.error(
+                                `⚠️ ${errorMessage}\n\n` +
+                                `Note: With composite unique constraints (name, parent_id), duplicates should be allowed under different parent subcategories.\n` +
+                                `If you're creating this under a different parent, the backend may need to be updated to use composite constraints.`,
+                                { duration: 8000 }
+                            );
+                        } else {
+                            // Specific error about same parent - expected behavior
+                            toast.error(
+                                `A subcategory with this name or slug already exists under the same parent subcategory.\n` +
+                                `💡 You can use the same name/slug under a different parent subcategory.`,
+                                { duration: 6000 }
+                            );
+                        }
+                    } else {
+                        // Top-level subcategory - global uniqueness is expected
+                        toast.error(
+                            `A top-level subcategory with this name or slug already exists.\n` +
+                            `💡 Tip: Create this as a sub-subcategory under a parent to allow duplicates under different parents.`,
+                            { duration: 5000 }
+                        );
+                    }
                 } else {
                     toast.error(errorMessage);
                 }

@@ -756,7 +756,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
                 </option>
                 {prescriptionLensTypes.map((type) => (
                   <option key={type.id} value={type.id}>
-                    {type.name} {type.name && type.name.toLowerCase().includes('sun') ? '☀️' : ''}
+                    {type.name}
                   </option>
                 ))}
               </select>
@@ -765,22 +765,6 @@ const LensColorModal = ({ lensColor, onClose }) => {
                   No prescription lens types found. Please create prescription lens types first in the Prescription Lens Types page.
                 </p>
               )}
-              {formData.prescription_lens_type_id && (() => {
-                const selectedType = prescriptionLensTypes.find(t => t.id === parseInt(formData.prescription_lens_type_id));
-                const isSunType = selectedType && selectedType.name && selectedType.name.toLowerCase().includes('sun');
-                return isSunType ? (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-800">
-                      <strong>📋 Prescription Sun Color:</strong> This color will be available via the public endpoint 
-                      <code className="bg-blue-100 px-1 rounded ml-1">GET /api/lens/prescription-sun-colors</code> for website display.
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 <strong>Tip:</strong> To create prescription sun colors, select a prescription lens type with "Sun" in its name.
-                  </p>
-                );
-              })()}
             </div>
           )}
 

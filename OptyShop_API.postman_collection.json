@@ -693,6 +693,49 @@
 							}
 						},
 						{
+							"name": "Get Contact Lens Options by Sub-SubCategory ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/subcategories/10/contact-lens-options",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"subcategories",
+										"10",
+										"contact-lens-options"
+									],
+									"query": []
+								},
+								"description": "Get aggregated contact lens options (power, base curve, diameter) for Spherical or Astigmatism/Toric sub-subcategories.\n\n**Supported Sub-SubCategory Types:**\n- **Spherical**: Sub-subcategories with names containing \"spherical\", \"sferiche\", or \"sferica\"\n- **Astigmatism/Toric**: Sub-subcategories with names containing \"astigmatism\", \"astigmatismo\", \"toric\", or \"torica\"\n\n**Response for Spherical Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", \"-9.50\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, 8.90, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"productCount\": 15,\n    \"type\": \"spherical\"\n  }\n}\n```\n\n**Response for Astigmatism/Toric Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"cylinderOptions\": [-0.25, -0.50, -0.75, ..., -6.00],\n    \"axisOptions\": [0, 1, 2, ..., 180],\n    \"productCount\": 15,\n    \"type\": \"astigmatism\"\n  }\n}\n```\n\n**Features:**\n- Automatically detects if sub-subcategory is Spherical or Astigmatism/Toric\n- Aggregates all unique options from all products in the sub-subcategory\n- Returns sorted arrays ready for dropdown menus\n- For Astigmatism: Includes standard cylinder (-0.25 to -6.00) and axis (0-180°) options\n\n**Use Cases:**\n- Populate contact lens parameter forms\n- Build dropdown menus for power, base curve, diameter, cylinder, and axis\n- Validate available options before adding to cart\n\n**Error Cases:**\n- Returns 404 if subcategory not found\n- Returns 400 if subcategory is not a sub-subcategory (no parent_id)\n- Returns 400 if subcategory is not Spherical or Astigmatism/Toric type"
+							}
+						},
+						{
+							"name": "Get Contact Lens Options by Sub-SubCategory Slug",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/subcategories/slug/sferiche/contact-lens-options",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"subcategories",
+										"slug",
+										"sferiche",
+										"contact-lens-options"
+									],
+									"query": []
+								},
+								"description": "Get aggregated contact lens options (power, base curve, diameter) for Spherical or Astigmatism/Toric sub-subcategories by slug.\n\n**Supported Sub-SubCategory Types:**\n- **Spherical**: Sub-subcategories with names containing \"spherical\", \"sferiche\", or \"sferica\"\n- **Astigmatism/Toric**: Sub-subcategories with names containing \"astigmatism\", \"astigmatismo\", \"toric\", or \"torica\"\n\n**Response for Spherical Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", \"-9.50\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, 8.90, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"productCount\": 15,\n    \"type\": \"spherical\"\n  }\n}\n```\n\n**Response for Astigmatism/Toric Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"cylinderOptions\": [-0.25, -0.50, -0.75, ..., -6.00],\n    \"axisOptions\": [0, 1, 2, ..., 180],\n    \"productCount\": 15,\n    \"type\": \"astigmatism\"\n  }\n}\n```\n\n**Features:**\n- Same as ID endpoint but uses slug instead of ID\n- Automatically detects if sub-subcategory is Spherical or Astigmatism/Toric\n- Aggregates all unique options from all products in the sub-subcategory\n- Returns sorted arrays ready for dropdown menus\n- For Astigmatism: Includes standard cylinder (-0.25 to -6.00) and axis (0-180°) options\n\n**Use Cases:**\n- Populate contact lens parameter forms using URL-friendly slugs\n- Build dropdown menus for power, base curve, diameter, cylinder, and axis\n- Validate available options before adding to cart\n\n**Error Cases:**\n- Returns 404 if subcategory not found\n- Returns 400 if subcategory is not a sub-subcategory (no parent_id)\n- Returns 400 if subcategory is not Spherical or Astigmatism/Toric type"
+							}
+						},
+						{
 							"name": "Get Related Categories for SubCategory",
 							"request": {
 								"method": "GET",
@@ -1678,6 +1721,80 @@
 					]
 				  },
 				  "description": "Get all prescription sun colors from prescription lens types that have 'Sun' in their name. These are colors available for prescription sun lenses. Public endpoint for viewing lens management data on the website."
+				}
+			  },
+			  {
+				"name": "Get All Prescription Sun Lenses",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/prescription-sun-lenses",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "prescription-sun-lenses"
+					]
+				  },
+				  "description": "Get all prescription sun lenses organized by category (Polarized, Classic, Blokz® Sunglasses). Returns structured data with finishes (Classic, Mirror, Gradient, Fashion) and colors for each option. Public endpoint for website display."
+				}
+			  },
+			  {
+				"name": "Get Prescription Sun Lens by ID",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/prescription-sun-lenses/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "prescription-sun-lenses",
+					  "1"
+					]
+				  },
+				  "description": "Get a single prescription sun lens option by ID with all its finishes and colors. Public endpoint for website display."
+				}
+			  },
+			  {
+				"name": "Get All Photochromic Lenses",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/photochromic-lenses",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "photochromic-lenses"
+					]
+				  },
+				  "description": "Get all photochromic lenses organized by type (EyeQLenz™ with Zenni ID Guard™, EyeQLenz™, Transitions® GEN S™, Standard, Blokz Photochromic). Returns structured data with colors for each option. Public endpoint for website display."
+				}
+			  },
+			  {
+				"name": "Get Photochromic Lens by ID",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/photochromic-lenses/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "photochromic-lenses",
+					  "1"
+					]
+				  },
+				  "description": "Get a single photochromic lens option by ID with all its colors. Public endpoint for website display."
 				}
 			  },
 			  {
@@ -4125,7 +4242,7 @@
 					  "subcategories"
 					]
 				  },
-				  "description": "Create a new sub-subcategory.\n\n**Required Fields:**\n- `name`: Sub-subcategory name\n- `category_id`: ID of the category\n- `parent_id`: ID of the parent subcategory (must be a subcategory in the same category)\n\n**Optional Fields:**\n- `slug`: URL-friendly slug (auto-generated from name if not provided)\n- `description`: Sub-subcategory description\n- `is_active`: Active status (default: true)\n- `sort_order`: Display order (default: 0)\n- `image`: Image file (use multipart/form-data for file uploads)\n\n**Example Request:**\n```json\n{\n  \"name\": \"Sferiche\",\n  \"slug\": \"sferiche\",\n  \"category_id\": 1,\n  \"parent_id\": 5,\n  \"description\": \"Spherical contact lenses\",\n  \"is_active\": true\n}\n```\nWhere `parent_id: 5` is the ID of the parent subcategory.\n\n**How to Get Parent ID:**\n1. Call `GET /api/admin/subcategories/available-parents/:category_id`\n2. This returns list of subcategories that can be parents\n3. Use one of those IDs in `parent_id` field\n\n**Validation:**\n- Category must exist and be active\n- Parent subcategory must exist, be active, and belong to the same category\n- Slug must be unique\n\n**Response:**\nReturns the created sub-subcategory with category and parent information"
+				  "description": "Create a new sub-subcategory.\n\n**Required Fields:**\n- `name`: Sub-subcategory name\n- `category_id`: ID of the category\n- `parent_id`: ID of the parent subcategory (must be a subcategory in the same category)\n\n**Optional Fields:**\n- `slug`: URL-friendly slug (auto-generated from name if not provided)\n- `description`: Sub-subcategory description\n- `is_active`: Active status (default: true)\n- `sort_order`: Display order (default: 0)\n- `image`: Image file (use multipart/form-data for file uploads)\n\n**Example Request:**\n```json\n{\n  \"name\": \"Sferiche\",\n  \"slug\": \"sferiche\",\n  \"category_id\": 1,\n  \"parent_id\": 5,\n  \"description\": \"Spherical contact lenses\",\n  \"is_active\": true\n}\n```\nWhere `parent_id: 5` is the ID of the parent subcategory.\n\n**How to Get Parent ID:**\n1. Call `GET /api/admin/subcategories/available-parents/:category_id`\n2. This returns list of subcategories that can be parents\n3. Use one of those IDs in `parent_id` field\n\n**Validation:**\n- Category must exist and be active\n- Parent subcategory must exist, be active, and belong to the same category\n\n**Response:**\nReturns the created sub-subcategory with category and parent information"
 				}
 			  },
 			  {
@@ -4162,7 +4279,7 @@
 					  "subcategories"
 					]
 				  },
-				  "description": "Create a subcategory (parent_id = null).\n\n**Required Fields:**\n- `name`: Subcategory name\n- `category_id`: ID of the category\n\n**Optional Fields:**\n- `parent_id`: Set to `null` or omit (for subcategories)\n- `slug`: URL-friendly slug (auto-generated from name if not provided)\n- `description`: Subcategory description\n- `is_active`: Active status (default: true)\n- `sort_order`: Display order (default: 0)\n- `image`: Image file (use multipart/form-data for file uploads)\n\n**Example Request:**\n```json\n{\n  \"name\": \"Men Frames\",\n  \"slug\": \"men-frames\",\n  \"category_id\": 1,\n  \"parent_id\": null,\n  \"description\": \"Subcategory for men's frames\",\n  \"is_active\": true\n}\n```\n\n**Response:**\nThe response includes the created subcategory with:\n- `parent_id`: null\n- `parent`: null\n- `children`: Array of sub-subcategories (if any)\n- `category`: Category information\n\n**Validation:**\n- Slug must be unique across all subcategories\n- Category must exist\n- If slug is not provided, it's auto-generated from name"
+				  "description": "Create a subcategory (parent_id = null).\n\n**Required Fields:**\n- `name`: Subcategory name\n- `category_id`: ID of the category\n\n**Optional Fields:**\n- `parent_id`: Set to `null` or omit (for subcategories)\n- `slug`: URL-friendly slug (auto-generated from name if not provided)\n- `description`: Subcategory description\n- `is_active`: Active status (default: true)\n- `sort_order`: Display order (default: 0)\n- `image`: Image file (use multipart/form-data for file uploads)\n\n**Example Request:**\n```json\n{\n  \"name\": \"Men Frames\",\n  \"slug\": \"men-frames\",\n  \"category_id\": 1,\n  \"parent_id\": null,\n  \"description\": \"Subcategory for men's frames\",\n  \"is_active\": true\n}\n```\n\n**Response:**\nThe response includes the created subcategory with:\n- `parent_id`: null\n- `parent`: null\n- `children`: Array of sub-subcategories (if any)\n- `category`: Category information\n\n**Validation:**\n- Category must exist\n- If slug is not provided, it's auto-generated from name"
 				}
 			  },
 			  {
@@ -8108,6 +8225,282 @@
 					]
 				  },
 				  "description": "Delete a lens finish. Admin can add, update, and delete lens finishes. Admin only."
+				}
+			  }
+			]
+		  },
+		  {
+			"name": "Prescription Sun Lenses (Admin)",
+			"item": [
+			  {
+				"name": "Get All Prescription Sun Lenses",
+				"request": {
+				  "method": "GET",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/admin/prescription-sun-lenses?page=1&limit=50&type=polarized&isActive=true",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "prescription-sun-lenses"
+					],
+					"query": [
+					  {
+						"key": "page",
+						"value": "1"
+					  },
+					  {
+						"key": "limit",
+						"value": "50"
+					  },
+					  {
+						"key": "type",
+						"value": "polarized",
+						"description": "Filter by type (polarized, classic, photochromic)",
+						"disabled": true
+					  },
+					  {
+						"key": "isActive",
+						"value": "true",
+						"description": "Filter by active status",
+						"disabled": true
+					  }
+					]
+				  },
+				  "description": "Get all prescription sun lenses (Polarized, Classic, Blokz® Sunglasses) with pagination and filters. Admin can view, add, update, and delete prescription sun lens options. Admin only."
+				}
+			  },
+			  {
+				"name": "Create Prescription Sun Lens",
+				"request": {
+				  "method": "POST",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Polarized\",\n  \"slug\": \"polarized\",\n  \"type\": \"polarized\",\n  \"description\": \"Reduce glare and see clearly for outdoor activities and driving.\",\n  \"base_price\": 76.95,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/admin/prescription-sun-lenses",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "prescription-sun-lenses"
+					]
+				  },
+				  "description": "Create a new prescription sun lens option (Polarized, Classic, or Blokz® Sunglasses). After creating, use lens-finishes and lens-colors endpoints to add finishes and colors. Admin only."
+				}
+			  },
+			  {
+				"name": "Update Prescription Sun Lens",
+				"request": {
+				  "method": "PUT",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Polarized\",\n  \"base_price\": 80.00,\n  \"is_active\": true\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/admin/prescription-sun-lenses/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "prescription-sun-lenses",
+					  "1"
+					]
+				  },
+				  "description": "Update an existing prescription sun lens option. Admin only."
+				}
+			  },
+			  {
+				"name": "Delete Prescription Sun Lens",
+				"request": {
+				  "method": "DELETE",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/admin/prescription-sun-lenses/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "prescription-sun-lenses",
+					  "1"
+					]
+				  },
+				  "description": "Delete a prescription sun lens option. Admin only."
+				}
+			  }
+			]
+		  },
+		  {
+			"name": "Photochromic Lenses (Admin)",
+			"item": [
+			  {
+				"name": "Get All Photochromic Lenses",
+				"request": {
+				  "method": "GET",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/admin/photochromic-lenses?page=1&limit=50&isActive=true",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "photochromic-lenses"
+					],
+					"query": [
+					  {
+						"key": "page",
+						"value": "1"
+					  },
+					  {
+						"key": "limit",
+						"value": "50"
+					  },
+					  {
+						"key": "isActive",
+						"value": "true",
+						"description": "Filter by active status",
+						"disabled": true
+					  }
+					]
+				  },
+				  "description": "Get all photochromic lenses (EyeQLenz™ with Zenni ID Guard™, EyeQLenz™, Transitions® GEN S™, Standard, Blokz Photochromic) with pagination and filters. Admin can view, add, update, and delete photochromic lens options. Admin only."
+				}
+			  },
+			  {
+				"name": "Create Photochromic Lens",
+				"request": {
+				  "method": "POST",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"EyeQLenz™ with Zenni ID Guard™\",\n  \"slug\": \"eyeqlenz-with-zenni-id-guard\",\n  \"description\": \"4-in-1 lens that reflects infrared light to disrupt unwanted tracking technology, filters blue light & blocks 100% UV. Stays clear indoors and darkens outdoors, with a subtle pink sheen.\",\n  \"base_price\": 0,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/admin/photochromic-lenses",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "photochromic-lenses"
+					]
+				  },
+				  "description": "Create a new photochromic lens option. After creating, use lens-colors endpoint to add colors directly to the lens option. Admin only."
+				}
+			  },
+			  {
+				"name": "Update Photochromic Lens",
+				"request": {
+				  "method": "PUT",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"EyeQLenz™ with Zenni ID Guard™\",\n  \"base_price\": 10.00,\n  \"is_active\": true\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/admin/photochromic-lenses/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "photochromic-lenses",
+					  "1"
+					]
+				  },
+				  "description": "Update an existing photochromic lens option. Admin only."
+				}
+			  },
+			  {
+				"name": "Delete Photochromic Lens",
+				"request": {
+				  "method": "DELETE",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/admin/photochromic-lenses/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "admin",
+					  "photochromic-lenses",
+					  "1"
+					]
+				  },
+				  "description": "Delete a photochromic lens option. Admin only."
 				}
 			  }
 			]

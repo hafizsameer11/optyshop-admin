@@ -4,49 +4,48 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
-const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
+const PhotochromicLensModal = ({ lens, onClose }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
-    description: '',
-    prescription_type: 'single_vision',
     base_price: '',
+    description: '',
     is_active: true,
     sort_order: 0,
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (lensType) {
+    if (lens) {
       setFormData({
-        name: lensType.name || '',
-        slug: lensType.slug || '',
-        description: lensType.description || '',
-        prescription_type: lensType.prescription_type || 'single_vision',
-        base_price: lensType.base_price || '',
-        is_active: lensType.is_active !== undefined ? lensType.is_active : true,
-        sort_order: lensType.sort_order || 0,
+        name: lens.name || '',
+        slug: lens.slug || '',
+        base_price: lens.base_price || '',
+        description: lens.description || '',
+        is_active: lens.is_active !== undefined ? lens.is_active : true,
+        sort_order: lens.sort_order || 0,
       });
     } else {
       setFormData({
         name: '',
         slug: '',
-        description: '',
-        prescription_type: 'single_vision',
         base_price: '',
+        description: '',
         is_active: true,
         sort_order: 0,
       });
     }
-  }, [lensType]);
+  }, [lens]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (value === '' ? '' : parseFloat(value) || '') : value;
     
-    // Auto-generate slug from name (only when creating new lens type)
-    if (name === 'name' && !lensType) {
+    // Auto-generate slug from name (only when creating new lens)
+    if (name === 'name' && !lens) {
       const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       setFormData({ ...formData, name: fieldValue, slug });
     } else {
@@ -60,36 +59,31 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
 
     try {
       const submitData = {
-        ...formData,
-        base_price: formData.base_price === '' ? 0 : formData.base_price,
-        sort_order: formData.sort_order || 0,
+        name: formData.name.trim(),
+        slug: formData.slug.trim(),
+        base_price: parseFloat(formData.base_price) || 0,
+        description: formData.description.trim() || null,
+        is_active: formData.is_active !== undefined ? formData.is_active : true,
+        sort_order: parseInt(formData.sort_order) || 0,
       };
 
       let response;
-      if (lensType) {
-        response = await api.put(API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.UPDATE(lensType.id), submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Prescription lens type updated successfully');
-        } else {
-          toast.success('Prescription lens type updated successfully');
-        }
+      if (lens) {
+        response = await api.put(API_ROUTES.ADMIN.PHOTOCHROMIC_LENSES.UPDATE(lens.id), submitData);
+        toast.success(response.data?.message || 'Photochromic lens updated successfully');
       } else {
-        response = await api.post(API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.CREATE, submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Prescription lens type created successfully');
-        } else {
-          toast.success('Prescription lens type created successfully');
-        }
+        response = await api.post(API_ROUTES.ADMIN.PHOTOCHROMIC_LENSES.CREATE, submitData);
+        toast.success(response.data?.message || 'Photochromic lens created successfully');
       }
       onClose();
     } catch (error) {
-      console.error('Prescription lens type save error:', error);
+      console.error('Photochromic lens save error:', error);
       if (!error.response) {
-        toast.error('Backend unavailable - Cannot save prescription lens type');
+        toast.error('Backend unavailable - Cannot save photochromic lens');
       } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials to save prescription lens types');
+        toast.error('❌ Demo mode - Please log in with real credentials');
       } else {
-        const errorMessage = error.response?.data?.message || 'Failed to save prescription lens type';
+        const errorMessage = error.response?.data?.message || 'Failed to save photochromic lens';
         toast.error(errorMessage);
       }
     } finally {
@@ -99,10 +93,10 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {lensType ? 'Edit Prescription Lens Type' : 'Add Prescription Lens Type'}
+            {lens ? 'Edit Photochromic Lens' : 'Add Photochromic Lens'}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -117,52 +111,36 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="input-modern"
-              required
-              placeholder="e.g., Distance Vision"
-            />
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="input-modern"
+                required
+                placeholder="e.g., EyeQLenz™ with Zenni ID Guard™"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Slug <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="slug"
-              value={formData.slug}
-              onChange={handleChange}
-              className="input-modern"
-              required
-              placeholder="e.g., distance-vision"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Prescription Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="prescription_type"
-              value={formData.prescription_type}
-              onChange={handleChange}
-              className="input-modern"
-              required
-            >
-              <option value="single_vision">Single Vision</option>
-              <option value="bifocal">Bifocal</option>
-              <option value="trifocal">Trifocal</option>
-              <option value="progressive">Progressive</option>
-            </select>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Slug <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="slug"
+                value={formData.slug}
+                onChange={handleChange}
+                className="input-modern"
+                required
+                placeholder="e.g., eyeqlenz-with-zenni-id-guard"
+              />
+            </div>
           </div>
 
           <div>
@@ -175,10 +153,9 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
               value={formData.base_price}
               onChange={handleChange}
               step="0.01"
-              min="0"
               className="input-modern"
               required
-              placeholder="e.g., 60.00"
+              placeholder="e.g., 0.00"
             />
           </div>
 
@@ -190,9 +167,9 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              rows="3"
+              rows="4"
               className="input-modern"
-              placeholder="e.g., For distance (Thin, anti-glare, blue-cut options)"
+              placeholder="e.g., 4-in-1 lens that reflects infrared light..."
             />
           </div>
 
@@ -247,5 +224,5 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
   );
 };
 
-export default PrescriptionLensTypeModal;
+export default PhotochromicLensModal;
 

@@ -106,6 +106,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { path: '/frame-sizes', icon: FiLayers, label: t('frameSizes') },
         { path: '/lens-types', icon: FiEye, label: t('lensTypes') },
         { path: '/lens-options', icon: FiSettings, label: t('lensOptions') },
+        { path: '/prescription-sun-lenses', icon: FiEye, label: t('prescriptionSunLenses') || 'Prescription Sun Lenses' },
+        { path: '/photochromic-lenses', icon: FiZap, label: t('photochromicLenses') || 'Photochromic Lenses' },
         { path: '/lens-coatings', icon: FiBox, label: t('lensCoatings') },
         { path: '/lens-colors', icon: FiDroplet, label: t('lensColors') },
         { path: '/lens-finishes', icon: FiLayers, label: t('lensFinishes') },

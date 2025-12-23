@@ -173,6 +173,8 @@ const translations = {
     frameSizes: 'Frame Sizes',
     lensTypes: 'Lens Types',
     lensOptions: 'Lens Options',
+    prescriptionSunLenses: 'Prescription Sun Lenses',
+    photochromicLenses: 'Photochromic Lenses',
     lensCoatings: 'Lens Coatings',
     lensColors: 'Lens Colors',
     lensFinishes: 'Lens Finishes',

@@ -101,10 +101,39 @@ const BannerModal = ({ banner, onClose }) => {
         return;
       }
       
-      setImageFile(file);
+      // Validate image dimensions (1300x469)
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const requiredWidth = 1300;
+          const requiredHeight = 469;
+          
+          if (img.width !== requiredWidth || img.height !== requiredHeight) {
+            toast.error(`Image dimensions must be exactly ${requiredWidth}x${requiredHeight} pixels. Current dimensions: ${img.width}x${img.height}px`);
+            e.target.value = ''; // Clear the input
+            setImageFile(null);
+            setImagePreview(null);
+            return;
+          }
+          
+          // Dimensions are correct, proceed
+          setImageFile(file);
+          setImagePreview(event.target.result);
+        };
+        img.onerror = () => {
+          toast.error('Failed to load image. Please try a different file.');
+          e.target.value = '';
+          setImageFile(null);
+          setImagePreview(null);
+        };
+        img.src = event.target.result;
+      };
+      reader.onerror = () => {
+        toast.error('Failed to read image file. Please try again.');
+        e.target.value = '';
+        setImageFile(null);
+        setImagePreview(null);
       };
       reader.readAsDataURL(file);
     }
@@ -266,7 +295,7 @@ const BannerModal = ({ banner, onClose }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Image *
+              Image * <span className="text-xs font-normal text-gray-500">(Required: 1300x469 pixels)</span>
             </label>
             {imagePreview && (
               <div className="mb-4">
@@ -288,6 +317,9 @@ const BannerModal = ({ banner, onClose }) => {
               required={!banner}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
+            <p className="text-xs text-blue-600 mt-2 font-medium">
+              📐 Image dimensions must be exactly <strong>1300x469 pixels</strong>
+            </p>
             {banner && !imageFile && (
               <p className="text-xs text-gray-500 mt-1">
                 Leave empty to keep current image

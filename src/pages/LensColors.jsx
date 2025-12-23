@@ -148,16 +148,16 @@ const LensColors = () => {
     if (color.prescription_lens_type_id || color.prescriptionLensTypeId) {
       const typeId = color.prescription_lens_type_id || color.prescriptionLensTypeId;
       if (color.prescription_lens_type && color.prescription_lens_type.name) {
-        return { name: color.prescription_lens_type.name, type: 'prescription', isSun: color.prescription_lens_type.name.toLowerCase().includes('sun') };
+        return { name: color.prescription_lens_type.name, type: 'prescription' };
       }
       if (color.prescriptionLensType && color.prescriptionLensType.name) {
-        return { name: color.prescriptionLensType.name, type: 'prescription', isSun: color.prescriptionLensType.name.toLowerCase().includes('sun') };
+        return { name: color.prescriptionLensType.name, type: 'prescription' };
       }
       const type = prescriptionLensTypes.find(t => t.id === typeId || t.id === parseInt(typeId));
       if (type) {
-        return { name: type.name, type: 'prescription', isSun: type.name && type.name.toLowerCase().includes('sun') };
+        return { name: type.name, type: 'prescription' };
       }
-      return { name: `Prescription Type ID: ${typeId}`, type: 'prescription', isSun: false };
+      return { name: `Prescription Type ID: ${typeId}`, type: 'prescription' };
     }
     
     // Check for lens finish
@@ -429,10 +429,7 @@ const LensColors = () => {
                               }`}>
                                 {parent.type === 'prescription' ? 'Prescription' : parent.type === 'finish' ? 'Finish' : 'Option'}
                               </span>
-                              <span>
-                                {parent.name}
-                                {parent.isSun && <span className="ml-1" title="Prescription Sun Color">☀️</span>}
-                              </span>
+                              <span>{parent.name}</span>
                             </div>
                           );
                         })()}

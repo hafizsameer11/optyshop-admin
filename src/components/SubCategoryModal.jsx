@@ -181,6 +181,8 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
 
         // Auto-generate slug from name (only when creating new subcategory)
         if (name === 'name' && !subCategory && type !== 'number') {
+            // Generate base slug from name
+            // Note: Duplicate names/slugs are allowed for sub-subcategories under different parents
             const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             setFormData(prev => ({ ...prev, name: fieldValue, slug }));
         } else {
@@ -247,102 +249,65 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                 dataToSend.sort_order = 0;
             }
 
+            // API Response: { success, message, data: { subcategory: {} } }
             let response;
-            let retryCount = 0;
-            const maxRetries = 5; // Maximum attempts to generate unique slug
-            
-            // Retry loop to handle duplicate name/slug errors
-            while (retryCount < maxRetries) {
-                try {
-                    // API Response: { success, message, data: { subcategory: {} } }
-                    if (subCategory) {
-                        response = await api.put(API_ROUTES.ADMIN.SUBCATEGORIES.UPDATE(subCategory.id), dataToSend);
-                    } else {
-                        response = await api.post(API_ROUTES.ADMIN.SUBCATEGORIES.CREATE, dataToSend);
-                    }
-
-                    // Extract created/updated subcategory from response
-                    // API Response: { success, message, data: { subcategory: {} } }
-                    const createdSubCategory = response.data?.data?.subcategory || response.data?.data || response.data?.subcategory || {};
-
-                    // Debug: Log API response to see what was saved
-                    console.log('✅ SubCategory Created/Updated:', {
-                        requestPayload: JSON.stringify(dataToSend, null, 2),
-                        responseStatus: response.status,
-                        responseData: JSON.stringify(createdSubCategory, null, 2),
-                        responseKeys: Object.keys(createdSubCategory || {}),
-                        parent_id: createdSubCategory?.parent_id,
-                        parentId: createdSubCategory?.parentId,
-                        parent: createdSubCategory?.parent,
-                        parent_subcategory_id: createdSubCategory?.parent_subcategory_id,
-                        category_id: createdSubCategory?.category_id,
-                        name: createdSubCategory?.name,
-                        slug: createdSubCategory?.slug,
-                        hasParentId: !!(createdSubCategory?.parent_id || createdSubCategory?.parentId),
-                        hasParentSubcategoryId: !!(createdSubCategory?.parent_subcategory_id || createdSubCategory?.parentSubcategoryId),
-                        hasParentObject: !!createdSubCategory?.parent,
-                        fullResponse: response.data
-                    });
-                    
-                    // Validate that the essential fields were saved
-                    if (!createdSubCategory.id) {
-                        console.error('❌ ERROR: API response missing subcategory ID!', response.data);
-                        toast.error(t('subCategorySaveWarning'));
-                    }
-                    
-
-                    // Handle response structure: { success, message, data: { subcategory: {} } }
-                    const successMessage = response.data?.message || (subCategory ? t('subCategoryUpdated') : t('subCategoryCreated'));
-
-                    toast.success(successMessage);
-                    
-                    // If onSuccess callback is provided, pass the created/updated subcategory
-                    if (onSuccess && createdSubCategory) {
-                        // Enrich with parent_id if it wasn't returned by API
-                        const enrichedData = {
-                            ...createdSubCategory,
-                            parent_id: createdSubCategory.parent_id !== undefined 
-                                ? createdSubCategory.parent_id 
-                                : parentId
-                        };
-                        
-                        console.log('📦 Enriched data for onSuccess:', enrichedData);
-                        onSuccess(enrichedData);
-                    }
-                    
-                    // Close modal and trigger refresh
-                    onClose();
-                    return; // Success, exit the function
-                } catch (error) {
-                    const errorData = error.response?.data || {};
-                    const errorMessage = errorData.message || errorData.errors?.[0]?.msg || '';
-                    const isDuplicateError = error.response?.status === 400 || 
-                                           error.response?.status === 422 ||
-                                           errorMessage.toLowerCase().includes('already exists') ||
-                                           errorMessage.toLowerCase().includes('duplicate');
-                    
-                    // If it's a duplicate error and we're creating (not editing), try with a unique slug/name
-                    if (isDuplicateError && !subCategory && retryCount < maxRetries - 1) {
-                        retryCount++;
-                        // Generate a unique identifier
-                        const uniqueSuffix = retryCount > 1 ? `-${retryCount}` : `-${Date.now().toString().slice(-6)}`;
-                        
-                        // Make slug unique (slugs must be unique for URLs)
-                        const baseSlug = formData.slug.trim();
-                        dataToSend.slug = baseSlug + uniqueSuffix;
-                        
-                        // Keep the name the same (user wants duplicate names to be valid)
-                        // The unique slug should be sufficient for the backend
-                        
-                        // Update the form data to show the new slug
-                        setFormData(prev => ({ ...prev, slug: dataToSend.slug }));
-                        continue; // Retry with new slug
-                    }
-                    
-                    // If not a duplicate error, or we've exhausted retries, throw the error
-                    throw error;
-                }
+            if (subCategory) {
+                response = await api.put(API_ROUTES.ADMIN.SUBCATEGORIES.UPDATE(subCategory.id), dataToSend);
+            } else {
+                response = await api.post(API_ROUTES.ADMIN.SUBCATEGORIES.CREATE, dataToSend);
             }
+
+            // Extract created/updated subcategory from response
+            // API Response: { success, message, data: { subcategory: {} } }
+            const createdSubCategory = response.data?.data?.subcategory || response.data?.data || response.data?.subcategory || {};
+
+            // Debug: Log API response to see what was saved
+            console.log('✅ SubCategory Created/Updated:', {
+                requestPayload: JSON.stringify(dataToSend, null, 2),
+                responseStatus: response.status,
+                responseData: JSON.stringify(createdSubCategory, null, 2),
+                responseKeys: Object.keys(createdSubCategory || {}),
+                parent_id: createdSubCategory?.parent_id,
+                parentId: createdSubCategory?.parentId,
+                parent: createdSubCategory?.parent,
+                parent_subcategory_id: createdSubCategory?.parent_subcategory_id,
+                category_id: createdSubCategory?.category_id,
+                name: createdSubCategory?.name,
+                slug: createdSubCategory?.slug,
+                hasParentId: !!(createdSubCategory?.parent_id || createdSubCategory?.parentId),
+                hasParentSubcategoryId: !!(createdSubCategory?.parent_subcategory_id || createdSubCategory?.parentSubcategoryId),
+                hasParentObject: !!createdSubCategory?.parent,
+                fullResponse: response.data
+            });
+            
+            // Validate that the essential fields were saved
+            if (!createdSubCategory.id) {
+                console.error('❌ ERROR: API response missing subcategory ID!', response.data);
+                toast.error(t('subCategorySaveWarning'));
+            }
+            
+
+            // Handle response structure: { success, message, data: { subcategory: {} } }
+            const successMessage = response.data?.message || (subCategory ? t('subCategoryUpdated') : t('subCategoryCreated'));
+
+            toast.success(successMessage);
+            
+            // If onSuccess callback is provided, pass the created/updated subcategory
+            if (onSuccess && createdSubCategory) {
+                // Enrich with parent_id if it wasn't returned by API
+                const enrichedData = {
+                    ...createdSubCategory,
+                    parent_id: createdSubCategory.parent_id !== undefined 
+                        ? createdSubCategory.parent_id 
+                        : parentId
+                };
+                
+                console.log('📦 Enriched data for onSuccess:', enrichedData);
+                onSuccess(enrichedData);
+            }
+            
+            // Close modal and trigger refresh
+            onClose();
         } catch (error) {
             console.error('SubCategory save error:', error);
             if (!error.response) {
@@ -352,7 +317,18 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
             } else if (error.response.status === 400 || error.response.status === 422) {
                 const errorData = error.response?.data || {};
                 const errorMessage = errorData.message || errorData.errors?.[0]?.msg || t('validationFailed');
-                toast.error(errorMessage);
+                
+                // Check if it's a duplicate error - backend now allows duplicates across different parents
+                // If we get a duplicate error, it means conflict within the same parent
+                const isDuplicateError = errorMessage.toLowerCase().includes('already exists') ||
+                                       errorMessage.toLowerCase().includes('duplicate');
+                
+                if (isDuplicateError && formData.parent_id) {
+                    // For sub-subcategories, duplicates are only allowed under different parents
+                    toast.error(errorMessage || 'A subcategory with this name or slug already exists under the same parent subcategory.');
+                } else {
+                    toast.error(errorMessage);
+                }
             } else {
                 const errorMessage = error.response?.data?.message || t('failedToSaveSubCategory');
                 toast.error(errorMessage);
@@ -433,7 +409,15 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                                             </select>
                                             <p className="text-xs text-gray-500 mt-2 px-1">
                                                 {formData.parent_id 
-                                                    ? `✓ ${t('nestedSubCategoryNote')}`
+                                                    ? (
+                                                        <>
+                                                            ✓ {t('nestedSubCategoryNote')}
+                                                            <br />
+                                                            <span className="text-blue-600 font-medium">
+                                                                💡 Duplicate names/slugs are allowed under different parent subcategories.
+                                                            </span>
+                                                        </>
+                                                    )
                                                     : t('topLevelSubCategoryNote')}
                                             </p>
                                         </>
@@ -467,6 +451,11 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                                     className="input-modern w-full"
                                     required
                                 />
+                                {formData.parent_id && (
+                                    <p className="text-xs text-blue-600 mt-2 px-1">
+                                        💡 <strong>Note:</strong> You can use the same name for sub-subcategories under different parent subcategories.
+                                    </p>
+                                )}
                             </div>
 
                             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
@@ -481,6 +470,11 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                                     className="input-modern font-mono w-full"
                                     required
                                 />
+                                {formData.parent_id && (
+                                    <p className="text-xs text-blue-600 mt-2 px-1">
+                                        💡 <strong>Note:</strong> You can use the same slug for sub-subcategories under different parent subcategories.
+                                    </p>
+                                )}
                             </div>
 
                             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">

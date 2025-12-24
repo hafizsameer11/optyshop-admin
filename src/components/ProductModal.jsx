@@ -639,11 +639,11 @@ const ProductModal = ({ product, onClose }) => {
       if (formData.frame_shape) {
         dataToSend.frame_shape = formData.frame_shape.replace(/_/g, '-');
       }
-      // Send frame_material as array (can be empty array if none selected)
+      // Send frame_material as array (multiple selections allowed)
       if (formData.frame_material && Array.isArray(formData.frame_material) && formData.frame_material.length > 0) {
         dataToSend.frame_material = formData.frame_material;
       } else if (formData.frame_material && !Array.isArray(formData.frame_material)) {
-        // Handle legacy single value format
+        // Handle legacy single value format - convert to array
         dataToSend.frame_material = [formData.frame_material];
       }
       if (formData.frame_color) dataToSend.frame_color = formData.frame_color;
@@ -698,6 +698,16 @@ const ProductModal = ({ product, onClose }) => {
               return; // Skip this optional field
             }
             
+            // Special handling for frame_material array - send each value as separate field
+            if (key === 'frame_material' && Array.isArray(value) && value.length > 0) {
+              // Send each material as a separate form field with the same name
+              // Backend should receive this as an array: frame_material = ['acetate', 'metal']
+              value.forEach((material) => {
+                submitData.append('frame_material', material);
+              });
+              return; // Skip the normal processing for this field
+            }
+            
             // Convert types properly for FormData
             if (typeof value === 'boolean') {
               // Booleans: send as "true" or "false" strings
@@ -708,13 +718,14 @@ const ProductModal = ({ product, onClose }) => {
             } else if (typeof value === 'string') {
               // Strings: trim and send
               submitData.append(key, value.trim());
+            } else if (Array.isArray(value)) {
+              // Arrays: convert to JSON string for other array fields
+              submitData.append(key, JSON.stringify(value));
+            } else if (typeof value === 'object' && value !== null) {
+              // Objects: convert to JSON string
+              submitData.append(key, JSON.stringify(value));
             } else {
-              // Other types (arrays, objects) - convert to JSON string if needed
-              if (Array.isArray(value) || typeof value === 'object') {
-                submitData.append(key, JSON.stringify(value));
-              } else {
-                submitData.append(key, String(value));
-              }
+              submitData.append(key, String(value));
             }
           });
 

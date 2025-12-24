@@ -518,59 +518,6 @@ const ContactLensConfigModal = ({ config, onClose }) => {
       return false;
     }
 
-    // Validate at least one eye has power (check arrays)
-    const rightPowerArray = Array.isArray(formData.right_power) ? formData.right_power : [];
-    const leftPowerArray = Array.isArray(formData.left_power) ? formData.left_power : [];
-    if (rightPowerArray.length === 0 && leftPowerArray.length === 0) {
-      toast.error('At least one eye (right or left) must have power');
-      return false;
-    }
-
-    // Validate base curve and diameter when power is provided (check arrays)
-    if (rightPowerArray.length > 0) {
-      const rightBaseCurve = Array.isArray(formData.right_base_curve) ? formData.right_base_curve : [];
-      const rightDiameter = Array.isArray(formData.right_diameter) ? formData.right_diameter : [];
-      if (rightBaseCurve.length === 0 || rightDiameter.length === 0) {
-        toast.error('Right eye: Base curve and diameter are required when power is provided');
-        return false;
-      }
-    }
-    if (leftPowerArray.length > 0) {
-      const leftBaseCurve = Array.isArray(formData.left_base_curve) ? formData.left_base_curve : [];
-      const leftDiameter = Array.isArray(formData.left_diameter) ? formData.left_diameter : [];
-      if (leftBaseCurve.length === 0 || leftDiameter.length === 0) {
-        toast.error('Left eye: Base curve and diameter are required when power is provided');
-        return false;
-      }
-    }
-
-    // Validate astigmatism fields (check arrays)
-    if (formData.configuration_type === 'astigmatism') {
-      const rightCylinder = Array.isArray(formData.right_cylinder) ? formData.right_cylinder : [];
-      const rightAxis = Array.isArray(formData.right_axis) ? formData.right_axis : [];
-      const leftCylinder = Array.isArray(formData.left_cylinder) ? formData.left_cylinder : [];
-      const leftAxis = Array.isArray(formData.left_axis) ? formData.left_axis : [];
-      
-      if (rightCylinder.length > 0 && rightAxis.length === 0) {
-        toast.error('Right eye: Axis is required when cylinder is provided');
-        return false;
-      }
-      if (leftCylinder.length > 0 && leftAxis.length === 0) {
-        toast.error('Left eye: Axis is required when cylinder is provided');
-        return false;
-      }
-    } else {
-      // Spherical cannot have cylinder or axis
-      const rightCylinder = Array.isArray(formData.right_cylinder) ? formData.right_cylinder : [];
-      const rightAxis = Array.isArray(formData.right_axis) ? formData.right_axis : [];
-      const leftCylinder = Array.isArray(formData.left_cylinder) ? formData.left_cylinder : [];
-      const leftAxis = Array.isArray(formData.left_axis) ? formData.left_axis : [];
-      
-      if (rightCylinder.length > 0 || rightAxis.length > 0 || leftCylinder.length > 0 || leftAxis.length > 0) {
-        toast.error('Spherical configurations cannot have cylinder or axis fields');
-        return false;
-      }
-    }
 
     return true;
   };

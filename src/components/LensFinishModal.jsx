@@ -18,14 +18,19 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
     sort_order: 0,
   });
   const [lensOptions, setLensOptions] = useState([]);
+  const [prescriptionSunLenses, setPrescriptionSunLenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   useEffect(() => {
     fetchLensOptions();
+    fetchPrescriptionSunLenses();
+  }, []);
+
+  useEffect(() => {
     if (lensFinish) {
       setFormData({
-        lens_option_id: lensFinish.lens_option_id || '',
+        lens_option_id: lensFinish.lens_option_id || lensFinish.lensOptionId || '',
         name: lensFinish.name || '',
         slug: lensFinish.slug || '',
         description: lensFinish.description || '',
@@ -146,6 +151,53 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
     }
   };
 
+  const fetchPrescriptionSunLenses = async () => {
+    try {
+      const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_SUN_LENSES.LIST}?page=1&limit=1000`);
+      console.log('Prescription Sun Lenses API Response (Modal):', JSON.stringify(response.data, null, 2));
+      
+      let prescriptionSunLensesData = [];
+      
+      if (response.data) {
+        if (response.data.data) {
+          const dataObj = response.data.data;
+          if (Array.isArray(dataObj)) {
+            prescriptionSunLensesData = dataObj;
+          } else if (dataObj.prescriptionSunLenses && Array.isArray(dataObj.prescriptionSunLenses)) {
+            prescriptionSunLensesData = dataObj.prescriptionSunLenses;
+          } else if (dataObj.lenses && Array.isArray(dataObj.lenses)) {
+            prescriptionSunLensesData = dataObj.lenses;
+          } else if (dataObj.data && Array.isArray(dataObj.data)) {
+            prescriptionSunLensesData = dataObj.data;
+          } else if (dataObj.results && Array.isArray(dataObj.results)) {
+            prescriptionSunLensesData = dataObj.results;
+          }
+        } else if (Array.isArray(response.data)) {
+          prescriptionSunLensesData = response.data;
+        } else {
+          if (response.data.prescriptionSunLenses && Array.isArray(response.data.prescriptionSunLenses)) {
+            prescriptionSunLensesData = response.data.prescriptionSunLenses;
+          } else if (response.data.lenses && Array.isArray(response.data.lenses)) {
+            prescriptionSunLensesData = response.data.lenses;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            prescriptionSunLensesData = response.data.data;
+          } else if (response.data.results && Array.isArray(response.data.results)) {
+            prescriptionSunLensesData = response.data.results;
+          }
+        }
+      }
+      
+      console.log('Parsed prescription sun lenses (Modal):', prescriptionSunLensesData);
+      
+      if (Array.isArray(prescriptionSunLensesData)) {
+        setPrescriptionSunLenses(prescriptionSunLensesData);
+      }
+    } catch (error) {
+      console.error('Failed to fetch prescription sun lenses:', error);
+      setPrescriptionSunLenses([]);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (value === '' ? '' : parseFloat(value) || '') : value;
@@ -244,27 +296,40 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
               onChange={handleChange}
               className="input-modern"
               required
-              disabled={loadingOptions || lensOptions.length === 0}
+              disabled={loadingOptions || (lensOptions.length === 0 && prescriptionSunLenses.length === 0)}
             >
               <option value="">
                 {loadingOptions 
                   ? 'Loading options...' 
-                  : lensOptions.length === 0 
+                  : (lensOptions.length === 0 && prescriptionSunLenses.length === 0)
                     ? 'No lens options available' 
                     : 'Select lens option'}
               </option>
-              {lensOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name} {option.type ? `(${option.type})` : ''}
-                </option>
-              ))}
+              {lensOptions.length > 0 && (
+                <optgroup label="Regular Lens Options">
+                  {lensOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name} {option.type ? `(${option.type})` : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {prescriptionSunLenses.length > 0 && (
+                <optgroup label="Prescription Sun Lenses">
+                  {prescriptionSunLenses.map((lens) => (
+                    <option key={lens.id} value={lens.id}>
+                      {lens.name} {lens.type ? `(${lens.type})` : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
             {loadingOptions && (
               <p className="text-xs text-gray-500 mt-1">Loading options...</p>
             )}
-            {!loadingOptions && lensOptions.length === 0 && (
+            {!loadingOptions && lensOptions.length === 0 && prescriptionSunLenses.length === 0 && (
               <p className="text-xs text-red-500 mt-1">
-                No lens options found. Please create lens options first in the Lens Options page.
+                No lens options found. Please create lens options or prescription sun lenses first.
               </p>
             )}
           </div>

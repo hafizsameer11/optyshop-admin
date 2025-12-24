@@ -410,6 +410,15 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/configs/${id}`,
       DELETE: (id) => `/admin/configs/${id}`,
     },
+    
+    // Contact Lens Configurations Management
+    CONTACT_LENS_CONFIGS: {
+      LIST: `/admin/contact-lens-configs`,
+      BY_ID: (id) => `/admin/contact-lens-configs/${id}`,
+      CREATE: `/admin/contact-lens-configs`,
+      UPDATE: (id) => `/admin/contact-lens-configs/${id}`,
+      DELETE: (id) => `/admin/contact-lens-configs/${id}`,
+    },
 
     // Navigation Menus Management
     MENUS: {

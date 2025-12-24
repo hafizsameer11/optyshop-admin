@@ -35,7 +35,7 @@ const normalizeImageUrl = (url) => {
   }
 };
 
-// Configuration Image Component
+// Configuration Image Component - handles both product and config images
 const ConfigImage = ({ config, refreshKey }) => {
   const [imageError, setImageError] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
@@ -53,6 +53,7 @@ const ConfigImage = ({ config, refreshKey }) => {
     
     let imageUrl = null;
     
+    // Try product images first (if config contains product data)
     if (config.images) {
       if (Array.isArray(config.images) && config.images.length > 0) {
         imageUrl = config.images.find(img => img && typeof img === 'string' && img.trim() !== '') || config.images[0];
@@ -423,11 +424,9 @@ const ContactLensConfigs = () => {
             <thead className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Image</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Product</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Display Name</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
               </tr>
@@ -435,71 +434,79 @@ const ContactLensConfigs = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {configs.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                     <FiEye className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p className="text-lg font-medium">No configurations found</p>
                     <p className="text-sm mt-2">Create your first contact lens configuration to get started</p>
                   </td>
                 </tr>
               ) : (
-                configs.map((config) => (
-                  <tr key={config.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <ConfigImage config={config} refreshKey={imageRefreshKey} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{config.name || 'N/A'}</div>
-                      {config.sku && (
-                        <div className="text-sm text-gray-500">SKU: {config.sku}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{config.display_name || config.name || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        config.configuration_type === 'spherical' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {config.configuration_type === 'spherical' ? 'Spherical' : 'Astigmatism'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {config.price ? `$${parseFloat(config.price).toFixed(2)}` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {config.stock_quantity !== undefined ? config.stock_quantity : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        config.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {config.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(config)}
-                          className="text-indigo-600 hover:text-indigo-900 p-2 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <FiEdit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(config.id)}
-                          className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                configs.map((config) => {
+                  // Get product information from config (API might return product object or product fields)
+                  const product = config.product || {};
+                  const productName = product.name || config.product_name || config.name || 'N/A';
+                  const productSku = product.sku || config.product_sku || config.sku || '';
+                  const productId = config.product_id || config.productId || product.id || '';
+                  
+                  // Use product image if available, otherwise fallback to config image
+                  const imageConfig = product.images || product.image ? { ...product } : config;
+                  
+                  return (
+                    <tr key={config.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <ConfigImage config={imageConfig} refreshKey={imageRefreshKey} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{productName}</div>
+                        {productSku && (
+                          <div className="text-sm text-gray-500">SKU: {productSku}</div>
+                        )}
+                        {productId && (
+                          <div className="text-xs text-gray-400">ID: {productId}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{config.display_name || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          config.configuration_type === 'spherical' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {config.configuration_type === 'spherical' ? 'Spherical' : 'Astigmatism'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          config.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {config.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(config)}
+                            className="text-indigo-600 hover:text-indigo-900 p-2 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <FiEdit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(config.id)}
+                            className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

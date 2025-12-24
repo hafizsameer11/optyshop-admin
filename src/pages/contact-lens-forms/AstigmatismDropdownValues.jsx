@@ -28,7 +28,9 @@ const AstigmatismDropdownValues = () => {
         url += `?${params.toString()}`;
       }
 
+      console.log('Fetching astigmatism dropdown values from:', url);
       const response = await api.get(url);
+      console.log('Astigmatism dropdown values API Response:', response.data);
       
       let valuesData = [];
 
@@ -41,22 +43,52 @@ const AstigmatismDropdownValues = () => {
             valuesData = dataObj.values;
           } else if (dataObj.data && Array.isArray(dataObj.data)) {
             valuesData = dataObj.data;
+          } else if (dataObj.dropdownValues && Array.isArray(dataObj.dropdownValues)) {
+            valuesData = dataObj.dropdownValues;
+          } else if (dataObj.results && Array.isArray(dataObj.results)) {
+            valuesData = dataObj.results;
           }
         } else if (Array.isArray(response.data)) {
           valuesData = response.data;
         } else if (response.data.values && Array.isArray(response.data.values)) {
           valuesData = response.data.values;
+        } else if (response.data.dropdownValues && Array.isArray(response.data.dropdownValues)) {
+          valuesData = response.data.dropdownValues;
+        } else if (response.data.results && Array.isArray(response.data.results)) {
+          valuesData = response.data.results;
         }
       }
+
+      console.log('Parsed dropdown values:', valuesData);
 
       if (Array.isArray(valuesData)) {
         setValues(valuesData);
       } else {
+        console.warn('Dropdown values data is not an array:', valuesData);
         setValues([]);
       }
     } catch (error) {
       console.error('Astigmatism dropdown values API error:', error);
-      toast.error('Failed to fetch dropdown values');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Request URL:', url);
+      
+      if (!error.response) {
+        toast.error('Cannot connect to server. Check if backend is running.');
+      } else if (error.response.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else if (error.response.status === 404) {
+        toast.error(
+          'Endpoint not found (404). The Contact Lens Forms API endpoint may not be implemented on the backend yet. ' +
+          'Please ensure the backend route /api/contact-lens-forms/admin/astigmatism/dropdown-values is available.',
+          { duration: 6000 }
+        );
+      } else if (error.response.status === 403) {
+        toast.error('Access denied. You may not have permission to access this resource.');
+      } else {
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to fetch dropdown values';
+        toast.error(errorMessage);
+      }
       setValues([]);
     } finally {
       setLoading(false);

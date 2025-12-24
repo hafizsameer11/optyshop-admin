@@ -21,7 +21,11 @@ const SphericalConfigurations = () => {
   const fetchConfigs = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?page=${page}&limit=${limit}`);
+      const url = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?page=${page}&limit=${limit}`;
+      console.log('Fetching spherical configs from:', url);
+      
+      const response = await api.get(url);
+      console.log('Spherical configs API Response:', response.data);
       
       let configsData = [];
       let pagination = null;
@@ -35,6 +39,10 @@ const SphericalConfigurations = () => {
             configsData = dataObj.configs;
           } else if (dataObj.data && Array.isArray(dataObj.data)) {
             configsData = dataObj.data;
+          } else if (dataObj.sphericalConfigs && Array.isArray(dataObj.sphericalConfigs)) {
+            configsData = dataObj.sphericalConfigs;
+          } else if (dataObj.results && Array.isArray(dataObj.results)) {
+            configsData = dataObj.results;
           }
           if (dataObj.pagination) {
             pagination = dataObj.pagination;
@@ -46,20 +54,55 @@ const SphericalConfigurations = () => {
           if (response.data.pagination) {
             pagination = response.data.pagination;
           }
+        } else if (response.data.sphericalConfigs && Array.isArray(response.data.sphericalConfigs)) {
+          configsData = response.data.sphericalConfigs;
+          if (response.data.pagination) {
+            pagination = response.data.pagination;
+          }
+        } else if (response.data.results && Array.isArray(response.data.results)) {
+          configsData = response.data.results;
+          if (response.data.pagination) {
+            pagination = response.data.pagination;
+          }
         }
       }
+
+      console.log('Parsed configs data:', configsData);
+      console.log('Pagination:', pagination);
 
       if (Array.isArray(configsData)) {
         setConfigs(configsData);
         if (pagination) {
           setTotalPages(pagination.totalPages || 1);
+        } else if (configsData.length < limit) {
+          setTotalPages(1);
         }
       } else {
+        console.warn('Configs data is not an array:', configsData);
         setConfigs([]);
       }
     } catch (error) {
       console.error('Spherical configs API error:', error);
-      toast.error('Failed to fetch spherical configurations');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Request URL:', `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?page=${page}&limit=${limit}`);
+      
+      if (!error.response) {
+        toast.error('Cannot connect to server. Check if backend is running.');
+      } else if (error.response.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else if (error.response.status === 404) {
+        toast.error(
+          'Endpoint not found (404). The Contact Lens Forms API endpoint may not be implemented on the backend yet. ' +
+          'Please ensure the backend route /api/contact-lens-forms/admin/spherical is available.',
+          { duration: 6000 }
+        );
+      } else if (error.response.status === 403) {
+        toast.error('Access denied. You may not have permission to access this resource.');
+      } else {
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to fetch spherical configurations';
+        toast.error(errorMessage);
+      }
       setConfigs([]);
     } finally {
       setLoading(false);
@@ -164,7 +207,11 @@ const SphericalConfigurations = () => {
                   const name = config.name || 'N/A';
                   const displayName = config.display_name || config.displayName || 'N/A';
                   const subCategoryId = config.sub_category_id || config.subCategoryId || 'N/A';
-                  const price = config.price !== undefined ? config.price : (config.price !== undefined ? config.price : 0);
+                  // Safely convert price to number, handling null, undefined, and string values
+                  const priceValue = config.price !== undefined && config.price !== null 
+                    ? (typeof config.price === 'string' ? parseFloat(config.price) : Number(config.price))
+                    : 0;
+                  const price = isNaN(priceValue) ? 0 : priceValue;
                   const isActive = config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true);
 
                   return (
@@ -182,7 +229,7 @@ const SphericalConfigurations = () => {
                         {subCategoryId}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${price.toFixed(2)}
+                        ${typeof price === 'number' && !isNaN(price) ? price.toFixed(2) : '0.00'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

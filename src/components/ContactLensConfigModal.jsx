@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiUpload, FiEye } from 'react-icons/fi';
+import { FiX, FiUpload, FiEye, FiPlus, FiMinus } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -23,20 +23,20 @@ const ContactLensConfigModal = ({ config, onClose }) => {
     stock_quantity: '',
     stock_status: 'in_stock',
     is_active: true,
-    // Spherical parameters
-    right_qty: '',
-    right_base_curve: '',
-    right_diameter: '',
-    right_power: '',
-    left_qty: '',
-    left_base_curve: '',
-    left_diameter: '',
-    left_power: '',
-    // Astigmatism parameters
-    right_cylinder: '',
-    right_axis: '',
-    left_cylinder: '',
-    left_axis: '',
+    // Spherical parameters (arrays for multiple selections)
+    right_qty: [],
+    right_base_curve: [],
+    right_diameter: [],
+    right_power: [],
+    left_qty: [],
+    left_base_curve: [],
+    left_diameter: [],
+    left_power: [],
+    // Astigmatism parameters (arrays for multiple selections)
+    right_cylinder: [],
+    right_axis: [],
+    left_cylinder: [],
+    left_axis: [],
   });
 
   const [categories, setCategories] = useState([]);
@@ -190,18 +190,19 @@ const ContactLensConfigModal = ({ config, onClose }) => {
         stock_quantity: configData.stock_quantity || '',
         stock_status: configData.stock_status || 'in_stock',
         is_active: configData.is_active !== undefined ? configData.is_active : true,
-        right_qty: configData.right_qty || '',
-        right_base_curve: configData.right_base_curve || '',
-        right_diameter: configData.right_diameter || '',
-        right_power: configData.right_power || '',
-        left_qty: configData.left_qty || '',
-        left_base_curve: configData.left_base_curve || '',
-        left_diameter: configData.left_diameter || '',
-        left_power: configData.left_power || '',
-        right_cylinder: configData.right_cylinder || '',
-        right_axis: configData.right_axis || '',
-        left_cylinder: configData.left_cylinder || '',
-        left_axis: configData.left_axis || '',
+        // Convert to arrays if they're not already
+        right_qty: Array.isArray(configData.right_qty) ? configData.right_qty : (configData.right_qty ? [configData.right_qty] : []),
+        right_base_curve: Array.isArray(configData.right_base_curve) ? configData.right_base_curve : (configData.right_base_curve ? [configData.right_base_curve] : []),
+        right_diameter: Array.isArray(configData.right_diameter) ? configData.right_diameter : (configData.right_diameter ? [configData.right_diameter] : []),
+        right_power: Array.isArray(configData.right_power) ? configData.right_power : (configData.right_power ? [configData.right_power] : []),
+        left_qty: Array.isArray(configData.left_qty) ? configData.left_qty : (configData.left_qty ? [configData.left_qty] : []),
+        left_base_curve: Array.isArray(configData.left_base_curve) ? configData.left_base_curve : (configData.left_base_curve ? [configData.left_base_curve] : []),
+        left_diameter: Array.isArray(configData.left_diameter) ? configData.left_diameter : (configData.left_diameter ? [configData.left_diameter] : []),
+        left_power: Array.isArray(configData.left_power) ? configData.left_power : (configData.left_power ? [configData.left_power] : []),
+        right_cylinder: Array.isArray(configData.right_cylinder) ? configData.right_cylinder : (configData.right_cylinder ? [configData.right_cylinder] : []),
+        right_axis: Array.isArray(configData.right_axis) ? configData.right_axis : (configData.right_axis ? [configData.right_axis] : []),
+        left_cylinder: Array.isArray(configData.left_cylinder) ? configData.left_cylinder : (configData.left_cylinder ? [configData.left_cylinder] : []),
+        left_axis: Array.isArray(configData.left_axis) ? configData.left_axis : (configData.left_axis ? [configData.left_axis] : []),
       });
 
       // Load images
@@ -356,6 +357,148 @@ const ContactLensConfigModal = ({ config, onClose }) => {
     setColorImagePreviews(newPreviews);
   };
 
+  // Multi-value input handlers
+  const addParameterValue = (fieldName, value) => {
+    if (!value || value.toString().trim() === '') {
+      toast.error('Please enter a value');
+      return;
+    }
+    const currentValues = formData[fieldName] || [];
+    let processedValue = value.toString().trim();
+    
+    // Convert to number if it's a numeric field (axis should be integer, others can be decimal)
+    if (fieldName.includes('axis')) {
+      const numValue = parseInt(processedValue);
+      if (isNaN(numValue)) {
+        toast.error('Axis must be a valid integer');
+        return;
+      }
+      processedValue = numValue.toString();
+    } else if (fieldName.includes('power') || fieldName.includes('cylinder') || fieldName.includes('base_curve') || fieldName.includes('diameter')) {
+      const numValue = parseFloat(processedValue);
+      if (isNaN(numValue)) {
+        toast.error('Please enter a valid number');
+        return;
+      }
+      processedValue = numValue.toString();
+    }
+    
+    if (currentValues.includes(processedValue)) {
+      toast.error('This value already exists');
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: [...currentValues, processedValue]
+    }));
+  };
+
+  const removeParameterValue = (fieldName, index) => {
+    const currentValues = formData[fieldName] || [];
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: currentValues.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateParameterValue = (fieldName, index, newValue) => {
+    const currentValues = [...(formData[fieldName] || [])];
+    let processedValue = newValue.toString().trim();
+    
+    // Convert to number if it's a numeric field
+    if (fieldName.includes('axis')) {
+      const numValue = parseInt(processedValue);
+      if (!isNaN(numValue)) {
+        processedValue = numValue.toString();
+      }
+    } else if (fieldName.includes('power') || fieldName.includes('cylinder') || fieldName.includes('base_curve') || fieldName.includes('diameter')) {
+      const numValue = parseFloat(processedValue);
+      if (!isNaN(numValue)) {
+        processedValue = numValue.toString();
+      }
+    }
+    
+    currentValues[index] = processedValue;
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: currentValues
+    }));
+  };
+
+  // Multi-value input component
+  const MultiValueInput = ({ label, fieldName, placeholder = "Enter value", type = "text" }) => {
+    const values = formData[fieldName] || [];
+    const [inputValue, setInputValue] = useState('');
+
+    const handleAdd = () => {
+      if (inputValue.trim()) {
+        addParameterValue(fieldName, inputValue);
+        setInputValue('');
+      }
+    };
+
+    const handleKeyPress = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAdd();
+      }
+    };
+
+    return (
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          {label} <span className="text-xs text-gray-500 font-normal">(Multiple values)</span>
+        </label>
+        <div className="space-y-2">
+          {/* Input field with add button */}
+          <div className="flex gap-2">
+            <input
+              type={type}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={placeholder}
+              className="input-modern flex-1"
+            />
+            <button
+              type="button"
+              onClick={handleAdd}
+              className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors flex items-center gap-2"
+            >
+              <FiPlus className="w-4 h-4" />
+              Add
+            </button>
+          </div>
+          {/* Display selected values as tags */}
+          {values.length > 0 && (
+            <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 min-h-[60px]">
+              {values.map((value, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-300 shadow-sm"
+                >
+                  <input
+                    type={type}
+                    value={value}
+                    onChange={(e) => updateParameterValue(fieldName, index, e.target.value)}
+                    className="text-sm border-none outline-none focus:ring-0 p-0 w-20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeParameterValue(fieldName, index)}
+                    className="text-red-500 hover:text-red-700 transition-colors"
+                  >
+                    <FiMinus className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const validateForm = () => {
     // Required fields
     if (!formData.name || !formData.name.trim()) {
@@ -375,39 +518,55 @@ const ContactLensConfigModal = ({ config, onClose }) => {
       return false;
     }
 
-    // Validate at least one eye has power
-    if (!formData.right_power && !formData.left_power) {
+    // Validate at least one eye has power (check arrays)
+    const rightPowerArray = Array.isArray(formData.right_power) ? formData.right_power : [];
+    const leftPowerArray = Array.isArray(formData.left_power) ? formData.left_power : [];
+    if (rightPowerArray.length === 0 && leftPowerArray.length === 0) {
       toast.error('At least one eye (right or left) must have power');
       return false;
     }
 
-    // Validate base curve and diameter when power is provided
-    if (formData.right_power) {
-      if (!formData.right_base_curve || !formData.right_diameter) {
+    // Validate base curve and diameter when power is provided (check arrays)
+    if (rightPowerArray.length > 0) {
+      const rightBaseCurve = Array.isArray(formData.right_base_curve) ? formData.right_base_curve : [];
+      const rightDiameter = Array.isArray(formData.right_diameter) ? formData.right_diameter : [];
+      if (rightBaseCurve.length === 0 || rightDiameter.length === 0) {
         toast.error('Right eye: Base curve and diameter are required when power is provided');
         return false;
       }
     }
-    if (formData.left_power) {
-      if (!formData.left_base_curve || !formData.left_diameter) {
+    if (leftPowerArray.length > 0) {
+      const leftBaseCurve = Array.isArray(formData.left_base_curve) ? formData.left_base_curve : [];
+      const leftDiameter = Array.isArray(formData.left_diameter) ? formData.left_diameter : [];
+      if (leftBaseCurve.length === 0 || leftDiameter.length === 0) {
         toast.error('Left eye: Base curve and diameter are required when power is provided');
         return false;
       }
     }
 
-    // Validate astigmatism fields
+    // Validate astigmatism fields (check arrays)
     if (formData.configuration_type === 'astigmatism') {
-      if (formData.right_cylinder && !formData.right_axis) {
+      const rightCylinder = Array.isArray(formData.right_cylinder) ? formData.right_cylinder : [];
+      const rightAxis = Array.isArray(formData.right_axis) ? formData.right_axis : [];
+      const leftCylinder = Array.isArray(formData.left_cylinder) ? formData.left_cylinder : [];
+      const leftAxis = Array.isArray(formData.left_axis) ? formData.left_axis : [];
+      
+      if (rightCylinder.length > 0 && rightAxis.length === 0) {
         toast.error('Right eye: Axis is required when cylinder is provided');
         return false;
       }
-      if (formData.left_cylinder && !formData.left_axis) {
+      if (leftCylinder.length > 0 && leftAxis.length === 0) {
         toast.error('Left eye: Axis is required when cylinder is provided');
         return false;
       }
     } else {
       // Spherical cannot have cylinder or axis
-      if (formData.right_cylinder || formData.right_axis || formData.left_cylinder || formData.left_axis) {
+      const rightCylinder = Array.isArray(formData.right_cylinder) ? formData.right_cylinder : [];
+      const rightAxis = Array.isArray(formData.right_axis) ? formData.right_axis : [];
+      const leftCylinder = Array.isArray(formData.left_cylinder) ? formData.left_cylinder : [];
+      const leftAxis = Array.isArray(formData.left_axis) ? formData.left_axis : [];
+      
+      if (rightCylinder.length > 0 || rightAxis.length > 0 || leftCylinder.length > 0 || leftAxis.length > 0) {
         toast.error('Spherical configurations cannot have cylinder or axis fields');
         return false;
       }
@@ -460,22 +619,36 @@ const ContactLensConfigModal = ({ config, onClose }) => {
       }
       dataToSend.is_active = formData.is_active;
 
-      // Parameter fields
-      if (formData.right_qty) dataToSend.right_qty = formData.right_qty;
-      if (formData.right_base_curve) dataToSend.right_base_curve = formData.right_base_curve;
-      if (formData.right_diameter) dataToSend.right_diameter = formData.right_diameter;
-      if (formData.right_power) dataToSend.right_power = formData.right_power;
-      if (formData.left_qty) dataToSend.left_qty = formData.left_qty;
-      if (formData.left_base_curve) dataToSend.left_base_curve = formData.left_base_curve;
-      if (formData.left_diameter) dataToSend.left_diameter = formData.left_diameter;
-      if (formData.left_power) dataToSend.left_power = formData.left_power;
+      // Parameter fields (arrays)
+      const rightQty = Array.isArray(formData.right_qty) ? formData.right_qty : [];
+      const rightBaseCurve = Array.isArray(formData.right_base_curve) ? formData.right_base_curve : [];
+      const rightDiameter = Array.isArray(formData.right_diameter) ? formData.right_diameter : [];
+      const rightPower = Array.isArray(formData.right_power) ? formData.right_power : [];
+      const leftQty = Array.isArray(formData.left_qty) ? formData.left_qty : [];
+      const leftBaseCurve = Array.isArray(formData.left_base_curve) ? formData.left_base_curve : [];
+      const leftDiameter = Array.isArray(formData.left_diameter) ? formData.left_diameter : [];
+      const leftPower = Array.isArray(formData.left_power) ? formData.left_power : [];
 
-      // Astigmatism fields
+      if (rightQty.length > 0) dataToSend.right_qty = rightQty;
+      if (rightBaseCurve.length > 0) dataToSend.right_base_curve = rightBaseCurve;
+      if (rightDiameter.length > 0) dataToSend.right_diameter = rightDiameter;
+      if (rightPower.length > 0) dataToSend.right_power = rightPower;
+      if (leftQty.length > 0) dataToSend.left_qty = leftQty;
+      if (leftBaseCurve.length > 0) dataToSend.left_base_curve = leftBaseCurve;
+      if (leftDiameter.length > 0) dataToSend.left_diameter = leftDiameter;
+      if (leftPower.length > 0) dataToSend.left_power = leftPower;
+
+      // Astigmatism fields (arrays)
       if (formData.configuration_type === 'astigmatism') {
-        if (formData.right_cylinder) dataToSend.right_cylinder = formData.right_cylinder;
-        if (formData.right_axis) dataToSend.right_axis = formData.right_axis;
-        if (formData.left_cylinder) dataToSend.left_cylinder = formData.left_cylinder;
-        if (formData.left_axis) dataToSend.left_axis = formData.left_axis;
+        const rightCylinder = Array.isArray(formData.right_cylinder) ? formData.right_cylinder : [];
+        const rightAxis = Array.isArray(formData.right_axis) ? formData.right_axis : [];
+        const leftCylinder = Array.isArray(formData.left_cylinder) ? formData.left_cylinder : [];
+        const leftAxis = Array.isArray(formData.left_axis) ? formData.left_axis : [];
+        
+        if (rightCylinder.length > 0) dataToSend.right_cylinder = rightCylinder;
+        if (rightAxis.length > 0) dataToSend.right_axis = rightAxis;
+        if (leftCylinder.length > 0) dataToSend.left_cylinder = leftCylinder;
+        if (leftAxis.length > 0) dataToSend.left_axis = leftAxis;
       }
 
       let response;
@@ -830,94 +1003,22 @@ const ContactLensConfigModal = ({ config, onClose }) => {
                   {/* Right Eye */}
                   <div className="space-y-4 bg-blue-50 p-4 rounded-xl">
                     <h4 className="font-semibold text-blue-900">Right Eye</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Qty</label>
-                        <input
-                          type="text"
-                          name="right_qty"
-                          value={formData.right_qty}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">B.C</label>
-                        <input
-                          type="text"
-                          name="right_base_curve"
-                          value={formData.right_base_curve}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">DIA</label>
-                        <input
-                          type="text"
-                          name="right_diameter"
-                          value={formData.right_diameter}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">PWR</label>
-                        <input
-                          type="text"
-                          name="right_power"
-                          value={formData.right_power}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <MultiValueInput label="Qty" fieldName="right_qty" placeholder="e.g., 6, 30" />
+                      <MultiValueInput label="B.C (Base Curve)" fieldName="right_base_curve" placeholder="e.g., 8.4, 8.5" />
+                      <MultiValueInput label="DIA (Diameter)" fieldName="right_diameter" placeholder="e.g., 14.3" />
+                      <MultiValueInput label="PWR (Power)" fieldName="right_power" placeholder="e.g., -2.00, -1.75" />
                     </div>
                   </div>
 
                   {/* Left Eye */}
                   <div className="space-y-4 bg-purple-50 p-4 rounded-xl">
                     <h4 className="font-semibold text-purple-900">Left Eye</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Qty</label>
-                        <input
-                          type="text"
-                          name="left_qty"
-                          value={formData.left_qty}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">B.C</label>
-                        <input
-                          type="text"
-                          name="left_base_curve"
-                          value={formData.left_base_curve}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">DIA</label>
-                        <input
-                          type="text"
-                          name="left_diameter"
-                          value={formData.left_diameter}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">PWR</label>
-                        <input
-                          type="text"
-                          name="left_power"
-                          value={formData.left_power}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <MultiValueInput label="Qty" fieldName="left_qty" placeholder="e.g., 6, 30" />
+                      <MultiValueInput label="B.C (Base Curve)" fieldName="left_base_curve" placeholder="e.g., 8.4, 8.5" />
+                      <MultiValueInput label="DIA (Diameter)" fieldName="left_diameter" placeholder="e.g., 14.3" />
+                      <MultiValueInput label="PWR (Power)" fieldName="left_power" placeholder="e.g., -2.00, -1.75" />
                     </div>
                   </div>
                 </div>
@@ -933,134 +1034,26 @@ const ContactLensConfigModal = ({ config, onClose }) => {
                   {/* Right Eye */}
                   <div className="space-y-4 bg-blue-50 p-4 rounded-xl">
                     <h4 className="font-semibold text-blue-900">Right Eye</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Qty</label>
-                        <input
-                          type="text"
-                          name="right_qty"
-                          value={formData.right_qty}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">B.C</label>
-                        <input
-                          type="text"
-                          name="right_base_curve"
-                          value={formData.right_base_curve}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">DIA</label>
-                        <input
-                          type="text"
-                          name="right_diameter"
-                          value={formData.right_diameter}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">PWR</label>
-                        <input
-                          type="text"
-                          name="right_power"
-                          value={formData.right_power}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">CYL</label>
-                        <input
-                          type="text"
-                          name="right_cylinder"
-                          value={formData.right_cylinder}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">AX</label>
-                        <input
-                          type="text"
-                          name="right_axis"
-                          value={formData.right_axis}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <MultiValueInput label="Qty" fieldName="right_qty" placeholder="e.g., 6, 30" />
+                      <MultiValueInput label="B.C (Base Curve)" fieldName="right_base_curve" placeholder="e.g., 8.4, 8.5" />
+                      <MultiValueInput label="DIA (Diameter)" fieldName="right_diameter" placeholder="e.g., 14.3" />
+                      <MultiValueInput label="PWR (Power)" fieldName="right_power" placeholder="e.g., -2.00, -1.75" />
+                      <MultiValueInput label="CYL (Cylinder)" fieldName="right_cylinder" placeholder="e.g., -0.50, -0.75" />
+                      <MultiValueInput label="AX (Axis)" fieldName="right_axis" placeholder="e.g., 90, 180" type="number" />
                     </div>
                   </div>
 
                   {/* Left Eye */}
                   <div className="space-y-4 bg-purple-50 p-4 rounded-xl">
                     <h4 className="font-semibold text-purple-900">Left Eye</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Qty</label>
-                        <input
-                          type="text"
-                          name="left_qty"
-                          value={formData.left_qty}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">B.C</label>
-                        <input
-                          type="text"
-                          name="left_base_curve"
-                          value={formData.left_base_curve}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">DIA</label>
-                        <input
-                          type="text"
-                          name="left_diameter"
-                          value={formData.left_diameter}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">PWR</label>
-                        <input
-                          type="text"
-                          name="left_power"
-                          value={formData.left_power}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">CYL</label>
-                        <input
-                          type="text"
-                          name="left_cylinder"
-                          value={formData.left_cylinder}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">AX</label>
-                        <input
-                          type="text"
-                          name="left_axis"
-                          value={formData.left_axis}
-                          onChange={handleChange}
-                          className="input-modern w-full"
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <MultiValueInput label="Qty" fieldName="left_qty" placeholder="e.g., 6, 30" />
+                      <MultiValueInput label="B.C (Base Curve)" fieldName="left_base_curve" placeholder="e.g., 8.4, 8.5" />
+                      <MultiValueInput label="DIA (Diameter)" fieldName="left_diameter" placeholder="e.g., 14.3" />
+                      <MultiValueInput label="PWR (Power)" fieldName="left_power" placeholder="e.g., -2.00, -1.75" />
+                      <MultiValueInput label="CYL (Cylinder)" fieldName="left_cylinder" placeholder="e.g., -0.50, -0.75" />
+                      <MultiValueInput label="AX (Axis)" fieldName="left_axis" placeholder="e.g., 90, 180" type="number" />
                     </div>
                   </div>
                 </div>

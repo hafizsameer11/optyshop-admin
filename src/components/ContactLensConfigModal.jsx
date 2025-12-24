@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiPlus, FiMinus } from 'react-icons/fi';
 import api from '../utils/api';
@@ -41,6 +41,8 @@ const ContactLensConfigModal = ({ config, onClose }) => {
   useEffect(() => {
     fetchCategories();
     fetchProducts();
+    // Reset auto-population ref when modal opens
+    lastAutoPopulatedProductId.current = null;
     if (config) {
       loadConfigData();
     }
@@ -63,17 +65,76 @@ const ContactLensConfigModal = ({ config, onClose }) => {
     }
   }, [formData.sub_category_id]);
 
-  // Auto-fill display_name when product is selected
+  // Track the last product_id we auto-populated for
+  const lastAutoPopulatedProductId = useRef(null);
+
+  // Auto-fill display_name and category hierarchy when product is selected
   useEffect(() => {
-    if (formData.product_id && !formData.display_name) {
-      const selectedProduct = products.find(p => p.id === parseInt(formData.product_id));
-      if (selectedProduct) {
-        setFormData(prev => ({
-          ...prev,
-          display_name: selectedProduct.name || ''
-        }));
+    const autoPopulateCategoryFromProduct = async () => {
+      // Only run if product_id changed and products are loaded
+      if (formData.product_id && formData.product_id !== lastAutoPopulatedProductId.current && products.length > 0) {
+        const selectedProduct = products.find(p => p.id === parseInt(formData.product_id));
+        if (selectedProduct) {
+          const updates = {};
+          
+          // Auto-fill display name only if empty
+          if (!formData.display_name) {
+            updates.display_name = selectedProduct.name || '';
+          }
+
+          // Auto-populate category hierarchy from product (only if not already set)
+          if (selectedProduct.category_id && !formData.category_id) {
+            updates.category_id = selectedProduct.category_id.toString();
+          }
+
+          // Handle subcategory - need to determine if it's top-level or nested
+          const subCatId = selectedProduct.sub_category_id || selectedProduct.subcategory_id || selectedProduct.subCategoryId;
+          
+          if (subCatId && !formData.sub_category_id && !formData.sub_sub_category_id) {
+            try {
+              // Fetch subcategory details to determine if it's nested
+              const subCatResponse = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(subCatId));
+              const subCat = subCatResponse.data?.data || subCatResponse.data || {};
+              const parentId = subCat.parent_id || subCat.parentId || subCat.parent_subcategory_id || subCat.parentSubcategoryId;
+              
+              if (parentId !== null && parentId !== undefined && parentId !== '') {
+                // It's a sub-subcategory (nested)
+                updates.sub_category_id = parentId.toString();
+                updates.sub_sub_category_id = subCatId.toString();
+                // Make sure category is set from subcategory if not already set
+                if (subCat.category_id && !updates.category_id) {
+                  updates.category_id = subCat.category_id.toString();
+                }
+              } else {
+                // It's a top-level subcategory
+                updates.sub_category_id = subCatId.toString();
+                // Make sure category is set from subcategory if not already set
+                if (subCat.category_id && !updates.category_id) {
+                  updates.category_id = subCat.category_id.toString();
+                }
+              }
+            } catch (error) {
+              console.warn('Failed to fetch subcategory details, using direct assignment:', error);
+              // Fallback: assume it's a top-level subcategory
+              updates.sub_category_id = subCatId.toString();
+            }
+          }
+
+          // Only update if there are changes
+          if (Object.keys(updates).length > 0) {
+            setFormData(prev => ({ ...prev, ...updates }));
+          }
+          
+          // Mark this product_id as auto-populated
+          lastAutoPopulatedProductId.current = formData.product_id;
+        } else {
+          // Product not found, still mark as processed
+          lastAutoPopulatedProductId.current = formData.product_id;
+        }
       }
-    }
+    };
+
+    autoPopulateCategoryFromProduct();
   }, [formData.product_id, products]);
 
   const fetchCategories = async () => {

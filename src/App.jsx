@@ -26,7 +26,6 @@ import PhotochromicLenses from './pages/PhotochromicLenses';
 import Prescriptions from './pages/Prescriptions';
 import PrescriptionLensTypes from './pages/PrescriptionLensTypes';
 import PrescriptionLensVariants from './pages/PrescriptionLensVariants';
-import ContactLensConfigs from './pages/ContactLensConfigs';
 import Coupons from './pages/Coupons';
 import Campaigns from './pages/Campaigns';
 import Banners from './pages/Banners';
@@ -111,7 +110,6 @@ function App() {
                     <Route path="/prescriptions" element={<Prescriptions />} />
                     <Route path="/prescription-lens-types" element={<PrescriptionLensTypes />} />
                     <Route path="/prescription-lens-variants" element={<PrescriptionLensVariants />} />
-                    <Route path="/contact-lens-configs" element={<ContactLensConfigs />} />
                     <Route path="/coupons" element={<Coupons />} />
                     <Route path="/campaigns" element={<Campaigns />} />
                     <Route path="/banners" element={<Banners />} />

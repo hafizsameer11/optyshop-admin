@@ -33,11 +33,16 @@ const PrescriptionSunLenses = () => {
       let lensesData = [];
       
       if (response.data) {
+        // Handle various response structures from the API
+        // Similar to Lens Finishes: { success: true, data: { prescriptionSunLenses: [...], pagination: {...} } }
         if (response.data.data) {
           const dataObj = response.data.data;
+          // If data is directly an array
           if (Array.isArray(dataObj)) {
             lensesData = dataObj;
-          } else if (dataObj.prescriptionSunLenses && Array.isArray(dataObj.prescriptionSunLenses)) {
+          } 
+          // Check for various property names in nested data (prioritize prescriptionSunLenses)
+          else if (dataObj.prescriptionSunLenses && Array.isArray(dataObj.prescriptionSunLenses)) {
             lensesData = dataObj.prescriptionSunLenses;
           } else if (dataObj.lenses && Array.isArray(dataObj.lenses)) {
             lensesData = dataObj.lenses;
@@ -46,9 +51,13 @@ const PrescriptionSunLenses = () => {
           } else if (dataObj.results && Array.isArray(dataObj.results)) {
             lensesData = dataObj.results;
           }
-        } else if (Array.isArray(response.data)) {
+        } 
+        // Check if response.data is directly an array
+        else if (Array.isArray(response.data)) {
           lensesData = response.data;
-        } else {
+        } 
+        // Check for various property names at root level
+        else {
           if (response.data.prescriptionSunLenses && Array.isArray(response.data.prescriptionSunLenses)) {
             lensesData = response.data.prescriptionSunLenses;
           } else if (response.data.lenses && Array.isArray(response.data.lenses)) {
@@ -61,7 +70,11 @@ const PrescriptionSunLenses = () => {
         }
       }
       
+      console.log('Parsed lenses data:', lensesData);
+      console.log('Parsed lenses count:', lensesData.length);
+      
       if (Array.isArray(lensesData)) {
+        // Filter out invalid entries
         lensesData = lensesData.filter(lens => {
           return lens && 
                  (lens.id !== undefined && lens.id !== null) &&
@@ -70,8 +83,16 @@ const PrescriptionSunLenses = () => {
                  lens.name.trim().length > 0;
         });
         
+        console.log('Filtered lenses count:', lensesData.length);
+        console.log('Sample lens:', lensesData[0]);
         setLenses(lensesData);
+        
+        if (lensesData.length === 0) {
+          console.warn('No prescription sun lenses found after filtering. Check API response structure.');
+        }
       } else {
+        console.error('Lenses data is not an array:', lensesData);
+        console.error('Response structure:', response.data);
         setLenses([]);
       }
     } catch (error) {
@@ -136,7 +157,7 @@ const PrescriptionSunLenses = () => {
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Prescription Sun Lenses</h1>
-        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
@@ -163,6 +184,7 @@ const PrescriptionSunLenses = () => {
             <FiPlus />
             <span>Add Prescription Sun Lens</span>
           </button>
+        </div>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
           <p className="text-sm text-blue-800 font-semibold mb-2">

@@ -469,7 +469,12 @@ const ContactLensConfigModal = ({ config, onClose }) => {
     setLoading(true);
 
     try {
+      // Get product name for the 'name' field (API requires it)
+      const selectedProduct = products.find(p => p.id === parseInt(formData.product_id));
+      const productName = selectedProduct?.name || formData.display_name || 'Contact Lens Configuration';
+      
       const dataToSend = {
+        name: productName, // API requires 'name' field
         product_id: parseInt(formData.product_id),
         display_name: formData.display_name.trim(),
         configuration_type: formData.configuration_type,

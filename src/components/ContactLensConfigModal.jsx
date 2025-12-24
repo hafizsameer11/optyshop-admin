@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiUpload, FiEye, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiX, FiPlus, FiMinus } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -8,20 +8,12 @@ import LanguageSwitcher from './LanguageSwitcher';
 
 const ContactLensConfigModal = ({ config, onClose }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    product_id: '', // Selected product ID
     display_name: '',
     configuration_type: 'spherical',
     category_id: '',
     sub_category_id: '', // Top-level subcategory
     sub_sub_category_id: '', // Sub-subcategory (has parent_id)
-    sku: '',
-    price: '',
-    compare_at_price: '',
-    cost_price: '',
-    description: '',
-    short_description: '',
-    stock_quantity: '',
-    stock_status: 'in_stock',
     is_active: true,
     // Spherical parameters (arrays for multiple selections)
     right_qty: [],
@@ -42,14 +34,13 @@ const ContactLensConfigModal = ({ config, onClose }) => {
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [subSubCategories, setSubSubCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [colorImages, setColorImages] = useState({}); // { colorName: [files] }
-  const [colorImagePreviews, setColorImagePreviews] = useState({}); // { colorName: [previews] }
 
   useEffect(() => {
     fetchCategories();
+    fetchProducts();
     if (config) {
       loadConfigData();
     }
@@ -72,6 +63,19 @@ const ContactLensConfigModal = ({ config, onClose }) => {
     }
   }, [formData.sub_category_id]);
 
+  // Auto-fill display_name when product is selected
+  useEffect(() => {
+    if (formData.product_id && !formData.display_name) {
+      const selectedProduct = products.find(p => p.id === parseInt(formData.product_id));
+      if (selectedProduct) {
+        setFormData(prev => ({
+          ...prev,
+          display_name: selectedProduct.name || ''
+        }));
+      }
+    }
+  }, [formData.product_id, products]);
+
   const fetchCategories = async () => {
     try {
       const response = await api.get(API_ROUTES.CATEGORIES.LIST);
@@ -81,6 +85,23 @@ const ContactLensConfigModal = ({ config, onClose }) => {
     } catch (error) {
       console.error('Failed to fetch categories:', error);
       setCategories([]);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      // Fetch all products with a high limit to get all available products
+      const response = await api.get(`${API_ROUTES.ADMIN.PRODUCTS.LIST}?page=1&limit=1000`);
+      const responseData = response.data?.data || response.data || {};
+      const productsData = responseData.products || responseData || [];
+      setProducts(Array.isArray(productsData) ? productsData : []);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      setProducts([]);
+      toast.error('Failed to load products');
+    } finally {
+      setLoadingProducts(false);
     }
   };
 
@@ -175,20 +196,12 @@ const ContactLensConfigModal = ({ config, onClose }) => {
       }
 
       setFormData({
-        name: configData.name || '',
+        product_id: configData.product_id || configData.productId || '',
         display_name: configData.display_name || configData.name || '',
         configuration_type: configData.configuration_type || 'spherical',
         category_id: categoryId.toString(),
         sub_category_id: subCategoryId.toString(),
         sub_sub_category_id: subSubCategoryId.toString(),
-        sku: configData.sku || '',
-        price: configData.price || '',
-        compare_at_price: configData.compare_at_price || '',
-        cost_price: configData.cost_price || '',
-        description: configData.description || '',
-        short_description: configData.short_description || '',
-        stock_quantity: configData.stock_quantity || '',
-        stock_status: configData.stock_status || 'in_stock',
         is_active: configData.is_active !== undefined ? configData.is_active : true,
         // Convert to arrays if they're not already
         right_qty: Array.isArray(configData.right_qty) ? configData.right_qty : (configData.right_qty ? [configData.right_qty] : []),
@@ -205,17 +218,6 @@ const ContactLensConfigModal = ({ config, onClose }) => {
         left_axis: Array.isArray(configData.left_axis) ? configData.left_axis : (configData.left_axis ? [configData.left_axis] : []),
       });
 
-      // Load images
-      if (configData.images && Array.isArray(configData.images) && configData.images.length > 0) {
-        setImagePreviews(configData.images.filter(img => img && typeof img === 'string'));
-      } else if (configData.image || configData.image_url) {
-        setImagePreviews([configData.image || configData.image_url].filter(Boolean));
-      }
-
-      // Load color images
-      if (configData.color_images && typeof configData.color_images === 'object') {
-        setColorImagePreviews(configData.color_images);
-      }
     } catch (error) {
       console.error('Failed to load config data:', error);
       toast.error('Failed to load configuration data');
@@ -230,132 +232,6 @@ const ContactLensConfigModal = ({ config, onClose }) => {
     }));
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const validFiles = files.filter(file => {
-      if (!file.type.startsWith('image/')) {
-        toast.error(`${file.name}: Not an image file`);
-        return false;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name}: Size exceeds 10MB`);
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    // Limit to 5 images total
-    const currentCount = imagePreviews.length + imageFiles.length;
-    if (currentCount + validFiles.length > 5) {
-      toast.error('Maximum 5 images allowed');
-      const allowedCount = 5 - currentCount;
-      if (allowedCount > 0) {
-        validFiles.splice(allowedCount);
-      } else {
-        return;
-      }
-    }
-
-    setImageFiles(prev => [...prev, ...validFiles]);
-
-    // Create previews
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImagePreviews(prev => [...prev, reader.result]);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    e.target.value = '';
-  };
-
-  const removeImage = (index) => {
-    // Remove from previews
-    const newPreviews = [...imagePreviews];
-    const removedPreview = newPreviews.splice(index, 1)[0];
-    setImagePreviews(newPreviews);
-
-    // Remove from files if it's a new file
-    if (index < imageFiles.length) {
-      const newFiles = [...imageFiles];
-      newFiles.splice(index, 1);
-      setImageFiles(newFiles);
-    } else {
-      // It's an existing image - we'll need to handle deletion on backend
-      // For now, just remove from preview
-    }
-  };
-
-  const handleColorImageChange = (colorName, e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const validFiles = files.filter(file => {
-      if (!file.type.startsWith('image/')) {
-        toast.error(`${file.name}: Not an image file`);
-        return false;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name}: Size exceeds 10MB`);
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    // Limit to 5 images per color
-    const existingFiles = colorImages[colorName] || [];
-    const existingPreviews = colorImagePreviews[colorName] || [];
-    if (existingFiles.length + existingPreviews.length + validFiles.length > 5) {
-      toast.error(`Maximum 5 images allowed per color`);
-      return;
-    }
-
-    const newFiles = [...existingFiles, ...validFiles];
-    setColorImages({ ...colorImages, [colorName]: newFiles });
-
-    // Create previews
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setColorImagePreviews(prev => ({
-          ...prev,
-          [colorName]: [...(prev[colorName] || []), reader.result]
-        }));
-      };
-      reader.readAsDataURL(file);
-    });
-
-    e.target.value = '';
-  };
-
-  const removeColorImage = (colorName, index) => {
-    const newFiles = { ...colorImages };
-    const newPreviews = { ...colorImagePreviews };
-
-    if (newFiles[colorName]) {
-      newFiles[colorName].splice(index, 1);
-      if (newFiles[colorName].length === 0) {
-        delete newFiles[colorName];
-      }
-    }
-
-    if (newPreviews[colorName]) {
-      newPreviews[colorName].splice(index, 1);
-      if (newPreviews[colorName].length === 0) {
-        delete newPreviews[colorName];
-      }
-    }
-
-    setColorImages(newFiles);
-    setColorImagePreviews(newPreviews);
-  };
 
   // Multi-value input handlers
   const addParameterValue = (fieldName, value) => {
@@ -501,8 +377,8 @@ const ContactLensConfigModal = ({ config, onClose }) => {
 
   const validateForm = () => {
     // Required fields
-    if (!formData.name || !formData.name.trim()) {
-      toast.error('Name is required');
+    if (!formData.product_id) {
+      toast.error('Product is required');
       return false;
     }
     if (!formData.display_name || !formData.display_name.trim()) {
@@ -533,38 +409,12 @@ const ContactLensConfigModal = ({ config, onClose }) => {
 
     try {
       const dataToSend = {
-        name: formData.name.trim(),
+        product_id: parseInt(formData.product_id),
         display_name: formData.display_name.trim(),
         configuration_type: formData.configuration_type,
         sub_category_id: parseInt(formData.sub_sub_category_id), // Use sub-subcategory
+        is_active: formData.is_active,
       };
-
-      // Product fields
-      if (formData.sku && formData.sku.trim()) {
-        dataToSend.sku = formData.sku.trim();
-      }
-      if (formData.price) {
-        dataToSend.price = parseFloat(formData.price);
-      }
-      if (formData.compare_at_price) {
-        dataToSend.compare_at_price = parseFloat(formData.compare_at_price);
-      }
-      if (formData.cost_price) {
-        dataToSend.cost_price = parseFloat(formData.cost_price);
-      }
-      if (formData.description && formData.description.trim()) {
-        dataToSend.description = formData.description.trim();
-      }
-      if (formData.short_description && formData.short_description.trim()) {
-        dataToSend.short_description = formData.short_description.trim();
-      }
-      if (formData.stock_quantity) {
-        dataToSend.stock_quantity = parseInt(formData.stock_quantity);
-      }
-      if (formData.stock_status) {
-        dataToSend.stock_status = formData.stock_status;
-      }
-      dataToSend.is_active = formData.is_active;
 
       // Parameter fields (arrays)
       const rightQty = Array.isArray(formData.right_qty) ? formData.right_qty : [];
@@ -600,64 +450,17 @@ const ContactLensConfigModal = ({ config, onClose }) => {
 
       let response;
 
-      // Check if we need FormData (images or color images)
-      const hasImageFiles = imageFiles.length > 0;
-      const hasColorImages = Object.keys(colorImages).length > 0 &&
-                            Object.values(colorImages).some(files => files && files.length > 0);
-
-      if (hasImageFiles || hasColorImages) {
-        const submitData = new FormData();
-
-        // Add all fields to FormData
-        Object.keys(dataToSend).forEach(key => {
-          const value = dataToSend[key];
-          if (value !== null && value !== undefined && value !== '') {
-            if (Array.isArray(value)) {
-              value.forEach(item => submitData.append(key, item));
-            } else {
-              submitData.append(key, value);
-            }
-          }
-        });
-
-        // Add main images
-        imageFiles.forEach(file => {
-          submitData.append('images', file);
-        });
-
-        // Add color images
-        Object.keys(colorImages).forEach(colorName => {
-          const files = colorImages[colorName];
-          if (files && files.length > 0) {
-            files.forEach(file => {
-              submitData.append(`color_images_${colorName}`, file);
-            });
-          }
-        });
-
-        if (config) {
-          response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_CONFIGS.UPDATE(config.id), submitData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        } else {
-          response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_CONFIGS.CREATE, submitData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        }
+      // Send as JSON (no image uploads needed - images come from product)
+      if (config) {
+        response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_CONFIGS.UPDATE(config.id), dataToSend);
       } else {
-        // No files - send as JSON
-        if (config) {
-          response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_CONFIGS.UPDATE(config.id), dataToSend);
-        } else {
-          response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_CONFIGS.CREATE, dataToSend);
-        }
+        response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_CONFIGS.CREATE, dataToSend);
       }
 
       const successMessage = response.data?.message || 
                             (config ? 'Configuration updated successfully' : 'Configuration created successfully');
       toast.success(successMessage);
       
-      setImageFiles([]);
       onClose();
     } catch (error) {
       console.error('Config save error:', error);
@@ -711,16 +514,24 @@ const ContactLensConfigModal = ({ config, onClose }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Name <span className="text-red-500">*</span>
+                    Product <span className="text-red-500">*</span>
+                    <span className="text-xs text-gray-500 block font-normal">Select an existing product</span>
                   </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
+                  <select
+                    name="product_id"
+                    value={formData.product_id}
                     onChange={handleChange}
                     className="input-modern w-full"
                     required
-                  />
+                    disabled={loadingProducts}
+                  >
+                    <option value="">{loadingProducts ? 'Loading products...' : 'Select Product'}</option>
+                    {products.map(product => (
+                      <option key={product.id} value={product.id}>
+                        {product.name} {product.sku ? `(${product.sku})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -754,17 +565,17 @@ const ContactLensConfigModal = ({ config, onClose }) => {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    SKU
+                <div className="flex items-center">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={formData.is_active}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-indigo-600 rounded"
+                    />
+                    <span className="text-sm font-semibold text-gray-700">Active</span>
                   </label>
-                  <input
-                    type="text"
-                    name="sku"
-                    value={formData.sku}
-                    onChange={handleChange}
-                    className="input-modern w-full"
-                  />
                 </div>
               </div>
             </div>
@@ -837,109 +648,6 @@ const ContactLensConfigModal = ({ config, onClose }) => {
               </div>
             </div>
 
-            {/* Product Fields */}
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Product Information</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Price</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleChange}
-                    className="input-modern w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Compare At Price</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="compare_at_price"
-                    value={formData.compare_at_price}
-                    onChange={handleChange}
-                    className="input-modern w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Cost Price</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="cost_price"
-                    value={formData.cost_price}
-                    onChange={handleChange}
-                    className="input-modern w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Stock Quantity</label>
-                  <input
-                    type="number"
-                    name="stock_quantity"
-                    value={formData.stock_quantity}
-                    onChange={handleChange}
-                    className="input-modern w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Stock Status</label>
-                  <select
-                    name="stock_status"
-                    value={formData.stock_status}
-                    onChange={handleChange}
-                    className="input-modern w-full"
-                  >
-                    <option value="in_stock">In Stock</option>
-                    <option value="out_of_stock">Out of Stock</option>
-                    <option value="backorder">Backorder</option>
-                    <option value="preorder">Preorder</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      checked={formData.is_active}
-                      onChange={handleChange}
-                      className="w-4 h-4 text-indigo-600 rounded"
-                    />
-                    <span className="text-sm font-semibold text-gray-700">Active</span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="input-modern w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Short Description</label>
-                <textarea
-                  name="short_description"
-                  value={formData.short_description}
-                  onChange={handleChange}
-                  rows={2}
-                  className="input-modern w-full"
-                />
-              </div>
-            </div>
 
             {/* Parameter Fields - Spherical */}
             {isSpherical && (
@@ -1007,54 +715,6 @@ const ContactLensConfigModal = ({ config, onClose }) => {
               </div>
             )}
 
-            {/* Images Upload */}
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Images</h3>
-              
-              {/* Main Images */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Product Images (Max 5)
-                </label>
-                {imagePreviews.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-xl border-2 border-gray-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <FiX className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <label className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <FiUpload className="w-8 h-8 text-indigo-600 mb-2" />
-                    <p className="text-sm font-semibold text-gray-700">
-                      {imagePreviews.length > 0 ? 'Add More Images' : 'Click to Upload Images'}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Max 5 images, 10MB each</p>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    className="hidden"
-                    disabled={imagePreviews.length + imageFiles.length >= 5}
-                  />
-                </label>
-              </div>
-            </div>
 
             {/* Submit Buttons */}
             <div className="flex items-center justify-end gap-4 border-t pt-6">

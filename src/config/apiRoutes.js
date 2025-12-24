@@ -294,6 +294,24 @@ export const API_ROUTES = {
   },
 
   // ============================================
+  // CONTACT LENS FORMS (PUBLIC - website routes)
+  // ============================================
+  // Public endpoints for contact lens form configuration and checkout
+  CONTACT_LENS_FORMS: {
+    // Get form configuration by sub-category
+    GET_CONFIG: (subCategoryId) => `/contact-lens-forms/config/${subCategoryId}`,
+    
+    // Get astigmatism dropdown values (public - active only)
+    ASTIGMATISM_DROPDOWN_VALUES: `/contact-lens-forms/astigmatism/dropdown-values`,
+    
+    // Get spherical configurations (public - active only)
+    SPHERICAL: `/contact-lens-forms/spherical`,
+    
+    // Checkout - Add contact lens to cart (requires user auth)
+    CHECKOUT: `/contact-lens-forms/checkout`,
+  },
+
+  // ============================================
   // FORMS (PUBLIC - all routes)
   // ============================================
   // Form configs and submissions are PUBLIC (no auth required)
@@ -654,6 +672,26 @@ export const API_ROUTES = {
     VTO_SETTINGS: {
       GET: `/admin/vto-settings`,
       UPDATE: `/admin/vto-settings`,
+    },
+
+    // Contact Lens Forms Management
+    CONTACT_LENS_FORMS: {
+      // Spherical Configurations
+      SPHERICAL: {
+        LIST: `/contact-lens-forms/admin/spherical`,
+        CREATE: `/contact-lens-forms/admin/spherical`,
+        UPDATE: (id) => `/contact-lens-forms/admin/spherical/${id}`,
+        DELETE: (id) => `/contact-lens-forms/admin/spherical/${id}`,
+      },
+      // Astigmatism Dropdown Values
+      ASTIGMATISM: {
+        DROPDOWN_VALUES: {
+          LIST: `/contact-lens-forms/admin/astigmatism/dropdown-values`,
+          CREATE: `/contact-lens-forms/admin/astigmatism/dropdown-values`,
+          UPDATE: (id) => `/contact-lens-forms/admin/astigmatism/dropdown-values/${id}`,
+          DELETE: (id) => `/contact-lens-forms/admin/astigmatism/dropdown-values/${id}`,
+        },
+      },
     },
   },
 

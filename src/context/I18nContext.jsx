@@ -206,6 +206,9 @@ const translations = {
     logout: 'Logout',
     administrator: 'Administrator',
     adminPanel: 'Admin Panel',
+    contactLensForms: 'Contact Lens Forms',
+    sphericalConfigurations: 'Spherical Configurations',
+    astigmatismDropdownValues: 'Astigmatism Dropdown Values',
   },
   ar: {
     // Common
@@ -374,6 +377,9 @@ const translations = {
     logout: 'تسجيل الخروج',
     administrator: 'المسؤول',
     adminPanel: 'لوحة التحكم',
+    contactLensForms: 'نماذج العدسات اللاصقة',
+    sphericalConfigurations: 'إعدادات الكروية',
+    astigmatismDropdownValues: 'قيم القائمة المنسدلة للاستجماتيزم',
   },
   fr: {
     // Common
@@ -542,6 +548,9 @@ const translations = {
     logout: 'Déconnexion',
     administrator: 'Administrateur',
     adminPanel: 'Panneau d\'Administration',
+    contactLensForms: 'Formulaires de Lentilles de Contact',
+    sphericalConfigurations: 'Configurations Sphériques',
+    astigmatismDropdownValues: 'Valeurs de Liste Déroulante Astigmatisme',
   },
   es: {
     // Common
@@ -710,6 +719,9 @@ const translations = {
     logout: 'Cerrar Sesión',
     administrator: 'Administrador',
     adminPanel: 'Panel de Administración',
+    contactLensForms: 'Formularios de Lentes de Contacto',
+    sphericalConfigurations: 'Configuraciones Esféricas',
+    astigmatismDropdownValues: 'Valores de Lista Desplegable Astigmatismo',
   },
   it: {
     // Common
@@ -878,6 +890,9 @@ const translations = {
     logout: 'Esci',
     administrator: 'Amministratore',
     adminPanel: 'Pannello di Amministrazione',
+    contactLensForms: 'Moduli Lenti a Contatto',
+    sphericalConfigurations: 'Configurazioni Sferiche',
+    astigmatismDropdownValues: 'Valori Menu a Tendina Astigmatismo',
   },
   de: {
     // Common
@@ -1046,6 +1061,9 @@ const translations = {
     logout: 'Abmelden',
     administrator: 'Administrator',
     adminPanel: 'Administrationspanel',
+    contactLensForms: 'Kontaktlinsen-Formulare',
+    sphericalConfigurations: 'Sphärische Konfigurationen',
+    astigmatismDropdownValues: 'Astigmatismus-Dropdown-Werte',
   },
   pt: {
     // Common
@@ -1214,6 +1232,9 @@ const translations = {
     logout: 'Sair',
     administrator: 'Administrador',
     adminPanel: 'Painel de Administração',
+    contactLensForms: 'Formulários de Lentes de Contato',
+    sphericalConfigurations: 'Configurações Esféricas',
+    astigmatismDropdownValues: 'Valores de Lista Suspensa Astigmatismo',
   },
   nl: {
     // Common

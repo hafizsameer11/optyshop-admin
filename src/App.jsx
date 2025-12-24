@@ -50,6 +50,10 @@ import JobApplications from './pages/forms/JobApplications';
 import CredentialsRequests from './pages/forms/CredentialsRequests';
 import SupportRequests from './pages/forms/SupportRequests';
 
+// Contact Lens Forms Module
+import SphericalConfigurations from './pages/contact-lens-forms/SphericalConfigurations';
+import AstigmatismDropdownValues from './pages/contact-lens-forms/AstigmatismDropdownValues';
+
 // Layout
 import Layout from './components/Layout';
 
@@ -90,6 +94,10 @@ function App() {
                     <Route path="/forms/credentials" element={<CredentialsRequests />} />
                     <Route path="/forms/support" element={<SupportRequests />} />
                     <Route path="/forms/job-applications" element={<JobApplications />} />
+
+                    {/* Contact Lens Forms Module */}
+                    <Route path="/contact-lens-forms/spherical" element={<SphericalConfigurations />} />
+                    <Route path="/contact-lens-forms/astigmatism" element={<AstigmatismDropdownValues />} />
 
                     <Route path="/products" element={<Products />} />
                     <Route path="/orders" element={<Orders />} />

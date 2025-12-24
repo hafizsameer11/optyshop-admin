@@ -50,7 +50,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     prescription: false,
     marketing: false,
     content: false,
-    forms: false
+    forms: false,
+    contactLensForms: false
   });
 
   const toggleSubmenu = (key) => {
@@ -186,6 +187,16 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { path: '/forms/credentials', label: t('credentialsRequests') },
         { path: '/forms/support', label: t('supportRequests') },
         { path: '/forms/job-applications', label: t('jobApplications') },
+      ]
+    },
+    {
+      type: 'group',
+      key: 'contactLensForms',
+      label: t('contactLensForms'),
+      icon: FiEye,
+      children: [
+        { path: '/contact-lens-forms/spherical', icon: FiAperture, label: t('sphericalConfigurations') },
+        { path: '/contact-lens-forms/astigmatism', icon: FiSettings, label: t('astigmatismDropdownValues') },
       ]
     },
     {

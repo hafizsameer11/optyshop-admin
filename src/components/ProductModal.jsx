@@ -672,7 +672,6 @@ const ProductModal = ({ product, onClose }) => {
       if (formData.is_featured !== undefined) dataToSend.is_featured = formData.is_featured;
 
       let response;
-      let imageUploadFailed = false;
       
       // Check if we need to use FormData (images, 3D model, or color images)
       const hasImageFiles = imageFiles && imageFiles.length > 0 && imageFiles.every(file => file instanceof File);
@@ -687,11 +686,11 @@ const ProductModal = ({ product, onClose }) => {
           
           // Add all fields to FormData with proper type conversion
           // Required fields: name, sku, price, category_id
-          const requiredFields = ['name', 'sku', 'price', 'category_id'];
+          const requiredFields = new Set(['name', 'sku', 'price', 'category_id']);
           
           Object.keys(dataToSend).forEach((key) => {
             const value = dataToSend[key];
-            const isRequired = requiredFields.includes(key);
+            const isRequired = requiredFields.has(key);
             
             // For required fields, always send (even if empty, let backend validate)
             // For optional fields, skip null, undefined, and empty strings
@@ -743,33 +742,15 @@ const ProductModal = ({ product, onClose }) => {
           // Note: Removed 'replace_images' field as it's not in the Postman collection
           // and may cause Multer "Unexpected field" errors
           
-          // Debug: Log what we're sending
-          console.log('Sending FormData:', {
-            imageCount: imageFiles.length,
-            imageNames: imageFiles.map(f => f.name),
-            has3DModel: !!model3DFile,
-            model3DName: model3DFile?.name,
-            colorImages: Object.keys(colorImages).map(color => ({
-              color,
-              count: colorImages[color]?.length || 0
-            })),
-            totalSize: [
-              ...imageFiles,
-              ...(model3DFile ? [model3DFile] : []),
-              ...Object.values(colorImages).flat()
-            ].reduce((sum, f) => sum + (f?.size || 0), 0),
-            isUpdate: !!product,
-            formDataKeys: Object.keys(dataToSend)
-          });
-
-          // Log FormData entries for debugging
-          console.log('FormData entries:');
-          for (const [key, value] of submitData.entries()) {
-            if (value instanceof File) {
-              console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
-            } else {
-              console.log(`  ${key}: ${value}`);
-            }
+          // Removed heavy console logging that was slowing down product saves
+          // Log only essential info in development mode
+          if (import.meta.env.DEV) {
+            console.log('Sending product:', {
+              imageCount: imageFiles.length,
+              has3DModel: !!model3DFile,
+              colorImageCount: Object.keys(colorImages).length,
+              isUpdate: !!product
+            });
           }
 
           if (product) {
@@ -798,30 +779,8 @@ const ProductModal = ({ product, onClose }) => {
             console.warn('Multer "Unexpected field" error detected. This may be due to color-specific image fields not being accepted by the backend Multer configuration.');
           }
           
-          // Check if it's an S3/upload error
-          const errorString = JSON.stringify(imageError.response?.data || {}).toLowerCase();
-          const isS3Error = errorString.includes('s3') || 
-                           errorString.includes('aws') || 
-                           errorString.includes('credentials') ||
-                           errorString.includes('missing credentials') ||
-                           errorString.includes('upload failed');
-          
-          if (isS3Error) {
-            // If S3 upload fails, try saving without images
-            imageUploadFailed = true;
-            toast.warning('Image upload failed. Saving product without images...');
-            
-            // Retry without images
-            if (product) {
-              response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), dataToSend);
-            } else {
-              response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
-            }
-            toast.success('Product saved successfully (without images). Please configure S3 to enable image uploads.');
-          } else {
-            // Re-throw if it's not an S3 error
-            throw imageError;
-          }
+          // Re-throw the error - let multer handle file uploads
+          throw imageError;
         }
       } else {
         // No images - send as JSON
@@ -836,9 +795,7 @@ const ProductModal = ({ product, onClose }) => {
       const responseData = response.data?.data || response.data;
       const successMessage = response.data?.message || (product ? 'Product updated successfully' : 'Product created successfully');
       
-      if (!imageUploadFailed) {
-        toast.success(successMessage);
-      }
+      toast.success(successMessage);
       
       // Reset image files after successful save
       setImageFiles([]);
@@ -913,16 +870,8 @@ const ProductModal = ({ product, onClose }) => {
                              errorData.errors?.[0]?.msg ||
                              `Failed to save product (${error.response.status})`;
           
-          // Check for S3 upload errors
-          const errorString = JSON.stringify(errorData).toLowerCase();
-          if (errorString.includes('s3') || 
-              errorString.includes('aws') || 
-              errorString.includes('credentials') ||
-              errorString.includes('missing credentials')) {
-            toast.error('Image upload failed: AWS S3 configuration error. Product saved without image.');
-          } else {
-            toast.error(errorMessage);
-          }
+          // Show error message
+          toast.error(errorMessage);
         }
       }
     } finally {

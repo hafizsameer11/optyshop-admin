@@ -28,7 +28,7 @@ const SphericalConfigurations = () => {
     try {
       const response = await api.get(`${API_ROUTES.ADMIN.SUBCATEGORIES.LIST}?page=1&limit=1000`);
       let subCategoriesData = [];
-      
+
       if (response.data) {
         if (response.data.data) {
           const dataObj = response.data.data;
@@ -41,7 +41,7 @@ const SphericalConfigurations = () => {
           subCategoriesData = response.data;
         }
       }
-      
+
       setSubCategories(subCategoriesData);
     } catch (error) {
       console.error('SubCategories fetch error:', error);
@@ -56,10 +56,10 @@ const SphericalConfigurations = () => {
         url += `&sub_category_id=${filterSubCategoryId}`;
       }
       console.log('Fetching spherical configs from:', url);
-      
+
       const response = await api.get(url);
       console.log('Spherical configs API Response:', response.data);
-      
+
       let configsData = [];
       let pagination = null;
 
@@ -119,7 +119,7 @@ const SphericalConfigurations = () => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       console.error('Request URL:', `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?page=${page}&limit=${limit}`);
-      
+
       if (!error.response) {
         toast.error('Cannot connect to server. Check if backend is running.');
       } else if (error.response.status === 401) {
@@ -147,9 +147,35 @@ const SphericalConfigurations = () => {
     setModalOpen(true);
   };
 
-  const handleEdit = (config) => {
-    setSelectedConfig(config);
-    setModalOpen(true);
+  const handleEdit = async (config) => {
+    try {
+      // Fetch the full configuration details to ensure we have all fields (like power)
+      // which might be missing or null in the list view
+      setLoading(true);
+      const response = await api.get(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.BY_ID(config.id));
+
+      let fullConfig = config;
+      if (response.data) {
+        if (response.data.data) {
+          fullConfig = response.data.data;
+        } else if (response.data.config) {
+          fullConfig = response.data.config;
+        } else {
+          fullConfig = response.data;
+        }
+      }
+
+      setSelectedConfig(fullConfig);
+      setModalOpen(true);
+    } catch (error) {
+      console.error('Fetch config details error:', error);
+      toast.error('Failed to fetch full configuration details. Using list data.');
+      // Fallback to the config from the list
+      setSelectedConfig(config);
+      setModalOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -267,7 +293,7 @@ const SphericalConfigurations = () => {
                   const displayName = config.display_name || config.displayName || 'N/A';
                   const subCategoryId = config.sub_category_id || config.subCategoryId || 'N/A';
                   // Safely convert price to number, handling null, undefined, and string values
-                  const priceValue = config.price !== undefined && config.price !== null 
+                  const priceValue = config.price !== undefined && config.price !== null
                     ? (typeof config.price === 'string' ? parseFloat(config.price) : Number(config.price))
                     : 0;
                   const price = isNaN(priceValue) ? 0 : priceValue;
@@ -292,11 +318,10 @@ const SphericalConfigurations = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            isActive
+                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${isActive
                               ? 'bg-green-100 text-green-800'
                               : 'bg-gray-100 text-gray-800'
-                          }`}
+                            }`}
                         >
                           {isActive ? 'Active' : 'Inactive'}
                         </span>

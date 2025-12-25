@@ -122,7 +122,7 @@ export const API_ROUTES = {
     LIST: `/transactions`,                       // USER - Get user transactions with filters
     BY_ID: (id) => `/transactions/${id}`,        // USER - Get transaction details
   },
-  
+
   // ============================================
   // COUPONS (PUBLIC - apply only)
   // ============================================
@@ -218,21 +218,21 @@ export const API_ROUTES = {
     KIDS_LENS_RECOMMENDATION: `/simulations/kids-lens-recommendation`, // PUBLIC
     LIFESTYLE_RECOMMENDATION: `/simulations/lifestyle-recommendation`, // PUBLIC
     CALCULATE_BASE_CURVE: `/simulations/base-curve`,     // PUBLIC
-    
+
     // PUBLIC - Simulators
     PHOTOCHROMIC: `/simulations/photochromic`,          // PUBLIC
     AR_COATING: `/simulations/ar-coating`,              // PUBLIC
-    
+
     // ADMIN - Configuration
     CONFIG: `/simulations/config`,                      // ADMIN
     UPDATE_CONFIG: `/simulations/config`,               // ADMIN
-    
+
     // ADMIN - VTO Assets
     VTO_ASSETS: `/simulations/vto-assets`,              // ADMIN
     VTO_ASSET_BY_ID: (id) => `/simulations/vto-assets/${id}`, // ADMIN
     CREATE_VTO_ASSET: `/simulations/vto-assets`,       // ADMIN
     DELETE_VTO_ASSET: (id) => `/simulations/vto-assets/${id}`, // ADMIN
-    
+
     // ADMIN - VTO Configs
     VTO_CONFIGS: `/simulations/vto-configs`,            // ADMIN
     VTO_CONFIG_BY_ID: (id) => `/simulations/vto-configs/${id}`, // ADMIN
@@ -300,13 +300,13 @@ export const API_ROUTES = {
   CONTACT_LENS_FORMS: {
     // Get form configuration by sub-category
     GET_CONFIG: (subCategoryId) => `/contact-lens-forms/config/${subCategoryId}`,
-    
+
     // Get astigmatism dropdown values (public - active only)
     ASTIGMATISM_DROPDOWN_VALUES: `/contact-lens-forms/astigmatism/dropdown-values`,
-    
+
     // Get spherical configurations (public - active only)
     SPHERICAL: `/contact-lens-forms/spherical`,
-    
+
     // Checkout - Add contact lens to cart (requires user auth)
     CHECKOUT: `/contact-lens-forms/checkout`,
   },
@@ -351,7 +351,7 @@ export const API_ROUTES = {
   // ALL routes under /api/admin/* require admin_token
   ADMIN: {
     DASHBOARD: `/admin/dashboard`,
-    
+
     // Products Management
     PRODUCTS: {
       LIST: `/admin/products`,
@@ -360,20 +360,20 @@ export const API_ROUTES = {
       DELETE: (id) => `/admin/products/${id}`,
       BULK_UPLOAD: `/admin/products/bulk-upload`,
     },
-    
+
     // Orders Management (Admin view)
     ORDERS: {
       LIST: `/admin/orders`,                    // ADMIN - Get all orders with filters
       BY_ID: (id) => `/admin/orders/${id}`,     // ADMIN - Get order details
     },
-    
+
     // Users Management
     USERS: {
       LIST: `/admin/users`,
       CREATE: `/admin/users`,
       UPDATE: (id) => `/admin/users/${id}`,
     },
-    
+
     // Categories Management
     CATEGORIES: {
       LIST: `/admin/categories`,
@@ -382,7 +382,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/categories/${id}`,
       DELETE: (id) => `/admin/categories/${id}`,
     },
-    
+
     // SubCategories Management
     SUBCATEGORIES: {
       LIST: `/admin/subcategories`, // ADMIN - Get all subcategories with pagination
@@ -395,7 +395,7 @@ export const API_ROUTES = {
       BY_PARENT: (parentId) => `/admin/subcategories/by-parent/${parentId}`, // ADMIN - Get sub-subcategories by parent ID (returns parent info + sub-subcategories with full details)
       AVAILABLE_PARENTS: (categoryId) => `/admin/subcategories/available-parents/${categoryId}`, // ADMIN - Get available parents (includes "None" option, returns array with "None (Top-level subcategory)" as first item)
     },
-    
+
     // Frame Sizes Management
     FRAME_SIZES: {
       LIST: `/admin/frame-sizes`,
@@ -404,7 +404,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/frame-sizes/${id}`,
       DELETE: (id) => `/admin/frame-sizes/${id}`,
     },
-    
+
     // Lens Types Management
     LENS_TYPES: {
       LIST: `/admin/lens-types`,
@@ -412,7 +412,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/lens-types/${id}`,
       DELETE: (id) => `/admin/lens-types/${id}`,
     },
-    
+
     // Lens Coatings Management
     LENS_COATINGS: {
       LIST: `/admin/lens-coatings`,
@@ -420,7 +420,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/lens-coatings/${id}`,
       DELETE: (id) => `/admin/lens-coatings/${id}`,
     },
-    
+
     // Configs Management (for Simulations page)
     CONFIGS: {
       LIST: `/admin/configs`,
@@ -446,7 +446,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/menu-items/${id}`,
       DELETE: (id) => `/admin/menu-items/${id}`,
     },
-    
+
     // Coupons Management
     COUPONS: {
       LIST: `/admin/coupons`,
@@ -454,7 +454,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/coupons/${id}`,
       DELETE: (id) => `/admin/coupons/${id}`,
     },
-    
+
     // Campaigns Management
     CAMPAIGNS: {
       LIST: `/admin/campaigns`,
@@ -462,7 +462,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/campaigns/${id}`,
       DELETE: (id) => `/admin/campaigns/${id}`,
     },
-    
+
     // Jobs Management
     JOBS: {
       LIST: `/admin/jobs`,
@@ -471,7 +471,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/jobs/${id}`,
       DELETE: (id) => `/admin/jobs/${id}`,
     },
-    
+
     // Job Applications Management
     JOB_APPLICATIONS: {
       LIST: `/admin/job-applications`,
@@ -481,7 +481,7 @@ export const API_ROUTES = {
       REJECT: (id) => `/admin/job-applications/${id}/reject`,
       DELETE: (id) => `/admin/job-applications/${id}`,
     },
-    
+
     // Form Requests Management (Admin view of form submissions)
     // These endpoints manage submissions from public forms (FORMS.*)
     // See docs/FORMS_INTEGRATION.md for complete integration guide
@@ -490,31 +490,31 @@ export const API_ROUTES = {
       BY_ID: (id) => `/admin/requests/contact/${id}`,     // ADMIN - Get contact submission by ID
       DELETE: (id) => `/admin/requests/contact/${id}`,     // ADMIN - Delete contact submission
     },
-    
+
     DEMO_REQUESTS: {
       LIST: `/admin/requests/demo`,                       // ADMIN - List all demo form submissions
       BY_ID: (id) => `/admin/requests/demo/${id}`,        // ADMIN - Get demo submission by ID
       DELETE: (id) => `/admin/requests/demo/${id}`,       // ADMIN - Delete demo submission
     },
-    
+
     PRICING_REQUESTS: {
       LIST: `/admin/requests/pricing`,                    // ADMIN - List all pricing form submissions
       BY_ID: (id) => `/admin/requests/pricing/${id}`,     // ADMIN - Get pricing submission by ID
       DELETE: (id) => `/admin/requests/pricing/${id}`,    // ADMIN - Delete pricing submission
     },
-    
+
     CREDENTIALS_REQUESTS: {
       LIST: `/admin/requests/credentials`,                // ADMIN - List all credentials form submissions
       BY_ID: (id) => `/admin/requests/credentials/${id}`,  // ADMIN - Get credentials submission by ID
       DELETE: (id) => `/admin/requests/credentials/${id}`, // ADMIN - Delete credentials submission
     },
-    
+
     SUPPORT_REQUESTS: {
       LIST: `/admin/requests/support`,                    // ADMIN - List all support form submissions (with attachments)
       BY_ID: (id) => `/admin/requests/support/${id}`,     // ADMIN - Get support submission by ID (includes attachments)
       DELETE: (id) => `/admin/requests/support/${id}`,     // ADMIN - Delete support submission
     },
-    
+
     // Transactions Management
     TRANSACTIONS: {
       LIST: `/admin/transactions`,
@@ -523,7 +523,7 @@ export const API_ROUTES = {
       STATS: `/admin/transactions/stats`,
       UPDATE_STATUS: (id) => `/admin/transactions/${id}/status`,
     },
-    
+
     // FAQs Management
     FAQS: {
       LIST: `/admin/faqs`,
@@ -532,7 +532,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/faqs/${id}`,
       DELETE: (id) => `/admin/faqs/${id}`,
     },
-    
+
     // Blog Posts Management
     BLOG_POSTS: {
       LIST: `/admin/blog-posts`,
@@ -541,7 +541,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/blog-posts/${id}`,
       DELETE: (id) => `/admin/blog-posts/${id}`,
     },
-    
+
     // Pages Management
     PAGES: {
       LIST: `/admin/pages`,
@@ -550,7 +550,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/pages/${id}`,
       DELETE: (id) => `/admin/pages/${id}`,
     },
-    
+
     // Testimonials Management
     TESTIMONIALS: {
       LIST: `/admin/testimonials`,
@@ -559,7 +559,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/testimonials/${id}`,
       DELETE: (id) => `/admin/testimonials/${id}`,
     },
-    
+
     // Banners Management
     BANNERS: {
       LIST: `/admin/banners`,
@@ -667,7 +667,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/photochromic-lenses/${id}`,
       DELETE: (id) => `/admin/photochromic-lenses/${id}`,
     },
-    
+
     // VTO Settings (for Simulations page)
     VTO_SETTINGS: {
       GET: `/admin/vto-settings`,
@@ -680,6 +680,7 @@ export const API_ROUTES = {
       SPHERICAL: {
         LIST: `/contact-lens-forms/admin/spherical`,
         CREATE: `/contact-lens-forms/admin/spherical`,
+        BY_ID: (id) => `/contact-lens-forms/admin/spherical/${id}`,
         UPDATE: (id) => `/contact-lens-forms/admin/spherical/${id}`,
         DELETE: (id) => `/contact-lens-forms/admin/spherical/${id}`,
       },
@@ -707,7 +708,7 @@ export const API_ROUTES = {
       UPDATE: (id) => `/marketing/coupons/${id}`,
       DELETE: (id) => `/marketing/coupons/${id}`,
     },
-    
+
     // Campaigns
     CAMPAIGNS: {
       LIST: `/marketing/campaigns`,
@@ -770,13 +771,13 @@ export const API_ROUTES = {
  */
 export const buildQueryString = (baseUrl, params = {}) => {
   const queryParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== null && value !== undefined && value !== '') {
       queryParams.append(key, value);
     }
   });
-  
+
   const queryString = queryParams.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 };
@@ -788,23 +789,23 @@ export const QUERY_PARAMS = {
   // Pagination
   PAGE: 'page',
   LIMIT: 'limit',
-  
+
   // Product filters
   FRAME_SHAPE: 'frameShape',
   FRAME_MATERIAL: 'frameMaterial',
   MIN_PRICE: 'minPrice',
   MAX_PRICE: 'maxPrice',
-  
+
   // Order/Status filters
   STATUS: 'status',
-  
+
   // Date ranges
   RANGE: 'range',
   PERIOD: 'period',
-  
+
   // Includes
   INCLUDE_PRODUCTS: 'includeProducts',
-  
+
   // VTO
   TYPE: 'type',
 };

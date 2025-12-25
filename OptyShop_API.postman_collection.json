@@ -66,7 +66,7 @@
 					  "register"
 					]
 				  },
-				  "description": "⚠️ WARNING: Admin registration only works if ALLOW_ADMIN_REGISTRATION=true in .env file. For production, use POST /api/admin/users instead. This endpoint will return 403 error if admin registration is disabled."
+				  "description": "\u26a0\ufe0f WARNING: Admin registration only works if ALLOW_ADMIN_REGISTRATION=true in .env file. For production, use POST /api/admin/users instead. This endpoint will return 403 error if admin registration is disabled."
 				}
 			  },
 			  {
@@ -198,7 +198,7 @@
 					  }
 					]
 				  },
-				  "description": "Get all active products with pagination and filters.\n\n**Response includes for each product:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (null if not available)\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Color name (e.g., \"black\", \"brown\")\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display\n- `selectedColor`: Default selected color value (first color or null)\n- Standard product fields (name, price, description, category, etc.)\n\n**Query Parameters:**\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 12)\n- `category`: Filter by category slug\n- `subCategory`: Filter by subcategory slug\n- `frameShape`: Filter by frame shape\n- `frameMaterial`: Filter by frame material\n- `lensType`: Filter by lens type\n- `gender`: Filter by gender\n- `minPrice`, `maxPrice`: Price range filter\n- `search`: Search in name, description, SKU\n- `sortBy`: Sort field (default: created_at)\n- `sortOrder`: Sort direction (asc/desc, default: desc)\n- `isFeatured`: Filter featured products (true/false)\n\n**Example Product in Response:**\n```json\n{\n  \"id\": 1,\n  \"name\": \"Classic Round Frame\",\n  \"images\": [\"main1.jpg\"],\n  \"image\": \"black1.jpg\",\n  \"colors\": [\n    {\"name\": \"black\", \"value\": \"black\", \"images\": [\"black1.jpg\"], \"primaryImage\": \"black1.jpg\", \"hexCode\": \"#000000\"}\n  ],\n  \"selectedColor\": \"black\",\n  \"model_3d_url\": \"https://s3.../model.glb\",\n  \"price\": 25.99\n}\n```"
+				  "description": "Get all active products with pagination and filters.\n\n**Response includes for each product:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (null if not available)\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Variant name (e.g., \"Black Classic\", \"Gold Premium\")\n  - `display_name`: Display name shown to customers (e.g., \"Black Classic Premium\")\n  - `price`: Variant-specific price (null if using base product price)\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display\n- `selectedColor`: Default selected color value (first color or null)\n- `currentVariantPrice`: Current variant price (or base product price if variant has no price)\n- Standard product fields (name, price, description, category, etc.)\n\n**Query Parameters:**\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 12)\n- `category`: Filter by category slug\n- `subCategory`: Filter by subcategory slug\n- `frameShape`: Filter by frame shape\n- `frameMaterial`: Filter by frame material\n- `lensType`: Filter by lens type\n- `gender`: Filter by gender\n- `minPrice`, `maxPrice`: Price range filter\n- `search`: Search in name, description, SKU\n- `sortBy`: Sort field (default: created_at)\n- `sortOrder`: Sort direction (asc/desc, default: desc)\n- `isFeatured`: Filter featured products (true/false)\n\n**Example Product in Response:**\n```json\n{\n  \"id\": 1,\n  \"name\": \"Classic Round Frame\",\n  \"images\": [\"main1.jpg\"],\n  \"image\": \"black1.jpg\",\n  \"colors\": [\n    {\n      \"name\": \"Black Classic\",\n      \"display_name\": \"Black Classic Premium\",\n      \"price\": 99.99,\n      \"value\": \"black\",\n      \"images\": [\"black1.jpg\"],\n      \"primaryImage\": \"black1.jpg\",\n      \"hexCode\": \"#000000\"\n    },\n    {\n      \"name\": \"Gold Premium\",\n      \"display_name\": \"Gold Premium Edition\",\n      \"price\": 129.99,\n      \"value\": \"gold\",\n      \"images\": [\"gold1.jpg\"],\n      \"primaryImage\": \"gold1.jpg\",\n      \"hexCode\": \"#FFD700\"\n    }\n  ],\n  \"selectedColor\": \"black\",\n  \"currentVariantPrice\": 99.99,\n  \"model_3d_url\": \"https://s3.../model.glb\",\n  \"price\": 25.99\n}\n```\n\n**Note:** When a customer selects a color variant, use `colors[selectedIndex].display_name` for the product name and `colors[selectedIndex].price` (or `currentVariantPrice`) for the price."
 				}
 			  },
 			  {
@@ -289,7 +289,7 @@
 					  }
 					]
 				  },
-				  "description": "Get featured products. Each product includes:\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (null if not available)\n- `colors`: Formatted array for color swatches with `name`, `value`, `images`, `primaryImage`, `hexCode`\n- `selectedColor`: Default selected color value\n- `color_images`: Raw array of color-specific images\n- Standard product fields\n\n**Use `colors` array to display color swatches in product cards.**"
+				  "description": "Get featured products. Each product includes:\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (null if not available)\n- `colors`: Formatted array for color swatches with `name`, `display_name`, `price`, `value`, `images`, `primaryImage`, `hexCode`\n- `selectedColor`: Default selected color value\n- `color_images`: Raw array of color-specific images\n- Standard product fields\n\n**Use `colors` array to display color swatches in product cards.**"
 				}
 			  },
 			  {
@@ -327,7 +327,7 @@
 					  "1"
 					]
 				  },
-				  "description": "Get single product by ID. Returns full product details including:\n\n**Media Fields:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (e.g., .glb, .gltf) - null if not available\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Color name (e.g., \"black\", \"brown\")\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display (e.g., \"#000000\")\n- `selectedColor`: Default selected color value (first color or null)\n\n**For Contact Lens Products:**\n- `base_curve_options`: Available base curve options (array) - e.g., [8.70, 8.80, 8.90]\n- `diameter_options`: Available diameter options (array) - e.g., [14.00, 14.20]\n- `powers_range`: Available power range (string or object) - e.g., \"-0.50 to -6.00 in 0.25 steps\"\n- `contact_lens_brand`: Brand/Producer name (e.g., \"Alcon\")\n- `contact_lens_material`: Material (e.g., \"Nelfilcon A\")\n- `contact_lens_color`: Lens color\n- `contact_lens_type`: Product type (e.g., \"Sferica\", \"Toric\")\n- `replacement_frequency`: Replacement frequency (e.g., \"Giornaliera\", \"Settimanale\", \"Mensile\")\n- `water_content`: Water content percentage\n- `can_sleep_with`: Boolean - can sleep with lenses\n- `is_medical_device`: Boolean - is medical device\n- `has_uv_filter`: Boolean - has UV filter\n\n**For Frame Products:**\n- `frameSizes`: Available frame sizes\n- `lensTypes`: Available lens types\n- `lensCoatings`: Available lens coatings\n- Standard product fields (name, price, description, etc.)\n\n**Example Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"product\": {\n      \"id\": 1,\n      \"name\": \"Classic Round Frame\",\n      \"images\": [\"main1.jpg\", \"main2.jpg\"],\n      \"image\": \"black1.jpg\",\n      \"model_3d_url\": \"https://s3.../model.glb\",\n      \"color_images\": [\n        {\"color\": \"black\", \"images\": [\"black1.jpg\", \"black2.jpg\"]},\n        {\"color\": \"brown\", \"images\": [\"brown1.jpg\"]}\n      ],\n      \"colors\": [\n        {\n          \"name\": \"black\",\n          \"value\": \"black\",\n          \"images\": [\"black1.jpg\", \"black2.jpg\"],\n          \"primaryImage\": \"black1.jpg\",\n          \"hexCode\": \"#000000\"\n        },\n        {\n          \"name\": \"brown\",\n          \"value\": \"brown\",\n          \"images\": [\"brown1.jpg\"],\n          \"primaryImage\": \"brown1.jpg\",\n          \"hexCode\": \"#8B4513\"\n        }\n      ],\n      \"selectedColor\": \"black\",\n      \"price\": 99.99\n    }\n  }\n}\n```\n\n**Frontend Usage:**\n- Use `colors` array to display color swatches\n- Use `hexCode` for swatch background color\n- When user selects a color, find it in `colors` array and use its `images`\n- Use `model_3d_url` for 3D try-on feature"
+				  "description": "Get single product by ID. Returns full product details including:\n\n**Media Fields:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (e.g., .glb, .gltf) - null if not available\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Variant name (e.g., \"Black Classic\", \"Gold Premium\")\n  - `display_name`: Display name shown to customers (e.g., \"Black Classic Premium\")\n  - `price`: Variant-specific price (null if using base product price)\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display (e.g., \"#000000\")\n- `selectedColor`: Default selected color value (first color or null)\n\n**For Contact Lens Products:**\n- `base_curve_options`: Available base curve options (array) - e.g., [8.70, 8.80, 8.90]\n- `diameter_options`: Available diameter options (array) - e.g., [14.00, 14.20]\n- `powers_range`: Available power range (string or object) - e.g., \"-0.50 to -6.00 in 0.25 steps\"\n- `contact_lens_brand`: Brand/Producer name (e.g., \"Alcon\")\n- `contact_lens_material`: Material (e.g., \"Nelfilcon A\")\n- `contact_lens_color`: Lens color\n- `contact_lens_type`: Product type (e.g., \"Sferica\", \"Toric\")\n- `replacement_frequency`: Replacement frequency (e.g., \"Giornaliera\", \"Settimanale\", \"Mensile\")\n- `water_content`: Water content percentage\n- `can_sleep_with`: Boolean - can sleep with lenses\n- `is_medical_device`: Boolean - is medical device\n- `has_uv_filter`: Boolean - has UV filter\n\n**For Frame Products:**\n- `frameSizes`: Available frame sizes\n- `lensTypes`: Available lens types\n- `lensCoatings`: Available lens coatings\n- Standard product fields (name, price, description, etc.)\n\n**Example Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"product\": {\n      \"id\": 1,\n      \"name\": \"Classic Round Frame\",\n      \"images\": [\"main1.jpg\", \"main2.jpg\"],\n      \"image\": \"black1.jpg\",\n      \"model_3d_url\": \"https://s3.../model.glb\",\n      \"color_images\": [\n        {\"color\": \"black\", \"images\": [\"black1.jpg\", \"black2.jpg\"]},\n        {\"color\": \"brown\", \"images\": [\"brown1.jpg\"]}\n      ],\n      \"colors\": [\n        {\n          \"name\": \"Black Classic\",\n          \"display_name\": \"Black Classic Premium\",\n          \"price\": 99.99,\n          \"value\": \"black\",\n          \"images\": [\"black1.jpg\", \"black2.jpg\"],\n          \"primaryImage\": \"black1.jpg\",\n          \"hexCode\": \"#000000\"\n        },\n        {\n          \"name\": \"Brown Elegant\",\n          \"display_name\": \"Brown Elegant\",\n          \"price\": 109.99,\n          \"value\": \"brown\",\n          \"images\": [\"brown1.jpg\"],\n          \"primaryImage\": \"brown1.jpg\",\n          \"hexCode\": \"#8B4513\"\n        }\n      ],\n      \"selectedColor\": \"black\",\n      \"currentVariantPrice\": 99.99,\n      \"price\": 99.99\n    }\n  }\n}\n```\n\n**Frontend Usage:**\n- Use `colors` array to display color swatches\n- Use `hexCode` for swatch background color\n- When user selects a color, find it in `colors` array and use:\n  - `display_name` for the product name\n  - `price` (or `currentVariantPrice`) for the product price\n  - `images` for the product images\n- Use `model_3d_url` for 3D try-on feature"
 				}
 			  },
 			  {
@@ -347,7 +347,7 @@
 					  "classic-round-frame"
 					]
 				  },
-				  "description": "Get single product by slug. Returns full product details including:\n\n**Media Fields:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (e.g., .glb, .gltf) - null if not available\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Color name (e.g., \"black\", \"brown\")\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display (e.g., \"#000000\")\n- `selectedColor`: Default selected color value (first color or null)\n\n**For Contact Lens Products:**\n- `base_curve_options`: Available base curve options (array) - e.g., [8.70, 8.80, 8.90]\n- `diameter_options`: Available diameter options (array) - e.g., [14.00, 14.20]\n- `powers_range`: Available power range (string or object) - e.g., \"-0.50 to -6.00 in 0.25 steps\"\n- `contact_lens_brand`: Brand/Producer name (e.g., \"Alcon\")\n- `contact_lens_material`: Material (e.g., \"Nelfilcon A\")\n- `contact_lens_color`: Lens color\n- `contact_lens_type`: Product type (e.g., \"Sferica\", \"Toric\")\n- `replacement_frequency`: Replacement frequency (e.g., \"Giornaliera\", \"Settimanale\", \"Mensile\")\n- `water_content`: Water content percentage\n- `can_sleep_with`: Boolean - can sleep with lenses\n- `is_medical_device`: Boolean - is medical device\n- `has_uv_filter`: Boolean - has UV filter\n\n**For Frame Products:**\n- `frameSizes`: Available frame sizes\n- `lensTypes`: Available lens types\n- `lensCoatings`: Available lens coatings\n- Standard product fields (name, price, description, etc.)\n\n**Example Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"product\": {\n      \"id\": 1,\n      \"name\": \"Classic Round Frame\",\n      \"images\": [\"main1.jpg\", \"main2.jpg\"],\n      \"image\": \"black1.jpg\",\n      \"model_3d_url\": \"https://s3.../model.glb\",\n      \"colors\": [\n        {\n          \"name\": \"black\",\n          \"value\": \"black\",\n          \"images\": [\"black1.jpg\", \"black2.jpg\"],\n          \"primaryImage\": \"black1.jpg\",\n          \"hexCode\": \"#000000\"\n        },\n        {\n          \"name\": \"brown\",\n          \"value\": \"brown\",\n          \"images\": [\"brown1.jpg\"],\n          \"primaryImage\": \"brown1.jpg\",\n          \"hexCode\": \"#8B4513\"\n        }\n      ],\n      \"selectedColor\": \"black\",\n      \"price\": 99.99\n    }\n  }\n}\n```\n\n**Frontend Usage:**\n- Use `colors` array to display color swatches\n- Use `hexCode` for swatch background color\n- When user selects a color, find it in `colors` array and use its `images`\n- Use `model_3d_url` for 3D try-on feature"
+				  "description": "Get single product by slug. Returns full product details including:\n\n**Media Fields:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (e.g., .glb, .gltf) - null if not available\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Variant name (e.g., \"Black Classic\", \"Gold Premium\")\n  - `display_name`: Display name shown to customers (e.g., \"Black Classic Premium\")\n  - `price`: Variant-specific price (null if using base product price)\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display (e.g., \"#000000\")\n- `selectedColor`: Default selected color value (first color or null)\n\n**For Contact Lens Products:**\n- `base_curve_options`: Available base curve options (array) - e.g., [8.70, 8.80, 8.90]\n- `diameter_options`: Available diameter options (array) - e.g., [14.00, 14.20]\n- `powers_range`: Available power range (string or object) - e.g., \"-0.50 to -6.00 in 0.25 steps\"\n- `contact_lens_brand`: Brand/Producer name (e.g., \"Alcon\")\n- `contact_lens_material`: Material (e.g., \"Nelfilcon A\")\n- `contact_lens_color`: Lens color\n- `contact_lens_type`: Product type (e.g., \"Sferica\", \"Toric\")\n- `replacement_frequency`: Replacement frequency (e.g., \"Giornaliera\", \"Settimanale\", \"Mensile\")\n- `water_content`: Water content percentage\n- `can_sleep_with`: Boolean - can sleep with lenses\n- `is_medical_device`: Boolean - is medical device\n- `has_uv_filter`: Boolean - has UV filter\n\n**For Frame Products:**\n- `frameSizes`: Available frame sizes\n- `lensTypes`: Available lens types\n- `lensCoatings`: Available lens coatings\n- Standard product fields (name, price, description, etc.)\n\n**Example Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"product\": {\n      \"id\": 1,\n      \"name\": \"Classic Round Frame\",\n      \"images\": [\"main1.jpg\", \"main2.jpg\"],\n      \"image\": \"black1.jpg\",\n      \"model_3d_url\": \"https://s3.../model.glb\",\n      \"colors\": [\n        {\n          \"name\": \"Black Classic\",\n          \"display_name\": \"Black Classic Premium\",\n          \"price\": 99.99,\n          \"value\": \"black\",\n          \"images\": [\"black1.jpg\", \"black2.jpg\"],\n          \"primaryImage\": \"black1.jpg\",\n          \"hexCode\": \"#000000\"\n        },\n        {\n          \"name\": \"Brown Elegant\",\n          \"display_name\": \"Brown Elegant\",\n          \"price\": 109.99,\n          \"value\": \"brown\",\n          \"images\": [\"brown1.jpg\"],\n          \"primaryImage\": \"brown1.jpg\",\n          \"hexCode\": \"#8B4513\"\n        }\n      ],\n      \"selectedColor\": \"black\",\n      \"currentVariantPrice\": 99.99,\n      \"price\": 99.99\n    }\n  }\n}\n```\n\n**Frontend Usage:**\n- Use `colors` array to display color swatches\n- Use `hexCode` for swatch background color\n- When user selects a color, find it in `colors` array and use:\n  - `display_name` for the product name\n  - `price` (or `currentVariantPrice`) for the product price\n  - `images` for the product images\n- Use `model_3d_url` for 3D try-on feature"
 				}
 			  },
 			  {
@@ -373,7 +373,7 @@
 					  }
 					]
 				  },
-				  "description": "Get related products from the same category. Each product includes:\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color\n- `colors`: Formatted array for color swatches with `name`, `value`, `images`, `primaryImage`, `hexCode`\n- `selectedColor`: Default selected color value\n- `model_3d_url`: URL to 3D model file (null if not available)\n- Standard product fields\n\n**Query Parameters:**\n- `limit`: Number of related products to return (default: 4)"
+				  "description": "Get related products from the same category. Each product includes:\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color\n- `colors`: Formatted array for color swatches with `name`, `display_name`, `price`, `value`, `images`, `primaryImage`, `hexCode`\n- `selectedColor`: Default selected color value\n- `model_3d_url`: URL to 3D model file (null if not available)\n- Standard product fields\n\n**Query Parameters:**\n- `limit`: Number of related products to return (default: 4)"
 				}
 			  },
 			  {
@@ -518,246 +518,246 @@
 			  }
 			]
 		  },
-				{
-					"name": "SubCategories",
-					"item": [
-						{
-							"name": "Get All SubCategories",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories?page=1&limit=50&category_id=1",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"subcategories"
-									],
-									"query": [
-										{
-											"key": "page",
-											"value": "1",
-											"description": "Page number for pagination"
-										},
-										{
-											"key": "limit",
-											"value": "50",
-											"description": "Number of items per page (default: 50)"
-										},
-										{
-											"key": "category_id",
-											"value": "1",
-											"description": "Filter by category ID (optional)"
-										},
-										{
-											"key": "search",
-											"value": "",
-											"description": "Search subcategories by name (optional)",
-											"disabled": true
-										}
-									]
-								},
-								"description": "Get all active subcategories with pagination support.\n\n**3-Level Structure:**\nCategory → Subcategory → Sub-subcategory\n\n**Response Structure:**\n- `subcategories`: All subcategories with parent/children info\n- `topLevelSubcategories`: Subcategories (parent_id = null)\n- `nestedSubcategories`: Sub-subcategories (parent_id != null)\n- `pagination`: Pagination metadata\n\n**Features:**\n- Paginated results\n- Filter by category_id\n- Search by name\n- Includes category, parent, and children information"
-							}
-						},
-						{
-							"name": "Get SubCategory by ID",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories/1?includeProducts=true",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"subcategories",
-										"1"
-									],
-									"query": [
-									  {
-										"key": "includeProducts",
-										"value": "true",
-										"description": "Include products associated with this subcategory",
-										"disabled": true
-									  }
-									]
-								},
-								"description": "Get a single subcategory by ID with its category, parent, and children information.\n\n**Response includes:**\n- Subcategory details (id, name, slug, description, image, parent_id, etc.)\n- `category`: Category information\n- `parent`: Parent subcategory (if sub-subcategory, null otherwise)\n- `children`: Array of sub-subcategories (if parent subcategory, empty otherwise)\n- Products (if includeProducts=true)"
-							}
-						},
-						{
-							"name": "Get SubCategory by Slug",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories/slug/test-subcategory",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"subcategories",
-										"slug",
-										"test-subcategory"
-									]
-								},
-								"description": "Get a single subcategory by slug with its category, parent, and children information.\n\n**Response includes:**\n- Subcategory details (id, name, slug, description, image, parent_id, etc.)\n- `category`: Category information\n- `parent`: Parent subcategory (if sub-subcategory, null otherwise)\n- `children`: Array of sub-subcategories (if parent subcategory, empty otherwise)"
-							}
-						},
-						{
-							"name": "Get SubCategories by Category ID",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories/by-category/1",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"subcategories",
-										"by-category",
-										"1"
-									]
-								},
-								"description": "Get all active subcategories for a specific category with their sub-subcategories.\n\n**Returns:**\n- Subcategories (parent_id = null) for the category\n- Each subcategory includes its sub-subcategories in `children` array\n\n**Example Structure:**\n```\nCategory: Contact Lenses\n  ├─ Subcategory: Giornaliere (parent_id: null)\n  │   ├─ Sub-subcategory: Sferiche (parent_id: Giornaliere.id)\n  │   └─ Sub-subcategory: Astigmatismo (parent_id: Giornaliere.id)\n  └─ Subcategory: Settimanale (parent_id: null)\n```\n\n**Use Cases:**\n- Populate category/subcategory dropdown menus\n- Display navigation\n- Filter products by subcategory"
-							}
-						},
-						{
-							"name": "Get Sub-SubCategories by Parent ID",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories/by-parent/1",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"subcategories",
-										"by-parent",
-										"1"
-									],
-									"query": []
-								},
-								"description": "Get all sub-subcategories of a specific parent subcategory.\n\n**Purpose:**\nGet sub-subcategories for a parent subcategory. Perfect for cascading dropdowns in product forms.\n\n**Example:**\nIf parent subcategory ID 5 is \"Giornaliere\", this endpoint returns:\n- Sferiche (parent_id: 5)\n- Astigmatismo (parent_id: 5)\n\n**Response includes:**\n- `parentSubcategory`: Parent subcategory information\n- `subcategories`: Array of sub-subcategories\n\n**Use Cases:**\n- Product forms: Fetch sub-subcategories when subcategory is selected\n- Navigation: Display sub-subcategory menu items\n- Filtering: Build product filters"
-							}
-						},
-						{
-							"name": "Get Products by SubCategory",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories/1/products?page=1&limit=12&sortBy=created_at&sortOrder=desc",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"subcategories",
-										"1",
-										"products"
-									],
-									"query": [
-										{
-											"key": "page",
-											"value": "1",
-											"description": "Page number (default: 1)"
-										},
-										{
-											"key": "limit",
-											"value": "12",
-											"description": "Items per page (default: 12)"
-										},
-										{
-											"key": "sortBy",
-											"value": "created_at",
-											"description": "Sort field: created_at, price, name, rating, updated_at"
-										},
-										{
-											"key": "sortOrder",
-											"value": "desc",
-											"description": "Sort order: asc or desc"
-										}
-									]
-								},
-								"description": "Get all products for a subcategory (including products from sub-subcategories if it's a parent).\n\n**Features:**\n- Returns products for the subcategory and its sub-subcategories (if any)\n- Paginated results\n- Sortable results\n- Includes subcategory, parent, children, and category information\n\n**Response includes:**\n- `subcategory`: Subcategory details\n- `products`: Array of products with formatted images\n- `pagination`: Pagination metadata\n\n**Use Cases:**\n- Display products for a subcategory page\n- Build product listings filtered by subcategory"
-							}
-						},
-						{
-							"name": "Get Contact Lens Options by Sub-SubCategory ID",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories/10/contact-lens-options",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"subcategories",
-										"10",
-										"contact-lens-options"
-									],
-									"query": []
-								},
-								"description": "Get aggregated contact lens options (power, base curve, diameter) for Spherical or Astigmatism/Toric sub-subcategories.\n\n**Supported Sub-SubCategory Types:**\n- **Spherical**: Sub-subcategories with names containing \"spherical\", \"sferiche\", or \"sferica\"\n- **Astigmatism/Toric**: Sub-subcategories with names containing \"astigmatism\", \"astigmatismo\", \"toric\", or \"torica\"\n\n**Response for Spherical Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", \"-9.50\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, 8.90, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"productCount\": 15,\n    \"type\": \"spherical\"\n  }\n}\n```\n\n**Response for Astigmatism/Toric Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"cylinderOptions\": [-0.25, -0.50, -0.75, ..., -6.00],\n    \"axisOptions\": [0, 1, 2, ..., 180],\n    \"productCount\": 15,\n    \"type\": \"astigmatism\"\n  }\n}\n```\n\n**Features:**\n- Automatically detects if sub-subcategory is Spherical or Astigmatism/Toric\n- Aggregates all unique options from all products in the sub-subcategory\n- Returns sorted arrays ready for dropdown menus\n- For Astigmatism: Includes standard cylinder (-0.25 to -6.00) and axis (0-180°) options\n\n**Use Cases:**\n- Populate contact lens parameter forms\n- Build dropdown menus for power, base curve, diameter, cylinder, and axis\n- Validate available options before adding to cart\n\n**Error Cases:**\n- Returns 404 if subcategory not found\n- Returns 400 if subcategory is not a sub-subcategory (no parent_id)\n- Returns 400 if subcategory is not Spherical or Astigmatism/Toric type"
-							}
-						},
-						{
-							"name": "Get Contact Lens Options by Sub-SubCategory Slug",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories/slug/sferiche/contact-lens-options",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"api",
-										"subcategories",
-										"slug",
-										"sferiche",
-										"contact-lens-options"
-									],
-									"query": []
-								},
-								"description": "Get aggregated contact lens options (power, base curve, diameter) for Spherical or Astigmatism/Toric sub-subcategories by slug.\n\n**Supported Sub-SubCategory Types:**\n- **Spherical**: Sub-subcategories with names containing \"spherical\", \"sferiche\", or \"sferica\"\n- **Astigmatism/Toric**: Sub-subcategories with names containing \"astigmatism\", \"astigmatismo\", \"toric\", or \"torica\"\n\n**Response for Spherical Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", \"-9.50\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, 8.90, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"productCount\": 15,\n    \"type\": \"spherical\"\n  }\n}\n```\n\n**Response for Astigmatism/Toric Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"cylinderOptions\": [-0.25, -0.50, -0.75, ..., -6.00],\n    \"axisOptions\": [0, 1, 2, ..., 180],\n    \"productCount\": 15,\n    \"type\": \"astigmatism\"\n  }\n}\n```\n\n**Features:**\n- Same as ID endpoint but uses slug instead of ID\n- Automatically detects if sub-subcategory is Spherical or Astigmatism/Toric\n- Aggregates all unique options from all products in the sub-subcategory\n- Returns sorted arrays ready for dropdown menus\n- For Astigmatism: Includes standard cylinder (-0.25 to -6.00) and axis (0-180°) options\n\n**Use Cases:**\n- Populate contact lens parameter forms using URL-friendly slugs\n- Build dropdown menus for power, base curve, diameter, cylinder, and axis\n- Validate available options before adding to cart\n\n**Error Cases:**\n- Returns 404 if subcategory not found\n- Returns 400 if subcategory is not a sub-subcategory (no parent_id)\n- Returns 400 if subcategory is not Spherical or Astigmatism/Toric type"
-							}
-						},
-						{
-							"name": "Get Related Categories for SubCategory",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/api/subcategories/1/related-categories",
-									"host": [
-									  "{{base_url}}"
-									],
-									"path": [
-									  "api",
-									  "subcategories",
-									  "1",
-									  "related-categories"
-									],
-									"query": []
-								},
-								"description": "Get categories that have subcategories with the same or similar name as the given subcategory.\n\n**How it works:**\n1. Gets the specified subcategory\n2. Searches all other categories for subcategories with matching names\n3. Returns categories grouped by matching subcategories\n\n**Example:**\nIf subcategory 'Spherical' in 'Contact Lenses' category:\n- Finds other categories that also have 'Spherical' subcategory\n- May find 'Prescription Glasses' category with 'Spherical' lens type\n- Returns matching categories with their matching subcategories\n\n**Response Structure:**\n```json\n{\n  \"subcategory\": { id, name, slug, category },\n  \"relatedCategories\": [\n    {\n      \"id\": 2,\n      \"name\": \"Prescription Glasses\",\n      \"matchingSubcategories\": [\n        { \"id\": 5, \"name\": \"Spherical\" }\n      ]\n    }\n  ]\n}\n```\n\n**Use Cases:**\n- Cross-category navigation\n- Related product suggestions\n- Category discovery based on subcategory similarity"
-							}
-						}
+		  {
+			"name": "SubCategories",
+			"item": [
+			  {
+				"name": "Get All SubCategories",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories?page=1&limit=50&category_id=1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories"
+					],
+					"query": [
+					  {
+						"key": "page",
+						"value": "1",
+						"description": "Page number for pagination"
+					  },
+					  {
+						"key": "limit",
+						"value": "50",
+						"description": "Number of items per page (default: 50)"
+					  },
+					  {
+						"key": "category_id",
+						"value": "1",
+						"description": "Filter by category ID (optional)"
+					  },
+					  {
+						"key": "search",
+						"value": "",
+						"description": "Search subcategories by name (optional)",
+						"disabled": true
+					  }
 					]
-				},
+				  },
+				  "description": "Get all active subcategories with pagination support.\n\n**3-Level Structure:**\nCategory \u2192 Subcategory \u2192 Sub-subcategory\n\n**Response Structure:**\n- `subcategories`: All subcategories with parent/children info\n- `topLevelSubcategories`: Subcategories (parent_id = null)\n- `nestedSubcategories`: Sub-subcategories (parent_id != null)\n- `pagination`: Pagination metadata\n\n**Features:**\n- Paginated results\n- Filter by category_id\n- Search by name\n- Includes category, parent, and children information"
+				}
+			  },
+			  {
+				"name": "Get SubCategory by ID",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories/1?includeProducts=true",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories",
+					  "1"
+					],
+					"query": [
+					  {
+						"key": "includeProducts",
+						"value": "true",
+						"description": "Include products associated with this subcategory",
+						"disabled": true
+					  }
+					]
+				  },
+				  "description": "Get a single subcategory by ID with its category, parent, and children information.\n\n**Response includes:**\n- Subcategory details (id, name, slug, description, image, parent_id, etc.)\n- `category`: Category information\n- `parent`: Parent subcategory (if sub-subcategory, null otherwise)\n- `children`: Array of sub-subcategories (if parent subcategory, empty otherwise)\n- Products (if includeProducts=true)"
+				}
+			  },
+			  {
+				"name": "Get SubCategory by Slug",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories/slug/test-subcategory",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories",
+					  "slug",
+					  "test-subcategory"
+					]
+				  },
+				  "description": "Get a single subcategory by slug with its category, parent, and children information.\n\n**Response includes:**\n- Subcategory details (id, name, slug, description, image, parent_id, etc.)\n- `category`: Category information\n- `parent`: Parent subcategory (if sub-subcategory, null otherwise)\n- `children`: Array of sub-subcategories (if parent subcategory, empty otherwise)"
+				}
+			  },
+			  {
+				"name": "Get SubCategories by Category ID",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories/by-category/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories",
+					  "by-category",
+					  "1"
+					]
+				  },
+				  "description": "Get all active subcategories for a specific category with their sub-subcategories.\n\n**Returns:**\n- Subcategories (parent_id = null) for the category\n- Each subcategory includes its sub-subcategories in `children` array\n\n**Example Structure:**\n```\nCategory: Contact Lenses\n  \u251c\u2500 Subcategory: Giornaliere (parent_id: null)\n  \u2502   \u251c\u2500 Sub-subcategory: Sferiche (parent_id: Giornaliere.id)\n  \u2502   \u2514\u2500 Sub-subcategory: Astigmatismo (parent_id: Giornaliere.id)\n  \u2514\u2500 Subcategory: Settimanale (parent_id: null)\n```\n\n**Use Cases:**\n- Populate category/subcategory dropdown menus\n- Display navigation\n- Filter products by subcategory"
+				}
+			  },
+			  {
+				"name": "Get Sub-SubCategories by Parent ID",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories/by-parent/1",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories",
+					  "by-parent",
+					  "1"
+					],
+					"query": []
+				  },
+				  "description": "Get all sub-subcategories of a specific parent subcategory.\n\n**Purpose:**\nGet sub-subcategories for a parent subcategory. Perfect for cascading dropdowns in product forms.\n\n**Example:**\nIf parent subcategory ID 5 is \"Giornaliere\", this endpoint returns:\n- Sferiche (parent_id: 5)\n- Astigmatismo (parent_id: 5)\n\n**Response includes:**\n- `parentSubcategory`: Parent subcategory information\n- `subcategories`: Array of sub-subcategories\n\n**Use Cases:**\n- Product forms: Fetch sub-subcategories when subcategory is selected\n- Navigation: Display sub-subcategory menu items\n- Filtering: Build product filters"
+				}
+			  },
+			  {
+				"name": "Get Products by SubCategory",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories/1/products?page=1&limit=12&sortBy=created_at&sortOrder=desc",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories",
+					  "1",
+					  "products"
+					],
+					"query": [
+					  {
+						"key": "page",
+						"value": "1",
+						"description": "Page number (default: 1)"
+					  },
+					  {
+						"key": "limit",
+						"value": "12",
+						"description": "Items per page (default: 12)"
+					  },
+					  {
+						"key": "sortBy",
+						"value": "created_at",
+						"description": "Sort field: created_at, price, name, rating, updated_at"
+					  },
+					  {
+						"key": "sortOrder",
+						"value": "desc",
+						"description": "Sort order: asc or desc"
+					  }
+					]
+				  },
+				  "description": "Get all products for a subcategory (including products from sub-subcategories if it's a parent).\n\n**Features:**\n- Returns products for the subcategory and its sub-subcategories (if any)\n- Paginated results\n- Sortable results\n- Includes subcategory, parent, children, and category information\n\n**Response includes:**\n- `subcategory`: Subcategory details\n- `products`: Array of products with formatted images\n- `pagination`: Pagination metadata\n\n**Use Cases:**\n- Display products for a subcategory page\n- Build product listings filtered by subcategory"
+				}
+			  },
+			  {
+				"name": "Get Contact Lens Options by Sub-SubCategory ID",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories/10/contact-lens-options",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories",
+					  "10",
+					  "contact-lens-options"
+					],
+					"query": []
+				  },
+				  "description": "Get aggregated contact lens options (power, base curve, diameter) for Spherical or Astigmatism/Toric sub-subcategories.\n\n**Supported Sub-SubCategory Types:**\n- **Spherical**: Sub-subcategories with names containing \"spherical\", \"sferiche\", or \"sferica\"\n- **Astigmatism/Toric**: Sub-subcategories with names containing \"astigmatism\", \"astigmatismo\", \"toric\", or \"torica\"\n\n**Response for Spherical Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", \"-9.50\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, 8.90, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"productCount\": 15,\n    \"type\": \"spherical\"\n  }\n}\n```\n\n**Response for Astigmatism/Toric Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"cylinderOptions\": [-0.25, -0.50, -0.75, ..., -6.00],\n    \"axisOptions\": [0, 1, 2, ..., 180],\n    \"productCount\": 15,\n    \"type\": \"astigmatism\"\n  }\n}\n```\n\n**Features:**\n- Automatically detects if sub-subcategory is Spherical or Astigmatism/Toric\n- Aggregates all unique options from all products in the sub-subcategory\n- Returns sorted arrays ready for dropdown menus\n- For Astigmatism: Includes standard cylinder (-0.25 to -6.00) and axis (0-180\u00b0) options\n\n**Use Cases:**\n- Populate contact lens parameter forms\n- Build dropdown menus for power, base curve, diameter, cylinder, and axis\n- Validate available options before adding to cart\n\n**Error Cases:**\n- Returns 404 if subcategory not found\n- Returns 400 if subcategory is not a sub-subcategory (no parent_id)\n- Returns 400 if subcategory is not Spherical or Astigmatism/Toric type"
+				}
+			  },
+			  {
+				"name": "Get Contact Lens Options by Sub-SubCategory Slug",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories/slug/sferiche/contact-lens-options",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories",
+					  "slug",
+					  "sferiche",
+					  "contact-lens-options"
+					],
+					"query": []
+				  },
+				  "description": "Get aggregated contact lens options (power, base curve, diameter) for Spherical or Astigmatism/Toric sub-subcategories by slug.\n\n**Supported Sub-SubCategory Types:**\n- **Spherical**: Sub-subcategories with names containing \"spherical\", \"sferiche\", or \"sferica\"\n- **Astigmatism/Toric**: Sub-subcategories with names containing \"astigmatism\", \"astigmatismo\", \"toric\", or \"torica\"\n\n**Response for Spherical Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", \"-9.50\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, 8.90, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"productCount\": 15,\n    \"type\": \"spherical\"\n  }\n}\n```\n\n**Response for Astigmatism/Toric Sub-SubCategories:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"subcategory\": { id, name, slug, parent, category },\n    \"powerOptions\": [\"-10.00\", \"-9.75\", ...],\n    \"baseCurveOptions\": [8.70, 8.80, ...],\n    \"diameterOptions\": [14.00, 14.20, ...],\n    \"cylinderOptions\": [-0.25, -0.50, -0.75, ..., -6.00],\n    \"axisOptions\": [0, 1, 2, ..., 180],\n    \"productCount\": 15,\n    \"type\": \"astigmatism\"\n  }\n}\n```\n\n**Features:**\n- Same as ID endpoint but uses slug instead of ID\n- Automatically detects if sub-subcategory is Spherical or Astigmatism/Toric\n- Aggregates all unique options from all products in the sub-subcategory\n- Returns sorted arrays ready for dropdown menus\n- For Astigmatism: Includes standard cylinder (-0.25 to -6.00) and axis (0-180\u00b0) options\n\n**Use Cases:**\n- Populate contact lens parameter forms using URL-friendly slugs\n- Build dropdown menus for power, base curve, diameter, cylinder, and axis\n- Validate available options before adding to cart\n\n**Error Cases:**\n- Returns 404 if subcategory not found\n- Returns 400 if subcategory is not a sub-subcategory (no parent_id)\n- Returns 400 if subcategory is not Spherical or Astigmatism/Toric type"
+				}
+			  },
+			  {
+				"name": "Get Related Categories for SubCategory",
+				"request": {
+				  "method": "GET",
+				  "header": [],
+				  "url": {
+					"raw": "{{base_url}}/api/subcategories/1/related-categories",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "subcategories",
+					  "1",
+					  "related-categories"
+					],
+					"query": []
+				  },
+				  "description": "Get categories that have subcategories with the same or similar name as the given subcategory.\n\n**How it works:**\n1. Gets the specified subcategory\n2. Searches all other categories for subcategories with matching names\n3. Returns categories grouped by matching subcategories\n\n**Example:**\nIf subcategory 'Spherical' in 'Contact Lenses' category:\n- Finds other categories that also have 'Spherical' subcategory\n- May find 'Prescription Glasses' category with 'Spherical' lens type\n- Returns matching categories with their matching subcategories\n\n**Response Structure:**\n```json\n{\n  \"subcategory\": { id, name, slug, category },\n  \"relatedCategories\": [\n    {\n      \"id\": 2,\n      \"name\": \"Prescription Glasses\",\n      \"matchingSubcategories\": [\n        { \"id\": 5, \"name\": \"Spherical\" }\n      ]\n    }\n  ]\n}\n```\n\n**Use Cases:**\n- Cross-category navigation\n- Related product suggestions\n- Category discovery based on subcategory similarity"
+				}
+			  }
+			]
+		  },
 		  {
 			"name": "Coupons (Public Apply)",
 			"item": [
@@ -1738,7 +1738,7 @@
 					  "prescription-sun-lenses"
 					]
 				  },
-				  "description": "Get all prescription sun lenses organized by category (Polarized, Classic, Blokz® Sunglasses). Returns structured data with finishes (Classic, Mirror, Gradient, Fashion) and colors for each option. Public endpoint for website display."
+				  "description": "Get all prescription sun lenses organized by category (Polarized, Classic, Blokz\u00ae Sunglasses). Returns structured data with finishes (Classic, Mirror, Gradient, Fashion) and colors for each option. Public endpoint for website display."
 				}
 			  },
 			  {
@@ -1775,7 +1775,7 @@
 					  "photochromic-lenses"
 					]
 				  },
-				  "description": "Get all photochromic lenses organized by type (EyeQLenz™ with Zenni ID Guard™, EyeQLenz™, Transitions® GEN S™, Standard, Blokz Photochromic). Returns structured data with colors for each option. Public endpoint for website display."
+				  "description": "Get all photochromic lenses organized by type (EyeQLenz\u2122 with Zenni ID Guard\u2122, EyeQLenz\u2122, Transitions\u00ae GEN S\u2122, Standard, Blokz Photochromic). Returns structured data with colors for each option. Public endpoint for website display."
 				}
 			  },
 			  {
@@ -2216,7 +2216,7 @@
 				  ],
 				  "body": {
 					"mode": "raw",
-					"raw": "{\n  \"product_id\": 1,\n  \"form_type\": \"spherical\",\n  \"right_qty\": 1,\n  \"right_base_curve\": 8.7,\n  \"right_diameter\": 14.0,\n  \"left_qty\": 1,\n  \"left_base_curve\": 8.7,\n  \"left_diameter\": 14.0\n}"
+					"raw": "{\n  \"product_id\": 1,\n  \"form_type\": \"spherical\",\n  \"right_qty\": \"1\",\n  \"right_base_curve\": \"8.7\",\n  \"right_diameter\": \"14.0\",\n  \"right_power\": \"-2.00\",\n  \"left_qty\": \"1\",\n  \"left_base_curve\": \"8.7\",\n  \"left_diameter\": \"14.0\",\n  \"left_power\": \"-2.25\"\n}"
 				  },
 				  "url": {
 					"raw": "{{base_url}}/api/contact-lens-forms/checkout",
@@ -2229,7 +2229,7 @@
 					  "checkout"
 					]
 				  },
-				  "description": "Add contact lens to cart with form data. Requires authentication. For Spherical: right_qty, right_base_curve, right_diameter, left_qty, left_base_curve, left_diameter. For Astigmatism: also include left_power, right_power, left_cylinder, right_cylinder, left_axis, right_axis."
+				  "description": "Add contact lens to cart with form data. Requires authentication. All values come from admin-managed dropdowns.\n\n**Request Body for Spherical:**\n- `product_id` (required): Product ID\n- `form_type` (required): \"spherical\"\n- `right_qty`, `right_base_curve`, `right_diameter`, `right_power` (all as strings from dropdowns)\n- `left_qty`, `left_base_curve`, `left_diameter`, `left_power` (all as strings from dropdowns)\n\n**Request Body for Astigmatism:**\n- `product_id` (required): Product ID\n- `form_type` (required): \"astigmatism\"\n- All spherical fields plus:\n- `left_cylinder`, `right_cylinder`, `left_axis`, `right_axis` (all as strings from dropdowns)\n\n**Response (Status 200):**\n```json\n{\n  \"success\": true,\n  \"message\": \"Contact lens added to cart successfully\",\n  \"data\": {\n    \"item\": {\n      \"id\": 10,\n      \"cart_id\": 2,\n      \"product_id\": 45,\n      \"quantity\": 2,\n      \"unit_price\": \"77.96\",\n      \"contact_lens_right_qty\": 1,\n      \"contact_lens_right_base_curve\": 2,\n      \"contact_lens_right_diameter\": 2,\n      \"contact_lens_right_power\": 8,\n      \"contact_lens_left_qty\": 1,\n      \"contact_lens_left_base_curve\": 2,\n      \"contact_lens_left_diameter\": 2,\n      \"contact_lens_left_power\": 7,\n      \"customization\": null,\n      \"product\": {\n        \"id\": 45,\n        \"name\": \"spherical\",\n        \"slug\": \"spherical\",\n        \"price\": \"77.96\",\n        \"images\": []\n      }\n    }\n  }\n}\n```\n\n**Note:** For astigmatism lenses, `customization` will contain cylinder and axis values as JSON."
 				}
 			  },
 			  {
@@ -2248,7 +2248,7 @@
 				  ],
 				  "body": {
 					"mode": "raw",
-					"raw": "{\n  \"product_id\": 1,\n  \"form_type\": \"astigmatism\",\n  \"right_qty\": 1,\n  \"right_base_curve\": 8.6,\n  \"right_diameter\": 14.5,\n  \"left_qty\": 1,\n  \"left_base_curve\": 8.6,\n  \"left_diameter\": 14.5,\n  \"left_power\": \"-2.00\",\n  \"right_power\": \"-2.25\",\n  \"left_cylinder\": \"-0.25\",\n  \"right_cylinder\": \"-0.50\",\n  \"left_axis\": 180,\n  \"right_axis\": 90\n}"
+					"raw": "{\n  \"product_id\": 1,\n  \"form_type\": \"astigmatism\",\n  \"right_qty\": \"1\",\n  \"right_base_curve\": \"8.6\",\n  \"right_diameter\": \"14.5\",\n  \"left_qty\": \"1\",\n  \"left_base_curve\": \"8.6\",\n  \"left_diameter\": \"14.5\",\n  \"left_power\": \"-2.00\",\n  \"right_power\": \"-2.25\",\n  \"left_cylinder\": \"-0.25\",\n  \"right_cylinder\": \"-0.50\",\n  \"left_axis\": \"180\",\n  \"right_axis\": \"90\"\n}"
 				  },
 				  "url": {
 					"raw": "{{base_url}}/api/contact-lens-forms/checkout",
@@ -2261,7 +2261,7 @@
 					  "checkout"
 					]
 				  },
-				  "description": "Add Astigmatism contact lens to cart with all form fields including power, cylinder, and axis values."
+				  "description": "Add Astigmatism contact lens to cart with all form fields including power, cylinder, and axis values.\n\n**Request Body:**\n```json\n{\n  \"product_id\": 1,\n  \"form_type\": \"astigmatism\",\n  \"right_qty\": \"1\",\n  \"right_base_curve\": \"8.6\",\n  \"right_diameter\": \"14.5\",\n  \"right_power\": \"-2.00\",\n  \"left_qty\": \"1\",\n  \"left_base_curve\": \"8.6\",\n  \"left_diameter\": \"14.5\",\n  \"left_power\": \"-2.00\",\n  \"right_power\": \"-2.25\",\n  \"left_cylinder\": \"-0.25\",\n  \"right_cylinder\": \"-0.50\",\n  \"left_axis\": \"180\",\n  \"right_axis\": \"90\"\n}\n```\n\n**Response (Status 200):**\n```json\n{\n  \"success\": true,\n  \"message\": \"Contact lens added to cart successfully\",\n  \"data\": {\n    \"item\": {\n      \"id\": 10,\n      \"product_id\": 1,\n      \"quantity\": 2,\n      \"contact_lens_right_qty\": 1,\n      \"contact_lens_right_base_curve\": 8.6,\n      \"contact_lens_right_diameter\": 14.5,\n      \"contact_lens_right_power\": -2.00,\n      \"contact_lens_left_qty\": 1,\n      \"contact_lens_left_base_curve\": 8.6,\n      \"contact_lens_left_diameter\": 14.5,\n      \"contact_lens_left_power\": -2.25,\n      \"customization\": {\n        \"left_cylinder\": -0.25,\n        \"right_cylinder\": -0.50,\n        \"left_axis\": 180,\n        \"right_axis\": 90\n      },\n      \"product\": {\n        \"id\": 1,\n        \"name\": \"Astigmatism Lens\",\n        \"slug\": \"astigmatism-lens\",\n        \"price\": \"99.99\",\n        \"images\": [\"url1\", \"url2\"]\n      }\n    }\n  }\n}\n```\n\n**Note:** Cylinder and axis values are stored in the `customization` field as JSON."
 				}
 			  }
 			]
@@ -3416,7 +3416,7 @@
 						"key": "color_images",
 						"value": "",
 						"type": "text",
-						"description": "Optional: JSON string for color-to-image mapping. Format: [{\"color\": \"black\", \"images\": [\"url1\", \"url2\"]}, {\"color\": \"brown\", \"images\": [\"url3\"]}]. Alternatively, use file uploads with field names: color_images_black, color_images_brown, etc."
+						"description": "Optional: JSON string for color variants with custom names and prices. Format: [{\"color\": \"black\", \"name\": \"Black Classic\", \"display_name\": \"Black Classic Premium\", \"price\": 99.99, \"images\": [\"url1\", \"url2\"]}, {\"color\": \"gold\", \"name\": \"Gold Premium\", \"display_name\": \"Gold Premium Edition\", \"price\": 129.99, \"images\": [\"url3\"]}]. Fields: color (required), name (optional, defaults to color), display_name (optional, defaults to name), price (optional, null uses base product price), images (required). Alternatively, use file uploads with field names: color_images_black, color_images_gold, etc."
 					  },
 					  {
 						"key": "color_images_black",
@@ -3426,7 +3426,7 @@
 					  }
 					]
 				  },
-				  "description": "Create a new product with images, 3D model, and color-specific images.\n\n**Product Information:**\n- `name` (required): Product name\n- `sku` (required): Unique SKU\n- `category_id` (required): Category ID\n- `sub_category_id` (optional): Subcategory ID (can be top-level or sub-subcategory)\n- `price` (required): Product price\n- `description` (optional): Full product description\n- `short_description` (optional): Short description (max 500 chars)\n- `stock_quantity` (optional): Stock quantity (default: 0)\n- `stock_status` (optional): in_stock, out_of_stock, backorder, preorder (default: in_stock)\n\n**Frame Properties:**\n- `frame_shape` (optional): round, square, rectangle, oval, cat_eye, aviator, wayfarer, browline, geometric\n- `frame_material` (optional): plastic, metal, acetate, titanium, wood, mixed\n- `frame_color` (optional): Frame color (e.g., Black, Gold, Brown)\n- `gender` (optional): men, women, unisex, kids (default: unisex)\n\n**Lens Type:** Optional field for lens type. Valid values:\n- `prescription` - Prescription lenses\n- `sunglasses` - Sunglasses\n- `reading` - Reading glasses\n- `computer` - Computer glasses\n- `photochromic` - Photochromic lenses\n- `plastic` - Plastic lenses\n- `glass` - Glass lenses\n- `polycarbonate` - Polycarbonate lenses\n- `trivex` - Trivex lenses\n- `high_index` - High index lenses\n\n**3D Model:** Upload a 3D model file using the `model_3d` field.\n\n**Color Images:** Two ways to add color-specific images:\n1. **JSON String:** Send `color_images` as JSON: `[{\"color\": \"black\", \"images\": [\"url1\", \"url2\"]}]`\n2. **File Uploads:** Upload files with field names like `color_images_black`, `color_images_brown`, etc.\n\n**Example with color images:**\n- Field: `color_images_black` → Upload files for black color\n- Field: `color_images_brown` → Upload files for brown color\n- Multiple files per color are supported",
+				  "description": "Create a new product with images, 3D model, and color-specific images.\n\n**Product Information:**\n- `name` (required): Product name\n- `sku` (required): Unique SKU\n- `category_id` (required): Category ID\n- `sub_category_id` (optional): Subcategory ID (can be top-level or sub-subcategory)\n- `price` (required): Product price\n- `description` (optional): Full product description\n- `short_description` (optional): Short description (max 500 chars)\n- `stock_quantity` (optional): Stock quantity (default: 0)\n- `stock_status` (optional): in_stock, out_of_stock, backorder, preorder (default: in_stock)\n\n**Frame Properties:**\n- `frame_shape` (optional): round, square, rectangle, oval, cat_eye, aviator, wayfarer, browline, geometric\n- `frame_material` (optional): plastic, metal, acetate, titanium, wood, mixed\n- `frame_color` (optional): Frame color (e.g., Black, Gold, Brown)\n- `gender` (optional): men, women, unisex, kids (default: unisex)\n\n**Lens Type:** Optional field for lens type. Valid values:\n- `prescription` - Prescription lenses\n- `sunglasses` - Sunglasses\n- `reading` - Reading glasses\n- `computer` - Computer glasses\n- `photochromic` - Photochromic lenses\n- `plastic` - Plastic lenses\n- `glass` - Glass lenses\n- `polycarbonate` - Polycarbonate lenses\n- `trivex` - Trivex lenses\n- `high_index` - High index lenses\n\n**3D Model:** Upload a 3D model file using the `model_3d` field.\n\n**Color Variants:** Two ways to add color-specific images with custom names and prices:\n1. **JSON String:** Send `color_images` as JSON with variant details:\n   ```json\n   [{\n     \"color\": \"black\",\n     \"name\": \"Black Classic\",\n     \"display_name\": \"Black Classic Premium\",\n     \"price\": 99.99,\n     \"images\": [\"url1\", \"url2\"]\n   }, {\n     \"color\": \"gold\",\n     \"name\": \"Gold Premium\",\n     \"display_name\": \"Gold Premium Edition\",\n     \"price\": 129.99,\n     \"images\": [\"url3\"]\n   }]\n   ```\n   - `color` (required): Color identifier\n   - `name` (optional): Variant name, defaults to color\n   - `display_name` (optional): Display name shown to customers, defaults to name\n   - `price` (optional): Variant-specific price, null uses base product price\n   - `images` (required): Array of image URLs\n2. **File Uploads:** Upload files with field names like `color_images_black`, `color_images_gold`, etc. Then set name/price via JSON.\n\n**Example with color images:**\n- Field: `color_images_black` \u2192 Upload files for black color\n- Field: `color_images_gold` \u2192 Upload files for gold color\n- Multiple files per color are supported\n- When customer selects a color, the variant's `display_name` and `price` will be shown",
 				  "url": {
 					"raw": "{{base_url}}/api/admin/products",
 					"host": [
@@ -3538,7 +3538,7 @@
 						"key": "color_images",
 						"value": "",
 						"type": "text",
-						"description": "Optional: JSON string to replace color images. Format: [{\"color\": \"black\", \"images\": [\"url1\", \"url2\"]}]. Or use file uploads with color_images_{colorName} to add new images."
+						"description": "Optional: JSON string to update color variants with names and prices. Format: [{\"color\": \"black\", \"name\": \"Black Classic\", \"display_name\": \"Black Classic Premium\", \"price\": 99.99, \"images\": [\"url1\", \"url2\"]}]. Fields: color (required), name (optional), display_name (optional), price (optional, null uses base price), images (required). Or use file uploads with color_images_{colorName} to add new images."
 					  },
 					  {
 						"key": "color_images_black",
@@ -3709,7 +3709,7 @@
 					  }
 					]
 				  },
-				  "description": "Get all products (admin view - includes inactive products).\n\n**Response includes for each product:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `thumbnail`: First image URL (backward compatibility)\n- `model_3d_url`: URL to 3D model file (null if not available)\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Color name (e.g., \"black\", \"brown\")\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display\n- `selectedColor`: Default selected color value (first color or null)\n- Standard product fields including `is_active`, `is_featured`\n\n**Query Parameters:**\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 50)\n- `search`: Search in name, description, SKU\n- `category_id`: Filter by category ID\n- `sub_category_id`: Filter by subcategory ID\n- `is_active`: Filter by active status (true/false)\n- `sortBy`: Sort field (default: created_at)\n- `sortOrder`: Sort direction (asc/desc, default: desc)"
+				  "description": "Get all products (admin view - includes inactive products).\n\n**Response includes for each product:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `thumbnail`: First image URL (backward compatibility)\n- `model_3d_url`: URL to 3D model file (null if not available)\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Variant name (e.g., \"Black Classic\", \"Gold Premium\")\n  - `display_name`: Display name shown to customers (e.g., \"Black Classic Premium\")\n  - `price`: Variant-specific price (null if using base product price)\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display\n- `selectedColor`: Default selected color value (first color or null)\n- `currentVariantPrice`: Current variant price (or base product price if variant has no price)\n- Standard product fields including `is_active`, `is_featured`\n\n**Query Parameters:**\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 50)\n- `search`: Search in name, description, SKU\n- `category_id`: Filter by category ID\n- `sub_category_id`: Filter by subcategory ID\n- `is_active`: Filter by active status (true/false)\n- `sortBy`: Sort field (default: created_at)\n- `sortOrder`: Sort direction (asc/desc, default: desc)"
 				}
 			  },
 			  {
@@ -3812,7 +3812,7 @@
 					  "1"
 					]
 				  },
-				  "description": "Get single product by ID (admin view - includes inactive products).\n\n**Response includes:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (null if not available)\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Color name (e.g., \"black\", \"brown\")\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display\n- `selectedColor`: Default selected color value (first color or null)\n- All product fields including variants, frameSizes, lensTypes, lensCoatings\n- `is_active`, `is_featured` status fields\n\n**Frontend can use `colors` array to display color swatches and switch images dynamically.**"
+				  "description": "Get single product by ID (admin view - includes inactive products).\n\n**Response includes:**\n- `images`: Array of main product image URLs\n- `image`: First image URL of selected color (or main images if no colors)\n- `model_3d_url`: URL to 3D model file (null if not available)\n- `color_images`: Raw array of color-specific images from database\n- `colors`: **Formatted array for color swatches** - Each object contains:\n  - `name`: Variant name (e.g., \"Black Classic\", \"Gold Premium\")\n  - `display_name`: Display name shown to customers (e.g., \"Black Classic Premium\")\n  - `price`: Variant-specific price (null if using base product price)\n  - `value`: Color value (lowercase, for matching)\n  - `images`: Array of images for this color\n  - `primaryImage`: First image URL for this color\n  - `hexCode`: Hex color code for swatch display\n- `selectedColor`: Default selected color value (first color or null)\n- `currentVariantPrice`: Current variant price (or base product price if variant has no price)\n- All product fields including variants, frameSizes, lensTypes, lensCoatings\n- `is_active`, `is_featured` status fields\n\n**Frontend can use `colors` array to display color swatches and switch images dynamically.**"
 				}
 			  },
 			  {
@@ -6607,2486 +6607,2486 @@
 					  "1"
 					]
 				  },
-			  "description": "Delete a job application permanently. Admin only."
-			}
-		  }
-		]
-	  },
-	  {
-		"name": "Requests (Admin)",
-		"item": [
-		  {
-			"name": "Contact Requests",
-			"item": [
-			  {
-				"name": "Get All Contact Requests",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/contact",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "contact"
-					]
-				  },
-				  "description": "Get all contact requests. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Contact Request by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/contact/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "contact",
-					  "1"
-					]
-				  },
-				  "description": "Get a specific contact request by ID. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Contact Request",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/contact/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "contact",
-					  "1"
-					]
-				  },
-				  "description": "Delete a contact request permanently. Admin only."
+				  "description": "Delete a job application permanently. Admin only."
 				}
 			  }
 			]
 		  },
 		  {
-			"name": "Demo Requests",
+			"name": "Requests (Admin)",
 			"item": [
 			  {
-				"name": "Get All Demo Requests",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/demo",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "demo"
-					]
-				  },
-				  "description": "Get all demo requests. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Demo Request by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/demo/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "demo",
-					  "1"
-					]
-				  },
-				  "description": "Get a specific demo request by ID. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Demo Request",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/demo/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "demo",
-					  "1"
-					]
-				  },
-				  "description": "Delete a demo request permanently. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Pricing Requests",
-			"item": [
-			  {
-				"name": "Get All Pricing Requests",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/pricing",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "pricing"
-					]
-				  },
-				  "description": "Get all pricing requests. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Pricing Request by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/pricing/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "pricing",
-					  "1"
-					]
-				  },
-				  "description": "Get a specific pricing request by ID. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Pricing Request",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/pricing/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "pricing",
-					  "1"
-					]
-				  },
-				  "description": "Delete a pricing request permanently. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Credentials Requests",
-			"item": [
-			  {
-				"name": "Get All Credentials Requests",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/credentials",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "credentials"
-					]
-				  },
-				  "description": "Get all credentials requests. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Credentials Request by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/credentials/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "credentials",
-					  "1"
-					]
-				  },
-				  "description": "Get a specific credentials request by ID. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Credentials Request",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/credentials/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "credentials",
-					  "1"
-					]
-				  },
-				  "description": "Delete a credentials request permanently. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Support Requests",
-			"item": [
-			  {
-				"name": "Get All Support Requests",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/support",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "support"
-					]
-				  },
-				  "description": "Get all support requests with attachments and solutions concerned. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Support Request by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/support/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "support",
-					  "1"
-					]
-				  },
-				  "description": "Get a specific support request by ID with attachments and solutions. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Support Request",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/requests/support/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "requests",
-					  "support",
-					  "1"
-					]
-				  },
-				  "description": "Delete a support request permanently. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Transactions (Admin)",
-			"item": [
-			  {
-				"name": "Get All Transactions",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/transactions?page=1&limit=50&status=completed&type=payment",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "transactions"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "status",
-						"value": "completed",
-						"description": "Filter by status: pending, processing, completed, failed, cancelled, refunded",
-						"disabled": true
-					  },
-					  {
-						"key": "type",
-						"value": "payment",
-						"description": "Filter by type: payment, refund, partial_refund, chargeback, reversal",
-						"disabled": true
-					  },
-					  {
-						"key": "paymentMethod",
-						"value": "",
-						"description": "Filter by payment method: stripe, paypal, cod",
-						"disabled": true
-					  },
-					  {
-						"key": "userId",
-						"value": "",
-						"description": "Filter by user ID",
-						"disabled": true
-					  },
-					  {
-						"key": "orderId",
-						"value": "",
-						"description": "Filter by order ID",
-						"disabled": true
-					  },
-					  {
-						"key": "startDate",
-						"value": "",
-						"description": "Filter from date (YYYY-MM-DD)",
-						"disabled": true
-					  },
-					  {
-						"key": "endDate",
-						"value": "",
-						"description": "Filter to date (YYYY-MM-DD)",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all transactions with filtering options. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Transaction Statistics",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/transactions/stats?startDate=2024-01-01&endDate=2024-12-31",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "transactions",
-					  "stats"
-					],
-					"query": [
-					  {
-						"key": "startDate",
-						"value": "2024-01-01",
-						"description": "Start date (YYYY-MM-DD)",
-						"disabled": true
-					  },
-					  {
-						"key": "endDate",
-						"value": "2024-12-31",
-						"description": "End date (YYYY-MM-DD)",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get transaction statistics including totals, revenue, and breakdowns by method and status. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Transaction by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/transactions/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "transactions",
-					  "1"
-					]
-				  },
-				  "description": "Get a specific transaction by ID with full order and user details. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Transaction",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"order_id\": 1,\n  \"user_id\": 1,\n  \"type\": \"payment\",\n  \"status\": \"completed\",\n  \"payment_method\": \"stripe\",\n  \"amount\": 199.99,\n  \"currency\": \"USD\",\n  \"gateway_transaction_id\": \"ch_1234567890\",\n  \"gateway_response\": {\n    \"id\": \"ch_1234567890\",\n    \"status\": \"succeeded\"\n  },\n  \"gateway_fee\": 5.99,\n  \"description\": \"Payment for order #ORD-12345\",\n  \"metadata\": {\n    \"source\": \"admin_panel\",\n    \"notes\": \"Manual transaction entry\"\n  }\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/transactions",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "transactions"
-					]
-				  },
-				  "description": "Create a new transaction manually. Automatically updates order payment status if transaction is completed. Admin only."
-				}
-			  },
-			  {
-				"name": "Update Transaction Status",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"status\": \"completed\",\n  \"gateway_response\": {\n    \"id\": \"ch_1234567890\",\n    \"status\": \"succeeded\",\n    \"receipt_url\": \"https://pay.stripe.com/receipts/...\"\n  },\n  \"metadata\": {\n    \"updated_by\": \"admin@example.com\",\n    \"notes\": \"Payment confirmed\"\n  }\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/transactions/1/status",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "transactions",
-					  "1",
-					  "status"
-					]
-				  },
-				  "description": "Update transaction status. Automatically updates order payment status when transaction is completed or refunded. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Shipping Methods (Admin)",
-			"item": [
-			  {
-				"name": "Get All Shipping Methods",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/shipping-methods?page=1&limit=50&type=standard&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "shipping-methods"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "type",
-						"value": "standard",
-						"description": "Filter by type",
-						"disabled": true
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all shipping methods with pagination and filters. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Shipping Method by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/shipping-methods/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "shipping-methods",
-					  "1"
-					]
-				  },
-				  "description": "Get a single shipping method by ID. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Shipping Method",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Standard Shipping\",\n  \"slug\": \"standard-shipping\",\n  \"type\": \"standard\",\n  \"description\": \"Standard shipping with 5-7 business days delivery\",\n  \"price\": 9.99,\n  \"estimated_days\": 7,\n  \"is_active\": true,\n  \"sort_order\": 0,\n  \"icon\": \"https://example.com/icons/shipping.svg\"\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/shipping-methods",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "shipping-methods"
-					]
-				  },
-				  "description": "Create a new shipping method. Admin only."
-				}
-			  },
-			  {
-				"name": "Update Shipping Method",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Standard Shipping Updated\",\n  \"price\": 12.99,\n  \"estimated_days\": 5,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/shipping-methods/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "shipping-methods",
-					  "1"
-					]
-				  },
-				  "description": "Update a shipping method. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Shipping Method",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/shipping-methods/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "shipping-methods",
-					  "1"
-					]
-				  },
-				  "description": "Delete a shipping method. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Lens Options (Admin)",
-			"item": [
-			  {
-				"name": "Get All Lens Options",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-options?page=1&limit=50&type=mirror&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-options"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "type",
-						"value": "mirror",
-						"description": "Filter by type",
-						"disabled": true
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all lens options with their colors. Admin can view, add, update, and delete lens options. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Lens Option by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-options/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-options",
-					  "1"
-					]
-				  },
-				  "description": "Get a single lens option with all its colors by ID. Admin can view, add, update, and delete lens options. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Lens Option",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Mirror Lenses\",\n  \"slug\": \"mirror-lenses\",\n  \"type\": \"mirror\",\n  \"description\": \"Reflective mirror coating for style and UV protection\",\n  \"base_price\": 20.00,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-options",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-options"
-					]
-				  },
-				  "description": "Create a new lens option. Admin can add, update, and delete lens options. Admin only."
-				}
-			  },
-			  {
-				"name": "Update Lens Option",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Mirror Lenses Updated\",\n  \"base_price\": 25.00,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-options/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-options",
-					  "1"
-					]
-				  },
-				  "description": "Update an existing lens option. Admin can add, update, and delete lens options. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Lens Option",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-options/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-options",
-					  "1"
-					]
-				  },
-				  "description": "Delete a lens option. Admin can add, update, and delete lens options. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Lens Colors (Admin)",
-			"item": [
-			  {
-				"name": "Get All Lens Colors",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-colors?page=1&limit=100&lensOptionId=1&lensFinishId=null&prescriptionLensTypeId=null&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-colors"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "100"
-					  },
-					  {
-						"key": "lensOptionId",
-						"value": "1",
-						"description": "Filter by lens option ID",
-						"disabled": true
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all lens colors with their lens option info. Admin can view, add, update, and delete lens colors. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Lens Color by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-colors/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-colors",
-					  "1"
-					]
-				  },
-				  "description": "Get a single lens color by ID. Admin can view, add, update, and delete lens colors. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Lens Color",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"lens_option_id\": 1,\n  \"lens_finish_id\": null,\n  \"prescription_lens_type_id\": null,\n  \"name\": \"Blue Mirror\",\n  \"color_code\": \"BLUE_MIRROR\",\n  \"hex_code\": \"#0066CC\",\n  \"image_url\": \"https://example.com/images/blue-mirror.png\",\n  \"price_adjustment\": 0.00,\n  \"is_active\": true,\n  \"sort_order\": 0\n}\n\n// Example for Prescription Sun Color:\n// {\n//   \"lens_option_id\": null,\n//   \"lens_finish_id\": null,\n//   \"prescription_lens_type_id\": 5,\n//   \"name\": \"Brown Gradient\",\n//   \"color_code\": \"BROWN_GRADIENT\",\n//   \"hex_code\": \"#8B4513\",\n//   \"image_url\": \"https://example.com/images/brown-gradient.png\",\n//   \"price_adjustment\": 10.00,\n//   \"is_active\": true,\n//   \"sort_order\": 0\n// }\n// Note: prescription_lens_type_id should be the ID of a prescription lens type with 'Sun' in its name"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-colors",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-colors"
-					]
-				  },
-				  "description": "Create a new lens color. Color must belong to either lens_option_id, lens_finish_id, or prescription_lens_type_id (choose one). To create prescription sun colors, set prescription_lens_type_id to a prescription lens type that has 'Sun' in its name. Admin can add, update, and delete lens colors. Admin only."
-				}
-			  },
-			  {
-				"name": "Update Lens Color",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Blue Mirror Updated\",\n  \"hex_code\": \"#0066FF\",\n  \"price_adjustment\": 5.00,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-colors/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-colors",
-					  "1"
-					]
-				  },
-				  "description": "Update an existing lens color. Admin can add, update, and delete lens colors. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Lens Color",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-colors/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-colors",
-					  "1"
-					]
-				  },
-				  "description": "Delete a lens color. Admin can add, update, and delete lens colors. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Lens Treatments (Admin)",
-			"item": [
-			  {
-				"name": "Get All Lens Treatments",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-treatments?page=1&limit=50&type=scratch_proof&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-treatments"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "type",
-						"value": "scratch_proof",
-						"description": "Filter by type",
-						"disabled": true
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all lens treatments with pagination and filters. Admin can view, add, update, and delete lens treatments. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Lens Treatment by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-treatments/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-treatments",
-					  "1"
-					]
-				  },
-				  "description": "Get a single lens treatment by ID. Admin can view, add, update, and delete lens treatments. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Lens Treatment",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Scratch Proof\",\n  \"slug\": \"scratch-proof\",\n  \"type\": \"scratch_proof\",\n  \"description\": \"Protects lenses from scratches and daily wear\",\n  \"price\": 30.00,\n  \"icon\": \"https://example.com/icons/scratch-proof.svg\",\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-treatments",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-treatments"
-					]
-				  },
-				  "description": "Create a new lens treatment. Admin can add, update, and delete lens treatments. Admin only."
-				}
-			  },
-			  {
-				"name": "Update Lens Treatment",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Scratch Proof Updated\",\n  \"price\": 35.00,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-treatments/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-treatments",
-					  "1"
-					]
-				  },
-				  "description": "Update an existing lens treatment. Admin can add, update, and delete lens treatments. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Lens Treatment",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-treatments/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-treatments",
-					  "1"
-					]
-				  },
-				  "description": "Delete a lens treatment. Admin can add, update, and delete lens treatments. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Lens Thickness Materials (Admin)",
-			"item": [
-			  {
-				"name": "Get All Lens Thickness Materials",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-materials?page=1&limit=50&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-materials"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all lens thickness materials (Unbreakable/Plastic, Minerals/Glass) with pagination. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Lens Thickness Material by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-materials/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-materials",
-					  "1"
-					]
-				  },
-				  "description": "Get a single lens thickness material by ID. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Lens Thickness Material",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Unbreakable (Plastic)\",\n  \"slug\": \"unbreakable-plastic\",\n  \"description\": \"Durable plastic material that resists breaking\",\n  \"price\": 30.00,\n  \"is_active\": true,\n  \"sort_order\": 1\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-materials",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-materials"
-					]
-				  },
-				  "description": "Create a new lens thickness material (e.g., Unbreakable/Plastic, Minerals/Glass). Admin only."
-				}
-			  },
-			  {
-				"name": "Update Lens Thickness Material",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Unbreakable (Plastic) - Updated\",\n  \"price\": 35.00,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-materials/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-materials",
-					  "1"
-					]
-				  },
-				  "description": "Update a lens thickness material. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Lens Thickness Material",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-materials/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-materials",
-					  "1"
-					]
-				  },
-				  "description": "Delete a lens thickness material. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Lens Thickness Options (Admin)",
-			"item": [
-			  {
-				"name": "Get All Lens Thickness Options",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-options?page=1&limit=50&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-options"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all lens thickness dropdown options (Thin, Medium, Thick, etc.) with pagination. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Lens Thickness Option by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-options/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-options",
-					  "1"
-					]
-				  },
-				  "description": "Get a single lens thickness option by ID. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Lens Thickness Option",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Thin\",\n  \"slug\": \"thin\",\n  \"description\": \"Thin lens option for lighter weight\",\n  \"thickness_value\": 1.5,\n  \"is_active\": true,\n  \"sort_order\": 1\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-options",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-options"
-					]
-				  },
-				  "description": "Create a new lens thickness dropdown option (e.g., Thin, Medium, Thick). Admin only."
-				}
-			  },
-			  {
-				"name": "Update Lens Thickness Option",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Thin - Updated\",\n  \"thickness_value\": 1.6,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-options/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-options",
-					  "1"
-					]
-				  },
-				  "description": "Update a lens thickness option. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Lens Thickness Option",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-thickness-options/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-thickness-options",
-					  "1"
-					]
-				  },
-				  "description": "Delete a lens thickness option. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Lens Finishes (Admin)",
-			"item": [
-			  {
-				"name": "Get All Lens Finishes",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-finishes?page=1&limit=100&lensOptionId=1&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-finishes"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "product_id",
-						"value": "",
-						"description": "Filter by product ID",
-						"disabled": true
-					  },
-					  {
-						"key": "sub_category_id",
-						"value": "",
-						"description": "Filter by subcategory ID (must be a sub-subcategory)",
-						"disabled": true
-					  },
-					  {
-						"key": "configuration_type",
-						"value": "",
-						"description": "Filter by type: spherical or astigmatism",
-						"disabled": true
-					  },
-					  {
-						"key": "is_active",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all lens finishes with their colors. Admin can view, add, update, and delete lens finishes. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Lens Finishes (Admin)",
-			"item": [
-			  {
-				"name": "Get All Lens Finishes",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-finishes?page=1&limit=100&lensOptionId=1&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-finishes"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "100"
-					  },
-					  {
-						"key": "lensOptionId",
-						"value": "1",
-						"description": "Filter by lens option ID",
-						"disabled": true
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all lens finishes with their colors. Admin can view, add, update, and delete lens finishes. Admin only."
-				}
-			  },
-			  {
-				"name": "Get Lens Finish by ID",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-finishes/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-finishes",
-					  "1"
-					]
-				  },
-				  "description": "Get a single lens finish by ID. Admin can view, add, update, and delete lens finishes. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Lens Finish",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"lens_option_id\": 1,\n  \"name\": \"Mirror\",\n  \"slug\": \"mirror\",\n  \"description\": \"Reflective mirror finish\",\n  \"price_adjustment\": 20.00,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-finishes",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-finishes"
-					]
-				  },
-				  "description": "Create a new lens finish for a lens option. Admin can add, update, and delete lens finishes. Admin only."
-				}
-			  },
-			  {
-				"name": "Update Lens Finish",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Mirror Updated\",\n  \"price_adjustment\": 25.00,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-finishes/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-finishes",
-					  "1"
-					]
-				  },
-				  "description": "Update an existing lens finish. Admin can add, update, and delete lens finishes. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Lens Finish",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/lens-finishes/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "lens-finishes",
-					  "1"
-					]
-				  },
-				  "description": "Delete a lens finish. Admin can add, update, and delete lens finishes. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Prescription Sun Lenses (Admin)",
-			"item": [
-			  {
-				"name": "Get All Prescription Sun Lenses",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-sun-lenses?page=1&limit=50&type=polarized&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-sun-lenses"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "type",
-						"value": "polarized",
-						"description": "Filter by type (polarized, classic, photochromic)",
-						"disabled": true
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all prescription sun lenses (Polarized, Classic, Blokz® Sunglasses) with pagination and filters. Admin can view, add, update, and delete prescription sun lens options. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Prescription Sun Lens",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Polarized\",\n  \"slug\": \"polarized\",\n  \"type\": \"polarized\",\n  \"description\": \"Reduce glare and see clearly for outdoor activities and driving.\",\n  \"base_price\": 76.95,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-sun-lenses",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-sun-lenses"
-					]
-				  },
-				  "description": "Create a new prescription sun lens option (Polarized, Classic, or Blokz® Sunglasses). After creating, use lens-finishes and lens-colors endpoints to add finishes and colors. Admin only."
-				}
-			  },
-			  {
-				"name": "Update Prescription Sun Lens",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Polarized\",\n  \"base_price\": 80.00,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-sun-lenses/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-sun-lenses",
-					  "1"
-					]
-				  },
-				  "description": "Update an existing prescription sun lens option. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Prescription Sun Lens",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-sun-lenses/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-sun-lenses",
-					  "1"
-					]
-				  },
-				  "description": "Delete a prescription sun lens option. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Photochromic Lenses (Admin)",
-			"item": [
-			  {
-				"name": "Get All Photochromic Lenses",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/photochromic-lenses?page=1&limit=50&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "photochromic-lenses"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all photochromic lenses (EyeQLenz™ with Zenni ID Guard™, EyeQLenz™, Transitions® GEN S™, Standard, Blokz Photochromic) with pagination and filters. Admin can view, add, update, and delete photochromic lens options. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Photochromic Lens",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"EyeQLenz™ with Zenni ID Guard™\",\n  \"slug\": \"eyeqlenz-with-zenni-id-guard\",\n  \"description\": \"4-in-1 lens that reflects infrared light to disrupt unwanted tracking technology, filters blue light & blocks 100% UV. Stays clear indoors and darkens outdoors, with a subtle pink sheen.\",\n  \"base_price\": 0,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/photochromic-lenses",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "photochromic-lenses"
-					]
-				  },
-				  "description": "Create a new photochromic lens option. After creating, use lens-colors endpoint to add colors directly to the lens option. Admin only."
-				}
-			  },
-			  {
-				"name": "Update Photochromic Lens",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"EyeQLenz™ with Zenni ID Guard™\",\n  \"base_price\": 10.00,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/photochromic-lenses/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "photochromic-lenses",
-					  "1"
-					]
-				  },
-				  "description": "Update an existing photochromic lens option. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Photochromic Lens",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/photochromic-lenses/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "photochromic-lenses",
-					  "1"
-					]
-				  },
-				  "description": "Delete a photochromic lens option. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Prescription Lens Types (Admin)",
-			"item": [
-			  {
-				"name": "Get All Prescription Lens Types",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-lens-types?page=1&limit=50&prescriptionType=single_vision&isActive=true",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-lens-types"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "prescriptionType",
-						"value": "single_vision",
-						"description": "Filter by prescription type (single_vision, bifocal, trifocal, progressive)",
-						"disabled": true
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all prescription lens types with their colors. Admin can view, add, update, and delete prescription lens types. To manage prescription sun colors, create prescription lens types with 'Sun' in the name, then add colors to them. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Prescription Lens Type",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Distance Vision\",\n  \"slug\": \"distance-vision\",\n  \"description\": \"For distance (Thin, anti-glare, blue-cut options)\",\n  \"prescription_type\": \"single_vision\",\n  \"base_price\": 60.00,\n  \"is_active\": true,\n  \"sort_order\": 0\n}\n\n// Example for Prescription Sun (to enable prescription sun colors):\n// {\n//   \"name\": \"Prescription Sun\",\n//   \"slug\": \"prescription-sun\",\n//   \"description\": \"Prescription sunglasses with UV protection\",\n//   \"prescription_type\": \"single_vision\",\n//   \"base_price\": 80.00,\n//   \"is_active\": true,\n//   \"sort_order\": 0\n// }",
-					"options": {
-						"raw": {
-							"language": "json"
+				"name": "Contact Requests",
+				"item": [
+				  {
+					"name": "Get All Contact Requests",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
 						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/contact",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "contact"
+						]
+					  },
+					  "description": "Get all contact requests. Admin only."
 					}
 				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-lens-types",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-lens-types"
-					]
+				  {
+					"name": "Get Contact Request by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/contact/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "contact",
+						  "1"
+						]
+					  },
+					  "description": "Get a specific contact request by ID. Admin only."
+					}
 				  },
-				  "description": "Create a new prescription lens type. To create prescription sun colors, create a prescription lens type with 'Sun' in the name (e.g., 'Prescription Sun', 'Distance Vision Sun'), then add colors to it using the Lens Colors admin endpoints with prescription_lens_type_id. Admin can add, update, and delete prescription lens types. Admin only."
-				}
+				  {
+					"name": "Delete Contact Request",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/contact/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "contact",
+						  "1"
+						]
+					  },
+					  "description": "Delete a contact request permanently. Admin only."
+					}
+				  }
+				]
 			  },
 			  {
-				"name": "Update Prescription Lens Type",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
+				"name": "Demo Requests",
+				"item": [
+				  {
+					"name": "Get All Demo Requests",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/demo",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "demo"
+						]
+					  },
+					  "description": "Get all demo requests. Admin only."
 					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Distance Vision Updated\",\n  \"base_price\": 65.00,\n  \"is_active\": true\n}"
 				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-lens-types/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-lens-types",
-					  "1"
-					]
+				  {
+					"name": "Get Demo Request by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/demo/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "demo",
+						  "1"
+						]
+					  },
+					  "description": "Get a specific demo request by ID. Admin only."
+					}
 				  },
-				  "description": "Update an existing prescription lens type. Admin can add, update, and delete prescription lens types. Admin only."
-				}
+				  {
+					"name": "Delete Demo Request",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/demo/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "demo",
+						  "1"
+						]
+					  },
+					  "description": "Delete a demo request permanently. Admin only."
+					}
+				  }
+				]
 			  },
 			  {
-				"name": "Delete Prescription Lens Type",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
+				"name": "Pricing Requests",
+				"item": [
+				  {
+					"name": "Get All Pricing Requests",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/pricing",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "pricing"
+						]
+					  },
+					  "description": "Get all pricing requests. Admin only."
 					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-lens-types/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-lens-types",
-					  "1"
-					]
 				  },
-				  "description": "Delete a prescription lens type. Admin can add, update, and delete prescription lens types. Admin only."
-				}
+				  {
+					"name": "Get Pricing Request by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/pricing/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "pricing",
+						  "1"
+						]
+					  },
+					  "description": "Get a specific pricing request by ID. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Pricing Request",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/pricing/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "pricing",
+						  "1"
+						]
+					  },
+					  "description": "Delete a pricing request permanently. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Credentials Requests",
+				"item": [
+				  {
+					"name": "Get All Credentials Requests",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/credentials",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "credentials"
+						]
+					  },
+					  "description": "Get all credentials requests. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Credentials Request by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/credentials/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "credentials",
+						  "1"
+						]
+					  },
+					  "description": "Get a specific credentials request by ID. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Credentials Request",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/credentials/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "credentials",
+						  "1"
+						]
+					  },
+					  "description": "Delete a credentials request permanently. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Support Requests",
+				"item": [
+				  {
+					"name": "Get All Support Requests",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/support",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "support"
+						]
+					  },
+					  "description": "Get all support requests with attachments and solutions concerned. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Support Request by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/support/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "support",
+						  "1"
+						]
+					  },
+					  "description": "Get a specific support request by ID with attachments and solutions. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Support Request",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/requests/support/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "requests",
+						  "support",
+						  "1"
+						]
+					  },
+					  "description": "Delete a support request permanently. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Transactions (Admin)",
+				"item": [
+				  {
+					"name": "Get All Transactions",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/transactions?page=1&limit=50&status=completed&type=payment",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "transactions"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "status",
+							"value": "completed",
+							"description": "Filter by status: pending, processing, completed, failed, cancelled, refunded",
+							"disabled": true
+						  },
+						  {
+							"key": "type",
+							"value": "payment",
+							"description": "Filter by type: payment, refund, partial_refund, chargeback, reversal",
+							"disabled": true
+						  },
+						  {
+							"key": "paymentMethod",
+							"value": "",
+							"description": "Filter by payment method: stripe, paypal, cod",
+							"disabled": true
+						  },
+						  {
+							"key": "userId",
+							"value": "",
+							"description": "Filter by user ID",
+							"disabled": true
+						  },
+						  {
+							"key": "orderId",
+							"value": "",
+							"description": "Filter by order ID",
+							"disabled": true
+						  },
+						  {
+							"key": "startDate",
+							"value": "",
+							"description": "Filter from date (YYYY-MM-DD)",
+							"disabled": true
+						  },
+						  {
+							"key": "endDate",
+							"value": "",
+							"description": "Filter to date (YYYY-MM-DD)",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all transactions with filtering options. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Transaction Statistics",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/transactions/stats?startDate=2024-01-01&endDate=2024-12-31",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "transactions",
+						  "stats"
+						],
+						"query": [
+						  {
+							"key": "startDate",
+							"value": "2024-01-01",
+							"description": "Start date (YYYY-MM-DD)",
+							"disabled": true
+						  },
+						  {
+							"key": "endDate",
+							"value": "2024-12-31",
+							"description": "End date (YYYY-MM-DD)",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get transaction statistics including totals, revenue, and breakdowns by method and status. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Transaction by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/transactions/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "transactions",
+						  "1"
+						]
+					  },
+					  "description": "Get a specific transaction by ID with full order and user details. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Transaction",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"order_id\": 1,\n  \"user_id\": 1,\n  \"type\": \"payment\",\n  \"status\": \"completed\",\n  \"payment_method\": \"stripe\",\n  \"amount\": 199.99,\n  \"currency\": \"USD\",\n  \"gateway_transaction_id\": \"ch_1234567890\",\n  \"gateway_response\": {\n    \"id\": \"ch_1234567890\",\n    \"status\": \"succeeded\"\n  },\n  \"gateway_fee\": 5.99,\n  \"description\": \"Payment for order #ORD-12345\",\n  \"metadata\": {\n    \"source\": \"admin_panel\",\n    \"notes\": \"Manual transaction entry\"\n  }\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/transactions",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "transactions"
+						]
+					  },
+					  "description": "Create a new transaction manually. Automatically updates order payment status if transaction is completed. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Transaction Status",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"status\": \"completed\",\n  \"gateway_response\": {\n    \"id\": \"ch_1234567890\",\n    \"status\": \"succeeded\",\n    \"receipt_url\": \"https://pay.stripe.com/receipts/...\"\n  },\n  \"metadata\": {\n    \"updated_by\": \"admin@example.com\",\n    \"notes\": \"Payment confirmed\"\n  }\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/transactions/1/status",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "transactions",
+						  "1",
+						  "status"
+						]
+					  },
+					  "description": "Update transaction status. Automatically updates order payment status when transaction is completed or refunded. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Shipping Methods (Admin)",
+				"item": [
+				  {
+					"name": "Get All Shipping Methods",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/shipping-methods?page=1&limit=50&type=standard&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "shipping-methods"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "type",
+							"value": "standard",
+							"description": "Filter by type",
+							"disabled": true
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all shipping methods with pagination and filters. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Shipping Method by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/shipping-methods/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "shipping-methods",
+						  "1"
+						]
+					  },
+					  "description": "Get a single shipping method by ID. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Shipping Method",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Standard Shipping\",\n  \"slug\": \"standard-shipping\",\n  \"type\": \"standard\",\n  \"description\": \"Standard shipping with 5-7 business days delivery\",\n  \"price\": 9.99,\n  \"estimated_days\": 7,\n  \"is_active\": true,\n  \"sort_order\": 0,\n  \"icon\": \"https://example.com/icons/shipping.svg\"\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/shipping-methods",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "shipping-methods"
+						]
+					  },
+					  "description": "Create a new shipping method. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Shipping Method",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Standard Shipping Updated\",\n  \"price\": 12.99,\n  \"estimated_days\": 5,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/shipping-methods/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "shipping-methods",
+						  "1"
+						]
+					  },
+					  "description": "Update a shipping method. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Shipping Method",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/shipping-methods/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "shipping-methods",
+						  "1"
+						]
+					  },
+					  "description": "Delete a shipping method. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Lens Options (Admin)",
+				"item": [
+				  {
+					"name": "Get All Lens Options",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-options?page=1&limit=50&type=mirror&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-options"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "type",
+							"value": "mirror",
+							"description": "Filter by type",
+							"disabled": true
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all lens options with their colors. Admin can view, add, update, and delete lens options. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Lens Option by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-options/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-options",
+						  "1"
+						]
+					  },
+					  "description": "Get a single lens option with all its colors by ID. Admin can view, add, update, and delete lens options. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Lens Option",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Mirror Lenses\",\n  \"slug\": \"mirror-lenses\",\n  \"type\": \"mirror\",\n  \"description\": \"Reflective mirror coating for style and UV protection\",\n  \"base_price\": 20.00,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-options",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-options"
+						]
+					  },
+					  "description": "Create a new lens option. Admin can add, update, and delete lens options. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Lens Option",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Mirror Lenses Updated\",\n  \"base_price\": 25.00,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-options/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-options",
+						  "1"
+						]
+					  },
+					  "description": "Update an existing lens option. Admin can add, update, and delete lens options. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Lens Option",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-options/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-options",
+						  "1"
+						]
+					  },
+					  "description": "Delete a lens option. Admin can add, update, and delete lens options. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Lens Colors (Admin)",
+				"item": [
+				  {
+					"name": "Get All Lens Colors",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-colors?page=1&limit=100&lensOptionId=1&lensFinishId=null&prescriptionLensTypeId=null&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-colors"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "100"
+						  },
+						  {
+							"key": "lensOptionId",
+							"value": "1",
+							"description": "Filter by lens option ID",
+							"disabled": true
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all lens colors with their lens option info. Admin can view, add, update, and delete lens colors. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Lens Color by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-colors/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-colors",
+						  "1"
+						]
+					  },
+					  "description": "Get a single lens color by ID. Admin can view, add, update, and delete lens colors. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Lens Color",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"lens_option_id\": 1,\n  \"lens_finish_id\": null,\n  \"prescription_lens_type_id\": null,\n  \"name\": \"Blue Mirror\",\n  \"color_code\": \"BLUE_MIRROR\",\n  \"hex_code\": \"#0066CC\",\n  \"image_url\": \"https://example.com/images/blue-mirror.png\",\n  \"price_adjustment\": 0.00,\n  \"is_active\": true,\n  \"sort_order\": 0\n}\n\n// Example for Prescription Sun Color:\n// {\n//   \"lens_option_id\": null,\n//   \"lens_finish_id\": null,\n//   \"prescription_lens_type_id\": 5,\n//   \"name\": \"Brown Gradient\",\n//   \"color_code\": \"BROWN_GRADIENT\",\n//   \"hex_code\": \"#8B4513\",\n//   \"image_url\": \"https://example.com/images/brown-gradient.png\",\n//   \"price_adjustment\": 10.00,\n//   \"is_active\": true,\n//   \"sort_order\": 0\n// }\n// Note: prescription_lens_type_id should be the ID of a prescription lens type with 'Sun' in its name"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-colors",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-colors"
+						]
+					  },
+					  "description": "Create a new lens color. Color must belong to either lens_option_id, lens_finish_id, or prescription_lens_type_id (choose one). To create prescription sun colors, set prescription_lens_type_id to a prescription lens type that has 'Sun' in its name. Admin can add, update, and delete lens colors. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Lens Color",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Blue Mirror Updated\",\n  \"hex_code\": \"#0066FF\",\n  \"price_adjustment\": 5.00,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-colors/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-colors",
+						  "1"
+						]
+					  },
+					  "description": "Update an existing lens color. Admin can add, update, and delete lens colors. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Lens Color",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-colors/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-colors",
+						  "1"
+						]
+					  },
+					  "description": "Delete a lens color. Admin can add, update, and delete lens colors. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Lens Treatments (Admin)",
+				"item": [
+				  {
+					"name": "Get All Lens Treatments",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-treatments?page=1&limit=50&type=scratch_proof&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-treatments"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "type",
+							"value": "scratch_proof",
+							"description": "Filter by type",
+							"disabled": true
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all lens treatments with pagination and filters. Admin can view, add, update, and delete lens treatments. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Lens Treatment by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-treatments/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-treatments",
+						  "1"
+						]
+					  },
+					  "description": "Get a single lens treatment by ID. Admin can view, add, update, and delete lens treatments. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Lens Treatment",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Scratch Proof\",\n  \"slug\": \"scratch-proof\",\n  \"type\": \"scratch_proof\",\n  \"description\": \"Protects lenses from scratches and daily wear\",\n  \"price\": 30.00,\n  \"icon\": \"https://example.com/icons/scratch-proof.svg\",\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-treatments",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-treatments"
+						]
+					  },
+					  "description": "Create a new lens treatment. Admin can add, update, and delete lens treatments. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Lens Treatment",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Scratch Proof Updated\",\n  \"price\": 35.00,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-treatments/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-treatments",
+						  "1"
+						]
+					  },
+					  "description": "Update an existing lens treatment. Admin can add, update, and delete lens treatments. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Lens Treatment",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-treatments/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-treatments",
+						  "1"
+						]
+					  },
+					  "description": "Delete a lens treatment. Admin can add, update, and delete lens treatments. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Lens Thickness Materials (Admin)",
+				"item": [
+				  {
+					"name": "Get All Lens Thickness Materials",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-materials?page=1&limit=50&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-materials"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all lens thickness materials (Unbreakable/Plastic, Minerals/Glass) with pagination. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Lens Thickness Material by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-materials/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-materials",
+						  "1"
+						]
+					  },
+					  "description": "Get a single lens thickness material by ID. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Lens Thickness Material",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Unbreakable (Plastic)\",\n  \"slug\": \"unbreakable-plastic\",\n  \"description\": \"Durable plastic material that resists breaking\",\n  \"price\": 30.00,\n  \"is_active\": true,\n  \"sort_order\": 1\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-materials",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-materials"
+						]
+					  },
+					  "description": "Create a new lens thickness material (e.g., Unbreakable/Plastic, Minerals/Glass). Admin only."
+					}
+				  },
+				  {
+					"name": "Update Lens Thickness Material",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Unbreakable (Plastic) - Updated\",\n  \"price\": 35.00,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-materials/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-materials",
+						  "1"
+						]
+					  },
+					  "description": "Update a lens thickness material. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Lens Thickness Material",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-materials/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-materials",
+						  "1"
+						]
+					  },
+					  "description": "Delete a lens thickness material. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Lens Thickness Options (Admin)",
+				"item": [
+				  {
+					"name": "Get All Lens Thickness Options",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-options?page=1&limit=50&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-options"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all lens thickness dropdown options (Thin, Medium, Thick, etc.) with pagination. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Lens Thickness Option by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-options/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-options",
+						  "1"
+						]
+					  },
+					  "description": "Get a single lens thickness option by ID. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Lens Thickness Option",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Thin\",\n  \"slug\": \"thin\",\n  \"description\": \"Thin lens option for lighter weight\",\n  \"thickness_value\": 1.5,\n  \"is_active\": true,\n  \"sort_order\": 1\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-options",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-options"
+						]
+					  },
+					  "description": "Create a new lens thickness dropdown option (e.g., Thin, Medium, Thick). Admin only."
+					}
+				  },
+				  {
+					"name": "Update Lens Thickness Option",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Thin - Updated\",\n  \"thickness_value\": 1.6,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-options/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-options",
+						  "1"
+						]
+					  },
+					  "description": "Update a lens thickness option. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Lens Thickness Option",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-thickness-options/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-thickness-options",
+						  "1"
+						]
+					  },
+					  "description": "Delete a lens thickness option. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Lens Finishes (Admin)",
+				"item": [
+				  {
+					"name": "Get All Lens Finishes",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-finishes?page=1&limit=100&lensOptionId=1&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-finishes"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "product_id",
+							"value": "",
+							"description": "Filter by product ID",
+							"disabled": true
+						  },
+						  {
+							"key": "sub_category_id",
+							"value": "",
+							"description": "Filter by subcategory ID (must be a sub-subcategory)",
+							"disabled": true
+						  },
+						  {
+							"key": "configuration_type",
+							"value": "",
+							"description": "Filter by type: spherical or astigmatism",
+							"disabled": true
+						  },
+						  {
+							"key": "is_active",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all lens finishes with their colors. Admin can view, add, update, and delete lens finishes. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Lens Finishes (Admin)",
+				"item": [
+				  {
+					"name": "Get All Lens Finishes",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-finishes?page=1&limit=100&lensOptionId=1&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-finishes"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "100"
+						  },
+						  {
+							"key": "lensOptionId",
+							"value": "1",
+							"description": "Filter by lens option ID",
+							"disabled": true
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all lens finishes with their colors. Admin can view, add, update, and delete lens finishes. Admin only."
+					}
+				  },
+				  {
+					"name": "Get Lens Finish by ID",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-finishes/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-finishes",
+						  "1"
+						]
+					  },
+					  "description": "Get a single lens finish by ID. Admin can view, add, update, and delete lens finishes. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Lens Finish",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"lens_option_id\": 1,\n  \"name\": \"Mirror\",\n  \"slug\": \"mirror\",\n  \"description\": \"Reflective mirror finish\",\n  \"price_adjustment\": 20.00,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-finishes",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-finishes"
+						]
+					  },
+					  "description": "Create a new lens finish for a lens option. Admin can add, update, and delete lens finishes. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Lens Finish",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Mirror Updated\",\n  \"price_adjustment\": 25.00,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-finishes/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-finishes",
+						  "1"
+						]
+					  },
+					  "description": "Update an existing lens finish. Admin can add, update, and delete lens finishes. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Lens Finish",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/lens-finishes/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "lens-finishes",
+						  "1"
+						]
+					  },
+					  "description": "Delete a lens finish. Admin can add, update, and delete lens finishes. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Prescription Sun Lenses (Admin)",
+				"item": [
+				  {
+					"name": "Get All Prescription Sun Lenses",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-sun-lenses?page=1&limit=50&type=polarized&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-sun-lenses"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "type",
+							"value": "polarized",
+							"description": "Filter by type (polarized, classic, photochromic)",
+							"disabled": true
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all prescription sun lenses (Polarized, Classic, Blokz\u00ae Sunglasses) with pagination and filters. Admin can view, add, update, and delete prescription sun lens options. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Prescription Sun Lens",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Polarized\",\n  \"slug\": \"polarized\",\n  \"type\": \"polarized\",\n  \"description\": \"Reduce glare and see clearly for outdoor activities and driving.\",\n  \"base_price\": 76.95,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-sun-lenses",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-sun-lenses"
+						]
+					  },
+					  "description": "Create a new prescription sun lens option (Polarized, Classic, or Blokz\u00ae Sunglasses). After creating, use lens-finishes and lens-colors endpoints to add finishes and colors. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Prescription Sun Lens",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Polarized\",\n  \"base_price\": 80.00,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-sun-lenses/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-sun-lenses",
+						  "1"
+						]
+					  },
+					  "description": "Update an existing prescription sun lens option. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Prescription Sun Lens",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-sun-lenses/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-sun-lenses",
+						  "1"
+						]
+					  },
+					  "description": "Delete a prescription sun lens option. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Photochromic Lenses (Admin)",
+				"item": [
+				  {
+					"name": "Get All Photochromic Lenses",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/photochromic-lenses?page=1&limit=50&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "photochromic-lenses"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all photochromic lenses (EyeQLenz\u2122 with Zenni ID Guard\u2122, EyeQLenz\u2122, Transitions\u00ae GEN S\u2122, Standard, Blokz Photochromic) with pagination and filters. Admin can view, add, update, and delete photochromic lens options. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Photochromic Lens",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"EyeQLenz\u2122 with Zenni ID Guard\u2122\",\n  \"slug\": \"eyeqlenz-with-zenni-id-guard\",\n  \"description\": \"4-in-1 lens that reflects infrared light to disrupt unwanted tracking technology, filters blue light & blocks 100% UV. Stays clear indoors and darkens outdoors, with a subtle pink sheen.\",\n  \"base_price\": 0,\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/photochromic-lenses",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "photochromic-lenses"
+						]
+					  },
+					  "description": "Create a new photochromic lens option. After creating, use lens-colors endpoint to add colors directly to the lens option. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Photochromic Lens",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"EyeQLenz\u2122 with Zenni ID Guard\u2122\",\n  \"base_price\": 10.00,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/photochromic-lenses/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "photochromic-lenses",
+						  "1"
+						]
+					  },
+					  "description": "Update an existing photochromic lens option. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Photochromic Lens",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/photochromic-lenses/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "photochromic-lenses",
+						  "1"
+						]
+					  },
+					  "description": "Delete a photochromic lens option. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Prescription Lens Types (Admin)",
+				"item": [
+				  {
+					"name": "Get All Prescription Lens Types",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-lens-types?page=1&limit=50&prescriptionType=single_vision&isActive=true",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-lens-types"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "prescriptionType",
+							"value": "single_vision",
+							"description": "Filter by prescription type (single_vision, bifocal, trifocal, progressive)",
+							"disabled": true
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all prescription lens types with their colors. Admin can view, add, update, and delete prescription lens types. To manage prescription sun colors, create prescription lens types with 'Sun' in the name, then add colors to them. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Prescription Lens Type",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Distance Vision\",\n  \"slug\": \"distance-vision\",\n  \"description\": \"For distance (Thin, anti-glare, blue-cut options)\",\n  \"prescription_type\": \"single_vision\",\n  \"base_price\": 60.00,\n  \"is_active\": true,\n  \"sort_order\": 0\n}\n\n// Example for Prescription Sun (to enable prescription sun colors):\n// {\n//   \"name\": \"Prescription Sun\",\n//   \"slug\": \"prescription-sun\",\n//   \"description\": \"Prescription sunglasses with UV protection\",\n//   \"prescription_type\": \"single_vision\",\n//   \"base_price\": 80.00,\n//   \"is_active\": true,\n//   \"sort_order\": 0\n// }",
+						"options": {
+						  "raw": {
+							"language": "json"
+						  }
+						}
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-lens-types",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-lens-types"
+						]
+					  },
+					  "description": "Create a new prescription lens type. To create prescription sun colors, create a prescription lens type with 'Sun' in the name (e.g., 'Prescription Sun', 'Distance Vision Sun'), then add colors to it using the Lens Colors admin endpoints with prescription_lens_type_id. Admin can add, update, and delete prescription lens types. Admin only."
+					}
+				  },
+				  {
+					"name": "Update Prescription Lens Type",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Distance Vision Updated\",\n  \"base_price\": 65.00,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-lens-types/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-lens-types",
+						  "1"
+						]
+					  },
+					  "description": "Update an existing prescription lens type. Admin can add, update, and delete prescription lens types. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Prescription Lens Type",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-lens-types/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-lens-types",
+						  "1"
+						]
+					  },
+					  "description": "Delete a prescription lens type. Admin can add, update, and delete prescription lens types. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Prescription Lens Variants (Admin)",
+				"item": [
+				  {
+					"name": "Get All Prescription Lens Variants",
+					"request": {
+					  "method": "GET",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-lens-variants?page=1&limit=50&prescriptionLensTypeId=1&isActive=true&isRecommended=false",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-lens-variants"
+						],
+						"query": [
+						  {
+							"key": "page",
+							"value": "1"
+						  },
+						  {
+							"key": "limit",
+							"value": "50"
+						  },
+						  {
+							"key": "prescriptionLensTypeId",
+							"value": "1",
+							"description": "Filter by prescription lens type ID",
+							"disabled": true
+						  },
+						  {
+							"key": "isActive",
+							"value": "true",
+							"description": "Filter by active status",
+							"disabled": true
+						  },
+						  {
+							"key": "isRecommended",
+							"value": "false",
+							"description": "Filter by recommended status",
+							"disabled": true
+						  }
+						]
+					  },
+					  "description": "Get all prescription lens variants with their prescription lens type info. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Prescription Lens Variant",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"prescription_lens_type_id\": 1,\n  \"name\": \"Premium\",\n  \"slug\": \"premium\",\n  \"description\": \"Up to 40% wider viewing areas than Standard. Maximum comfort & balanced vision.\",\n  \"price\": 52.95,\n  \"is_recommended\": true,\n  \"viewing_range\": null,\n  \"use_cases\": \"Maximum comfort & balanced vision\",\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-lens-variants",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-lens-variants"
+						]
+					  },
+					  "description": "Create a new prescription lens variant (e.g., Premium, Standard, Mid-Range, Near-Range for Progressive lenses). Admin only."
+					}
+				  },
+				  {
+					"name": "Update Prescription Lens Variant",
+					"request": {
+					  "method": "PUT",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"name\": \"Premium Updated\",\n  \"price\": 55.00,\n  \"is_recommended\": true,\n  \"is_active\": true\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-lens-variants/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-lens-variants",
+						  "1"
+						]
+					  },
+					  "description": "Update a prescription lens variant. Admin only."
+					}
+				  },
+				  {
+					"name": "Delete Prescription Lens Variant",
+					"request": {
+					  "method": "DELETE",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						}
+					  ],
+					  "url": {
+						"raw": "{{base_url}}/api/admin/prescription-lens-variants/1",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "admin",
+						  "prescription-lens-variants",
+						  "1"
+						]
+					  },
+					  "description": "Delete a prescription lens variant. Admin only."
+					}
+				  }
+				]
+			  },
+			  {
+				"name": "Payments (Admin)",
+				"item": [
+				  {
+					"name": "Create Refund",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"transaction_id\": 1,\n  \"amount\": 50.00,\n  \"reason\": \"requested_by_customer\"\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/payments/refund",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "payments",
+						  "refund"
+						]
+					  },
+					  "description": "Create a partial or full refund for a completed payment transaction. If amount is omitted, creates a full refund. Reason options: requested_by_customer, duplicate, fraudulent. Admin only."
+					}
+				  },
+				  {
+					"name": "Create Full Refund",
+					"request": {
+					  "method": "POST",
+					  "header": [
+						{
+						  "key": "Authorization",
+						  "value": "Bearer {{admin_token}}"
+						},
+						{
+						  "key": "Content-Type",
+						  "value": "application/json"
+						}
+					  ],
+					  "body": {
+						"mode": "raw",
+						"raw": "{\n  \"transaction_id\": 1,\n  \"reason\": \"requested_by_customer\"\n}"
+					  },
+					  "url": {
+						"raw": "{{base_url}}/api/payments/refund",
+						"host": [
+						  "{{base_url}}"
+						],
+						"path": [
+						  "api",
+						  "payments",
+						  "refund"
+						]
+					  },
+					  "description": "Create a full refund by omitting the amount field. Automatically updates order payment_status to 'refunded' if full refund. Admin only."
+					}
+				  }
+				]
 			  }
-			]
-		  },
-		  {
-			"name": "Prescription Lens Variants (Admin)",
-			"item": [
-			  {
-				"name": "Get All Prescription Lens Variants",
-				"request": {
-				  "method": "GET",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-lens-variants?page=1&limit=50&prescriptionLensTypeId=1&isActive=true&isRecommended=false",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-lens-variants"
-					],
-					"query": [
-					  {
-						"key": "page",
-						"value": "1"
-					  },
-					  {
-						"key": "limit",
-						"value": "50"
-					  },
-					  {
-						"key": "prescriptionLensTypeId",
-						"value": "1",
-						"description": "Filter by prescription lens type ID",
-						"disabled": true
-					  },
-					  {
-						"key": "isActive",
-						"value": "true",
-						"description": "Filter by active status",
-						"disabled": true
-					  },
-					  {
-						"key": "isRecommended",
-						"value": "false",
-						"description": "Filter by recommended status",
-						"disabled": true
-					  }
-					]
-				  },
-				  "description": "Get all prescription lens variants with their prescription lens type info. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Prescription Lens Variant",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"prescription_lens_type_id\": 1,\n  \"name\": \"Premium\",\n  \"slug\": \"premium\",\n  \"description\": \"Up to 40% wider viewing areas than Standard. Maximum comfort & balanced vision.\",\n  \"price\": 52.95,\n  \"is_recommended\": true,\n  \"viewing_range\": null,\n  \"use_cases\": \"Maximum comfort & balanced vision\",\n  \"is_active\": true,\n  \"sort_order\": 0\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-lens-variants",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-lens-variants"
-					]
-				  },
-				  "description": "Create a new prescription lens variant (e.g., Premium, Standard, Mid-Range, Near-Range for Progressive lenses). Admin only."
-				}
-			  },
-			  {
-				"name": "Update Prescription Lens Variant",
-				"request": {
-				  "method": "PUT",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Premium Updated\",\n  \"price\": 55.00,\n  \"is_recommended\": true,\n  \"is_active\": true\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-lens-variants/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-lens-variants",
-					  "1"
-					]
-				  },
-				  "description": "Update a prescription lens variant. Admin only."
-				}
-			  },
-			  {
-				"name": "Delete Prescription Lens Variant",
-				"request": {
-				  "method": "DELETE",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					}
-				  ],
-				  "url": {
-					"raw": "{{base_url}}/api/admin/prescription-lens-variants/1",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "admin",
-					  "prescription-lens-variants",
-					  "1"
-					]
-				  },
-				  "description": "Delete a prescription lens variant. Admin only."
-				}
-			  }
-			]
-		  },
-		  {
-			"name": "Payments (Admin)",
-			"item": [
-			  {
-				"name": "Create Refund",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"transaction_id\": 1,\n  \"amount\": 50.00,\n  \"reason\": \"requested_by_customer\"\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/payments/refund",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "payments",
-					  "refund"
-					]
-				  },
-				  "description": "Create a partial or full refund for a completed payment transaction. If amount is omitted, creates a full refund. Reason options: requested_by_customer, duplicate, fraudulent. Admin only."
-				}
-			  },
-			  {
-				"name": "Create Full Refund",
-				"request": {
-				  "method": "POST",
-				  "header": [
-					{
-					  "key": "Authorization",
-					  "value": "Bearer {{admin_token}}"
-					},
-					{
-					  "key": "Content-Type",
-					  "value": "application/json"
-					}
-				  ],
-				  "body": {
-					"mode": "raw",
-					"raw": "{\n  \"transaction_id\": 1,\n  \"reason\": \"requested_by_customer\"\n}"
-				  },
-				  "url": {
-					"raw": "{{base_url}}/api/payments/refund",
-					"host": [
-					  "{{base_url}}"
-					],
-					"path": [
-					  "api",
-					  "payments",
-					  "refund"
-					]
-				  },
-				  "description": "Create a full refund by omitting the amount field. Automatically updates order payment_status to 'refunded' if full refund. Admin only."
-				}
-			  }
-			]
-		  }
 			]
 		  },
 		  {
@@ -9151,7 +9151,7 @@
 				  ],
 				  "body": {
 					"mode": "raw",
-					"raw": "{\n  \"name\": \"Daily Spherical Config\",\n  \"sub_category_id\": 1,\n  \"right_qty\": [1, 2, 3],\n  \"right_base_curve\": [8.6, 8.7, 8.8],\n  \"right_diameter\": [14.0, 14.2, 14.5],\n  \"left_qty\": [1, 2, 3],\n  \"left_base_curve\": [8.6, 8.7, 8.8],\n  \"left_diameter\": [14.0, 14.2, 14.5],\n  \"price\": 29.99,\n  \"display_name\": \"Daily Spherical\"\n}"
+					"raw": "{\n  \"name\": \"Daily Spherical Config\",\n  \"sub_category_id\": 1,\n  \"right_qty\": [1, 2, 3],\n  \"right_base_curve\": [8.6, 8.7, 8.8],\n  \"right_diameter\": [14.0, 14.2, 14.5],\n  \"right_power\": [-2.00, -2.25, -2.50],\n  \"left_qty\": [1, 2, 3],\n  \"left_base_curve\": [8.6, 8.7, 8.8],\n  \"left_diameter\": [14.0, 14.2, 14.5],\n  \"left_power\": [-2.00, -2.25, -2.50],\n  \"price\": 29.99,\n  \"display_name\": \"Daily Spherical\"\n}"
 				  },
 				  "url": {
 					"raw": "{{base_url}}/api/contact-lens-forms/admin/spherical",
@@ -9184,7 +9184,7 @@
 				  ],
 				  "body": {
 					"mode": "raw",
-					"raw": "{\n  \"name\": \"Updated Spherical Config\",\n  \"right_base_curve\": [8.5, 8.6, 8.7],\n  \"price\": 34.99,\n  \"is_active\": true\n}"
+					"raw": "{\n  \"name\": \"Updated Spherical Config\",\n  \"right_base_curve\": [8.5, 8.6, 8.7],\n  \"right_power\": [-2.00, -2.25],\n  \"left_power\": [-2.00, -2.25],\n  \"price\": 34.99,\n  \"is_active\": true\n}"
 				  },
 				  "url": {
 					"raw": "{{base_url}}/api/contact-lens-forms/admin/spherical/:id",
@@ -9238,6 +9238,154 @@
 					]
 				  },
 				  "description": "Delete a Spherical configuration. Admin only."
+				}
+			  },
+			  {
+				"name": "Get All Astigmatism Configs (Admin)",
+				"request": {
+				  "method": "GET",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/contact-lens-forms/admin/astigmatism?page=1&limit=50",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "contact-lens-forms",
+					  "admin",
+					  "astigmatism"
+					],
+					"query": [
+					  {
+						"key": "page",
+						"value": "1",
+						"disabled": true
+					  },
+					  {
+						"key": "limit",
+						"value": "50",
+						"disabled": true
+					  },
+					  {
+						"key": "sub_category_id",
+						"value": "1",
+						"description": "Filter by sub-sub-category ID",
+						"disabled": true
+					  }
+					]
+				  },
+				  "description": "Get all Astigmatism configurations with pagination. Admin only."
+				}
+			  },
+			  {
+				"name": "Create Astigmatism Config (Admin)",
+				"request": {
+				  "method": "POST",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Daily Astigmatism Config\",\n  \"sub_category_id\": 1,\n  \"right_qty\": [1, 2, 3],\n  \"right_base_curve\": [8.6, 8.7, 8.8],\n  \"right_diameter\": [14.0, 14.2, 14.5],\n  \"right_power\": [-2.00, -2.25, -2.50],\n  \"right_cylinder\": [-0.75, -1.00, -1.25],\n  \"right_axis\": [10, 20, 90, 180],\n  \"left_qty\": [1, 2, 3],\n  \"left_base_curve\": [8.6, 8.7, 8.8],\n  \"left_diameter\": [14.0, 14.2, 14.5],\n  \"left_power\": [-2.00, -2.25, -2.50],\n  \"left_cylinder\": [-0.75, -1.00, -1.25],\n  \"left_axis\": [10, 20, 90, 180],\n  \"price\": 39.99,\n  \"display_name\": \"Daily Astigmatism\"\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/contact-lens-forms/admin/astigmatism",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "contact-lens-forms",
+					  "admin",
+					  "astigmatism"
+					]
+				  },
+				  "description": "Create a new Astigmatism configuration. Arrays allow multiple values for each parameter including cylinder and axis."
+				}
+			  },
+			  {
+				"name": "Update Astigmatism Config (Admin)",
+				"request": {
+				  "method": "PUT",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					},
+					{
+					  "key": "Content-Type",
+					  "value": "application/json"
+					}
+				  ],
+				  "body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Updated Astigmatism Config\",\n  \"right_power\": [-2.00, -2.25],\n  \"right_cylinder\": [-0.75, -1.00],\n  \"left_cylinder\": [-0.75, -1.00],\n  \"price\": 44.99,\n  \"is_active\": true\n}"
+				  },
+				  "url": {
+					"raw": "{{base_url}}/api/contact-lens-forms/admin/astigmatism/:id",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "contact-lens-forms",
+					  "admin",
+					  "astigmatism",
+					  ":id"
+					],
+					"variable": [
+					  {
+						"key": "id",
+						"value": "1"
+					  }
+					]
+				  },
+				  "description": "Update an Astigmatism configuration. Only include fields to update."
+				}
+			  },
+			  {
+				"name": "Delete Astigmatism Config (Admin)",
+				"request": {
+				  "method": "DELETE",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{admin_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/contact-lens-forms/admin/astigmatism/:id",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "contact-lens-forms",
+					  "admin",
+					  "astigmatism",
+					  ":id"
+					],
+					"variable": [
+					  {
+						"key": "id",
+						"value": "1"
+					  }
+					]
+				  },
+				  "description": "Delete an Astigmatism configuration. Admin only."
 				}
 			  },
 			  {

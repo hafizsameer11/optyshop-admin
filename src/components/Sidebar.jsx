@@ -196,7 +196,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: FiEye,
       children: [
         { path: '/contact-lens-forms/spherical', icon: FiAperture, label: t('sphericalConfigurations') },
-        { path: '/contact-lens-forms/astigmatism', icon: FiSettings, label: t('astigmatismDropdownValues') },
+        { path: '/contact-lens-forms/astigmatism', icon: FiLayers, label: t('astigmatismConfigurations') || 'Astigmatism Configs' },
+        { path: '/contact-lens-forms/dropdown-values', icon: FiSettings, label: t('astigmatismDropdownValues') || 'Dropdown Values' },
       ]
     },
     {
@@ -236,11 +237,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-indigo-600 via-purple-600 to-pink-500 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-r border-indigo-500/20 dark:border-gray-700 shadow-2xl z-50 transition-all duration-300 ease-in-out ${
-          isOpen 
-            ? 'w-72 translate-x-0' 
+        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-indigo-600 via-purple-600 to-pink-500 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-r border-indigo-500/20 dark:border-gray-700 shadow-2xl z-50 transition-all duration-300 ease-in-out ${isOpen
+            ? 'w-72 translate-x-0'
             : 'w-20 -translate-x-full lg:translate-x-0'
-        }`}
+          }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo Section */}
@@ -288,16 +288,15 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 if (section.type === 'item') {
                   const { path, icon: Icon, label } = section.item;
                   const active = isActive(path);
-                  
+
                   return (
                     <Link
                       key={path}
                       to={path}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                        active
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
                           ? 'bg-white/20 backdrop-blur-md text-white shadow-lg border border-white/30'
                           : 'text-white/80 hover:bg-white/10 hover:text-white'
-                      } ${!isOpen && 'lg:justify-center'}`}
+                        } ${!isOpen && 'lg:justify-center'}`}
                       title={!isOpen ? label : ''}
                     >
                       <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-white/70'}`} />
@@ -319,11 +318,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     <div key={key}>
                       <button
                         onClick={() => toggleSubmenu(key)}
-                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                          hasActiveChild
+                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${hasActiveChild
                             ? 'bg-white/20 backdrop-blur-md text-white shadow-lg border border-white/30'
                             : 'text-white/80 hover:bg-white/10 hover:text-white'
-                        } ${!isOpen && 'lg:justify-center'}`}
+                          } ${!isOpen && 'lg:justify-center'}`}
                         title={!isOpen ? label : ''}
                       >
                         <div className="flex items-center gap-3">
@@ -346,16 +344,15 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                           {children.map((child) => {
                             const childActive = isActive(child.path);
                             const ChildIcon = child.icon || FiFile;
-                            
+
                             return (
                               <Link
                                 key={child.path}
                                 to={child.path}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                                  childActive
+                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${childActive
                                     ? 'bg-white/15 text-white shadow-md border border-white/20 font-semibold'
                                     : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                }`}
+                                  }`}
                               >
                                 <ChildIcon className="w-4 h-4 flex-shrink-0" />
                                 <span className={`text-sm ${childActive ? 'font-semibold' : ''}`}>
@@ -394,9 +391,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             )}
             <button
               onClick={logout}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-white bg-gradient-to-r from-red-500/80 to-red-600/80 hover:from-red-500 hover:to-red-600 border border-red-400/30 hover:border-red-400/50 shadow-lg hover:shadow-xl backdrop-blur-sm ${
-                !isOpen && 'lg:justify-center'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-white bg-gradient-to-r from-red-500/80 to-red-600/80 hover:from-red-500 hover:to-red-600 border border-red-400/30 hover:border-red-400/50 shadow-lg hover:shadow-xl backdrop-blur-sm ${!isOpen && 'lg:justify-center'
+                }`}
               title={!isOpen ? t('logout') : ''}
             >
               <FiLogOut className="w-5 h-5 flex-shrink-0" />

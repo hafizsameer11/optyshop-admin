@@ -40,7 +40,7 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
   const handleChange = (e) => {
     const { name, value: val, type, checked } = e.target;
     const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (val === '' ? '' : parseFloat(val) || 0) : val;
-    
+
     // Auto-update label when value changes (if label is empty or matches old value)
     if (name === 'value' && (!formData.label || formData.label === formData.value)) {
       setFormData({ ...formData, value: fieldValue, label: fieldValue });
@@ -68,11 +68,29 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
           toast.success('Dropdown value updated successfully');
         }
       } else {
-        response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.CREATE, submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Dropdown value created successfully');
+        // Check for multiple values (comma-separated)
+        const valuesToCreate = formData.value.toString().split(',').map(v => v.trim()).filter(v => v !== '');
+
+        if (valuesToCreate.length > 1) {
+          // Bulk creation
+          const createPromises = valuesToCreate.map(val => {
+            return api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.CREATE, {
+              ...submitData,
+              value: val,
+              label: val, // specific label logic for bulk: use value as label to avoid confusion
+            });
+          });
+
+          await Promise.all(createPromises);
+          toast.success(`${valuesToCreate.length} dropdown values created successfully`);
         } else {
-          toast.success('Dropdown value created successfully');
+          // Single creation
+          response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.CREATE, submitData);
+          if (response.data?.success) {
+            toast.success(response.data.message || 'Dropdown value created successfully');
+          } else {
+            toast.success('Dropdown value created successfully');
+          }
         }
       }
       onClose();
@@ -140,21 +158,21 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
               className="input-modern"
               required
               placeholder={
-                formData.field_type === 'axis' ? 'e.g., 0, 90, 180' : 
-                formData.field_type === 'power' ? 'e.g., -2.00, -1.75' : 
-                formData.field_type === 'cylinder' ? 'e.g., -0.25, -0.50' :
-                formData.field_type === 'qty' ? 'e.g., 1, 2, 3, 6, 12' :
-                formData.field_type === 'base_curve' ? 'e.g., 8.6, 8.7, 8.8' :
-                formData.field_type === 'diameter' ? 'e.g., 14.0, 14.2, 14.5' : ''
+                formData.field_type === 'axis' ? 'e.g., 0, 90, 180' :
+                  formData.field_type === 'power' ? 'e.g., -2.00, -1.75' :
+                    formData.field_type === 'cylinder' ? 'e.g., -0.25, -0.50' :
+                      formData.field_type === 'qty' ? 'e.g., 1, 2, 3, 6, 12' :
+                        formData.field_type === 'base_curve' ? 'e.g., 8.6, 8.7, 8.8' :
+                          formData.field_type === 'diameter' ? 'e.g., 14.0, 14.2, 14.5' : ''
               }
             />
             <p className="mt-1 text-xs text-gray-500">
-              {formData.field_type === 'axis' ? 'Axis values (0-180)' : 
-               formData.field_type === 'power' ? 'Power values (e.g., -2.00 D)' : 
-               formData.field_type === 'cylinder' ? 'Cylinder values (e.g., -0.25 D)' :
-               formData.field_type === 'qty' ? 'Quantity values (e.g., 1, 2, 3, 6, 12)' :
-               formData.field_type === 'base_curve' ? 'Base curve values (e.g., 8.6, 8.7, 8.8)' :
-               formData.field_type === 'diameter' ? 'Diameter values (e.g., 14.0, 14.2, 14.5)' : ''}
+              {formData.field_type === 'axis' ? 'Axis values (0-180)' :
+                formData.field_type === 'power' ? 'Power values (e.g., -2.00 D)' :
+                  formData.field_type === 'cylinder' ? 'Cylinder values (e.g., -0.25 D)' :
+                    formData.field_type === 'qty' ? 'Quantity values (e.g., 1, 2, 3, 6, 12)' :
+                      formData.field_type === 'base_curve' ? 'Base curve values (e.g., 8.6, 8.7, 8.8)' :
+                        formData.field_type === 'diameter' ? 'Diameter values (e.g., 14.0, 14.2, 14.5)' : ''}
             </p>
           </div>
 

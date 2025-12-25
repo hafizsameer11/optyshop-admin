@@ -684,8 +684,14 @@ export const API_ROUTES = {
         UPDATE: (id) => `/contact-lens-forms/admin/spherical/${id}`,
         DELETE: (id) => `/contact-lens-forms/admin/spherical/${id}`,
       },
-      // Astigmatism Dropdown Values
+      // Astigmatism Configurations & Dropdown Values
       ASTIGMATISM: {
+        LIST: `/contact-lens-forms/admin/astigmatism`,
+        CREATE: `/contact-lens-forms/admin/astigmatism`,
+        BY_ID: (id) => `/contact-lens-forms/admin/astigmatism/${id}`,
+        UPDATE: (id) => `/contact-lens-forms/admin/astigmatism/${id}`,
+        DELETE: (id) => `/contact-lens-forms/admin/astigmatism/${id}`,
+
         DROPDOWN_VALUES: {
           LIST: `/contact-lens-forms/admin/astigmatism/dropdown-values`,
           CREATE: `/contact-lens-forms/admin/astigmatism/dropdown-values`,

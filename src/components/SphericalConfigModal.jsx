@@ -14,15 +14,20 @@ const SphericalConfigModal = ({ config, onClose }) => {
     right_qty: [],
     right_base_curve: [],
     right_diameter: [],
+    right_power: [],
     left_qty: [],
     left_base_curve: [],
     left_diameter: [],
+    left_power: [],
   });
   const [loading, setLoading] = useState(false);
   const [subCategories, setSubCategories] = useState([]);
 
   useEffect(() => {
     fetchSubCategories();
+  }, []);
+
+  useEffect(() => {
     if (config) {
       setFormData({
         name: config.name || '',
@@ -30,12 +35,14 @@ const SphericalConfigModal = ({ config, onClose }) => {
         display_name: config.display_name || config.displayName || '',
         price: config.price !== undefined ? config.price : '',
         is_active: config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true),
-        right_qty: Array.isArray(config.right_qty) ? config.right_qty : (Array.isArray(config.rightQty) ? config.rightQty : []),
-        right_base_curve: Array.isArray(config.right_base_curve) ? config.right_base_curve : (Array.isArray(config.rightBaseCurve) ? config.rightBaseCurve : []),
-        right_diameter: Array.isArray(config.right_diameter) ? config.right_diameter : (Array.isArray(config.rightDiameter) ? config.rightDiameter : []),
-        left_qty: Array.isArray(config.left_qty) ? config.left_qty : (Array.isArray(config.leftQty) ? config.leftQty : []),
-        left_base_curve: Array.isArray(config.left_base_curve) ? config.left_base_curve : (Array.isArray(config.leftBaseCurve) ? config.leftBaseCurve : []),
-        left_diameter: Array.isArray(config.left_diameter) ? config.left_diameter : (Array.isArray(config.leftDiameter) ? config.leftDiameter : []),
+        right_qty: Array.isArray(config.right_qty) ? config.right_qty.map(String) : (Array.isArray(config.rightQty) ? config.rightQty.map(String) : []),
+        right_base_curve: Array.isArray(config.right_base_curve) ? config.right_base_curve.map(String) : (Array.isArray(config.rightBaseCurve) ? config.rightBaseCurve.map(String) : []),
+        right_diameter: Array.isArray(config.right_diameter) ? config.right_diameter.map(String) : (Array.isArray(config.rightDiameter) ? config.rightDiameter.map(String) : []),
+        right_power: Array.isArray(config.right_power) ? config.right_power.map(String) : (Array.isArray(config.rightPower) ? config.rightPower.map(String) : []),
+        left_qty: Array.isArray(config.left_qty) ? config.left_qty.map(String) : (Array.isArray(config.leftQty) ? config.leftQty.map(String) : []),
+        left_base_curve: Array.isArray(config.left_base_curve) ? config.left_base_curve.map(String) : (Array.isArray(config.leftBaseCurve) ? config.leftBaseCurve.map(String) : []),
+        left_diameter: Array.isArray(config.left_diameter) ? config.left_diameter.map(String) : (Array.isArray(config.leftDiameter) ? config.leftDiameter.map(String) : []),
+        left_power: Array.isArray(config.left_power) ? config.left_power.map(String) : (Array.isArray(config.leftPower) ? config.leftPower.map(String) : []),
       });
     }
   }, [config]);
@@ -44,7 +51,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
     try {
       const response = await api.get(`${API_ROUTES.ADMIN.SUBCATEGORIES.LIST}?page=1&limit=1000`);
       let subCategoriesData = [];
-      
+
       if (response.data) {
         if (response.data.data) {
           const dataObj = response.data.data;
@@ -57,82 +64,14 @@ const SphericalConfigModal = ({ config, onClose }) => {
           subCategoriesData = response.data;
         }
       }
-      
+
       setSubCategories(subCategoriesData);
     } catch (error) {
       console.error('SubCategories fetch error:', error);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (value === '' ? '' : parseFloat(value)) : value;
-    setFormData({ ...formData, [name]: fieldValue });
-  };
-
-  const handleArrayChange = (field, index, value) => {
-    const newArray = [...formData[field]];
-    newArray[index] = value === '' ? '' : parseFloat(value) || '';
-    setFormData({ ...formData, [field]: newArray });
-  };
-
-  const addArrayItem = (field) => {
-    setFormData({ ...formData, [field]: [...formData[field], ''] });
-  };
-
-  const removeArrayItem = (field, index) => {
-    const newArray = formData[field].filter((_, i) => i !== index);
-    setFormData({ ...formData, [field]: newArray });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const submitData = {
-        ...formData,
-        right_qty: formData.right_qty.filter(v => v !== ''),
-        right_base_curve: formData.right_base_curve.filter(v => v !== ''),
-        right_diameter: formData.right_diameter.filter(v => v !== ''),
-        left_qty: formData.left_qty.filter(v => v !== ''),
-        left_base_curve: formData.left_base_curve.filter(v => v !== ''),
-        left_diameter: formData.left_diameter.filter(v => v !== ''),
-      };
-
-      let response;
-      if (config) {
-        response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.UPDATE(config.id), submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Spherical configuration updated successfully');
-        } else {
-          toast.success('Spherical configuration updated successfully');
-        }
-      } else {
-        response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.CREATE, submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Spherical configuration created successfully');
-        } else {
-          toast.success('Spherical configuration created successfully');
-        }
-      }
-      onClose();
-    } catch (error) {
-      console.error('Save error:', error);
-      if (!error.response) {
-        toast.error('Backend unavailable - Cannot save configuration');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
-      } else {
-        const errorMessage = error.response?.data?.message || 'Failed to save configuration';
-        toast.error(errorMessage);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderArrayField = (field, label) => (
+  const renderArrayField = (field, label, placeholder = "Enter value") => (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="block text-sm font-semibold text-gray-700">
@@ -151,17 +90,16 @@ const SphericalConfigModal = ({ config, onClose }) => {
         {formData[field].map((value, index) => (
           <div key={index} className="flex items-center gap-2">
             <input
-              type="number"
-              step="0.1"
+              type="text"
               value={value}
               onChange={(e) => handleArrayChange(field, index, e.target.value)}
               className="flex-1 input-modern"
-              placeholder="Enter value"
+              placeholder={placeholder}
             />
             <button
               type="button"
               onClick={() => removeArrayItem(field, index)}
-              className="p-2 text-red-600 hover:text-red-800"
+              className="p-2 text-red-600 hover:text-red-900"
             >
               <FiTrash2 className="w-4 h-4" />
             </button>
@@ -272,19 +210,21 @@ const SphericalConfigModal = ({ config, onClose }) => {
 
           <div className="border-t pt-4">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Right Eye Parameters</h3>
-            <div className="space-y-4">
-              {renderArrayField('right_qty', 'Right Qty')}
-              {renderArrayField('right_base_curve', 'Right Base Curve (B.C)')}
-              {renderArrayField('right_diameter', 'Right Diameter (DIA)')}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {renderArrayField('right_qty', 'Right Qty', 'e.g. 1')}
+              {renderArrayField('right_base_curve', 'Right Base Curve (B.C)', 'e.g. 8.60')}
+              {renderArrayField('right_diameter', 'Right Diameter (DIA)', 'e.g. 14.0')}
+              {renderArrayField('right_power', 'Right Power (PWR)', 'e.g. -2.00')}
             </div>
           </div>
 
           <div className="border-t pt-4">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Left Eye Parameters</h3>
-            <div className="space-y-4">
-              {renderArrayField('left_qty', 'Left Qty')}
-              {renderArrayField('left_base_curve', 'Left Base Curve (B.C)')}
-              {renderArrayField('left_diameter', 'Left Diameter (DIA)')}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {renderArrayField('left_qty', 'Left Qty', 'e.g. 1')}
+              {renderArrayField('left_base_curve', 'Left Base Curve (B.C)', 'e.g. 8.60')}
+              {renderArrayField('left_diameter', 'Left Diameter (DIA)', 'e.g. 14.0')}
+              {renderArrayField('left_power', 'Left Power (PWR)', 'e.g. -2.00')}
             </div>
           </div>
 

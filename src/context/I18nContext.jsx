@@ -208,6 +208,7 @@ const translations = {
     adminPanel: 'Admin Panel',
     contactLensForms: 'Contact Lens Forms',
     sphericalConfigurations: 'Spherical Configurations',
+    astigmatismConfigurations: 'Astigmatism Configurations',
     astigmatismDropdownValues: 'Astigmatism Dropdown Values',
   },
   ar: {
@@ -379,6 +380,7 @@ const translations = {
     adminPanel: 'لوحة التحكم',
     contactLensForms: 'نماذج العدسات اللاصقة',
     sphericalConfigurations: 'إعدادات الكروية',
+    astigmatismConfigurations: 'إعدادات الاستجماتيزم',
     astigmatismDropdownValues: 'قيم القائمة المنسدلة للاستجماتيزم',
   },
   fr: {
@@ -550,6 +552,7 @@ const translations = {
     adminPanel: 'Panneau d\'Administration',
     contactLensForms: 'Formulaires de Lentilles de Contact',
     sphericalConfigurations: 'Configurations Sphériques',
+    astigmatismConfigurations: 'Configurations Astigmatisme',
     astigmatismDropdownValues: 'Valeurs de Liste Déroulante Astigmatisme',
   },
   es: {
@@ -721,6 +724,7 @@ const translations = {
     adminPanel: 'Panel de Administración',
     contactLensForms: 'Formularios de Lentes de Contacto',
     sphericalConfigurations: 'Configuraciones Esféricas',
+    astigmatismConfigurations: 'Configuraciones de Astigmatismo',
     astigmatismDropdownValues: 'Valores de Lista Desplegable Astigmatismo',
   },
   it: {
@@ -892,6 +896,7 @@ const translations = {
     adminPanel: 'Pannello di Amministrazione',
     contactLensForms: 'Moduli Lenti a Contatto',
     sphericalConfigurations: 'Configurazioni Sferiche',
+    astigmatismConfigurations: 'Configurazioni Astigmatismo',
     astigmatismDropdownValues: 'Valori Menu a Tendina Astigmatismo',
   },
   de: {
@@ -1063,6 +1068,7 @@ const translations = {
     adminPanel: 'Administrationspanel',
     contactLensForms: 'Kontaktlinsen-Formulare',
     sphericalConfigurations: 'Sphärische Konfigurationen',
+    astigmatismConfigurations: 'Astigmatismus-Konfigurationen',
     astigmatismDropdownValues: 'Astigmatismus-Dropdown-Werte',
   },
   pt: {
@@ -1234,6 +1240,7 @@ const translations = {
     adminPanel: 'Painel de Administração',
     contactLensForms: 'Formulários de Lentes de Contato',
     sphericalConfigurations: 'Configurações Esféricas',
+    astigmatismConfigurations: 'Configurações de Astigmatismo',
     astigmatismDropdownValues: 'Valores de Lista Suspensa Astigmatismo',
   },
   nl: {

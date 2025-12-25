@@ -71,6 +71,78 @@ const SphericalConfigModal = ({ config, onClose }) => {
     }
   };
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    // Keep price as number, but others can be strings if needed (though top level fields are mostly text/number)
+    const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (value === '' ? '' : parseFloat(value)) : value;
+    setFormData({ ...formData, [name]: fieldValue });
+  };
+
+  const handleArrayChange = (field, index, value) => {
+    const newArray = [...formData[field]];
+    // Treat as string to preserve formatting (e.g. "8.60")
+    newArray[index] = value;
+    setFormData({ ...formData, [field]: newArray });
+  };
+
+  const addArrayItem = (field) => {
+    setFormData({ ...formData, [field]: [...formData[field], ''] });
+  };
+
+  const removeArrayItem = (field, index) => {
+    const newArray = formData[field].filter((_, i) => i !== index);
+    setFormData({ ...formData, [field]: newArray });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const submitData = {
+        ...formData,
+        right_qty: formData.right_qty.filter(v => v !== ''),
+        right_base_curve: formData.right_base_curve.filter(v => v !== ''),
+        right_diameter: formData.right_diameter.filter(v => v !== ''),
+        right_power: formData.right_power.filter(v => v !== ''),
+        left_qty: formData.left_qty.filter(v => v !== ''),
+        left_base_curve: formData.left_base_curve.filter(v => v !== ''),
+        left_diameter: formData.left_diameter.filter(v => v !== ''),
+        left_power: formData.left_power.filter(v => v !== ''),
+      };
+
+      let response;
+      if (config) {
+        response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.UPDATE(config.id), submitData);
+        if (response.data?.success) {
+          toast.success(response.data.message || 'Spherical configuration updated successfully');
+        } else {
+          toast.success('Spherical configuration updated successfully');
+        }
+      } else {
+        response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.CREATE, submitData);
+        if (response.data?.success) {
+          toast.success(response.data.message || 'Spherical configuration created successfully');
+        } else {
+          toast.success('Spherical configuration created successfully');
+        }
+      }
+      onClose();
+    } catch (error) {
+      console.error('Save error:', error);
+      if (!error.response) {
+        toast.error('Backend unavailable - Cannot save configuration');
+      } else if (error.response.status === 401) {
+        toast.error('❌ Demo mode - Please log in with real credentials');
+      } else {
+        const errorMessage = error.response?.data?.message || 'Failed to save configuration';
+        toast.error(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderArrayField = (field, label, placeholder = "Enter value") => (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -251,4 +323,3 @@ const SphericalConfigModal = ({ config, onClose }) => {
 };
 
 export default SphericalConfigModal;
-

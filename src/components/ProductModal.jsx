@@ -635,9 +635,9 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       if (formData.stock_status) dataToSend.stock_status = formData.stock_status;
-      // Normalize frame_shape: convert underscores to hyphens (cat_eye -> cat-eye)
+      // Send frame_shape as-is (API expects values like: round, square, cat_eye, etc.)
       if (formData.frame_shape) {
-        dataToSend.frame_shape = formData.frame_shape.replace(/_/g, '-');
+        dataToSend.frame_shape = formData.frame_shape;
       }
       // Send frame_material as array (multiple selections allowed)
       if (formData.frame_material && Array.isArray(formData.frame_material) && formData.frame_material.length > 0) {
@@ -1390,7 +1390,8 @@ const ProductModal = ({ product, onClose }) => {
               >
                 <option value="in_stock">In Stock</option>
                 <option value="out_of_stock">Out of Stock</option>
-                <option value="on_backorder">On Backorder</option>
+                <option value="backorder">Backorder</option>
+                <option value="preorder">Preorder</option>
               </select>
             </div>
           </div>

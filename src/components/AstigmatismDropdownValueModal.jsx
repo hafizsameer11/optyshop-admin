@@ -6,7 +6,7 @@ import { API_ROUTES } from '../config/apiRoutes';
 
 const AstigmatismDropdownValueModal = ({ value, onClose }) => {
   const [formData, setFormData] = useState({
-    field_type: 'power',
+    field_type: 'qty',
     value: '',
     label: '',
     eye_type: 'both',
@@ -18,7 +18,7 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
   useEffect(() => {
     if (value) {
       setFormData({
-        field_type: value.field_type || value.fieldType || 'power',
+        field_type: value.field_type || value.fieldType || 'qty',
         value: value.value || '',
         label: value.label || value.value || '',
         eye_type: value.eye_type || value.eyeType || 'both',
@@ -27,7 +27,7 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
       });
     } else {
       setFormData({
-        field_type: 'power',
+        field_type: 'qty',
         value: '',
         label: '',
         eye_type: 'both',
@@ -96,7 +96,7 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10 flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {value ? 'Edit Dropdown Value' : 'Add Dropdown Value'}
+            {value ? 'Edit Contact Lens Dropdown Value' : 'Add Contact Lens Dropdown Value'}
           </h2>
           <button
             onClick={onClose}
@@ -119,9 +119,12 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
               className="input-modern"
               required
             >
-              <option value="power">Power</option>
-              <option value="cylinder">Cylinder</option>
-              <option value="axis">Axis</option>
+              <option value="qty">Qty</option>
+              <option value="base_curve">Base Curve (B.C)</option>
+              <option value="diameter">Diameter (DIA)</option>
+              <option value="power">Power (PWR)</option>
+              <option value="cylinder">Cylinder (CYL)</option>
+              <option value="axis">Axis (AX)</option>
             </select>
           </div>
 
@@ -136,10 +139,22 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
               onChange={handleChange}
               className="input-modern"
               required
-              placeholder={formData.field_type === 'axis' ? 'e.g., 0, 90, 180' : formData.field_type === 'power' ? 'e.g., -2.00, -1.75' : 'e.g., -0.25, -0.50'}
+              placeholder={
+                formData.field_type === 'axis' ? 'e.g., 0, 90, 180' : 
+                formData.field_type === 'power' ? 'e.g., -2.00, -1.75' : 
+                formData.field_type === 'cylinder' ? 'e.g., -0.25, -0.50' :
+                formData.field_type === 'qty' ? 'e.g., 1, 2, 3, 6, 12' :
+                formData.field_type === 'base_curve' ? 'e.g., 8.6, 8.7, 8.8' :
+                formData.field_type === 'diameter' ? 'e.g., 14.0, 14.2, 14.5' : ''
+              }
             />
             <p className="mt-1 text-xs text-gray-500">
-              {formData.field_type === 'axis' ? 'Axis values (0-180)' : formData.field_type === 'power' ? 'Power values (e.g., -2.00 D)' : 'Cylinder values (e.g., -0.25 D)'}
+              {formData.field_type === 'axis' ? 'Axis values (0-180)' : 
+               formData.field_type === 'power' ? 'Power values (e.g., -2.00 D)' : 
+               formData.field_type === 'cylinder' ? 'Cylinder values (e.g., -0.25 D)' :
+               formData.field_type === 'qty' ? 'Quantity values (e.g., 1, 2, 3, 6, 12)' :
+               formData.field_type === 'base_curve' ? 'Base curve values (e.g., 8.6, 8.7, 8.8)' :
+               formData.field_type === 'diameter' ? 'Diameter values (e.g., 14.0, 14.2, 14.5)' : ''}
             </p>
           </div>
 
@@ -156,7 +171,7 @@ const AstigmatismDropdownValueModal = ({ value, onClose }) => {
               placeholder="Display label (optional, defaults to value)"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Display label for the dropdown. If empty, the value will be used.
+              Display label for the dropdown. If empty, the value will be used. Used by both Spherical and Astigmatism forms.
             </p>
           </div>
 

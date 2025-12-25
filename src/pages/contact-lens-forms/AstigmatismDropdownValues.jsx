@@ -133,6 +133,12 @@ const AstigmatismDropdownValues = () => {
 
   const getFieldTypeBadgeColor = (fieldType) => {
     switch (fieldType) {
+      case 'qty':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'base_curve':
+        return 'bg-cyan-100 text-cyan-800';
+      case 'diameter':
+        return 'bg-teal-100 text-teal-800';
       case 'power':
         return 'bg-blue-100 text-blue-800';
       case 'cylinder':
@@ -192,9 +198,12 @@ const AstigmatismDropdownValues = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">All Field Types</option>
-              <option value="power">Power</option>
-              <option value="cylinder">Cylinder</option>
-              <option value="axis">Axis</option>
+              <option value="qty">Qty</option>
+              <option value="base_curve">Base Curve (B.C)</option>
+              <option value="diameter">Diameter (DIA)</option>
+              <option value="power">Power (PWR)</option>
+              <option value="cylinder">Cylinder (CYL)</option>
+              <option value="axis">Axis (AX)</option>
             </select>
           </div>
           <div>

@@ -13,15 +13,48 @@ const SphericalConfigurations = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
+  const [filterSubCategoryId, setFilterSubCategoryId] = useState('');
+  const [subCategories, setSubCategories] = useState([]);
+
+  useEffect(() => {
+    fetchSubCategories();
+  }, []);
 
   useEffect(() => {
     fetchConfigs();
-  }, [page]);
+  }, [page, filterSubCategoryId]);
+
+  const fetchSubCategories = async () => {
+    try {
+      const response = await api.get(`${API_ROUTES.ADMIN.SUBCATEGORIES.LIST}?page=1&limit=1000`);
+      let subCategoriesData = [];
+      
+      if (response.data) {
+        if (response.data.data) {
+          const dataObj = response.data.data;
+          if (Array.isArray(dataObj)) {
+            subCategoriesData = dataObj;
+          } else if (dataObj.subcategories && Array.isArray(dataObj.subcategories)) {
+            subCategoriesData = dataObj.subcategories;
+          }
+        } else if (Array.isArray(response.data)) {
+          subCategoriesData = response.data;
+        }
+      }
+      
+      setSubCategories(subCategoriesData);
+    } catch (error) {
+      console.error('SubCategories fetch error:', error);
+    }
+  };
 
   const fetchConfigs = async () => {
     try {
       setLoading(true);
-      const url = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?page=${page}&limit=${limit}`;
+      let url = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?page=${page}&limit=${limit}`;
+      if (filterSubCategoryId) {
+        url += `&sub_category_id=${filterSubCategoryId}`;
+      }
       console.log('Fetching spherical configs from:', url);
       
       const response = await api.get(url);
@@ -164,6 +197,32 @@ const SphericalConfigurations = () => {
           <FiPlus />
           <span>Add Configuration</span>
         </button>
+      </div>
+
+      {/* Filter */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter by Sub Category
+            </label>
+            <select
+              value={filterSubCategoryId}
+              onChange={(e) => {
+                setFilterSubCategoryId(e.target.value);
+                setPage(1); // Reset to first page when filter changes
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">All Sub Categories</option>
+              {subCategories.map((subCat) => (
+                <option key={subCat.id} value={subCat.id}>
+                  {subCat.name} (ID: {subCat.id})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">

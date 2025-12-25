@@ -835,6 +835,36 @@ const OrderModal = ({ order, onClose }) => {
                                   Coatings: {item.lens_coatings.join(', ')}
                                 </div>
                               )}
+                              {/* Contact Lens Details */}
+                              {item.contact_lens_details && (
+                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                  <div className="text-xs font-semibold text-gray-700 mb-1">Contact Lens Details:</div>
+                                  {item.contact_lens_details.right_eye && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">Right Eye:</span> {Object.entries(item.contact_lens_details.right_eye)
+                                        .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                                        .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${value}`)
+                                        .join(', ')}
+                                    </div>
+                                  )}
+                                  {item.contact_lens_details.left_eye && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">Left Eye:</span> {Object.entries(item.contact_lens_details.left_eye)
+                                        .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                                        .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${value}`)
+                                        .join(', ')}
+                                    </div>
+                                  )}
+                                  {item.contact_lens_details.astigmatism && (
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">Astigmatism:</span> {Object.entries(item.contact_lens_details.astigmatism)
+                                        .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                                        .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${value}`)
+                                        .join(', ')}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-500">

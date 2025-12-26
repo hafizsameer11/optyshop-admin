@@ -789,55 +789,87 @@ const ProductModal = ({ product, onClose }) => {
             }
           });
 
-          // Add general images (without color codes) - API expects 'images' (plural) array
-          imageFiles.forEach((file) => {
-            submitData.append('images', file);
-          });
-          
           // Add 3D model file if present (per Postman collection: model_3d field)
           if (model3DFile) {
             submitData.append('model_3d', model3DFile);
           }
           
-          // Method 1: Parallel Arrays (Recommended - Only Method Supported)
-          // Group images with hex codes for parallel arrays approach
-          const imagesWithHexCodes = imagesWithColors.filter(img => img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode));
-          const imagesWithoutHexCodes = imagesWithColors.filter(img => img.file instanceof File && (!img.hexCode || !isValidHexCode(img.hexCode)));
+          // Method 1: Parallel Arrays (Recommended - Per Postman Collection)
+          // According to Postman: "Each hex code maps to the image at the same index"
+          // Example from Postman: 
+          //   - Upload 5 images in `images` field
+          //   - Provide `image_colors`: `["#000000", "#000000", "#FFD700", "#FFD700", "#8B4513"]`
+          //   - Result: images[0] → #000000, images[1] → #000000, images[2] → #FFD700, etc.
+          // Strategy: Build parallel arrays where image_colors[i] maps to images[i] by exact index
           
-          if (imagesWithHexCodes.length > 0) {
-            // Create parallel arrays: images array + image_colors JSON array
-            const imageFilesArray = [];
-            const imageColorsArray = [];
-            
-            imagesWithHexCodes.forEach((img) => {
-              imageFilesArray.push(img.file);
-              imageColorsArray.push(img.hexCode);
-            });
-            
-            // Append each image file to 'images' field
-            imageFilesArray.forEach((file) => {
-              submitData.append('images', file);
-            });
-            
-            // Append image_colors as JSON array string
+          // Separate images: those with hex codes and those without (general images)
+          const imagesWithHexCodes = imagesWithColors.filter(img => 
+            img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode)
+          );
+          const imagesWithoutHexCodes = imagesWithColors.filter(img => 
+            img.file instanceof File && (!img.hexCode || !isValidHexCode(img.hexCode))
+          );
+          
+          // Strategy per Postman: 
+          // - All images go in 'images' field
+          // - image_colors array maps to images by index
+          // - Images without color codes become general product images
+          // 
+          // We'll put images with hex codes first, then general images
+          // This way image_colors indices match the first N images
+          
+          const imageFilesArray = [];
+          const imageColorsArray = [];
+          
+          // First, add images with hex codes (these will have corresponding entries in image_colors)
+          imagesWithHexCodes.forEach((img) => {
+            imageFilesArray.push(img.file);
+            imageColorsArray.push(img.hexCode);
+          });
+          
+          // Then add general images (from imageFiles) - no color codes
+          imageFiles.forEach((file) => {
+            imageFilesArray.push(file);
+            // Don't add to imageColorsArray - these are general images
+          });
+          
+          // Then add images without hex codes from imagesWithColors - no color codes
+          imagesWithoutHexCodes.forEach((img) => {
+            imageFilesArray.push(img.file);
+            // Don't add to imageColorsArray - these are general images
+          });
+          
+          // Append all images to 'images' field
+          imageFilesArray.forEach((file) => {
+            submitData.append('images', file);
+          });
+          
+          // Append image_colors as JSON array string
+          // This array contains hex codes for the first N images (where N = imageColorsArray.length)
+          // The backend will match: images[0] → image_colors[0], images[1] → image_colors[1], etc.
+          // Remaining images (without hex codes) become general product images
+          if (imageColorsArray.length > 0) {
             submitData.append('image_colors', JSON.stringify(imageColorsArray));
           }
-          
-          // Add images without hex codes to general images (no color assignment)
-          imagesWithoutHexCodes.forEach((img) => {
-            submitData.append('images', img.file);
-          });
           
           // Note: Removed 'replace_images' field as it's not in the Postman collection
           // and may cause Multer "Unexpected field" errors
           
-          // Removed heavy console logging that was slowing down product saves
-          // Log only essential info in development mode
+          // Log FormData contents in development mode for debugging
           if (import.meta.env.DEV) {
-            console.log('Sending product:', {
-              generalImageCount: imageFiles.length,
+            const formDataObj = {};
+            for (const [key, value] of submitData.entries()) {
+              if (value instanceof File) {
+                formDataObj[key] = `[File: ${value.name}, size: ${value.size}]`;
+              } else {
+                formDataObj[key] = value;
+              }
+            }
+            console.log('Sending product FormData:', {
+              ...formDataObj,
+              imageFilesCount: imageFiles.length,
               imagesWithColorsCount: imagesWithColors.filter(img => img.file instanceof File).length,
-              imagesWithHexCodesCount: imagesWithColors.filter(img => img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode)).length,
+              imagesWithHexCodesCount: imagesWithHexCodes.length,
               has3DModel: !!model3DFile,
               isUpdate: !!product
             });

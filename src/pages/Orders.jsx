@@ -13,6 +13,8 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -20,7 +22,7 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page, statusFilter, searchTerm]);
+  }, [page, statusFilter, paymentStatusFilter, paymentMethodFilter, searchTerm]);
 
   const fetchOrders = async () => {
     try {
@@ -31,6 +33,12 @@ const Orders = () => {
       });
       if (statusFilter) {
         params.append('status', statusFilter);
+      }
+      if (paymentStatusFilter) {
+        params.append('payment_status', paymentStatusFilter);
+      }
+      if (paymentMethodFilter) {
+        params.append('payment_method', paymentMethodFilter);
       }
       if (searchTerm) {
         params.append('search', searchTerm);
@@ -150,6 +158,29 @@ const Orders = () => {
             <option value="shipped">{t('shipped')}</option>
             <option value="delivered">{t('delivered')}</option>
             <option value="cancelled">{t('cancelled')}</option>
+          </select>
+          <select
+            value={paymentStatusFilter}
+            onChange={(e) => setPaymentStatusFilter(e.target.value)}
+            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">All Payment Status</option>
+            <option value="pending">Payment Pending</option>
+            <option value="paid">Paid</option>
+            <option value="refunded">Refunded</option>
+            <option value="failed">Failed</option>
+          </select>
+          <select
+            value={paymentMethodFilter}
+            onChange={(e) => setPaymentMethodFilter(e.target.value)}
+            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">All Payment Methods</option>
+            <option value="stripe">Stripe</option>
+            <option value="paypal">PayPal</option>
+            <option value="cod">Cash on Delivery</option>
+            <option value="cash">Cash</option>
+            <option value="check">Check</option>
           </select>
         </div>
 

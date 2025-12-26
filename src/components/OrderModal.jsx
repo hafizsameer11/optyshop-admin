@@ -767,6 +767,90 @@ const OrderModal = ({ order, onClose }) => {
               </div>
             </div>
 
+            {/* Payment Flow Status */}
+            {orderData?.id && (
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Payment Flow Status</h3>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                  <div className="space-y-3">
+                    {/* Step 1: Order Created */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        orderData?.id ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
+                        ✓
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Order Created</p>
+                        <p className="text-xs text-gray-600">
+                          {orderData?.created_at ? new Date(orderData.created_at).toLocaleString() : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 2: Payment Intent */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        orderData?.payment_status !== 'pending' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
+                        {orderData?.payment_status !== 'pending' ? '✓' : '○'}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Payment Intent Created</p>
+                        <p className="text-xs text-gray-600">
+                          {orderData?.payment_method === 'stripe' ? 'Stripe Payment Intent' : 
+                           orderData?.payment_method === 'paypal' ? 'PayPal Payment' :
+                           orderData?.payment_method === 'cod' ? 'Cash on Delivery' : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 3: Payment Confirmed */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        orderData?.payment_status === 'paid' ? 'bg-green-500 text-white' : 
+                        orderData?.payment_status === 'refunded' ? 'bg-orange-500 text-white' :
+                        'bg-gray-300 text-gray-600'
+                      }`}>
+                        {orderData?.payment_status === 'paid' ? '✓' : 
+                         orderData?.payment_status === 'refunded' ? '↻' : '○'}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Payment Status</p>
+                        <p className="text-xs text-gray-600">
+                          <span className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
+                            orderData?.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                            orderData?.payment_status === 'refunded' ? 'bg-orange-100 text-orange-800' :
+                            orderData?.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {orderData?.payment_status || 'pending'}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 4: Transaction Created */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        orderData?.payment_status === 'paid' || orderData?.payment_status === 'refunded' 
+                          ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
+                        {orderData?.payment_status === 'paid' || orderData?.payment_status === 'refunded' ? '✓' : '○'}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Transaction Recorded</p>
+                        <p className="text-xs text-gray-600">
+                          {orderData?.payment_status === 'paid' || orderData?.payment_status === 'refunded' 
+                            ? 'Transaction automatically created' : 'Waiting for payment confirmation'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Payment Transactions */}
             {orderData?.id && (
               <div className="mt-6">

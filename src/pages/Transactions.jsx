@@ -12,6 +12,7 @@ const Transactions = () => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   
   // Filters
   const [page, setPage] = useState(1);
@@ -162,10 +163,7 @@ const Transactions = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
         <button
-          onClick={() => {
-            // TODO: Open create transaction modal
-            toast.info('Create transaction feature coming soon');
-          }}
+          onClick={() => setCreateModalOpen(true)}
           className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
         >
           <FiDollarSign />
@@ -660,6 +658,302 @@ const Transactions = () => {
           onSubmit={handleStatusSubmit}
         />
       )}
+
+      {/* Create Transaction Modal */}
+      {createModalOpen && (
+        <CreateTransactionModal
+          onClose={() => {
+            setCreateModalOpen(false);
+          }}
+          onSubmit={async (transactionData) => {
+            try {
+              await api.post(API_ROUTES.ADMIN.TRANSACTIONS.CREATE, transactionData);
+              toast.success('Transaction created successfully');
+              setCreateModalOpen(false);
+              fetchTransactions();
+              fetchStats();
+            } catch (error) {
+              console.error('Create transaction error:', error);
+              toast.error(error.response?.data?.message || 'Failed to create transaction');
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Create Transaction Modal Component
+const CreateTransactionModal = ({ onClose, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    order_id: '',
+    user_id: '',
+    type: 'payment',
+    status: 'completed',
+    payment_method: 'stripe',
+    amount: '',
+    currency: 'USD',
+    gateway_transaction_id: '',
+    gateway_fee: '',
+    description: '',
+    gateway_response: '{}',
+    metadata: '{}',
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    let parsedGatewayResponse = {};
+    let parsedMetadata = {};
+
+    try {
+      if (formData.gateway_response) {
+        parsedGatewayResponse = JSON.parse(formData.gateway_response);
+      }
+    } catch (e) {
+      toast.error('Invalid JSON in Gateway Response');
+      return;
+    }
+
+    try {
+      if (formData.metadata) {
+        parsedMetadata = JSON.parse(formData.metadata);
+      }
+    } catch (e) {
+      toast.error('Invalid JSON in Metadata');
+      return;
+    }
+
+    const submitData = {
+      order_id: formData.order_id ? parseInt(formData.order_id, 10) : undefined,
+      user_id: formData.user_id ? parseInt(formData.user_id, 10) : undefined,
+      type: formData.type,
+      status: formData.status,
+      payment_method: formData.payment_method,
+      amount: parseFloat(formData.amount),
+      currency: formData.currency,
+      gateway_transaction_id: formData.gateway_transaction_id || undefined,
+      gateway_fee: formData.gateway_fee ? parseFloat(formData.gateway_fee) : undefined,
+      description: formData.description || undefined,
+      gateway_response: Object.keys(parsedGatewayResponse).length > 0 ? parsedGatewayResponse : undefined,
+      metadata: Object.keys(parsedMetadata).length > 0 ? parsedMetadata : undefined,
+    };
+
+    // Remove undefined values
+    Object.keys(submitData).forEach(key => {
+      if (submitData[key] === undefined) {
+        delete submitData[key];
+      }
+    });
+
+    onSubmit(submitData);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">Create Transaction</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Order ID *</label>
+                <input
+                  type="number"
+                  name="order_id"
+                  value={formData.order_id}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">User ID *</label>
+                <input
+                  type="number"
+                  name="user_id"
+                  value={formData.user_id}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="payment">Payment</option>
+                  <option value="refund">Refund</option>
+                  <option value="partial_refund">Partial Refund</option>
+                  <option value="chargeback">Chargeback</option>
+                  <option value="reversal">Reversal</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method *</label>
+                <select
+                  name="payment_method"
+                  value={formData.payment_method}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="stripe">Stripe</option>
+                  <option value="paypal">PayPal</option>
+                  <option value="cod">Cash on Delivery</option>
+                  <option value="cash">Cash</option>
+                  <option value="check">Check</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Currency *</label>
+                <select
+                  name="currency"
+                  value={formData.currency}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gateway Fee</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="gateway_fee"
+                  value={formData.gateway_fee}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gateway Transaction ID</label>
+              <input
+                type="text"
+                name="gateway_transaction_id"
+                value={formData.gateway_transaction_id}
+                onChange={handleChange}
+                placeholder="e.g., ch_1234567890"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <input
+                type="text"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="e.g., Payment for order #ORD-12345"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gateway Response (JSON)</label>
+              <textarea
+                name="gateway_response"
+                value={formData.gateway_response}
+                onChange={handleChange}
+                rows="4"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                placeholder='{"id": "ch_123", "status": "succeeded"}'
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Metadata (JSON)</label>
+              <textarea
+                name="metadata"
+                value={formData.metadata}
+                onChange={handleChange}
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                placeholder='{"source": "admin_panel", "notes": "Manual transaction entry"}'
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+              >
+                Create Transaction
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };

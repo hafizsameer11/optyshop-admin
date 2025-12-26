@@ -799,7 +799,7 @@ const ProductModal = ({ product, onClose }) => {
             submitData.append('model_3d', model3DFile);
           }
           
-          // Method 1: Parallel Arrays (Recommended)
+          // Method 1: Parallel Arrays (Recommended - Only Method Supported)
           // Group images with hex codes for parallel arrays approach
           const imagesWithHexCodes = imagesWithColors.filter(img => img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode));
           const imagesWithoutHexCodes = imagesWithColors.filter(img => img.file instanceof File && (!img.hexCode || !isValidHexCode(img.hexCode)));
@@ -814,35 +814,18 @@ const ProductModal = ({ product, onClose }) => {
               imageColorsArray.push(img.hexCode);
             });
             
-            // Append each image file
+            // Append each image file to 'images' field
             imageFilesArray.forEach((file) => {
               submitData.append('images', file);
             });
             
-            // Append image_colors as JSON array
+            // Append image_colors as JSON array string
             submitData.append('image_colors', JSON.stringify(imageColorsArray));
           }
           
-          // Add images without hex codes to general images
+          // Add images without hex codes to general images (no color assignment)
           imagesWithoutHexCodes.forEach((img) => {
             submitData.append('images', img.file);
-          });
-          
-          // Method 2: Individual Color Fields (Alternative - for backward compatibility)
-          // Group by hex code and use image_#RRGGBB format
-          const imagesByHexCode = {};
-          imagesWithHexCodes.forEach((img) => {
-            if (!imagesByHexCode[img.hexCode]) {
-              imagesByHexCode[img.hexCode] = [];
-            }
-            imagesByHexCode[img.hexCode].push(img.file);
-          });
-          
-          // Use individual fields as alternative (comment out if using only Method 1)
-          Object.keys(imagesByHexCode).forEach((hexCode) => {
-            imagesByHexCode[hexCode].forEach((file) => {
-              submitData.append(`image_${hexCode}`, file);
-            });
           });
           
           // Note: Removed 'replace_images' field as it's not in the Postman collection
@@ -852,9 +835,10 @@ const ProductModal = ({ product, onClose }) => {
           // Log only essential info in development mode
           if (import.meta.env.DEV) {
             console.log('Sending product:', {
-              imageCount: imageFiles.length,
+              generalImageCount: imageFiles.length,
+              imagesWithColorsCount: imagesWithColors.filter(img => img.file instanceof File).length,
+              imagesWithHexCodesCount: imagesWithColors.filter(img => img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode)).length,
               has3DModel: !!model3DFile,
-              colorImageCount: Object.keys(colorImages).length,
               isUpdate: !!product
             });
           }

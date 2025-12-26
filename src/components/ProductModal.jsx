@@ -643,6 +643,11 @@ const ProductModal = ({ product, onClose }) => {
         setLoading(false);
         return;
       }
+      if (!formData.category_id) {
+        toast.error('Category is required');
+        setLoading(false);
+        return;
+      }
 
       // Prepare data object with proper types
       const dataToSend = {
@@ -661,11 +666,14 @@ const ProductModal = ({ product, onClose }) => {
       if (formData.short_description && formData.short_description.trim()) {
         dataToSend.short_description = formData.short_description.trim();
       }
-      if (formData.category_id) {
-        const categoryId = parseInt(formData.category_id);
-        if (!isNaN(categoryId)) {
-          dataToSend.category_id = categoryId;
-        }
+      // category_id is required - always include it
+      const categoryId = parseInt(formData.category_id);
+      if (!isNaN(categoryId) && categoryId > 0) {
+        dataToSend.category_id = categoryId;
+      } else {
+        toast.error('Valid category is required');
+        setLoading(false);
+        return;
       }
       // Handle subcategory selection: if nested subcategory is selected, use it; otherwise use parent subcategory
       if (formData.parent_subcategory_id) {
@@ -848,8 +856,14 @@ const ProductModal = ({ product, onClose }) => {
           // This array contains hex codes for the first N images (where N = imageColorsArray.length)
           // The backend will match: images[0] → image_colors[0], images[1] → image_colors[1], etc.
           // Remaining images (without hex codes) become general product images
-          if (imageColorsArray.length > 0) {
-            submitData.append('image_colors', JSON.stringify(imageColorsArray));
+          // Only send image_colors if we have valid hex codes
+          if (imageColorsArray.length > 0 && imageColorsArray.every(hex => hex && isValidHexCode(hex))) {
+            const imageColorsJson = JSON.stringify(imageColorsArray);
+            submitData.append('image_colors', imageColorsJson);
+            
+            if (import.meta.env.DEV) {
+              console.log('Sending image_colors:', imageColorsJson);
+            }
           }
           
           // Note: Removed 'replace_images' field as it's not in the Postman collection
@@ -960,11 +974,27 @@ const ProductModal = ({ product, onClose }) => {
           fullData: errorData
         });
         
+        // Log the full Prisma error if available
+        if (errorData.fullData || errorData.stack) {
+          console.error('Full Prisma error:', JSON.stringify(errorData, null, 2));
+        }
+        
         if (errorMessage.includes('Prisma') || errorMessage.includes('Invalid value provided')) {
-          // Extract the field name from Prisma error
+          // Try to extract more detailed Prisma error information
+          const prismaErrorMatch = errorMessage.match(/Invalid `prisma\.(\w+)\.(\w+)`/);
           const fieldMatch = errorMessage.match(/Argument `(\w+)`:/);
-          const fieldName = fieldMatch ? fieldMatch[1] : 'field';
-          toast.error(`Validation error: ${fieldName} has an invalid value. Please check the form data.`);
+          const fieldName = fieldMatch ? fieldMatch[1] : (prismaErrorMatch ? prismaErrorMatch[2] : 'field');
+          
+          // Try to extract the actual error reason
+          const reasonMatch = errorMessage.match(/Argument `\w+`:(.+?)(?:\.|$)/);
+          const reason = reasonMatch ? reasonMatch[1].trim() : 'has an invalid value';
+          
+          toast.error(`Prisma validation error: ${fieldName} ${reason}. Please check the form data and console for details.`);
+          console.error('Prisma validation error details:', {
+            field: fieldName,
+            reason: reason,
+            fullMessage: errorMessage
+          });
         } else if (errorMessage.includes('multer') || errorMessage.includes('file upload') || errorMessage.includes('Unexpected field')) {
           // Multer "Unexpected field" error - usually means backend doesn't accept the field name
           if (errorMessage.includes('Unexpected field')) {

@@ -435,27 +435,6 @@ const ProductModal = ({ product, onClose }) => {
     }
   };
 
-  const handleFrameMaterialChange = (material) => {
-    setFormData(prev => {
-      const currentMaterials = prev.frame_material || [];
-      const isSelected = currentMaterials.includes(material);
-      
-      if (isSelected) {
-        // Remove material if already selected
-        return {
-          ...prev,
-          frame_material: currentMaterials.filter(m => m !== material)
-        };
-      } else {
-        // Add material if not selected
-        return {
-          ...prev,
-          frame_material: [...currentMaterials, material]
-        };
-      }
-    });
-  };
-
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -704,20 +683,34 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       if (formData.stock_status) dataToSend.stock_status = formData.stock_status;
-      // Send frame_shape as-is (API expects values like: round, square, cat_eye, etc.)
+      // Send frame_shape as-is (API accepts any string value)
       if (formData.frame_shape) {
-        dataToSend.frame_shape = formData.frame_shape;
+        dataToSend.frame_shape = formData.frame_shape.trim();
       }
-      // Send frame_material as array (multiple selections allowed)
+      // Send frame_material - API accepts single string or JSON array for multiple materials
       if (formData.frame_material && Array.isArray(formData.frame_material) && formData.frame_material.length > 0) {
-        dataToSend.frame_material = formData.frame_material;
+        // Filter out empty values and trim
+        const validMaterials = formData.frame_material.map(m => m.trim()).filter(m => m);
+        if (validMaterials.length === 0) {
+          // Skip if all materials are empty
+        } else if (validMaterials.length === 1) {
+          // If single material, send as string (per Postman API spec)
+          dataToSend.frame_material = validMaterials[0];
+        } else {
+          // If multiple materials, send as array (per Postman API spec)
+          dataToSend.frame_material = validMaterials;
+        }
       } else if (formData.frame_material && !Array.isArray(formData.frame_material)) {
-        // Handle legacy single value format - convert to array
-        dataToSend.frame_material = [formData.frame_material];
+        const trimmed = formData.frame_material.trim();
+        // Handle legacy single value format - send as string if not empty
+        if (trimmed) {
+          dataToSend.frame_material = trimmed;
+        }
       }
-      if (formData.frame_color) dataToSend.frame_color = formData.frame_color;
-      if (formData.gender) dataToSend.gender = formData.gender;
-      if (formData.lens_type) dataToSend.lens_type = formData.lens_type;
+      if (formData.frame_color) dataToSend.frame_color = formData.frame_color.trim();
+      if (formData.gender) dataToSend.gender = formData.gender.trim();
+      // Send lens_type as-is (API accepts any string value)
+      if (formData.lens_type) dataToSend.lens_type = formData.lens_type.trim();
       if (formData.compare_at_price && formData.compare_at_price !== '') {
         const comparePrice = parseFloat(formData.compare_at_price);
         if (!isNaN(comparePrice) && comparePrice >= 0) {
@@ -766,13 +759,19 @@ const ProductModal = ({ product, onClose }) => {
               return; // Skip this optional field
             }
             
-            // Special handling for frame_material array - send each value as separate field
-            if (key === 'frame_material' && Array.isArray(value) && value.length > 0) {
-              // Send each material as a separate form field with the same name
-              // Backend should receive this as an array: frame_material = ['acetate', 'metal']
-              value.forEach((material) => {
-                submitData.append('frame_material', material);
-              });
+            // Special handling for frame_material - per Postman API spec
+            // Can be single string or array for multiple materials
+            if (key === 'frame_material') {
+              if (Array.isArray(value) && value.length > 0) {
+                // Filter out empty values and send each material as a separate form field
+                // Backend will receive this as an array: frame_material = ['acetate', 'metal']
+                value.filter(m => m && m.trim()).forEach((material) => {
+                  submitData.append('frame_material', material.trim());
+                });
+              } else if (typeof value === 'string' && value.trim()) {
+                // Single material - send as string
+                submitData.append('frame_material', value.trim());
+              }
               return; // Skip the normal processing for this field
             }
             
@@ -1681,69 +1680,42 @@ const ProductModal = ({ product, onClose }) => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Frame Shape
               </label>
-              <select
+              <input
+                type="text"
                 name="frame_shape"
                 value={formData.frame_shape}
                 onChange={handleChange}
                 className="input-modern"
-              >
-                <option value="">Select Frame Shape</option>
-                {frameShapes.map((shape) => (
-                  <option key={shape} value={shape}>
-                    {shape.charAt(0).toUpperCase() + shape.slice(1).replace('_', ' ')}
-                  </option>
-                ))}
-              </select>
+                placeholder="Enter any frame shape"
+              />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Material <span className="text-gray-500 text-xs font-normal">(Multiple Selection)</span>
+                Frame Material
               </label>
-              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 max-h-48 overflow-y-auto">
-                {frameMaterials.length === 0 ? (
-                  <p className="text-sm text-gray-500">No materials available</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {frameMaterials.map((material) => {
-                      const isSelected = formData.frame_material?.includes(material) || false;
-                      const displayName = material.split('_').map(word => 
-                        word.charAt(0).toUpperCase() + word.slice(1)
-                      ).join(' ');
-                      
-                      return (
-                        <label
-                          key={material}
-                          className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-white transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleFrameMaterialChange(material)}
-                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
-                          />
-                          <span className="text-sm text-gray-700 font-medium">{displayName}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-              {formData.frame_material && formData.frame_material.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="text-xs text-gray-600 font-medium">Selected:</span>
-                  {formData.frame_material.map((material) => (
-                    <span
-                      key={material}
-                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200"
-                    >
-                      {material.split('_').map(word => 
-                        word.charAt(0).toUpperCase() + word.slice(1)
-                      ).join(' ')}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <input
+                type="text"
+                name="frame_material"
+                value={Array.isArray(formData.frame_material) ? formData.frame_material.join(', ') : formData.frame_material || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Convert comma-separated string to array, or keep as single value
+                  if (value.includes(',')) {
+                    setFormData({
+                      ...formData,
+                      frame_material: value.split(',').map(m => m.trim()).filter(m => m)
+                    });
+                  } else {
+                    setFormData({
+                      ...formData,
+                      frame_material: value ? [value.trim()] : []
+                    });
+                  }
+                }}
+                className="input-modern"
+                placeholder="Enter frame material(s), comma-separated for multiple"
+              />
             </div>
           </div>
 
@@ -1786,19 +1758,14 @@ const ProductModal = ({ product, onClose }) => {
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Lens Type
             </label>
-            <select
+            <input
+              type="text"
               name="lens_type"
               value={formData.lens_type}
               onChange={handleChange}
               className="input-modern"
-            >
-              <option value="">Select Lens Type</option>
-              {lensTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </option>
-              ))}
-            </select>
+              placeholder="Enter any lens type"
+            />
           </div>
 
           {/* SEO Fields */}

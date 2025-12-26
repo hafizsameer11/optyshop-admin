@@ -20,6 +20,9 @@ const OrderModal = ({ order, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [technicianId, setTechnicianId] = useState('');
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('requested_by_customer');
 
   // Create mode form data
   const [formData, setFormData] = useState({
@@ -172,41 +175,58 @@ const OrderModal = ({ order, onClose }) => {
   };
 
   const handleRefund = async () => {
-    if (!window.confirm('Are you sure you want to refund this order?')) return;
+    setRefundModalOpen(true);
+  };
 
+  const processRefund = async () => {
     const orderId = orderData?.id || order?.id;
     if (!orderId) return;
 
     setLoading(true);
     try {
-      const response = await api.post(API_ROUTES.ORDERS.REFUND(orderId));
-      // Handle response structure: { success, message, data: { order: {...} } }
+      const refundData = {
+        reason: refundReason,
+      };
+      
+      // If amount is provided, it's a partial refund
+      if (refundAmount && parseFloat(refundAmount) > 0) {
+        refundData.amount = parseFloat(refundAmount);
+      }
+      // Otherwise, it's a full refund
+
+      const response = await api.post(API_ROUTES.ORDERS.REFUND(orderId), refundData);
+      // Handle response structure: { success, message, data: { order: {...}, refund: {...}, transaction: {...} } }
       if (response.data?.success) {
         toast.success(response.data.message || 'Refund processed successfully');
       } else {
         toast.success('Refund processed successfully');
       }
+      
       // Update local order data
       const updatedOrder = response.data?.data?.order;
       if (updatedOrder) {
         setOrderData(updatedOrder);
         setStatus(updatedOrder.status);
         
-        // Extract refund information from notes if available
-        const notes = updatedOrder.notes || '';
-        const refundMatch = notes.match(/Refunded:\s*([\d.]+)\s*\(([^)]+)\)/);
-        const refundAmount = refundMatch ? refundMatch[1] : updatedOrder.total;
-        const refundReason = refundMatch ? refundMatch[2] : null;
+        // Get refund amount from response or form
+        const actualRefundAmount = response.data?.data?.refund?.amount || refundAmount || updatedOrder.total;
         
         // Send email notification
         try {
-          await sendOrderRefundEmail(updatedOrder, refundAmount, refundReason);
+          await sendOrderRefundEmail(updatedOrder, actualRefundAmount, refundReason);
         } catch (emailError) {
           console.warn('Failed to send refund email:', emailError);
           // Don't show error to user - email failure shouldn't block the action
         }
       }
-      onClose();
+      
+      // Reset refund form
+      setRefundAmount('');
+      setRefundReason('requested_by_customer');
+      setRefundModalOpen(false);
+      
+      // Refresh order details to show new transaction
+      fetchOrderDetails();
     } catch (error) {
       console.error('Order refund error:', error);
       if (!error.response) {
@@ -1098,6 +1118,84 @@ const OrderModal = ({ order, onClose }) => {
                     Process Refund
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Refund Modal */}
+        {refundModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">Process Refund</h2>
+                  <button
+                    onClick={() => {
+                      setRefundModalOpen(false);
+                      setRefundAmount('');
+                      setRefundReason('requested_by_customer');
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Refund Amount (Leave empty for full refund)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={orderData?.total || orderData?.total_amount || 0}
+                      value={refundAmount}
+                      onChange={(e) => setRefundAmount(e.target.value)}
+                      placeholder={`Max: $${orderData?.total || orderData?.total_amount || '0.00'}`}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {refundAmount ? `Partial refund: $${refundAmount}` : 'Full refund will be processed'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Refund Reason *
+                    </label>
+                    <select
+                      value={refundReason}
+                      onChange={(e) => setRefundReason(e.target.value)}
+                      required
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="requested_by_customer">Requested by Customer</option>
+                      <option value="duplicate">Duplicate</option>
+                      <option value="fraudulent">Fraudulent</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end space-x-3 pt-4 border-t">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRefundModalOpen(false);
+                        setRefundAmount('');
+                        setRefundReason('requested_by_customer');
+                      }}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={processRefund}
+                      disabled={loading}
+                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                    >
+                      {loading ? 'Processing...' : 'Process Refund'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

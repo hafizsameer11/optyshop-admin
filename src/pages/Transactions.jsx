@@ -173,56 +173,90 @@ const Transactions = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Revenue (Net)</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ${stats.totalRevenue?.toFixed(2) || stats.netRevenue?.toFixed(2) || '0.00'}
-                </p>
-                {stats.totalRevenue && stats.totalFees && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Gross: ${(stats.totalRevenue + stats.totalFees).toFixed(2)} | Fees: ${stats.totalFees.toFixed(2)}
+        <div className="space-y-4 mb-6">
+          {/* Main Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Revenue (Net)</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    ${stats.totalRevenue?.toFixed(2) || stats.netRevenue?.toFixed(2) || stats.stats?.totalRevenue?.toFixed(2) || '0.00'}
                   </p>
-                )}
+                  {stats.totalAmount && stats.totalFees && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Gross: ${(stats.totalAmount + stats.totalFees).toFixed(2)} | Fees: ${stats.totalFees.toFixed(2)}
+                    </p>
+                  )}
+                </div>
+                <FiDollarSign className="w-8 h-8 text-green-500" />
               </div>
-              <FiDollarSign className="w-8 h-8 text-green-500" />
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Transactions</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.totalTransactions || stats.stats?.totalTransactions || 0}
+                  </p>
+                </div>
+                <FiTrendingUp className="w-8 h-8 text-blue-500" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Completed</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.completedCount || stats.completedTransactions || stats.stats?.completedTransactions || 0}
+                  </p>
+                </div>
+                <FiTrendingUp className="w-8 h-8 text-green-500" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Failed</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.failedCount || stats.failedTransactions || stats.stats?.failedTransactions || 0}
+                  </p>
+                </div>
+                <FiTrendingDown className="w-8 h-8 text-red-500" />
+              </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.totalTransactions || 0}
-                </p>
+
+          {/* Breakdown by Payment Method */}
+          {(stats.transactionsByMethod || stats.stats?.transactionsByMethod) && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Transactions by Payment Method</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(stats.transactionsByMethod || stats.stats?.transactionsByMethod || []).map((method, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm font-medium text-gray-700 capitalize">{method.method || 'N/A'}</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{method.count || 0}</p>
+                    <p className="text-xs text-gray-500 mt-1">${(method.totalAmount || 0).toFixed(2)}</p>
+                  </div>
+                ))}
               </div>
-              <FiTrendingUp className="w-8 h-8 text-blue-500" />
             </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.completedCount || 0}
-                </p>
+          )}
+
+          {/* Breakdown by Status */}
+          {(stats.transactionsByStatus || stats.stats?.transactionsByStatus) && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Transactions by Status</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {(stats.transactionsByStatus || stats.stats?.transactionsByStatus || []).map((status, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm font-medium text-gray-700 capitalize">{status.status || 'N/A'}</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{status.count || 0}</p>
+                  </div>
+                ))}
               </div>
-              <FiTrendingUp className="w-8 h-8 text-green-500" />
             </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Failed</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.failedCount || 0}
-                </p>
-              </div>
-              <FiTrendingDown className="w-8 h-8 text-red-500" />
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -616,7 +650,20 @@ const Transactions = () => {
                 {selectedTransaction.gateway_transaction_id && (
                   <div>
                     <p className="text-sm text-gray-600">Gateway Transaction ID</p>
-                    <p className="font-semibold">{selectedTransaction.gateway_transaction_id}</p>
+                    <p className="font-semibold font-mono text-sm">{selectedTransaction.gateway_transaction_id}</p>
+                  </div>
+                )}
+                {selectedTransaction.gateway_response?.receipt_url && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Receipt URL</p>
+                    <a
+                      href={selectedTransaction.gateway_response.receipt_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-600 hover:text-primary-800 hover:underline break-all"
+                    >
+                      {selectedTransaction.gateway_response.receipt_url}
+                    </a>
                   </div>
                 )}
                 {selectedTransaction.description && (

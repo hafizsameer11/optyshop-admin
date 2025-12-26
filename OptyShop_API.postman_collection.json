@@ -2542,6 +2542,92 @@
 			]
 		  },
 		  {
+			"name": "Dashboard (Customer)",
+			"item": [
+			  {
+				"name": "Get Dashboard Stats",
+				"request": {
+				  "method": "GET",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{access_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/orders?page=1&limit=100",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "orders"
+					],
+					"query": [
+					  {
+						"key": "page",
+						"value": "1",
+						"description": "Page number for pagination"
+					  },
+					  {
+						"key": "limit",
+						"value": "100",
+						"description": "Number of orders per page (use high limit to get all orders for stats)"
+					  }
+					]
+				  },
+				  "description": "Get user orders for dashboard statistics. The dashboard aggregates:\n- Total orders count\n- Pending/processing orders count\n- Completed/delivered orders count\n\n**Note:** This endpoint is used along with prescriptions and cart endpoints to build the complete dashboard view."
+				}
+			  },
+			  {
+				"name": "Get User Prescriptions (Dashboard)",
+				"request": {
+				  "method": "GET",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{access_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/prescriptions",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "prescriptions"
+					]
+				  },
+				  "description": "Get user prescriptions for dashboard statistics. Returns total prescriptions count for the dashboard."
+				}
+			  },
+			  {
+				"name": "Get Cart (Dashboard)",
+				"request": {
+				  "method": "GET",
+				  "header": [
+					{
+					  "key": "Authorization",
+					  "value": "Bearer {{access_token}}"
+					}
+				  ],
+				  "url": {
+					"raw": "{{base_url}}/api/cart",
+					"host": [
+					  "{{base_url}}"
+					],
+					"path": [
+					  "api",
+					  "cart"
+					]
+				  },
+				  "description": "Get user cart for dashboard statistics. Returns cart items count for the dashboard.\n\n**Dashboard Integration:**\nThe customer dashboard combines data from:\n1. Orders endpoint - for order statistics (total, pending, completed)\n2. Prescriptions endpoint - for total prescriptions count\n3. Cart endpoint - for cart items count\n\nAll three endpoints are called in parallel to build the complete dashboard view."
+				}
+			  }
+			]
+		  },
+		  {
 			"name": "Cart",
 			"item": [
 			  {
@@ -2746,8 +2832,9 @@
 				  ],
 				  "body": {
 					"mode": "raw",
-					"raw": "{\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 1,\n      \"lens_index\": 1.61,\n      \"lens_coatings\": [\"ar\", \"blue_light\"]\n    }\n  ],\n  \"prescription_id\": 1,\n  \"shipping_address\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zip\": \"10001\",\n    \"country\": \"USA\"\n  },\n  \"payment_method\": \"stripe\"\n}"
+					"raw": "{\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 1,\n      \"lens_index\": 1.61,\n      \"lens_coatings\": [\"ar\", \"blue_light\"]\n    }\n  ],\n  \"prescription_id\": 1,\n  \"shipping_address\": {\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"phone\": \"+1 234 567 8900\",\n    \"address\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"zip_code\": \"10001\",\n    \"country\": \"USA\"\n  },\n  \"billing_address\": {\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"phone\": \"+1 234 567 8900\",\n    \"address\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"zip_code\": \"10001\",\n    \"country\": \"USA\"\n  },\n  \"payment_method\": \"stripe\",\n  \"shipping_method_id\": 1,\n  \"coupon_code\": \"SAVE10\"\n}"
 				  },
+				  "description": "Create a new order from cart items. Required fields:\n- `items` or `cart_items`: Array of cart items with product_id, quantity, and optional lens customization\n- `shipping_address`: Full address object with first_name, last_name, email, phone, address, city, zip_code, country\n- `billing_address`: Full address object (can be same as shipping_address)\n- `payment_method`: Payment method (lowercase: 'stripe', 'paypal', 'cod')\n- `shipping_method_id`: ID of selected shipping method (optional but recommended)\n- `prescription_id`: Prescription ID if applicable (optional)\n- `coupon_code`: Coupon code if applicable (optional)\n\nNote: Addresses can be sent as objects (will be JSON stringified) or as JSON strings.",
 				  "url": {
 					"raw": "{{base_url}}/api/orders",
 					"host": [

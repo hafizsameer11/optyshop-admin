@@ -15,6 +15,8 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -22,7 +24,7 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page, statusFilter, paymentStatusFilter, paymentMethodFilter, searchTerm]);
+  }, [page, statusFilter, paymentStatusFilter, paymentMethodFilter, searchTerm, startDate, endDate]);
 
   const fetchOrders = async () => {
     try {
@@ -39,6 +41,12 @@ const Orders = () => {
       }
       if (paymentMethodFilter) {
         params.append('payment_method', paymentMethodFilter);
+      }
+      if (startDate) {
+        params.append('start_date', startDate);
+      }
+      if (endDate) {
+        params.append('end_date', endDate);
       }
       if (searchTerm) {
         params.append('search', searchTerm);
@@ -182,6 +190,24 @@ const Orders = () => {
             <option value="cash">Cash</option>
             <option value="check">Check</option>
           </select>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Start Date</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">End Date</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">

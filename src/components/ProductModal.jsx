@@ -1,10 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiUpload } from 'react-icons/fi';
+import { FiX, FiUpload, FiPlus } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+
+// Helper function to validate hex code format (#RRGGBB)
+const isValidHexCode = (hex) => {
+  if (!hex || typeof hex !== 'string') return false;
+  const hexPattern = /^#([A-Fa-f0-9]{6})$/;
+  return hexPattern.test(hex.trim());
+};
+
+// Helper function to convert color name to hex code (for backward compatibility)
+const getHexFromColorName = (colorName) => {
+  if (!colorName) return null;
+  const colorMap = {
+    'black': '#000000',
+    'white': '#FFFFFF',
+    'brown': '#8B4513',
+    'blue': '#0000FF',
+    'red': '#FF0000',
+    'green': '#008000',
+    'gray': '#808080',
+    'grey': '#808080',
+    'gold': '#FFD700',
+    'silver': '#C0C0C0',
+    'tortoise': '#8B4513',
+    'tortoiseshell': '#8B4513',
+    'navy': '#000080',
+    'burgundy': '#800020',
+    'clear': '#FFFFFF',
+    'transparent': '#FFFFFF',
+  };
+  const normalized = colorName.toLowerCase().trim();
+  return colorMap[normalized] || null;
+};
+
+// Helper function to get color name from hex code (for display)
+const getColorNameFromHex = (hexCode) => {
+  if (!hexCode) return 'Unknown';
+  const hexMap = {
+    '#000000': 'Black',
+    '#FFFFFF': 'White',
+    '#8B4513': 'Brown',
+    '#0000FF': 'Blue',
+    '#FF0000': 'Red',
+    '#008000': 'Green',
+    '#808080': 'Gray',
+    '#FFD700': 'Gold',
+    '#C0C0C0': 'Silver',
+    '#000080': 'Navy',
+    '#800020': 'Burgundy',
+  };
+  const normalized = hexCode.toUpperCase().trim();
+  return hexMap[normalized] || hexCode;
+};
 
 const ProductModal = ({ product, onClose }) => {
   const [formData, setFormData] = useState({
@@ -45,8 +97,9 @@ const ProductModal = ({ product, onClose }) => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [model3DFile, setModel3DFile] = useState(null);
   const [model3DPreview, setModel3DPreview] = useState(null);
-  const [colorImages, setColorImages] = useState({}); // { colorName: [files] }
-  const [colorImagePreviews, setColorImagePreviews] = useState({}); // { colorName: [previews] }
+  const [colorImages, setColorImages] = useState({}); // { hexCode: [files] }
+  const [colorImagePreviews, setColorImagePreviews] = useState({}); // { hexCode: [previews] }
+  const [customHexCodes, setCustomHexCodes] = useState([]); // Array of custom hex codes added by user
 
   useEffect(() => {
     fetchProductOptions();
@@ -113,10 +166,35 @@ const ProductModal = ({ product, onClose }) => {
       setModel3DFile(null);
       
       // Set color images if exists (from product.color_images or similar)
+      // Handle both new hex code format and old color name format
       if (product.color_images && typeof product.color_images === 'object') {
-        setColorImagePreviews(product.color_images);
+        const normalizedColorImages = {};
+        const hexCodes = [];
+        
+        Object.keys(product.color_images).forEach((key) => {
+          // Check if key is a hex code or color name
+          if (isValidHexCode(key)) {
+            // New format: hex code
+            normalizedColorImages[key] = product.color_images[key];
+            hexCodes.push(key);
+          } else {
+            // Old format: color name - convert to hex code
+            const hexCode = getHexFromColorName(key);
+            if (hexCode) {
+              normalizedColorImages[hexCode] = product.color_images[key];
+              hexCodes.push(hexCode);
+            } else {
+              // Keep original if we can't convert
+              normalizedColorImages[key] = product.color_images[key];
+            }
+          }
+        });
+        
+        setColorImagePreviews(normalizedColorImages);
+        setCustomHexCodes(hexCodes);
       } else {
         setColorImagePreviews({});
+        setCustomHexCodes([]);
       }
       setColorImages({});
     } else {
@@ -155,6 +233,7 @@ const ProductModal = ({ product, onClose }) => {
       setModel3DPreview(null);
       setColorImages({});
       setColorImagePreviews({});
+      setCustomHexCodes([]);
     }
   }, [product]);
 
@@ -489,9 +568,16 @@ const ProductModal = ({ product, onClose }) => {
     toast.success('3D model removed');
   };
 
-  const handleColorImageChange = (colorName, e) => {
+  const handleColorImageChange = (hexCode, e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+
+    // Validate hex code
+    if (!isValidHexCode(hexCode)) {
+      toast.error(`Invalid hex code: ${hexCode}. Must be in format #RRGGBB`);
+      e.target.value = '';
+      return;
+    }
 
     const validFiles = files.filter(file => {
       if (!file.type.startsWith('image/')) {
@@ -505,12 +591,15 @@ const ProductModal = ({ product, onClose }) => {
       return true;
     });
 
-    if (validFiles.length === 0) return;
+    if (validFiles.length === 0) {
+      e.target.value = '';
+      return;
+    }
 
-    // Add to existing files for this color
-    const existingFiles = colorImages[colorName] || [];
+    // Add to existing files for this hex code
+    const existingFiles = colorImages[hexCode] || [];
     const newFiles = [...existingFiles, ...validFiles];
-    setColorImages({ ...colorImages, [colorName]: newFiles });
+    setColorImages({ ...colorImages, [hexCode]: newFiles });
 
     // Create previews
     const previewPromises = validFiles.map((file) => {
@@ -524,41 +613,73 @@ const ProductModal = ({ product, onClose }) => {
 
     Promise.all(previewPromises).then((previews) => {
       const validPreviews = previews.filter(Boolean);
-      const existingPreviews = colorImagePreviews[colorName] || [];
+      const existingPreviews = colorImagePreviews[hexCode] || [];
       const newPreviews = [...existingPreviews, ...validPreviews];
-      setColorImagePreviews({ ...colorImagePreviews, [colorName]: newPreviews });
-      toast.success(`${validFiles.length} image(s) added for ${colorName} color`);
+      setColorImagePreviews({ ...colorImagePreviews, [hexCode]: newPreviews });
+      const colorName = getColorNameFromHex(hexCode);
+      toast.success(`${validFiles.length} image(s) added for ${colorName} (${hexCode})`);
     });
 
     e.target.value = '';
   };
 
-  const removeColorImage = (colorName, index) => {
+  const removeColorImage = (hexCode, index) => {
     const newFiles = { ...colorImages };
     const newPreviews = { ...colorImagePreviews };
     
-    if (newFiles[colorName]) {
-      newFiles[colorName].splice(index, 1);
-      if (newFiles[colorName].length === 0) {
-        delete newFiles[colorName];
+    if (newFiles[hexCode]) {
+      newFiles[hexCode].splice(index, 1);
+      if (newFiles[hexCode].length === 0) {
+        delete newFiles[hexCode];
       }
     }
     
-    if (newPreviews[colorName]) {
+    if (newPreviews[hexCode]) {
       // Revoke blob URL if it's a blob
-      const preview = newPreviews[colorName][index];
+      const preview = newPreviews[hexCode][index];
       if (preview && preview.startsWith('blob:')) {
         URL.revokeObjectURL(preview);
       }
-      newPreviews[colorName].splice(index, 1);
-      if (newPreviews[colorName].length === 0) {
-        delete newPreviews[colorName];
+      newPreviews[hexCode].splice(index, 1);
+      if (newPreviews[hexCode].length === 0) {
+        delete newPreviews[hexCode];
       }
     }
     
     setColorImages(newFiles);
     setColorImagePreviews(newPreviews);
     toast.success('Color image removed');
+  };
+
+  const addCustomHexCode = () => {
+    const hexCode = prompt('Enter hex color code (e.g., #000000):');
+    if (!hexCode) return;
+    
+    const trimmedHex = hexCode.trim().toUpperCase();
+    if (!isValidHexCode(trimmedHex)) {
+      toast.error('Invalid hex code format. Must be #RRGGBB (e.g., #000000)');
+      return;
+    }
+    
+    if (customHexCodes.includes(trimmedHex)) {
+      toast.error('This hex code is already added');
+      return;
+    }
+    
+    setCustomHexCodes([...customHexCodes, trimmedHex]);
+    toast.success(`Added ${getColorNameFromHex(trimmedHex)} (${trimmedHex})`);
+  };
+
+  const removeCustomHexCode = (hexCode) => {
+    setCustomHexCodes(customHexCodes.filter(h => h !== hexCode));
+    // Also remove any images/previews for this hex code
+    const newFiles = { ...colorImages };
+    const newPreviews = { ...colorImagePreviews };
+    delete newFiles[hexCode];
+    delete newPreviews[hexCode];
+    setColorImages(newFiles);
+    setColorImagePreviews(newPreviews);
+    toast.success('Color removed');
   };
 
   const handleSubmit = async (e) => {
@@ -740,13 +861,26 @@ const ProductModal = ({ product, onClose }) => {
             submitData.append('model_3d', model3DFile);
           }
           
-          // Add color-specific images (per Postman collection: color_images_{colorName} fields)
-          Object.keys(colorImages).forEach((colorName) => {
-            const files = colorImages[colorName];
+          // Add color-specific images (per Postman collection: color_images_#RRGGBB format)
+          Object.keys(colorImages).forEach((hexCode) => {
+            const files = colorImages[hexCode];
             if (files && files.length > 0) {
-              files.forEach((file) => {
-                submitData.append(`color_images_${colorName}`, file);
-              });
+              // Validate hex code before sending
+              if (isValidHexCode(hexCode)) {
+                files.forEach((file) => {
+                  submitData.append(`color_images_${hexCode}`, file);
+                });
+              } else {
+                // Backward compatibility: if it's a color name, try to convert
+                const convertedHex = getHexFromColorName(hexCode);
+                if (convertedHex) {
+                  files.forEach((file) => {
+                    submitData.append(`color_images_${convertedHex}`, file);
+                  });
+                } else {
+                  console.warn(`Skipping invalid color identifier: ${hexCode}`);
+                }
+              }
             }
           });
           
@@ -1079,36 +1213,55 @@ const ProductModal = ({ product, onClose }) => {
             </div>
           </div>
 
-          {/* Color-Specific Images - Per Postman Collection */}
+          {/* Color-Specific Images - Hex Code Based */}
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               Color-Specific Images <span className="text-gray-500 text-xs font-normal">(Optional)</span>
             </label>
             <p className="text-xs text-gray-600 mb-4">
-              Upload images for specific color variants (e.g., black, brown, blue). These images will be associated with the color name.
+              Upload images for specific color variants using hex color codes (e.g., #000000 for black, #FFD700 for gold). 
+              Format: <code className="bg-gray-100 px-1 rounded">#RRGGBB</code>
             </p>
             <div className="space-y-4">
-              {/* Common colors */}
-              {['black', 'brown', 'blue', 'red', 'green', 'gray', 'gold', 'silver'].map((colorName) => (
-                <div key={colorName} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                    {colorName} Color Images
-                  </label>
+              {/* Common hex codes */}
+              {[
+                { hex: '#000000', name: 'Black' },
+                { hex: '#8B4513', name: 'Brown' },
+                { hex: '#0000FF', name: 'Blue' },
+                { hex: '#FF0000', name: 'Red' },
+                { hex: '#008000', name: 'Green' },
+                { hex: '#808080', name: 'Gray' },
+                { hex: '#FFD700', name: 'Gold' },
+                { hex: '#C0C0C0', name: 'Silver' },
+              ].map(({ hex, name }) => (
+                <div key={hex} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-8 h-8 rounded border-2 border-gray-300 shadow-sm"
+                        style={{ backgroundColor: hex }}
+                        title={hex}
+                      />
+                      <label className="block text-sm font-medium text-gray-700">
+                        {name} ({hex})
+                      </label>
+                    </div>
+                  </div>
                   
-                  {/* Display existing/preview images for this color */}
-                  {colorImagePreviews[colorName] && colorImagePreviews[colorName].length > 0 && (
+                  {/* Display existing/preview images for this hex code */}
+                  {colorImagePreviews[hex] && colorImagePreviews[hex].length > 0 && (
                     <div className="mb-3">
                       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                        {colorImagePreviews[colorName].map((preview, index) => (
+                        {colorImagePreviews[hex].map((preview, index) => (
                           <div key={index} className="relative group">
                             <img
                               src={preview}
-                              alt={`${colorName} ${index + 1}`}
+                              alt={`${name} ${index + 1}`}
                               className="w-full h-20 object-cover rounded-lg border-2 border-gray-200"
                             />
                             <button
                               type="button"
-                              onClick={() => removeColorImage(colorName, index)}
+                              onClick={() => removeColorImage(hex, index)}
                               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
                             >
                               <FiX className="w-3 h-3" />
@@ -1119,29 +1272,107 @@ const ProductModal = ({ product, onClose }) => {
                     </div>
                   )}
                   
-                  {/* Upload button for this color */}
+                  {/* Upload button for this hex code */}
                   <label
-                    htmlFor={`color-image-${colorName}`}
+                    htmlFor={`color-image-${hex}`}
                     className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all text-sm text-gray-700"
                   >
                     <FiUpload className="w-4 h-4 mr-2" />
-                    Add {colorName} images
+                    Add {name} images
                   </label>
                   <input
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handleColorImageChange(colorName, e)}
+                    onChange={(e) => handleColorImageChange(hex, e)}
                     className="hidden"
-                    id={`color-image-${colorName}`}
+                    id={`color-image-${hex}`}
                   />
                 </div>
               ))}
               
-              {/* Custom color input */}
+              {/* Custom hex codes added by user */}
+              {customHexCodes.map((hexCode) => {
+                const colorName = getColorNameFromHex(hexCode);
+                return (
+                  <div key={hexCode} className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-8 h-8 rounded border-2 border-gray-300 shadow-sm"
+                          style={{ backgroundColor: hexCode }}
+                          title={hexCode}
+                        />
+                        <label className="block text-sm font-medium text-gray-700">
+                          {colorName} ({hexCode})
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeCustomHexCode(hexCode)}
+                        className="text-red-600 hover:text-red-800 p-1"
+                        title="Remove color"
+                      >
+                        <FiX className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    {/* Display existing/preview images for this hex code */}
+                    {colorImagePreviews[hexCode] && colorImagePreviews[hexCode].length > 0 && (
+                      <div className="mb-3">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                          {colorImagePreviews[hexCode].map((preview, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={preview}
+                                alt={`${colorName} ${index + 1}`}
+                                className="w-full h-20 object-cover rounded-lg border-2 border-gray-200"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeColorImage(hexCode, index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
+                              >
+                                <FiX className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Upload button for this hex code */}
+                    <label
+                      htmlFor={`color-image-${hexCode}`}
+                      className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-indigo-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-100/50 transition-all text-sm text-gray-700"
+                    >
+                      <FiUpload className="w-4 h-4 mr-2" />
+                      Add {colorName} images
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleColorImageChange(hexCode, e)}
+                      className="hidden"
+                      id={`color-image-${hexCode}`}
+                    />
+                  </div>
+                );
+              })}
+              
+              {/* Add custom hex code button */}
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <p className="text-xs text-blue-700 mb-2">
-                  💡 Tip: For custom colors, use the field name format: <code className="bg-white px-1 rounded">color_images_{'{colorName}'}</code>
+                <button
+                  type="button"
+                  onClick={addCustomHexCode}
+                  className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-100/50 transition-all text-sm text-blue-700 font-medium"
+                >
+                  <FiPlus className="w-4 h-4 mr-2" />
+                  Add Custom Hex Color
+                </button>
+                <p className="text-xs text-blue-600 mt-2 text-center">
+                  💡 Enter a hex color code (e.g., #FF5733) to add custom color variants. Format: <code className="bg-white px-1 rounded">#RRGGBB</code>
                 </p>
               </div>
             </div>

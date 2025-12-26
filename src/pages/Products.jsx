@@ -7,9 +7,20 @@ import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 
-// Helper function to convert color name to hex code
+// Helper function to validate hex code format (#RRGGBB)
+const isValidHexCode = (hex) => {
+  if (!hex || typeof hex !== 'string') return false;
+  const hexPattern = /^#([A-Fa-f0-9]{6})$/;
+  return hexPattern.test(hex.trim());
+};
+
+// Helper function to convert color name to hex code (for backward compatibility)
 const getColorHex = (colorName) => {
   if (!colorName) return null;
+  // Check if it's already a hex code
+  if (isValidHexCode(colorName)) {
+    return colorName.toUpperCase().trim();
+  }
   const colorMap = {
     'black': '#000000',
     'white': '#FFFFFF',
@@ -30,6 +41,26 @@ const getColorHex = (colorName) => {
   };
   const normalized = colorName.toLowerCase().trim();
   return colorMap[normalized] || null;
+};
+
+// Helper function to get color name from hex code (for display)
+const getColorNameFromHex = (hexCode) => {
+  if (!hexCode) return 'Unknown';
+  const hexMap = {
+    '#000000': 'Black',
+    '#FFFFFF': 'White',
+    '#8B4513': 'Brown',
+    '#0000FF': 'Blue',
+    '#FF0000': 'Red',
+    '#008000': 'Green',
+    '#808080': 'Gray',
+    '#FFD700': 'Gold',
+    '#C0C0C0': 'Silver',
+    '#000080': 'Navy',
+    '#800020': 'Burgundy',
+  };
+  const normalized = hexCode.toUpperCase().trim();
+  return hexMap[normalized] || hexCode;
 };
 
 // Helper function to normalize image URLs
@@ -668,10 +699,35 @@ const Products = () => {
                               title={product.frame_color}
                             />
                           </div>
-                          {/* Show if product has color-specific images */}
+                          {/* Show if product has color-specific images with hex codes */}
                           {product.color_images && typeof product.color_images === 'object' && Object.keys(product.color_images).length > 0 && (
-                            <div className="text-xs text-indigo-600 font-medium">
-                              {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
+                            <div className="flex flex-col gap-1">
+                              <div className="text-xs text-indigo-600 font-medium">
+                                {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {Object.keys(product.color_images).slice(0, 5).map((colorKey) => {
+                                  const hexCode = isValidHexCode(colorKey) ? colorKey : getColorHex(colorKey);
+                                  const colorName = isValidHexCode(colorKey) ? getColorNameFromHex(colorKey) : colorKey;
+                                  if (!hexCode) return null;
+                                  return (
+                                    <div
+                                      key={colorKey}
+                                      className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs"
+                                      title={`${colorName} (${hexCode})`}
+                                    >
+                                      <div 
+                                        className="w-3 h-3 rounded border border-gray-300"
+                                        style={{ backgroundColor: hexCode }}
+                                      />
+                                      <span className="text-gray-600">{hexCode}</span>
+                                    </div>
+                                  );
+                                })}
+                                {Object.keys(product.color_images).length > 5 && (
+                                  <span className="text-xs text-gray-500">+{Object.keys(product.color_images).length - 5} more</span>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -680,8 +736,33 @@ const Products = () => {
                           <span className="text-gray-400">-</span>
                           {/* Show color images even if no frame_color */}
                           {product.color_images && typeof product.color_images === 'object' && Object.keys(product.color_images).length > 0 && (
-                            <div className="text-xs text-indigo-600 font-medium">
-                              {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
+                            <div className="flex flex-col gap-1">
+                              <div className="text-xs text-indigo-600 font-medium">
+                                {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {Object.keys(product.color_images).slice(0, 5).map((colorKey) => {
+                                  const hexCode = isValidHexCode(colorKey) ? colorKey : getColorHex(colorKey);
+                                  const colorName = isValidHexCode(colorKey) ? getColorNameFromHex(colorKey) : colorKey;
+                                  if (!hexCode) return null;
+                                  return (
+                                    <div
+                                      key={colorKey}
+                                      className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs"
+                                      title={`${colorName} (${hexCode})`}
+                                    >
+                                      <div 
+                                        className="w-3 h-3 rounded border border-gray-300"
+                                        style={{ backgroundColor: hexCode }}
+                                      />
+                                      <span className="text-gray-600">{hexCode}</span>
+                                    </div>
+                                  );
+                                })}
+                                {Object.keys(product.color_images).length > 5 && (
+                                  <span className="text-xs text-gray-500">+{Object.keys(product.color_images).length - 5} more</span>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>

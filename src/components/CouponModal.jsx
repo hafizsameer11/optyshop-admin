@@ -23,8 +23,16 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
     is_active: true,
     applicable_to: '',
     conditions: '',
+    product_ids: [], // Array of product IDs
   });
   const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (coupon) {
@@ -34,6 +42,18 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
         const date = new Date(dateString);
         return date.toISOString().split('T')[0];
       };
+
+      // Handle product_ids - could be array or comma-separated string
+      let productIds = [];
+      if (coupon.product_ids) {
+        if (Array.isArray(coupon.product_ids)) {
+          productIds = coupon.product_ids;
+        } else if (typeof coupon.product_ids === 'string') {
+          productIds = coupon.product_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+        }
+      } else if (coupon.products && Array.isArray(coupon.products)) {
+        productIds = coupon.products.map(p => p.id || p.product_id).filter(Boolean);
+      }
 
       setFormData({
         code: coupon.code || '',
@@ -49,6 +69,7 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
         is_active: coupon.is_active !== undefined ? coupon.is_active : true,
         applicable_to: coupon.applicable_to || '',
         conditions: coupon.conditions || '',
+        product_ids: productIds,
       });
     } else {
       // Reset form for new coupon
@@ -66,9 +87,24 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
         is_active: true,
         applicable_to: '',
         conditions: '',
+        product_ids: [],
       });
     }
   }, [coupon]);
+
+  const fetchProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const response = await api.get(`${API_ROUTES.PRODUCTS.LIST}?limit=1000`);
+      const productsData = response.data?.data?.products || response.data?.products || response.data || [];
+      setProducts(Array.isArray(productsData) ? productsData : []);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      setProducts([]);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -129,19 +165,39 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
         setLoading(false);
         return;
       }
+      
+      // Validate discount_value is a valid number
+      const discountValue = parseFloat(formData.discount_value);
+      if (isNaN(discountValue) || discountValue < 0) {
+        toast.error('Discount value must be a valid positive number');
+        setLoading(false);
+        return;
+      }
+      
       if (!formData.starts_at || !formData.ends_at) {
         toast.error('Start and end dates are required');
         setLoading(false);
         return;
       }
+      
+      // Validate date range
+      const startDate = new Date(formData.starts_at);
+      const endDate = new Date(formData.ends_at);
+      if (endDate < startDate) {
+        toast.error('End date must be after start date');
+        setLoading(false);
+        return;
+      }
 
       // Prepare data object - convert empty strings to null for optional fields
+      // Note: Postman collection shows valid_from/valid_until for creation
+      // API returns starts_at/ends_at when fetching, but may expect valid_from/valid_until for creation
       const dataToSend = {
         code: formData.code.trim().toUpperCase(),
         discount_type: formData.discount_type,
-        discount_value: formData.discount_value,
-        starts_at: formData.starts_at,
-        ends_at: formData.ends_at,
+        discount_value: discountValue, // Already validated as number
+        valid_from: formData.starts_at, // Per Postman collection spec
+        valid_until: formData.ends_at, // Per Postman collection spec
         is_active: formData.is_active,
       };
 
@@ -188,6 +244,19 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
         dataToSend.conditions = null;
       }
 
+      // Add product_ids if any products are selected
+      if (formData.product_ids && Array.isArray(formData.product_ids) && formData.product_ids.length > 0) {
+        dataToSend.product_ids = formData.product_ids;
+      } else {
+        dataToSend.product_ids = null;
+      }
+
+      // Log the data being sent for debugging
+      console.log('Sending coupon data:', dataToSend);
+      console.log('API endpoint:', coupon 
+        ? API_ROUTES.ADMIN.COUPONS.UPDATE(coupon.id)
+        : API_ROUTES.ADMIN.COUPONS.CREATE);
+
       let response;
       if (coupon) {
         response = await api.put(API_ROUTES.ADMIN.COUPONS.UPDATE(coupon.id), dataToSend);
@@ -223,6 +292,13 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
       onClose();
     } catch (error) {
       console.error('Coupon save error:', error);
+      console.error('Error response:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        fullError: error
+      });
+      
       if (!error.response) {
         toast.error('Backend unavailable - Cannot save coupon');
       } else if (error.response.status === 401) {
@@ -231,6 +307,17 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
         const errorData = error.response?.data || {};
         const errorMessage = errorData.message || errorData.errors?.[0]?.msg || 'Validation failed';
         toast.error(errorMessage);
+      } else if (error.response.status === 500) {
+        // Enhanced 500 error handling
+        const errorData = error.response?.data || {};
+        const errorMessage = errorData.message || errorData.error || 'Server error occurred';
+        console.error('Server 500 error details:', {
+          message: errorMessage,
+          error: errorData.error,
+          stack: errorData.stack,
+          fullData: errorData
+        });
+        toast.error(`Server error: ${errorMessage}. Check console for details.`);
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to save coupon';
         toast.error(errorMessage);
@@ -419,7 +506,116 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Applicable To
+              Assign to Products
+            </label>
+            <div className="space-y-3">
+              {/* Search input */}
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-modern"
+                placeholder="Search products by name or SKU..."
+              />
+              
+              {/* Product selection list */}
+              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                {productsLoading ? (
+                  <p className="text-sm text-gray-500 text-center py-4">Loading products...</p>
+                ) : products.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-4">No products available</p>
+                ) : (
+                  <div className="space-y-2">
+                    {products
+                      .filter(product => {
+                        if (!searchTerm) return true;
+                        const search = searchTerm.toLowerCase();
+                        return (
+                          product.name?.toLowerCase().includes(search) ||
+                          product.sku?.toLowerCase().includes(search)
+                        );
+                      })
+                      .map((product) => {
+                        const isSelected = formData.product_ids.includes(product.id);
+                        return (
+                          <label
+                            key={product.id}
+                            className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-white transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                if (isSelected) {
+                                  setFormData({
+                                    ...formData,
+                                    product_ids: formData.product_ids.filter(id => id !== product.id)
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    product_ids: [...formData.product_ids, product.id]
+                                  });
+                                }
+                              }}
+                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                            />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium text-gray-700">{product.name}</span>
+                              {product.sku && (
+                                <span className="text-xs text-gray-500 ml-2">(SKU: {product.sku})</span>
+                              )}
+                            </div>
+                            {product.price && (
+                              <span className="text-sm text-gray-600">${parseFloat(product.price).toFixed(2)}</span>
+                            )}
+                          </label>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+              
+              {/* Selected products display */}
+              {formData.product_ids.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-600 font-medium mb-2">
+                    Selected Products ({formData.product_ids.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.product_ids.map((productId) => {
+                      const product = products.find(p => p.id === productId);
+                      if (!product) return null;
+                      return (
+                        <span
+                          key={productId}
+                          className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200"
+                        >
+                          {product.name}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                product_ids: formData.product_ids.filter(id => id !== productId)
+                              });
+                            }}
+                            className="ml-2 text-indigo-600 hover:text-indigo-800"
+                          >
+                            <FiX className="w-3 h-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Applicable To (Additional Notes)
             </label>
             <input
               type="text"
@@ -427,7 +623,7 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
               value={formData.applicable_to}
               onChange={handleChange}
               className="input-modern"
-              placeholder="Optional: e.g., specific products, categories"
+              placeholder="Optional: Additional notes about applicability"
             />
           </div>
 

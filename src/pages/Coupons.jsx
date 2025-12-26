@@ -114,6 +114,9 @@ const Coupons = () => {
                   Valid Period
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Assigned Products
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Usage
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -139,6 +142,30 @@ const Coupons = () => {
                     {coupon.starts_at && coupon.ends_at 
                       ? `${new Date(coupon.starts_at).toLocaleDateString()} - ${new Date(coupon.ends_at).toLocaleDateString()}`
                       : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {coupon.products && Array.isArray(coupon.products) && coupon.products.length > 0 ? (
+                      <div className="space-y-1">
+                        <span className="font-medium text-gray-700">{coupon.products.length} product(s)</span>
+                        <div className="flex flex-wrap gap-1">
+                          {coupon.products.slice(0, 3).map((product) => (
+                            <span
+                              key={product.id || product.product_id}
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-indigo-100 text-indigo-700"
+                            >
+                              {product.name || product.product?.name || `Product #${product.id || product.product_id}`}
+                            </span>
+                          ))}
+                          {coupon.products.length > 3 && (
+                            <span className="text-xs text-gray-500">+{coupon.products.length - 3} more</span>
+                          )}
+                        </div>
+                      </div>
+                    ) : coupon.product_ids && Array.isArray(coupon.product_ids) && coupon.product_ids.length > 0 ? (
+                      <span className="text-gray-600">{coupon.product_ids.length} product(s) assigned</span>
+                    ) : (
+                      <span className="text-gray-400 italic">All products</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {coupon.usage_limit ? `Limit: ${coupon.usage_limit}` : 'Unlimited'}

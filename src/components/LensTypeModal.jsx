@@ -106,7 +106,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10 flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {lensType ? 'Edit Lens Type' : 'Add Lens Type'}
+            {lensType ? t('editLensType') : t('addLensType')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -154,7 +154,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Index <span className="text-red-500">*</span>
+                {t('index')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -170,7 +170,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Price Adjustment <span className="text-red-500">*</span>
+                {t('priceAdjustment')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -187,7 +187,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Thickness Factor
+              {t('thicknessFactor')}
             </label>
             <input
               type="number"

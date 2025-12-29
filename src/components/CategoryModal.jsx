@@ -122,7 +122,7 @@ const CategoryModal = ({ category, onClose }) => {
         {/* Fixed Header */}
         <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex-shrink-0">
           <h2 className="text-2xl font-extrabold text-white">
-            {category ? 'Edit Category' : 'Add Category'}
+            {category ? t('editCategory') : t('addCategory')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" onGradient={true} />
@@ -183,7 +183,7 @@ const CategoryModal = ({ category, onClose }) => {
 
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <label className="block text-sm font-bold text-gray-800 mb-2">
-                Sort Order
+                {t('sortOrder')}
               </label>
               <input
                 type="number"

@@ -100,7 +100,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10 flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {frameSize ? 'Edit Frame Size' : 'Add Frame Size'}
+            {frameSize ? t('editFrameSize') : t('addFrameSize')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -117,7 +117,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Product ID <span className="text-red-500">*</span>
+              {t('productId')} <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -132,7 +132,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Lens Width (mm) <span className="text-red-500">*</span>
+                {t('lensWidth')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -147,7 +147,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Bridge Width (mm) <span className="text-red-500">*</span>
+                {t('bridgeWidth')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -163,7 +163,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Temple Length (mm) <span className="text-red-500">*</span>
+              {t('templeLength')} <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -179,7 +179,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Width (mm)
+                {t('frameWidth')}
               </label>
               <input
                 type="number"
@@ -193,7 +193,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Height (mm)
+                {t('frameHeight')}
               </label>
               <input
                 type="number"
@@ -208,7 +208,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Size Label <span className="text-red-500">*</span>
+              {t('sizeLabel')} <span className="text-red-500">*</span>
             </label>
             <select
               name="size_label"
@@ -217,11 +217,11 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
               className="input-modern"
               required
             >
-              <option value="">Select size</option>
-              <option value="Small">Small</option>
-              <option value="Medium">Medium</option>
-              <option value="Large">Large</option>
-              <option value="Extra Large">Extra Large</option>
+              <option value="">{t('selectSize')}</option>
+              <option value="Small">{t('small')}</option>
+              <option value="Medium">{t('medium')}</option>
+              <option value="Large">{t('large')}</option>
+              <option value="Extra Large">{t('extraLarge')}</option>
             </select>
           </div>
 

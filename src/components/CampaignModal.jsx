@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import { sendFormSubmissionEmail } from '../utils/emailService';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const CampaignModal = ({ campaign, onClose, onSuccess }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -189,7 +191,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {campaign ? 'Edit Campaign' : 'Add Campaign'}
+            {campaign ? t('editCampaign') : t('addCampaign')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -206,7 +208,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Campaign Name <span className="text-red-500">*</span>
+              {t('campaignName')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -237,7 +239,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Description <span className="text-red-500">*</span>
+              {t('description')} <span className="text-red-500">*</span>
             </label>
             <textarea
               name="description"
@@ -252,7 +254,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Campaign Type
+              {t('campaignType')}
             </label>
             <input
               type="text"
@@ -267,7 +269,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Start Date <span className="text-red-500">*</span>
+                {t('startsAt')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -281,7 +283,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                End Date <span className="text-red-500">*</span>
+                {t('endsAt')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -314,14 +316,14 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

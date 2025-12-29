@@ -5,8 +5,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const BannerModal = ({ banner, onClose }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     title: '',
     image_url: '',
@@ -264,7 +266,7 @@ const BannerModal = ({ banner, onClose }) => {
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {banner ? 'Edit Banner' : 'Add Banner'}
+            {banner ? t('editBanner') : t('addBanner')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -280,7 +282,7 @@ const BannerModal = ({ banner, onClose }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Title *
+              {t('title')} *
             </label>
             <input
               type="text"
@@ -295,7 +297,7 @@ const BannerModal = ({ banner, onClose }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Image * <span className="text-xs font-normal text-gray-500">(Required: 1300x469 pixels)</span>
+              {t('image')} * <span className="text-xs font-normal text-gray-500">({t('imageDimensions')} 1300x469 {t('pixels')})</span>
             </label>
             {imagePreview && (
               <div className="mb-4">
@@ -318,18 +320,18 @@ const BannerModal = ({ banner, onClose }) => {
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             <p className="text-xs text-blue-600 mt-2 font-medium">
-              📐 Image dimensions must be exactly <strong>1300x469 pixels</strong>
+              📐 {t('imageDimensions')} <strong>1300x469 {t('pixels')}</strong>
             </p>
             {banner && !imageFile && (
               <p className="text-xs text-gray-500 mt-1">
-                Leave empty to keep current image
+                {t('leaveEmptyToKeepCurrent')}
               </p>
             )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Link URL (Optional)
+              {t('linkURLOptional')}
             </label>
             <input
               type="url"
@@ -343,7 +345,7 @@ const BannerModal = ({ banner, onClose }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Position (Optional)
+              {t('positionOptional')}
             </label>
             <input
               type="text"

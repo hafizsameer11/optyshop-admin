@@ -100,7 +100,7 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {shippingMethod ? 'Edit Shipping Method' : 'Add Shipping Method'}
+            {shippingMethod ? t('editShippingMethod') : t('addShippingMethod')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -118,7 +118,7 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Name <span className="text-red-500">*</span>
+                {t('shippingMethodName')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -133,7 +133,7 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Slug <span className="text-red-500">*</span>
+                {t('slug')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -150,7 +150,7 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Type <span className="text-red-500">*</span>
+                {t('shippingType')} <span className="text-red-500">*</span>
               </label>
               <select
                 name="type"
@@ -159,17 +159,17 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
                 className="input-modern"
                 required
               >
-                <option value="standard">Standard</option>
-                <option value="express">Express</option>
-                <option value="overnight">Overnight</option>
-                <option value="international">International</option>
-                <option value="free">Free</option>
+                <option value="standard">{t('standard')}</option>
+                <option value="express">{t('express')}</option>
+                <option value="overnight">{t('overnight')}</option>
+                <option value="international">{t('international') || 'International'}</option>
+                <option value="free">{t('free') || 'Free'}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Price <span className="text-red-500">*</span>
+                {t('price')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -186,7 +186,7 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Estimated Days</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('estimatedDays')}</label>
               <input
                 type="number"
                 name="estimated_days"
@@ -198,7 +198,7 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Sort Order</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('sortOrder')}</label>
               <input
                 type="number"
                 name="sort_order"
@@ -211,7 +211,7 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('description')}</label>
             <textarea
               name="description"
               value={formData.description}
@@ -254,14 +254,14 @@ const ShippingMethodModal = ({ shippingMethod, onClose }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

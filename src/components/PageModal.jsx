@@ -4,8 +4,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const PageModal = ({ page, onClose, onSuccess }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -124,7 +126,7 @@ const PageModal = ({ page, onClose, onSuccess }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {page ? 'Edit Page' : 'Add Page'}
+            {page ? t('editPage') : t('addPage')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -141,7 +143,7 @@ const PageModal = ({ page, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Title <span className="text-red-500">*</span>
+              {t('pageTitle')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -187,7 +189,7 @@ const PageModal = ({ page, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Content <span className="text-red-500">*</span>
+              {t('content')} <span className="text-red-500">*</span>
             </label>
             <textarea
               name="content"
@@ -210,7 +212,7 @@ const PageModal = ({ page, onClose, onSuccess }) => {
               className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
             />
             <label htmlFor="is_published" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
-              Publish immediately
+              {t('publishImmediately')}
             </label>
           </div>
 
@@ -220,14 +222,14 @@ const PageModal = ({ page, onClose, onSuccess }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('saving') : t('save')}
             </button>
           </div>
         </form>

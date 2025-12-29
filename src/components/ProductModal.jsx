@@ -5,6 +5,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -59,6 +60,7 @@ const getColorNameFromHex = (hexCode) => {
 };
 
 const ProductModal = ({ product, onClose }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -1084,7 +1086,7 @@ const ProductModal = ({ product, onClose }) => {
         {/* Fixed Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {product ? 'Edit Product' : 'Add Product'}
+            {product ? t('editProduct') : t('addProduct')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -1104,7 +1106,7 @@ const ProductModal = ({ product, onClose }) => {
           {/* Multiple Images Upload - Enhanced Design */}
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Product Images <span className="text-indigo-600 font-bold">(Multiple Selection Supported)</span>
+              {t('productImages')} <span className="text-indigo-600 font-bold">({t('multipleSelectionSupported')})</span>
             </label>
             <div className="space-y-4">
               {/* Display existing/preview images */}
@@ -1112,18 +1114,18 @@ const ProductModal = ({ product, onClose }) => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium text-gray-700">
-                      Selected Images ({imagePreviews.length})
+                      {t('selectedImages')} ({imagePreviews.length})
                     </p>
                     <button
                       type="button"
                       onClick={() => {
                         setImageFiles([]);
                         setImagePreviews([]);
-                        toast.success('All images cleared');
+                        toast.success(t('clearAll'));
                       }}
                       className="text-xs text-red-600 hover:text-red-800 font-medium"
                     >
-                      Clear All
+                      {t('clearAll')}
                     </button>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -1167,13 +1169,13 @@ const ProductModal = ({ product, onClose }) => {
                     <FiUpload className="w-8 h-8 text-indigo-600" />
                   </div>
                   <p className="text-base font-semibold text-gray-700 mb-1">
-                    {imagePreviews.length > 0 ? 'Add More Images' : 'Click to Select Multiple Images'}
+                    {imagePreviews.length > 0 ? t('addMoreImages') : t('clickToSelectMultipleImages')}
                   </p>
                   <p className="text-sm text-gray-600 text-center">
-                    You can select multiple images at once
+                    {t('youCanSelectMultipleImages')}
                   </p>
                   <p className="text-xs text-gray-500 mt-2 text-center">
-                    Supported formats: PNG, JPG, JPEG, WEBP • Max 5MB per image
+                    {t('supportedFormats')}
                   </p>
                   {imagePreviews.length > 0 && (
                     <div className="mt-3 px-4 py-2 bg-indigo-100 rounded-lg">
@@ -1201,7 +1203,7 @@ const ProductModal = ({ product, onClose }) => {
           {/* 3D Model Upload - Per Postman Collection */}
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
-              3D Model <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+              {t('model3D')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
             </label>
             <div className="space-y-4">
               {/* Display existing/preview 3D model */}
@@ -1209,7 +1211,7 @@ const ProductModal = ({ product, onClose }) => {
                 <div className="relative">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium text-gray-700">
-                      3D Model Selected
+                      {t('model3D')} {t('selected')}
                     </p>
                     <button
                       type="button"
@@ -1270,7 +1272,7 @@ const ProductModal = ({ product, onClose }) => {
           {/* Images with Color Codes - Single Upload System */}
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Images with Color Codes <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+              {t('imagesWithColorCodes')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
             </label>
             <p className="text-xs text-gray-600 mb-4">
               Upload images and assign a hex color code to each image. Each image can be associated with a specific color variant.
@@ -1382,7 +1384,7 @@ const ProductModal = ({ product, onClose }) => {
             
             {/* Quick color picker for common colors */}
             <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <p className="text-xs font-medium text-blue-700 mb-2">Quick Color Codes:</p>
+              <p className="text-xs font-medium text-blue-700 mb-2">{t('quickColorCodes')}</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { hex: '#000000', name: 'Black' },
@@ -1421,7 +1423,7 @@ const ProductModal = ({ product, onClose }) => {
           {/* General Images (without color codes) - Optional */}
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
-              General Product Images <span className="text-gray-500 text-xs font-normal">(Optional - No Color Codes)</span>
+              {t('generalProductImages')} <span className="text-gray-500 text-xs font-normal">({t('noColorCodes')})</span>
             </label>
             <p className="text-xs text-gray-600 mb-4">
               Upload general product images that are not associated with specific color variants.
@@ -1474,7 +1476,7 @@ const ProductModal = ({ product, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Product Name <span className="text-red-500">*</span>
+              {t('productName')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -1488,7 +1490,7 @@ const ProductModal = ({ product, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Slug
+              {t('slug')}
             </label>
             <input
               type="text"
@@ -1517,7 +1519,7 @@ const ProductModal = ({ product, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Price <span className="text-red-500">*</span>
+                {t('price')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -1534,7 +1536,7 @@ const ProductModal = ({ product, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Compare at Price
+                {t('compareAtPrice')}
               </label>
               <input
                 type="number"
@@ -1543,13 +1545,13 @@ const ProductModal = ({ product, onClose }) => {
                 onChange={handleChange}
                 step="0.01"
                 className="input-modern"
-                placeholder="Original price"
+                placeholder={t('originalPrice')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Cost Price
+                {t('costPrice')}
               </label>
               <input
                 type="number"
@@ -1558,14 +1560,14 @@ const ProductModal = ({ product, onClose }) => {
                 onChange={handleChange}
                 step="0.01"
                 className="input-modern"
-                placeholder="Wholesale cost"
+                placeholder={t('wholesaleCost')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Short Description
+              {t('shortDescription')}
             </label>
             <input
               type="text"
@@ -1573,13 +1575,13 @@ const ProductModal = ({ product, onClose }) => {
               value={formData.short_description}
               onChange={handleChange}
               className="input-modern"
-              placeholder="Brief product description"
+              placeholder={t('briefProductDescription')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Description
+              {t('description')}
             </label>
             <textarea
               name="description"
@@ -1595,7 +1597,7 @@ const ProductModal = ({ product, onClose }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Category <span className="text-red-500">*</span>
+                  {t('category')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="category_id"
@@ -1604,7 +1606,7 @@ const ProductModal = ({ product, onClose }) => {
                   className="input-modern"
                   required
                 >
-                  <option value="">Select Category</option>
+                  <option value="">{t('selectCategory')}</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
@@ -1615,7 +1617,7 @@ const ProductModal = ({ product, onClose }) => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  SubCategory
+                  {t('subCategories')}
                 </label>
                 <select
                   name="sub_category_id"
@@ -1624,7 +1626,7 @@ const ProductModal = ({ product, onClose }) => {
                   disabled={!formData.category_id}
                   className="input-modern disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  <option value="">{formData.category_id ? 'Select SubCategory' : 'Select Category First'}</option>
+                  <option value="">{formData.category_id ? t('selectCategory').replace('Category', 'SubCategory') : t('selectCategory') + ' First'}</option>
                   {subCategories.map((subCat) => (
                     <option key={subCat.id} value={subCat.id}>
                       {subCat.name}
@@ -1638,7 +1640,7 @@ const ProductModal = ({ product, onClose }) => {
             {formData.sub_category_id && (
               <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Sub-SubCategory <span className="text-gray-500 text-xs font-normal">(Optional - Nested Subcategory)</span>
+                  {t('parentSubCategory')} <span className="text-gray-500 text-xs font-normal">({t('optional')} - {t('nestedSubCategoryNote')})</span>
                 </label>
                 {nestedSubCategories.length > 0 ? (
                   <>
@@ -1648,7 +1650,7 @@ const ProductModal = ({ product, onClose }) => {
                       onChange={handleChange}
                       className="input-modern border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                     >
-                      <option value="">None (Use parent SubCategory)</option>
+                      <option value="">{t('noneTopLevel')}</option>
                       {nestedSubCategories.map((nestedSubCat) => (
                         <option key={nestedSubCat.id} value={nestedSubCat.id}>
                           {nestedSubCat.name}
@@ -1952,7 +1954,7 @@ const ProductModal = ({ product, onClose }) => {
                 onChange={handleChange}
                 className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
               />
-              <span className="ml-2 text-sm font-medium text-gray-700">Featured</span>
+              <span className="ml-2 text-sm font-medium text-gray-700">{t('isFeatured')}</span>
             </label>
           </div>
           </div>
@@ -1964,14 +1966,14 @@ const ProductModal = ({ product, onClose }) => {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save Product'}
+              {loading ? t('saving') : t('save') + ' ' + t('product')}
             </button>
           </div>
         </form>

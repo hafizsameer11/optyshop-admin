@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import { sendPrescriptionVerificationEmail } from '../utils/emailService';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../context/I18nContext';
 
 const PrescriptionModal = ({ prescription, onClose }) => {
+  const { t } = useI18n();
   // Admin can only view and verify/validate prescriptions from customers
   const isViewMode = true; // Always view mode for admin
   const [formData, setFormData] = useState({
@@ -258,7 +260,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            View Prescription #{prescription?.id || 'N/A'}
+            {t('viewPrescription')} #{prescription?.id || t('nA')}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -275,10 +277,10 @@ const PrescriptionModal = ({ prescription, onClose }) => {
         <div className="p-6 space-y-6">
           {/* User Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">User Information</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('customerInformation')}</h3>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                User ID *
+                {t('userId')} *
               </label>
               <input
                 type="number"
@@ -293,7 +295,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
           {/* Prescription Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Prescription Type *
+              {t('prescriptionType')} *
             </label>
             <select
               name="prescription_type"
@@ -302,16 +304,16 @@ const PrescriptionModal = ({ prescription, onClose }) => {
               disabled
               className="w-full px-4 py-2 border rounded-lg bg-gray-50"
             >
-              <option value="single_vision">Single Vision</option>
-              <option value="bifocal">Bifocal</option>
-              <option value="progressive">Progressive</option>
-              <option value="reading">Reading</option>
+              <option value="single_vision">{t('singleVision')}</option>
+              <option value="bifocal">{t('bifocal')}</option>
+              <option value="progressive">{t('progressive')}</option>
+              <option value="reading">{t('reading')}</option>
             </select>
           </div>
 
           {/* Right Eye (OD) */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Right Eye (OD)</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('rightEye')}</h3>
             <div className="grid grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -378,7 +380,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
 
           {/* Left Eye (OS) */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Left Eye (OS)</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('leftEye')}</h3>
             <div className="grid grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -439,11 +441,11 @@ const PrescriptionModal = ({ prescription, onClose }) => {
 
           {/* Pupillary Distance */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Pupillary Distance (PD)</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('pupillaryDistance')}</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Binocular PD *
+                  {t('binocularPD')} *
                 </label>
                 <input
                   type="number"
@@ -456,7 +458,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Near PD
+                  {t('nearPD')}
                 </label>
                 <input
                   type="number"
@@ -471,7 +473,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Monocular OD (Right)
+                  {t('monocularOD')}
                 </label>
                 <input
                   type="number"
@@ -484,7 +486,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Monocular OS (Left)
+                  {t('monocularOS')}
                 </label>
                 <input
                   type="number"
@@ -500,11 +502,11 @@ const PrescriptionModal = ({ prescription, onClose }) => {
 
           {/* Pupillary Height */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Pupillary Height (PH)</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('pupillaryHeight')}</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PH OD (Right)
+                  {t('phOD')}
                 </label>
                 <input
                   type="number"
@@ -517,7 +519,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PH OS (Left)
+                  {t('phOS')}
                 </label>
                 <input
                   type="number"
@@ -533,11 +535,11 @@ const PrescriptionModal = ({ prescription, onClose }) => {
 
           {/* Doctor Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Doctor Information</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('doctorInformation')}</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Doctor Name
+                  {t('doctorName')}
                 </label>
                 <input
                   type="text"
@@ -550,7 +552,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Doctor License
+                  {t('doctorLicense')}
                 </label>
                 <input
                   type="text"
@@ -565,7 +567,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prescription Date
+                  {t('prescriptionDate')}
                 </label>
                 <input
                   type="date"
@@ -577,7 +579,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expiry Date
+                  {t('expiryDate')}
                 </label>
                 <input
                   type="date"
@@ -629,16 +631,16 @@ const PrescriptionModal = ({ prescription, onClose }) => {
 
           <div className="flex items-center pt-2 pb-4">
             <span className="text-sm text-gray-700 mr-4">
-              Status: <span className={`font-semibold ${prescription?.is_verified ? 'text-green-600' : 'text-yellow-600'}`}>
-                {prescription?.is_verified ? 'Verified' : 'Pending Verification'}
+              {t('status')}: <span className={`font-semibold ${prescription?.is_verified ? 'text-green-600' : 'text-yellow-600'}`}>
+                {prescription?.is_verified ? t('verified') : t('pendingVerification')}
               </span>
             </span>
             {prescription?.is_active !== undefined && (
-              <span className="text-sm text-gray-700">
-                Active: <span className={`font-semibold ${prescription?.is_active ? 'text-green-600' : 'text-gray-600'}`}>
-                  {prescription?.is_active ? 'Yes' : 'No'}
-                </span>
+            <span className="text-sm text-gray-700">
+              {t('active')}: <span className={`font-semibold ${prescription?.is_active ? 'text-green-600' : 'text-gray-600'}`}>
+                {prescription?.is_active ? t('yes') : t('no')}
               </span>
+            </span>
             )}
             </div>
 
@@ -652,12 +654,12 @@ const PrescriptionModal = ({ prescription, onClose }) => {
                 {validating ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Validating...</span>
+                    <span>{t('validating')}</span>
                   </>
                 ) : (
                   <>
                     <FiCheckCircle />
-                    <span>Validate Prescription</span>
+                    <span>{t('validatePrescription')}</span>
                 </>
               )}
             </button>
@@ -672,12 +674,12 @@ const PrescriptionModal = ({ prescription, onClose }) => {
                   {verifying ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Verifying...</span>
+                      <span>{t('verifying')}</span>
                     </>
                   ) : (
                     <>
                       <FiCheckCircle />
-                      <span>Verify Prescription</span>
+                      <span>{t('verifyPrescription')}</span>
                     </>
                   )}
                 </button>
@@ -687,7 +689,7 @@ const PrescriptionModal = ({ prescription, onClose }) => {
                 onClick={onClose}
                 className="px-6 py-2 border rounded-lg hover:bg-gray-50"
               >
-                Close
+                {t('close')}
               </button>
             </div>
           </div>

@@ -30,7 +30,10 @@ const PrescriptionFormDropdownValues = () => {
         url += `?${params.toString()}`;
       }
 
-      console.log('Fetching prescription form dropdown values from:', url);
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://optyshop-frontend.hmstech.org/api';
+      const fullUrl = `${baseURL}${url}`;
+      console.log('Fetching prescription form dropdown values from:', fullUrl);
+      console.log('API Route:', url);
       const response = await api.get(url);
       console.log('Prescription form dropdown values API Response:', response.data);
       
@@ -79,11 +82,21 @@ const PrescriptionFormDropdownValues = () => {
       } else if (error.response.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else if (error.response.status === 404) {
+        const requestedUrl = error.config?.url || url;
+        const fullUrl = error.config?.baseURL ? `${error.config.baseURL}${requestedUrl}` : requestedUrl;
         toast.error(
-          'Endpoint not found (404). The Prescription Forms API endpoint may not be implemented on the backend yet. ' +
-          'Please ensure the backend route /api/prescription-forms/admin/dropdown-values is available.',
-          { duration: 6000 }
+          `Endpoint not found (404). The Prescription Forms API endpoint may not be implemented on the backend yet.\n\n` +
+          `Requested URL: ${fullUrl}\n` +
+          `Expected route: /api/prescription-forms/admin/dropdown-values\n\n` +
+          `Please ensure the backend implements this route according to the Postman collection.`,
+          { duration: 8000 }
         );
+        console.error('404 Error Details:', {
+          requestedUrl,
+          fullUrl,
+          expectedRoute: '/api/prescription-forms/admin/dropdown-values',
+          errorResponse: error.response?.data
+        });
       } else if (error.response.status === 403) {
         toast.error('Access denied. You may not have permission to access this resource.');
       } else {

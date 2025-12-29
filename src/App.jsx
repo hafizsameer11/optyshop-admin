@@ -55,6 +55,9 @@ import SphericalConfigurations from './pages/contact-lens-forms/SphericalConfigu
 import AstigmatismConfigurations from './pages/contact-lens-forms/AstigmatismConfigurations';
 import AstigmatismDropdownValues from './pages/contact-lens-forms/AstigmatismDropdownValues';
 
+// Prescription Forms Module
+import PrescriptionFormDropdownValues from './pages/prescription-forms/PrescriptionFormDropdownValues';
+
 // Layout
 import Layout from './components/Layout';
 
@@ -100,6 +103,9 @@ function App() {
                       <Route path="/contact-lens-forms/spherical" element={<SphericalConfigurations />} />
                       <Route path="/contact-lens-forms/astigmatism" element={<AstigmatismConfigurations />} />
                       <Route path="/contact-lens-forms/dropdown-values" element={<AstigmatismDropdownValues />} />
+
+                      {/* Prescription Forms Module */}
+                      <Route path="/prescription-forms/dropdown-values" element={<PrescriptionFormDropdownValues />} />
 
                       <Route path="/products" element={<Products />} />
                       <Route path="/orders" element={<Orders />} />

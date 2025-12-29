@@ -210,6 +210,7 @@ const translations = {
     sphericalConfigurations: 'Spherical Configurations',
     astigmatismConfigurations: 'Astigmatism Configurations',
     astigmatismDropdownValues: 'Astigmatism Dropdown Values',
+    prescriptionFormDropdownValues: 'Prescription Form Dropdown Values',
   },
   ar: {
     // Common

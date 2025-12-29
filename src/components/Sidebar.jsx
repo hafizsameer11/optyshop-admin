@@ -130,6 +130,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { path: '/prescriptions', icon: FiFileText, label: t('prescriptions') },
         { path: '/prescription-lens-types', icon: FiEye, label: t('prescriptionLensTypes') },
         { path: '/prescription-lens-variants', icon: FiLayers, label: t('lensVariants') },
+        { path: '/prescription-forms/dropdown-values', icon: FiSettings, label: t('prescriptionFormDropdownValues') || 'Prescription Form Dropdown Values' },
       ]
     },
     {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiX, FiPlus, FiTrash2, FiCopy } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -26,6 +26,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
     });
     const [loading, setLoading] = useState(false);
     const [subCategories, setSubCategories] = useState([]);
+    const [useBackendCopy, setUseBackendCopy] = useState(false);
 
     useEffect(() => {
         fetchSubCategories();
@@ -52,6 +53,9 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 left_cylinder: Array.isArray(config.left_cylinder) ? config.left_cylinder.map(String) : [],
                 left_axis: Array.isArray(config.left_axis) ? config.left_axis.map(String) : [],
             });
+            setUseBackendCopy(false); // Reset when editing existing config
+        } else {
+            setUseBackendCopy(false); // Reset when creating new config
         }
     }, [config]);
 
@@ -101,6 +105,22 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
         setFormData({ ...formData, [field]: newArray });
     };
 
+    const copyRightToLeft = () => {
+        // Copy on frontend for immediate visual feedback
+        setFormData({
+            ...formData,
+            left_qty: [...formData.right_qty],
+            left_base_curve: [...formData.right_base_curve],
+            left_diameter: [...formData.right_diameter],
+            left_power: [...formData.right_power],
+            left_cylinder: [...formData.right_cylinder],
+            left_axis: [...formData.right_axis],
+        });
+        // Enable backend copy flag for API submission
+        setUseBackendCopy(true);
+        toast.success('Right Eye values copied to Left Eye');
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -123,6 +143,11 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 left_axis: formData.left_axis.filter(v => v !== ''),
             };
 
+            // Add backend copy flag if user clicked copy button
+            if (useBackendCopy) {
+                submitData.copy_right_to_left = true;
+            }
+
             let response;
             if (config) {
                 response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.UPDATE(config.id), submitData);
@@ -139,6 +164,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                     toast.success('Astigmatism configuration created successfully');
                 }
             }
+            setUseBackendCopy(false); // Reset flag after submission
             onClose();
         } catch (error) {
             console.error('Save error:', error);
@@ -293,7 +319,17 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                     </div>
 
                     <div className="border-t pt-4">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Right Eye Parameters</h3>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-gray-900">Right Eye Parameters</h3>
+                            <button
+                                type="button"
+                                onClick={copyRightToLeft}
+                                className="px-4 py-2 bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-lg hover:from-primary-600 hover:to-purple-700 transition-all duration-200 text-sm font-semibold flex items-center gap-2 shadow-md hover:shadow-lg"
+                            >
+                                <FiCopy className="w-4 h-4" />
+                                Copy Right Eye to Left Eye
+                            </button>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {renderArrayField('right_qty', 'Right Qty', 'e.g. 1')}
                             {renderArrayField('right_base_curve', 'Right Base Curve (B.C)', 'e.g. 8.60')}

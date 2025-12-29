@@ -312,6 +312,23 @@ export const API_ROUTES = {
   },
 
   // ============================================
+  // PRESCRIPTION FORMS (PUBLIC - website routes)
+  // ============================================
+  // Public endpoints for prescription form configuration and submission
+  PRESCRIPTION_FORMS: {
+    // Get dropdown values (public - active only)
+    DROPDOWN_VALUES: `/prescription-forms/dropdown-values`,
+
+    // Get form structures (public)
+    PROGRESSIVE: `/prescription-forms/progressive`,
+    NEAR_VISION: `/prescription-forms/near_vision`,
+    DISTANCE_VISION: `/prescription-forms/distance_vision`,
+
+    // Submit prescription form (public - supports copy_left_to_right)
+    SUBMIT: `/prescription-forms/submit`,
+  },
+
+  // ============================================
   // FORMS (PUBLIC - all routes)
   // ============================================
   // Form configs and submissions are PUBLIC (no auth required)
@@ -698,6 +715,16 @@ export const API_ROUTES = {
           UPDATE: (id) => `/contact-lens-forms/admin/astigmatism/dropdown-values/${id}`,
           DELETE: (id) => `/contact-lens-forms/admin/astigmatism/dropdown-values/${id}`,
         },
+      },
+    },
+
+    // Prescription Forms Management
+    PRESCRIPTION_FORMS: {
+      DROPDOWN_VALUES: {
+        LIST: `/prescription-forms/admin/dropdown-values`,
+        CREATE: `/prescription-forms/admin/dropdown-values`,
+        UPDATE: (id) => `/prescription-forms/admin/dropdown-values/${id}`,
+        DELETE: (id) => `/prescription-forms/admin/dropdown-values/${id}`,
       },
     },
   },

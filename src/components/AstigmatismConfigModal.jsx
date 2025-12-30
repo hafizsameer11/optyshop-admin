@@ -61,7 +61,8 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
 
     const fetchSubCategories = async () => {
         try {
-            const response = await api.get(`${API_ROUTES.ADMIN.SUBCATEGORIES.LIST}?page=1&limit=1000`);
+            // Fetch only sub-subcategories (nested subcategories)
+            const response = await api.get(`${API_ROUTES.ADMIN.SUBCATEGORIES.NESTED}?page=1&limit=1000`);
             let subCategoriesData = [];
 
             if (response.data) {
@@ -71,15 +72,106 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                         subCategoriesData = dataObj;
                     } else if (dataObj.subcategories && Array.isArray(dataObj.subcategories)) {
                         subCategoriesData = dataObj.subcategories;
+                    } else if (dataObj.nestedSubcategories && Array.isArray(dataObj.nestedSubcategories)) {
+                        subCategoriesData = dataObj.nestedSubcategories;
                     }
                 } else if (Array.isArray(response.data)) {
                     subCategoriesData = response.data;
                 }
             }
 
-            setSubCategories(subCategoriesData);
+            // Filter to only include sub-subcategories (those with parent_id)
+            // Also ensure we have parent information for display
+            const subSubCategories = subCategoriesData.filter(subCat => {
+                const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
+                                subCat.parentId || 
+                                subCat.parent_subcategory_id || 
+                                subCat.parentSubcategoryId;
+                return parentId !== null && parentId !== undefined && parentId !== '';
+            });
+
+            // Create a map of parent IDs to names for quick lookup
+            const parentMap = {};
+            subSubCategories.forEach(subCat => {
+                const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
+                                subCat.parentId || 
+                                subCat.parent_subcategory_id || 
+                                subCat.parentSubcategoryId;
+                if (parentId && subCat.parent?.name) {
+                    parentMap[parentId] = subCat.parent.name;
+                }
+            });
+
+            // If we don't have parent info in the response, fetch parent subcategories
+            if (Object.keys(parentMap).length === 0 && subSubCategories.length > 0) {
+                try {
+                    const parentIds = [...new Set(subSubCategories.map(subCat => {
+                        return subCat.parent_id !== undefined ? subCat.parent_id : 
+                               subCat.parentId || 
+                               subCat.parent_subcategory_id || 
+                               subCat.parentSubcategoryId;
+                    }).filter(id => id))];
+                    
+                    // Fetch parent subcategories
+                    const parentResponse = await api.get(`${API_ROUTES.ADMIN.SUBCATEGORIES.TOP_LEVEL}?page=1&limit=1000`);
+                    let parentData = [];
+                    if (parentResponse.data?.data) {
+                        const dataObj = parentResponse.data.data;
+                        if (Array.isArray(dataObj)) {
+                            parentData = dataObj;
+                        } else if (dataObj.subcategories && Array.isArray(dataObj.subcategories)) {
+                            parentData = dataObj.subcategories;
+                        } else if (dataObj.topLevelSubcategories && Array.isArray(dataObj.topLevelSubcategories)) {
+                            parentData = dataObj.topLevelSubcategories;
+                        }
+                    }
+                    
+                    parentData.forEach(parent => {
+                        if (parentIds.includes(parent.id)) {
+                            parentMap[parent.id] = parent.name;
+                        }
+                    });
+                } catch (parentError) {
+                    console.warn('Could not fetch parent subcategories:', parentError);
+                }
+            }
+
+            // Store parent map in state for use in dropdown
+            setSubCategories(subSubCategories.map(subCat => ({
+                ...subCat,
+                _parentName: (() => {
+                    const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
+                                    subCat.parentId || 
+                                    subCat.parent_subcategory_id || 
+                                    subCat.parentSubcategoryId;
+                    return subCat.parent?.name || parentMap[parentId] || null;
+                })()
+            })));
         } catch (error) {
-            console.error('SubCategories fetch error:', error);
+            console.error('Sub SubCategories fetch error:', error);
+            // Fallback: try to fetch all and filter
+            try {
+                const fallbackResponse = await api.get(`${API_ROUTES.ADMIN.SUBCATEGORIES.LIST}?page=1&limit=1000&type=nested`);
+                let fallbackData = [];
+                if (fallbackResponse.data?.data) {
+                    const dataObj = fallbackResponse.data.data;
+                    if (dataObj.nestedSubcategories && Array.isArray(dataObj.nestedSubcategories)) {
+                        fallbackData = dataObj.nestedSubcategories;
+                    } else if (dataObj.subcategories && Array.isArray(dataObj.subcategories)) {
+                        fallbackData = dataObj.subcategories.filter(subCat => {
+                            const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
+                                            subCat.parentId || 
+                                            subCat.parent_subcategory_id || 
+                                            subCat.parentSubcategoryId;
+                            return parentId !== null && parentId !== undefined && parentId !== '';
+                        });
+                    }
+                }
+                setSubCategories(fallbackData);
+            } catch (fallbackError) {
+                console.error('Fallback fetch also failed:', fallbackError);
+                setSubCategories([]);
+            }
         }
     };
 
@@ -271,7 +363,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Sub Category <span className="text-red-500">*</span>
+                                Sub Sub Category <span className="text-red-500">*</span>
                             </label>
                             <select
                                 name="sub_category_id"
@@ -280,12 +372,20 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                                 className="input-modern"
                                 required
                             >
-                                <option value="">Select Sub Category</option>
-                                {subCategories.map((subCat) => (
-                                    <option key={subCat.id} value={subCat.id}>
-                                        {subCat.name}
-                                    </option>
-                                ))}
+                                <option value="">Select Sub Sub Category</option>
+                                {subCategories.map((subCat) => {
+                                    const parentName = subCat._parentName || 
+                                                      subCat.parent?.name || 
+                                                      'Unknown Parent';
+                                    const displayName = parentName && parentName !== 'Unknown Parent' 
+                                        ? `${parentName} > ${subCat.name}` 
+                                        : subCat.name;
+                                    return (
+                                        <option key={subCat.id} value={subCat.id}>
+                                            {displayName}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
 

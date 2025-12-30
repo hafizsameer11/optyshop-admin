@@ -257,7 +257,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Sub Category ID <span className="text-red-500">*</span>
+                Sub Category <span className="text-red-500">*</span>
               </label>
               <select
                 name="sub_category_id"
@@ -269,7 +269,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
                 <option value="">Select Sub Category</option>
                 {subCategories.map((subCat) => (
                   <option key={subCat.id} value={subCat.id}>
-                    {subCat.name} (ID: {subCat.id})
+                    {subCat.name}
                   </option>
                 ))}
               </select>

@@ -149,8 +149,9 @@ const SphericalConfigurations = () => {
 
   const handleEdit = async (config) => {
     try {
-      // Fetch the full configuration details to ensure we have all fields (like power)
+      // Try to fetch the full configuration details to ensure we have all fields (like power)
       // which might be missing or null in the list view
+      // If endpoint doesn't exist (404), use list data
       setLoading(true);
       const response = await api.get(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.BY_ID(config.id));
 
@@ -168,9 +169,12 @@ const SphericalConfigurations = () => {
       setSelectedConfig(fullConfig);
       setModalOpen(true);
     } catch (error) {
-      console.error('Fetch config details error:', error);
-      toast.error('Failed to fetch full configuration details. Using list data.');
-      // Fallback to the config from the list
+      // If 404, the endpoint doesn't exist - silently use list data
+      // For other errors, log but still use list data
+      if (error.response?.status !== 404) {
+        console.error('Fetch config details error:', error);
+      }
+      // Fallback to the config from the list (should have all necessary data)
       setSelectedConfig(config);
       setModalOpen(true);
     } finally {

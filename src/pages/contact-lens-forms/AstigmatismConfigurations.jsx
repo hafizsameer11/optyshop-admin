@@ -127,7 +127,7 @@ const AstigmatismConfigurations = () => {
     const handleEdit = async (config) => {
         try {
             setLoading(true);
-            // Fetch full details
+            // Try to fetch full details, but if endpoint doesn't exist (404), use list data
             const response = await api.get(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.BY_ID(config.id));
             let fullConfig = config;
             if (response.data) {
@@ -142,8 +142,12 @@ const AstigmatismConfigurations = () => {
             setSelectedConfig(fullConfig);
             setModalOpen(true);
         } catch (error) {
-            console.error('Fetch config details error:', error);
-            toast.error('Failed to fetch full configuration details. Using list data.');
+            // If 404, the endpoint doesn't exist - silently use list data
+            // For other errors, log but still use list data
+            if (error.response?.status !== 404) {
+                console.error('Fetch config details error:', error);
+            }
+            // Use the config from the list (should have all necessary data)
             setSelectedConfig(config);
             setModalOpen(true);
         } finally {

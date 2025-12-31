@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import { FiMail, FiLock } from 'react-icons/fi';
 
 const Login = () => {
@@ -8,6 +9,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, user } = useAuth();
+  const { t } = useI18n();
 
   if (user) {
     return <Navigate to="/" />;
@@ -24,14 +26,14 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700">
       <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">OptyShop Admin</h1>
-          <p className="text-gray-600 mt-2">Sign in to access the admin panel</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('optyshopAdmin')}</h1>
+          <p className="text-gray-600 mt-2">{t('signInToAccess')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              {t('email')}
             </label>
             <div className="relative">
               <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -48,7 +50,7 @@ const Login = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
+              {t('password')}
             </label>
             <div className="relative">
               <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -68,14 +70,14 @@ const Login = () => {
             disabled={loading}
             className="w-full bg-primary-500 text-white py-3 rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('signingIn') : t('signIn')}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Demo Credentials:</p>
-          <p>Email: admin@test.com</p>
-          <p>Password: admin123</p>
+          <p>{t('demoCredentials')}</p>
+          <p>{t('email')}: admin@test.com</p>
+          <p>{t('password')}: admin123</p>
         </div>
       </div>
     </div>

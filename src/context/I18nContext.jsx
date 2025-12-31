@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 
 const I18nContext = createContext();
 
@@ -424,6 +424,34 @@ const translations = {
     // Category Modal
     addCategory: 'Add Category',
     editCategory: 'Edit Category',
+    // Header
+    searchPlaceholder: 'Search products, orders, users...',
+    demoMode: 'DEMO MODE',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'Sign in to access the admin panel',
+    signIn: 'Sign In',
+    signingIn: 'Signing in...',
+    demoCredentials: 'Demo Credentials:',
+    // Order Item Fields
+    lensConfiguration: 'Lens Configuration',
+    progressiveVariant: 'Progressive Variant',
+    lensThicknessMaterial: 'Lens Thickness Material',
+    lensThicknessOption: 'Lens Thickness Option',
+    treatments: 'Treatments',
+    photochromicColor: 'Photochromic Color',
+    prescriptionSunColor: 'Prescription Sun Color',
+    prescriptionData: 'Prescription Data',
+    rightEye: 'Right Eye',
+    leftEye: 'Left Eye',
+    pd: 'PD',
+    pdRight: 'PD Right',
+    pdLeft: 'PD Left',
+    height: 'Height',
+    sphere: 'Sphere',
+    cylinder: 'Cylinder',
+    axis: 'Axis',
+    yearOfBirth: 'Year of Birth',
   },
   ar: {
     // Common
@@ -620,6 +648,28 @@ const translations = {
     // Category Modal
     addCategory: 'إضافة فئة',
     editCategory: 'تعديل فئة',
+    // Header
+    searchPlaceholder: 'بحث عن المنتجات والطلبات والمستخدمين...',
+    demoMode: 'وضع العرض التوضيحي',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'قم بتسجيل الدخول للوصول إلى لوحة التحكم',
+    signIn: 'تسجيل الدخول',
+    signingIn: 'جاري تسجيل الدخول...',
+    demoCredentials: 'بيانات الاعتماد التجريبية:',
+    // Order Item Fields
+    lensConfiguration: 'تكوين العدسة',
+    progressiveVariant: 'متغير التدريجي',
+    lensThicknessMaterial: 'مادة سماكة العدسة',
+    lensThicknessOption: 'خيار سماكة العدسة',
+    treatments: 'المعالجات',
+    photochromicColor: 'لون الضوئي',
+    prescriptionSunColor: 'لون وصفة الشمس',
+    prescriptionData: 'بيانات الوصفة',
+    pdRight: 'PD الأيمن',
+    pdLeft: 'PD الأيسر',
+    height: 'الارتفاع',
+    yearOfBirth: 'سنة الميلاد',
   },
   fr: {
     // Common
@@ -816,6 +866,28 @@ const translations = {
     // Category Modal
     addCategory: 'Ajouter une Catégorie',
     editCategory: 'Modifier la Catégorie',
+    // Header
+    searchPlaceholder: 'Rechercher des produits, commandes, utilisateurs...',
+    demoMode: 'MODE DÉMO',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'Connectez-vous pour accéder au panneau d\'administration',
+    signIn: 'Se connecter',
+    signingIn: 'Connexion...',
+    demoCredentials: 'Identifiants de démonstration:',
+    // Order Item Fields
+    lensConfiguration: 'Configuration des Lentilles',
+    progressiveVariant: 'Variante Progressive',
+    lensThicknessMaterial: 'Matériau d\'Épaisseur de Lentille',
+    lensThicknessOption: 'Option d\'Épaisseur de Lentille',
+    treatments: 'Traitements',
+    photochromicColor: 'Couleur Photochromique',
+    prescriptionSunColor: 'Couleur Soleil Prescription',
+    prescriptionData: 'Données de Prescription',
+    pdRight: 'PD Droit',
+    pdLeft: 'PD Gauche',
+    height: 'Hauteur',
+    yearOfBirth: 'Année de Naissance',
   },
   es: {
     // Common
@@ -1012,6 +1084,28 @@ const translations = {
     // Category Modal
     addCategory: 'Agregar Categoría',
     editCategory: 'Editar Categoría',
+    // Header
+    searchPlaceholder: 'Buscar productos, pedidos, usuarios...',
+    demoMode: 'MODO DEMO',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'Inicia sesión para acceder al panel de administración',
+    signIn: 'Iniciar sesión',
+    signingIn: 'Iniciando sesión...',
+    demoCredentials: 'Credenciales de demostración:',
+    // Order Item Fields
+    lensConfiguration: 'Configuración de Lentes',
+    progressiveVariant: 'Variante Progresiva',
+    lensThicknessMaterial: 'Material de Grosor de Lente',
+    lensThicknessOption: 'Opción de Grosor de Lente',
+    treatments: 'Tratamientos',
+    photochromicColor: 'Color Fotocromático',
+    prescriptionSunColor: 'Color Sol Prescripción',
+    prescriptionData: 'Datos de Prescripción',
+    pdRight: 'PD Derecho',
+    pdLeft: 'PD Izquierdo',
+    height: 'Altura',
+    yearOfBirth: 'Año de Nacimiento',
   },
   it: {
     // Common
@@ -1208,6 +1302,28 @@ const translations = {
     // Category Modal
     addCategory: 'Aggiungi Categoria',
     editCategory: 'Modifica Categoria',
+    // Header
+    searchPlaceholder: 'Cerca prodotti, ordini, utenti...',
+    demoMode: 'MODO DEMO',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'Accedi per accedere al pannello di amministrazione',
+    signIn: 'Accedi',
+    signingIn: 'Accesso in corso...',
+    demoCredentials: 'Credenziali demo:',
+    // Order Item Fields
+    lensConfiguration: 'Configurazione Lenti',
+    progressiveVariant: 'Variante Progressiva',
+    lensThicknessMaterial: 'Materiale Spessore Lente',
+    lensThicknessOption: 'Opzione Spessore Lente',
+    treatments: 'Trattamenti',
+    photochromicColor: 'Colore Fotocromico',
+    prescriptionSunColor: 'Colore Sole Prescrizione',
+    prescriptionData: 'Dati Prescrizione',
+    pdRight: 'PD Destro',
+    pdLeft: 'PD Sinistro',
+    height: 'Altezza',
+    yearOfBirth: 'Anno di Nascita',
   },
   de: {
     // Common
@@ -1404,6 +1520,28 @@ const translations = {
     // Category Modal
     addCategory: 'Kategorie Hinzufügen',
     editCategory: 'Kategorie Bearbeiten',
+    // Header
+    searchPlaceholder: 'Produkte, Bestellungen, Benutzer suchen...',
+    demoMode: 'DEMO-MODUS',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'Melden Sie sich an, um auf das Administrationspanel zuzugreifen',
+    signIn: 'Anmelden',
+    signingIn: 'Anmeldung...',
+    demoCredentials: 'Demo-Anmeldedaten:',
+    // Order Item Fields
+    lensConfiguration: 'Linsenkonfiguration',
+    progressiveVariant: 'Progressive Variante',
+    lensThicknessMaterial: 'Linsendickenmaterial',
+    lensThicknessOption: 'Linsendickenoption',
+    treatments: 'Behandlungen',
+    photochromicColor: 'Photochrome Farbe',
+    prescriptionSunColor: 'Verschreibung Sonnenfarbe',
+    prescriptionData: 'Verschreibungsdaten',
+    pdRight: 'PD Rechts',
+    pdLeft: 'PD Links',
+    height: 'Höhe',
+    yearOfBirth: 'Geburtsjahr',
   },
   pt: {
     // Common
@@ -1600,6 +1738,28 @@ const translations = {
     // Category Modal
     addCategory: 'Adicionar Categoria',
     editCategory: 'Editar Categoria',
+    // Header
+    searchPlaceholder: 'Pesquisar produtos, pedidos, usuários...',
+    demoMode: 'MODO DEMO',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'Faça login para acessar o painel de administração',
+    signIn: 'Entrar',
+    signingIn: 'Entrando...',
+    demoCredentials: 'Credenciais de demonstração:',
+    // Order Item Fields
+    lensConfiguration: 'Configuração de Lentes',
+    progressiveVariant: 'Variante Progressiva',
+    lensThicknessMaterial: 'Material de Espessura de Lente',
+    lensThicknessOption: 'Opção de Espessura de Lente',
+    treatments: 'Tratamentos',
+    photochromicColor: 'Cor Fotocromática',
+    prescriptionSunColor: 'Cor Sol Prescrição',
+    prescriptionData: 'Dados de Prescrição',
+    pdRight: 'PD Direito',
+    pdLeft: 'PD Esquerdo',
+    height: 'Altura',
+    yearOfBirth: 'Ano de Nascimento',
   },
   nl: {
     // Common
@@ -1653,6 +1813,28 @@ const translations = {
     // Category Modal
     addCategory: 'Categorie Toevoegen',
     editCategory: 'Categorie Bewerken',
+    // Header
+    searchPlaceholder: 'Zoek producten, bestellingen, gebruikers...',
+    demoMode: 'DEMO MODUS',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'Log in om toegang te krijgen tot het beheerpaneel',
+    signIn: 'Inloggen',
+    signingIn: 'Inloggen...',
+    demoCredentials: 'Demo-inloggegevens:',
+    // Order Item Fields
+    lensConfiguration: 'Lensconfiguratie',
+    progressiveVariant: 'Progressieve Variant',
+    lensThicknessMaterial: 'Lensdikte Materiaal',
+    lensThicknessOption: 'Lensdikte Optie',
+    treatments: 'Behandelingen',
+    photochromicColor: 'Fotochrome Kleur',
+    prescriptionSunColor: 'Recept Zon Kleur',
+    prescriptionData: 'Receptgegevens',
+    pdRight: 'PD Rechts',
+    pdLeft: 'PD Links',
+    height: 'Hoogte',
+    yearOfBirth: 'Geboortejaar',
   },
   ru: {
     // Common
@@ -1706,6 +1888,28 @@ const translations = {
     // Category Modal
     addCategory: 'Добавить Категорию',
     editCategory: 'Редактировать Категорию',
+    // Header
+    searchPlaceholder: 'Поиск товаров, заказов, пользователей...',
+    demoMode: 'ДЕМО РЕЖИМ',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: 'Войдите, чтобы получить доступ к панели администратора',
+    signIn: 'Войти',
+    signingIn: 'Вход...',
+    demoCredentials: 'Демо-учетные данные:',
+    // Order Item Fields
+    lensConfiguration: 'Конфигурация Линз',
+    progressiveVariant: 'Прогрессивный Вариант',
+    lensThicknessMaterial: 'Материал Толщины Линзы',
+    lensThicknessOption: 'Опция Толщины Линзы',
+    treatments: 'Обработки',
+    photochromicColor: 'Фотохромный Цвет',
+    prescriptionSunColor: 'Цвет Рецепта Солнца',
+    prescriptionData: 'Данные Рецепта',
+    pdRight: 'PD Правый',
+    pdLeft: 'PD Левый',
+    height: 'Высота',
+    yearOfBirth: 'Год Рождения',
   },
   zh: {
     // Common
@@ -1759,6 +1963,28 @@ const translations = {
     // Category Modal
     addCategory: '添加类别',
     editCategory: '编辑类别',
+    // Header
+    searchPlaceholder: '搜索产品、订单、用户...',
+    demoMode: '演示模式',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: '登录以访问管理面板',
+    signIn: '登录',
+    signingIn: '正在登录...',
+    demoCredentials: '演示凭据:',
+    // Order Item Fields
+    lensConfiguration: '镜片配置',
+    progressiveVariant: '渐进变体',
+    lensThicknessMaterial: '镜片厚度材料',
+    lensThicknessOption: '镜片厚度选项',
+    treatments: '处理',
+    photochromicColor: '光致变色颜色',
+    prescriptionSunColor: '处方太阳颜色',
+    prescriptionData: '处方数据',
+    pdRight: 'PD右',
+    pdLeft: 'PD左',
+    height: '高度',
+    yearOfBirth: '出生年份',
   },
   ja: {
     // Common
@@ -1812,6 +2038,28 @@ const translations = {
     // Category Modal
     addCategory: 'カテゴリを追加',
     editCategory: 'カテゴリを編集',
+    // Header
+    searchPlaceholder: '製品、注文、ユーザーを検索...',
+    demoMode: 'デモモード',
+    // Login
+    optyshopAdmin: 'OptyShop Admin',
+    signInToAccess: '管理パネルにアクセスするにはログインしてください',
+    signIn: 'ログイン',
+    signingIn: 'ログイン中...',
+    demoCredentials: 'デモ認証情報:',
+    // Order Item Fields
+    lensConfiguration: 'レンズ構成',
+    progressiveVariant: 'プログレッシブバリアント',
+    lensThicknessMaterial: 'レンズ厚み材料',
+    lensThicknessOption: 'レンズ厚みオプション',
+    treatments: '処理',
+    photochromicColor: 'フォトクロミックカラー',
+    prescriptionSunColor: '処方サンカラー',
+    prescriptionData: '処方データ',
+    pdRight: 'PD右',
+    pdLeft: 'PD左',
+    height: '高さ',
+    yearOfBirth: '生年',
   },
 };
 
@@ -1832,20 +2080,20 @@ export const I18nProvider = ({ children }) => {
     }
   }, [language]);
 
-  const t = (key) => {
+  const t = useCallback((key) => {
     return translations[language]?.[key] || key;
-  };
+  }, [language]);
 
-  const changeLanguage = (lang) => {
+  const changeLanguage = useCallback((lang) => {
     setLanguage(lang);
-  };
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     language,
     changeLanguage,
     t,
     translations: translations[language] || translations.en,
-  };
+  }), [language, changeLanguage, t]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 };

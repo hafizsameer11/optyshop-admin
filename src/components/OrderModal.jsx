@@ -29,7 +29,22 @@ const OrderModal = ({ order, onClose }) => {
   // Create mode form data
   const [formData, setFormData] = useState({
     user_id: '',
-    items: [{ product_id: '', quantity: 1, lens_index: '', lens_coatings: [] }],
+    items: [{ 
+      product_id: '', 
+      quantity: 1, 
+      lens_index: '', 
+      lens_coatings: [],
+      prescription_id: null,
+      lens_type: '',
+      prescription_data: null,
+      progressive_variant_id: null,
+      lens_thickness_material_id: null,
+      lens_thickness_option_id: null,
+      treatment_ids: [],
+      photochromic_color_id: null,
+      prescription_sun_color_id: null,
+      unit_price: ''
+    }],
     prescription_id: '',
     shipping_address: {
       street: '',
@@ -380,7 +395,22 @@ const OrderModal = ({ order, onClose }) => {
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { product_id: '', quantity: 1, lens_index: '', lens_coatings: [] }]
+      items: [...formData.items, { 
+        product_id: '', 
+        quantity: 1, 
+        lens_index: '', 
+        lens_coatings: [],
+        prescription_id: null,
+        lens_type: '',
+        prescription_data: null,
+        progressive_variant_id: null,
+        lens_thickness_material_id: null,
+        lens_thickness_option_id: null,
+        treatment_ids: [],
+        photochromic_color_id: null,
+        prescription_sun_color_id: null,
+        unit_price: ''
+      }]
     });
   };
 
@@ -510,6 +540,139 @@ const OrderModal = ({ order, onClose }) => {
                         placeholder="e.g., ar, blue_light"
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('prescriptionId')} ({t('optional')})
+                      </label>
+                      <input
+                        type="number"
+                        value={item.prescription_id || ''}
+                        onChange={(e) => handleItemChange(index, 'prescription_id', e.target.value || null)}
+                        placeholder="Prescription ID"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('lensType')} ({t('optional')})
+                      </label>
+                      <select
+                        value={item.lens_type || ''}
+                        onChange={(e) => handleItemChange(index, 'lens_type', e.target.value || null)}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      >
+                        <option value="">{t('selectLanguage')}...</option>
+                        <option value="single_vision">Single Vision</option>
+                        <option value="progressive">Progressive</option>
+                        <option value="bifocal">Bifocal</option>
+                        <option value="reading">Reading</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('progressiveVariant')} ID ({t('optional')})
+                      </label>
+                      <input
+                        type="number"
+                        value={item.progressive_variant_id || ''}
+                        onChange={(e) => handleItemChange(index, 'progressive_variant_id', e.target.value || null)}
+                        placeholder="Progressive Variant ID"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('lensThicknessMaterial')} ID ({t('optional')})
+                      </label>
+                      <input
+                        type="number"
+                        value={item.lens_thickness_material_id || ''}
+                        onChange={(e) => handleItemChange(index, 'lens_thickness_material_id', e.target.value || null)}
+                        placeholder="Material ID"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('lensThicknessOption')} ID ({t('optional')})
+                      </label>
+                      <input
+                        type="number"
+                        value={item.lens_thickness_option_id || ''}
+                        onChange={(e) => handleItemChange(index, 'lens_thickness_option_id', e.target.value || null)}
+                        placeholder="Option ID"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('treatments')} IDs (comma-separated, {t('optional')})
+                      </label>
+                      <input
+                        type="text"
+                        value={Array.isArray(item.treatment_ids) ? item.treatment_ids.join(', ') : ''}
+                        onChange={(e) => handleItemChange(index, 'treatment_ids', e.target.value.split(',').map(id => id.trim()).filter(id => id).map(id => parseInt(id, 10)).filter(id => !isNaN(id)))}
+                        placeholder="e.g., 1, 2, 3"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('photochromicColor')} ID ({t('optional')})
+                      </label>
+                      <input
+                        type="number"
+                        value={item.photochromic_color_id || ''}
+                        onChange={(e) => handleItemChange(index, 'photochromic_color_id', e.target.value || null)}
+                        placeholder="Photochromic Color ID"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('prescriptionSunColor')} ID ({t('optional')})
+                      </label>
+                      <input
+                        type="number"
+                        value={item.prescription_sun_color_id || ''}
+                        onChange={(e) => handleItemChange(index, 'prescription_sun_color_id', e.target.value || null)}
+                        placeholder="Prescription Sun Color ID"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('unitPrice')} ({t('optional')})
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={item.unit_price || ''}
+                        onChange={(e) => handleItemChange(index, 'unit_price', e.target.value || null)}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        {t('prescriptionData')} (JSON, {t('optional')})
+                      </label>
+                      <textarea
+                        value={item.prescription_data ? JSON.stringify(item.prescription_data, null, 2) : ''}
+                        onChange={(e) => {
+                          try {
+                            const parsed = e.target.value ? JSON.parse(e.target.value) : null;
+                            handleItemChange(index, 'prescription_data', parsed);
+                          } catch (err) {
+                            // Invalid JSON, don't update
+                          }
+                        }}
+                        placeholder='{"pd": 64, "od": {"sph": -2.0, "cyl": -0.5, "axis": 90}, "os": {"sph": -2.0, "cyl": -0.5, "axis": 90}}'
+                        rows="4"
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-xs"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Enter valid JSON or leave empty</p>
                     </div>
                   </div>
                 </div>
@@ -939,6 +1102,93 @@ const OrderModal = ({ order, onClose }) => {
                               {item.lens_coatings && item.lens_coatings.length > 0 && (
                                 <div className="text-xs text-gray-500">
                                   {t('lensCoatings')}: {item.lens_coatings.join(', ')}
+                                </div>
+                              )}
+                              {/* Lens Configuration Details */}
+                              {(item.lens_type || item.prescription_data || item.progressive_variant_id || item.lens_thickness_material_id || item.lens_thickness_option_id || item.treatment_ids || item.photochromic_color_id || item.prescription_sun_color_id) && (
+                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                  <div className="text-xs font-semibold text-gray-700 mb-1">{t('lensConfiguration')}:</div>
+                                  {item.lens_type && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">{t('lensType')}:</span> {item.lens_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    </div>
+                                  )}
+                                  {item.prescription_id && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">{t('prescriptionId')}:</span> {item.prescription_id}
+                                    </div>
+                                  )}
+                                  {item.progressiveVariant && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">{t('progressiveVariant')}:</span> {item.progressiveVariant.name} {item.progressiveVariant.price && `($${item.progressiveVariant.price})`}
+                                    </div>
+                                  )}
+                                  {item.lensThicknessMaterial && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">{t('lensThicknessMaterial')}:</span> {item.lensThicknessMaterial.name}
+                                    </div>
+                                  )}
+                                  {item.lensThicknessOption && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">{t('lensThicknessOption')}:</span> {item.lensThicknessOption.name}
+                                    </div>
+                                  )}
+                                  {item.treatment_ids && Array.isArray(item.treatment_ids) && item.treatment_ids.length > 0 && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">{t('treatments')}:</span> {item.treatment_ids.join(', ')}
+                                    </div>
+                                  )}
+                                  {item.photochromicColor && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">{t('photochromicColor')}:</span> {item.photochromicColor.name}
+                                    </div>
+                                  )}
+                                  {item.prescriptionSunColor && (
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      <span className="font-medium">{t('prescriptionSunColor')}:</span> {item.prescriptionSunColor.name}
+                                    </div>
+                                  )}
+                                  {/* Prescription Data */}
+                                  {item.prescription_data && typeof item.prescription_data === 'object' && (
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <div className="text-xs font-semibold text-gray-700 mb-1">{t('prescriptionData')}:</div>
+                                      {item.prescription_data.pd && (
+                                        <div className="text-xs text-gray-600 mb-1">
+                                          <span className="font-medium">{t('binocularPD')}:</span> {item.prescription_data.pd}mm
+                                        </div>
+                                      )}
+                                      {item.prescription_data.pd_right && (
+                                        <div className="text-xs text-gray-600 mb-1">
+                                          <span className="font-medium">{t('pdRight')}:</span> {item.prescription_data.pd_right}mm
+                                        </div>
+                                      )}
+                                      {item.prescription_data.pd_left && (
+                                        <div className="text-xs text-gray-600 mb-1">
+                                          <span className="font-medium">{t('pdLeft')}:</span> {item.prescription_data.pd_left}mm
+                                        </div>
+                                      )}
+                                      {item.prescription_data.h && (
+                                        <div className="text-xs text-gray-600 mb-1">
+                                          <span className="font-medium">{t('height')}:</span> {item.prescription_data.h}mm
+                                        </div>
+                                      )}
+                                      {item.prescription_data.od && (
+                                        <div className="text-xs text-gray-600 mb-1">
+                                          <span className="font-medium">{t('rightEye')} (OD):</span> {item.prescription_data.od.sph && `Sph: ${item.prescription_data.od.sph}`} {item.prescription_data.od.cyl && `Cyl: ${item.prescription_data.od.cyl}`} {item.prescription_data.od.axis && `Axis: ${item.prescription_data.od.axis}`}
+                                        </div>
+                                      )}
+                                      {item.prescription_data.os && (
+                                        <div className="text-xs text-gray-600 mb-1">
+                                          <span className="font-medium">{t('leftEye')} (OS):</span> {item.prescription_data.os.sph && `Sph: ${item.prescription_data.os.sph}`} {item.prescription_data.os.cyl && `Cyl: ${item.prescription_data.os.cyl}`} {item.prescription_data.os.axis && `Axis: ${item.prescription_data.os.axis}`}
+                                        </div>
+                                      )}
+                                      {item.prescription_data.year_of_birth && (
+                                        <div className="text-xs text-gray-600 mb-1">
+                                          <span className="font-medium">{t('yearOfBirth')}:</span> {item.prescription_data.year_of_birth}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               {/* Contact Lens Details */}

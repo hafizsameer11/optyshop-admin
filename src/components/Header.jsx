@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMenu, FiLogOut, FiBell, FiSearch, FiUser, FiSettings, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const isDemoMode = localStorage.getItem('demo_user') !== null;
@@ -30,7 +32,7 @@ const Header = ({ toggleSidebar }) => {
                 <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Search products, orders, users..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full pl-12 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400"
                 />
               </div>
@@ -46,7 +48,7 @@ const Header = ({ toggleSidebar }) => {
             {isDemoMode && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg">
                 <span className="text-xs font-semibold text-amber-800 dark:text-amber-200">
-                  🔒 DEMO MODE
+                  🔒 {t('demoMode')}
                 </span>
               </div>
             )}
@@ -73,7 +75,7 @@ const Header = ({ toggleSidebar }) => {
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {user?.first_name} {user?.last_name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('administrator')}</p>
                 </div>
                 <FiChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
               </button>
@@ -94,7 +96,7 @@ const Header = ({ toggleSidebar }) => {
                       className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                     >
                       <FiUser className="w-4 h-4" />
-                      Profile Settings
+                      {t('profileSettings')}
                     </button>
                     <button
                       onClick={() => {
@@ -104,7 +106,7 @@ const Header = ({ toggleSidebar }) => {
                       className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                     >
                       <FiSettings className="w-4 h-4" />
-                      Preferences
+                      {t('preferences')}
                     </button>
                     <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                     <button
@@ -115,7 +117,7 @@ const Header = ({ toggleSidebar }) => {
                       className="w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
                     >
                       <FiLogOut className="w-4 h-4" />
-                      Logout
+                      {t('logout')}
                     </button>
                   </div>
                 </>

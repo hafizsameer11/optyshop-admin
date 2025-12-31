@@ -236,8 +236,15 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
 
             setProducts(productsData);
         } catch (error) {
-            console.error('Error fetching products:', error);
-            setProducts([]);
+            // Silently handle 404 - endpoint may not be implemented on backend yet
+            if (error.response?.status === 404) {
+                console.warn('Products endpoint not available yet (404). Product assignment feature will be available once backend is deployed.');
+                setProducts([]);
+            } else {
+                // Log other errors but don't show to user
+                console.error('Error fetching products:', error);
+                setProducts([]);
+            }
         } finally {
             setLoadingProducts(false);
         }

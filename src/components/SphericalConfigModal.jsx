@@ -8,6 +8,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     sub_category_id: '',
+    product_id: '',
     display_name: '',
     price: '',
     is_active: true,
@@ -22,17 +23,27 @@ const SphericalConfigModal = ({ config, onClose }) => {
   });
   const [loading, setLoading] = useState(false);
   const [subCategories, setSubCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const [useBackendCopy, setUseBackendCopy] = useState(false);
 
   useEffect(() => {
     fetchSubCategories();
   }, []);
 
+  // Fetch products when sub_category_id changes and subCategories are loaded
+  useEffect(() => {
+    if (formData.sub_category_id && subCategories.length > 0) {
+      fetchProducts(formData.sub_category_id);
+    }
+  }, [formData.sub_category_id, subCategories.length]);
+
   useEffect(() => {
     if (config) {
       setFormData({
         name: config.name || '',
         sub_category_id: config.sub_category_id || config.subCategoryId || '',
+        product_id: config.product_id || config.productId || config.product?.id || '',
         display_name: config.display_name || config.displayName || '',
         price: config.price !== undefined ? config.price : '',
         is_active: config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true),
@@ -46,6 +57,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
         left_power: Array.isArray(config.left_power) ? config.left_power.map(String) : (Array.isArray(config.leftPower) ? config.leftPower.map(String) : []),
       });
       setUseBackendCopy(false); // Reset when editing existing config
+      // Products will be fetched automatically when sub_category_id is set and subCategories are loaded
     } else {
       setUseBackendCopy(false); // Reset when creating new config
     }
@@ -167,11 +179,75 @@ const SphericalConfigModal = ({ config, onClose }) => {
     }
   };
 
+  const fetchProducts = async (subCategoryId) => {
+    if (!subCategoryId) {
+      setProducts([]);
+      return;
+    }
+
+    try {
+      setLoadingProducts(true);
+      // Find the selected subcategory to get category_id
+      const selectedSubCat = subCategories.find(sc => sc.id === subCategoryId || sc.id === parseInt(subCategoryId));
+      
+      if (!selectedSubCat) {
+        setProducts([]);
+        return;
+      }
+
+      // Get category_id from subcategory
+      const categoryId = selectedSubCat.category_id || selectedSubCat.categoryId || selectedSubCat.category?.id;
+      
+      // Check if this is a sub-subcategory (has parent_id)
+      const parentId = selectedSubCat.parent_id !== undefined ? selectedSubCat.parent_id : 
+                      selectedSubCat.parentId || 
+                      selectedSubCat.parent_subcategory_id || 
+                      selectedSubCat.parentSubcategoryId;
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (categoryId) params.append('category_id', categoryId);
+      if (parentId) {
+        // If it has a parent, it's a sub-subcategory
+        params.append('sub_sub_category_id', subCategoryId);
+      } else {
+        // If no parent, it's a subcategory (may have children)
+        params.append('sub_category_id', subCategoryId);
+      }
+
+      const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.PRODUCTS}?${params.toString()}`);
+      
+      let productsData = [];
+      if (response.data?.data?.products) {
+        productsData = response.data.data.products;
+      } else if (Array.isArray(response.data?.data)) {
+        productsData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        productsData = response.data;
+      }
+
+      setProducts(productsData);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setProducts([]);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     // Keep price as number, but others can be strings if needed (though top level fields are mostly text/number)
     const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (value === '' ? '' : parseFloat(value)) : value;
-    setFormData({ ...formData, [name]: fieldValue });
+    
+    const newFormData = { ...formData, [name]: fieldValue };
+    
+    // If sub_category_id changes, reset product_id (products will be fetched by useEffect)
+    if (name === 'sub_category_id') {
+      newFormData.product_id = ''; // Reset product when category changes
+    }
+    
+    setFormData(newFormData);
   };
 
   const handleArrayChange = (field, index, value) => {
@@ -220,6 +296,13 @@ const SphericalConfigModal = ({ config, onClose }) => {
         left_diameter: formData.left_diameter.filter(v => v !== ''),
         left_power: formData.left_power.filter(v => v !== ''),
       };
+
+      // Include product_id if selected (convert empty string to null for API)
+      if (submitData.product_id === '') {
+        submitData.product_id = null;
+      } else if (submitData.product_id) {
+        submitData.product_id = parseInt(submitData.product_id);
+      }
 
       // Add backend copy flag if user clicked copy button
       if (useBackendCopy) {
@@ -373,6 +456,32 @@ const SphericalConfigModal = ({ config, onClose }) => {
                   );
                 })}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Product (Optional)
+              </label>
+              <select
+                name="product_id"
+                value={formData.product_id}
+                onChange={handleChange}
+                className="input-modern"
+                disabled={loadingProducts || !formData.sub_category_id}
+              >
+                <option value="">No Product Assigned</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name} {product.sku ? `(${product.sku})` : ''} - ${product.price || '0.00'}
+                  </option>
+                ))}
+              </select>
+              {loadingProducts && (
+                <p className="text-xs text-gray-500 mt-1">Loading products...</p>
+              )}
+              {!loadingProducts && formData.sub_category_id && products.length === 0 && (
+                <p className="text-xs text-gray-500 mt-1">No contact lens products available for this category</p>
+              )}
             </div>
 
             <div>

@@ -693,6 +693,8 @@ export const API_ROUTES = {
 
     // Contact Lens Forms Management
     CONTACT_LENS_FORMS: {
+      // Get Contact Lens Products
+      PRODUCTS: `/contact-lens-forms/admin/products`,
       // Spherical Configurations
       SPHERICAL: {
         LIST: `/contact-lens-forms/admin/spherical`,

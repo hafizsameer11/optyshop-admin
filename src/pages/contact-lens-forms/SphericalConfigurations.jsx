@@ -273,6 +273,9 @@ const SphericalConfigurations = () => {
                   Sub Category ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Product
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -286,7 +289,7 @@ const SphericalConfigurations = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {configs.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
                     No spherical configurations found
                   </td>
                 </tr>
@@ -302,6 +305,12 @@ const SphericalConfigurations = () => {
                     : 0;
                   const price = isNaN(priceValue) ? 0 : priceValue;
                   const isActive = config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true);
+                  
+                  // Get product information
+                  const product = config.product || config.productData;
+                  const productName = product?.name || 'N/A';
+                  const productSku = product?.sku;
+                  const productDisplay = product ? `${productName}${productSku ? ` (${productSku})` : ''}` : 'No Product';
 
                   return (
                     <tr key={configId}>
@@ -316,6 +325,11 @@ const SphericalConfigurations = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {subCategoryId}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className={product ? 'text-gray-900' : 'text-gray-400 italic'}>
+                          {productDisplay}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${typeof price === 'number' && !isNaN(price) ? price.toFixed(2) : '0.00'}

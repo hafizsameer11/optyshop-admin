@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiDollarSign, FiXCircle, FiUser } from 'react-icons/fi';
+import { FiX, FiDollarSign, FiXCircle, FiUser, FiPackage } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -871,32 +871,44 @@ const OrderModal = ({ order, onClose }) => {
         ) : (
           <div className="p-6 space-y-6">
             {/* Order Summary */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">{t('customerInformation')}</h3>
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  <p className="text-sm">
-                    <span className="font-medium">{t('userId')}:</span> {orderData?.user_id || t('nA')}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium">{t('email')}:</span> {orderData?.user?.email || t('nA')}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium">{t('phone')}:</span> {orderData?.user?.phone || t('nA')}
-                  </p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                  <FiUser className="mr-2" />
+                  {t('customerInformation')}
+                </h3>
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border border-gray-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">{t('userId')}:</span>
+                    <span className="text-sm text-gray-900 font-mono bg-white px-3 py-1 rounded-md">#{orderData?.user_id || t('nA')}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">{t('email')}:</span>
+                    <span className="text-sm text-gray-900">{orderData?.user?.email || <span className="text-gray-400 italic">{t('nA')}</span>}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">{t('phone')}:</span>
+                    <span className="text-sm text-gray-900">{orderData?.user?.phone || <span className="text-gray-400 italic">{t('nA')}</span>}</span>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">{t('orderDetails')}</h3>
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  <p className="text-sm">
-                    <span className="font-medium">{t('date')}:</span>{' '}
-                    {orderData?.created_at ? new Date(orderData.created_at).toLocaleDateString() : t('nA')}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium">{t('status')}:</span>{' '}
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${orderData?.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('orderDetails')}</h3>
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border border-gray-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">{t('date')}:</span>
+                    <span className="text-sm text-gray-900">
+                      {orderData?.created_at ? new Date(orderData.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      }) : <span className="text-gray-400 italic">{t('nA')}</span>}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">{t('status')}:</span>
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full ${orderData?.status === 'delivered' ? 'bg-green-100 text-green-800' :
                         orderData?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                           orderData?.status === 'refunded' ? 'bg-orange-100 text-orange-800' :
                             orderData?.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
@@ -905,49 +917,53 @@ const OrderModal = ({ order, onClose }) => {
                       }`}>
                       {orderData?.status || t('nA')}
                     </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium">{t('paymentStatus')}:</span>{' '}
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${orderData?.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">{t('paymentStatus')}:</span>
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full ${orderData?.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
                         orderData?.payment_status === 'refunded' ? 'bg-orange-100 text-orange-800' :
                           orderData?.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
                             'bg-yellow-100 text-yellow-800'
                       }`}>
                       {orderData?.payment_status || t('nA')}
                     </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium">{t('paymentMethod')}:</span> {orderData?.payment_method || t('nA')}
-                  </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">{t('paymentMethod')}:</span>
+                    <span className="text-sm text-gray-900 font-medium capitalize">{orderData?.payment_method || <span className="text-gray-400 italic">{t('nA')}</span>}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Pricing Breakdown */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">{t('pricingBreakdown')}</h3>
-              <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>{t('subtotal')}:</span>
-                  <span>${orderData?.subtotal || '0.00'}</span>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                <FiDollarSign className="mr-2" />
+                {t('pricingBreakdown')}
+              </h3>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-lg border border-blue-200 shadow-sm space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-medium text-gray-700">{t('subtotal')}:</span>
+                  <span className="font-semibold text-gray-900">${parseFloat(orderData?.subtotal || 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>{t('tax')}:</span>
-                  <span>${orderData?.tax || '0.00'}</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-medium text-gray-700">{t('tax')}:</span>
+                  <span className="font-semibold text-gray-900">${parseFloat(orderData?.tax || 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>{t('shipping')}:</span>
-                  <span>${orderData?.shipping || '0.00'}</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-medium text-gray-700">{t('shipping')}:</span>
+                  <span className="font-semibold text-gray-900">${parseFloat(orderData?.shipping || 0).toFixed(2)}</span>
                 </div>
                 {orderData?.discount && parseFloat(orderData.discount) > 0 && (
-                  <div className="flex justify-between text-sm text-red-600">
-                    <span>{t('discount')}:</span>
-                    <span>-${orderData.discount}</span>
+                  <div className="flex justify-between items-center text-sm text-red-600">
+                    <span className="font-medium">{t('discount')}:</span>
+                    <span className="font-bold">-${parseFloat(orderData.discount).toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm font-bold border-t pt-2">
-                  <span>{t('total')}:</span>
-                  <span>${orderData?.total || orderData?.total_amount || '0.00'}</span>
+                <div className="flex justify-between items-center text-base font-bold border-t-2 border-blue-300 pt-3 mt-2">
+                  <span className="text-gray-900">{t('total')}:</span>
+                  <span className="text-indigo-700 text-lg">${parseFloat(orderData?.total || orderData?.total_amount || 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -957,52 +973,73 @@ const OrderModal = ({ order, onClose }) => {
               <div className="mt-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Payment Flow Status</h3>
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {/* Step 1: Order Created */}
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-start space-x-3">
                       <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                         orderData?.id ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
                       }`}>
-                        ✓
+                        {orderData?.id ? '✓' : '○'}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">Order Created</p>
-                        <p className="text-xs text-gray-600">
-                          {orderData?.created_at ? new Date(orderData.created_at).toLocaleString() : 'N/A'}
+                        <p className="text-xs text-gray-600 mt-1">
+                          {orderData?.created_at ? new Date(orderData.created_at).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                          }) : 'N/A'}
                         </p>
                       </div>
                     </div>
 
-                    {/* Step 2: Payment Intent */}
-                    <div className="flex items-center space-x-3">
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                        orderData?.payment_status !== 'pending' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                    {/* Step 2: Payment Intent Created */}
+                    <div className="flex items-start space-x-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                        orderData?.payment_id || orderData?.payment_method !== 'pending' 
+                          ? 'bg-green-500 text-white border-green-600' 
+                          : 'bg-gray-200 text-gray-500 border-gray-300'
                       }`}>
-                        {orderData?.payment_status !== 'pending' ? '✓' : '○'}
+                        {orderData?.payment_id || orderData?.payment_method !== 'pending' ? '✓' : '○'}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">Payment Intent Created</p>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-600 mt-1">
                           {orderData?.payment_method === 'stripe' ? 'Stripe Payment Intent' : 
                            orderData?.payment_method === 'paypal' ? 'PayPal Payment' :
-                           orderData?.payment_method === 'cod' ? 'Cash on Delivery' : 'N/A'}
+                           orderData?.payment_method === 'cod' ? 'Cash on Delivery' : 
+                           orderData?.payment_method ? `${orderData.payment_method.charAt(0).toUpperCase() + orderData.payment_method.slice(1)} Payment` : 'N/A'}
                         </p>
+                        {orderData?.payment_id && (
+                          <p className="text-xs text-gray-400 font-mono mt-1">
+                            ID: {orderData.payment_id}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    {/* Step 3: Payment Confirmed */}
-                    <div className="flex items-center space-x-3">
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                        orderData?.payment_status === 'paid' ? 'bg-green-500 text-white' : 
-                        orderData?.payment_status === 'refunded' ? 'bg-orange-500 text-white' :
-                        'bg-gray-300 text-gray-600'
+                    {/* Step 3: Payment Status */}
+                    <div className="flex items-start space-x-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                        orderData?.payment_status === 'paid' 
+                          ? 'bg-green-500 text-white border-green-600' :
+                        orderData?.payment_status === 'refunded'
+                          ? 'bg-orange-500 text-white border-orange-600' :
+                        orderData?.payment_status === 'failed'
+                          ? 'bg-red-500 text-white border-red-600' :
+                          'bg-gray-200 text-gray-500 border-gray-300'
                       }`}>
                         {orderData?.payment_status === 'paid' ? '✓' : 
-                         orderData?.payment_status === 'refunded' ? '↻' : '○'}
+                         orderData?.payment_status === 'refunded' ? '↻' : 
+                         orderData?.payment_status === 'failed' ? '✕' : '○'}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">Payment Status</p>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-600 mt-1">
                           <span className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
                             orderData?.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
                             orderData?.payment_status === 'refunded' ? 'bg-orange-100 text-orange-800' :
@@ -1015,17 +1052,18 @@ const OrderModal = ({ order, onClose }) => {
                       </div>
                     </div>
 
-                    {/* Step 4: Transaction Created */}
-                    <div className="flex items-center space-x-3">
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                    {/* Step 4: Transaction Recorded */}
+                    <div className="flex items-start space-x-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${
                         orderData?.payment_status === 'paid' || orderData?.payment_status === 'refunded' 
-                          ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                          ? 'bg-green-500 text-white border-green-600' 
+                          : 'bg-gray-200 text-gray-500 border-gray-300'
                       }`}>
                         {orderData?.payment_status === 'paid' || orderData?.payment_status === 'refunded' ? '✓' : '○'}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">Transaction Recorded</p>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-600 mt-1">
                           {orderData?.payment_status === 'paid' || orderData?.payment_status === 'refunded' 
                             ? 'Transaction automatically created' : 'Waiting for payment confirmation'}
                         </p>
@@ -1047,144 +1085,230 @@ const OrderModal = ({ order, onClose }) => {
               </div>
             )}
 
-            {/* Shipping Address */}
-            {orderData?.shipping_address && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">{t('shippingAddress')}</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm">
-                    {orderData.shipping_address.street}<br />
-                    {orderData.shipping_address.city}, {orderData.shipping_address.state} {orderData.shipping_address.zip}<br />
-                    {orderData.shipping_address.country}
-                  </p>
-                </div>
-              </div>
-            )}
+            {/* Shipping & Billing Addresses */}
+            {(orderData?.shipping_address || orderData?.billing_address) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Shipping Address */}
+                {orderData?.shipping_address && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('shippingAddress')}</h3>
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-lg border border-green-200 shadow-sm">
+                      <div className="space-y-1 text-sm text-gray-700">
+                        {orderData.shipping_address.street && (
+                          <p className="font-medium">{orderData.shipping_address.street}</p>
+                        )}
+                        <p>
+                          {orderData.shipping_address.city && `${orderData.shipping_address.city}, `}
+                          {orderData.shipping_address.state} {orderData.shipping_address.zip}
+                        </p>
+                        {orderData.shipping_address.country && (
+                          <p className="font-semibold text-gray-900">{orderData.shipping_address.country}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-            {/* Billing Address */}
-            {orderData?.billing_address && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">{t('billingAddress')}</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm">
-                    {orderData.billing_address.street}<br />
-                    {orderData.billing_address.city}, {orderData.billing_address.state} {orderData.billing_address.zip}<br />
-                    {orderData.billing_address.country}
-                  </p>
-                </div>
+                {/* Billing Address */}
+                {orderData?.billing_address && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('billingAddress')}</h3>
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-lg border border-purple-200 shadow-sm">
+                      <div className="space-y-1 text-sm text-gray-700">
+                        {orderData.billing_address.street && (
+                          <p className="font-medium">{orderData.billing_address.street}</p>
+                        )}
+                        <p>
+                          {orderData.billing_address.city && `${orderData.billing_address.city}, `}
+                          {orderData.billing_address.state} {orderData.billing_address.zip}
+                        </p>
+                        {orderData.billing_address.country && (
+                          <p className="font-semibold text-gray-900">{orderData.billing_address.country}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Order Items */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">{t('orderItems')}</h3>
-              <div className="border rounded-lg overflow-hidden">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <FiPackage className="mr-2" />
+                {t('orderItems')} {orderData?.items && `(${orderData.items.length})`}
+              </h3>
+              <div className="border rounded-lg overflow-hidden shadow-sm">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('product')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">SKU</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('quantity')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('unitPrice')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('total')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('product')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SKU</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('quantity')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('unitPrice')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('total')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {orderData?.items && orderData.items.length > 0 ? (
                       orderData.items.map((item, index) => (
-                        <tr key={item.id || index}>
-                          <td className="px-4 py-2 text-sm">
-                            <div>
-                              <div className="font-medium">{item.product_name || item.product?.name || 'Product'}</div>
+                        <tr key={item.id || index} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 text-sm">
+                            <div className="space-y-2">
+                              <div className="font-semibold text-gray-900">{item.product_name || item.product?.name || 'Product'}</div>
                               {item.lens_index && (
-                                <div className="text-xs text-gray-500">{t('lensIndex')}: {item.lens_index}</div>
+                                <div className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
+                                  {t('lensIndex')}: {item.lens_index}
+                                </div>
                               )}
                               {item.lens_coatings && item.lens_coatings.length > 0 && (
-                                <div className="text-xs text-gray-500">
-                                  {t('lensCoatings')}: {item.lens_coatings.join(', ')}
+                                <div className="flex flex-wrap gap-1">
+                                  {item.lens_coatings.map((coating, idx) => (
+                                    <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md bg-purple-50 text-purple-700 text-xs font-medium">
+                                      {coating}
+                                    </span>
+                                  ))}
                                 </div>
                               )}
                               {/* Lens Configuration Details */}
                               {(item.lens_type || item.prescription_data || item.progressive_variant_id || item.lens_thickness_material_id || item.lens_thickness_option_id || item.treatment_ids || item.photochromic_color_id || item.prescription_sun_color_id) && (
-                                <div className="mt-2 pt-2 border-t border-gray-200">
-                                  <div className="text-xs font-semibold text-gray-700 mb-1">{t('lensConfiguration')}:</div>
-                                  {item.lens_type && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">{t('lensType')}:</span> {item.lens_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                    </div>
-                                  )}
-                                  {item.prescription_id && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">{t('prescriptionId')}:</span> {item.prescription_id}
-                                    </div>
-                                  )}
-                                  {item.progressiveVariant && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">{t('progressiveVariant')}:</span> {item.progressiveVariant.name} {item.progressiveVariant.price && `($${item.progressiveVariant.price})`}
-                                    </div>
-                                  )}
-                                  {item.lensThicknessMaterial && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">{t('lensThicknessMaterial')}:</span> {item.lensThicknessMaterial.name}
-                                    </div>
-                                  )}
-                                  {item.lensThicknessOption && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">{t('lensThicknessOption')}:</span> {item.lensThicknessOption.name}
-                                    </div>
-                                  )}
-                                  {item.treatment_ids && Array.isArray(item.treatment_ids) && item.treatment_ids.length > 0 && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">{t('treatments')}:</span> {item.treatment_ids.join(', ')}
-                                    </div>
-                                  )}
-                                  {item.photochromicColor && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">{t('photochromicColor')}:</span> {item.photochromicColor.name}
-                                    </div>
-                                  )}
-                                  {item.prescriptionSunColor && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">{t('prescriptionSunColor')}:</span> {item.prescriptionSunColor.name}
-                                    </div>
-                                  )}
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                  <div className="text-xs font-bold text-gray-800 mb-2 uppercase tracking-wide">{t('lensConfiguration')}</div>
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {item.lens_type && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="font-semibold text-gray-700 w-24">{t('lensType')}:</span>
+                                        <span className="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-medium">
+                                          {item.lens_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {item.prescription_id && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="font-semibold text-gray-700 w-24">{t('prescriptionId')}:</span>
+                                        <span className="text-gray-600">#{item.prescription_id}</span>
+                                      </div>
+                                    )}
+                                    {item.progressiveVariant && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="font-semibold text-gray-700 w-24">{t('progressiveVariant')}:</span>
+                                        <span className="px-2 py-1 rounded bg-green-50 text-green-700 font-medium">
+                                          {item.progressiveVariant.name} {item.progressiveVariant.price && `($${item.progressiveVariant.price})`}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {item.lensThicknessMaterial && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="font-semibold text-gray-700 w-24">{t('lensThicknessMaterial')}:</span>
+                                        <span className="text-gray-600">{item.lensThicknessMaterial.name}</span>
+                                      </div>
+                                    )}
+                                    {item.lensThicknessOption && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="font-semibold text-gray-700 w-24">{t('lensThicknessOption')}:</span>
+                                        <span className="text-gray-600">{item.lensThicknessOption.name}</span>
+                                      </div>
+                                    )}
+                                    {item.treatment_ids && Array.isArray(item.treatment_ids) && item.treatment_ids.length > 0 && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="font-semibold text-gray-700 w-24">{t('treatments')}:</span>
+                                        <div className="flex flex-wrap gap-1">
+                                          {item.treatment_ids.map((treatmentId, idx) => (
+                                            <span key={idx} className="px-2 py-1 rounded bg-yellow-50 text-yellow-700 text-xs font-medium">
+                                              #{treatmentId}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {item.photochromicColor && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="font-semibold text-gray-700 w-24">{t('photochromicColor')}:</span>
+                                        <span className="px-2 py-1 rounded bg-pink-50 text-pink-700 font-medium">
+                                          {item.photochromicColor.name}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {item.prescriptionSunColor && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="font-semibold text-gray-700 w-24">{t('prescriptionSunColor')}:</span>
+                                        <span className="px-2 py-1 rounded bg-orange-50 text-orange-700 font-medium">
+                                          {item.prescriptionSunColor.name}
+                                        </span>
+                                      </div>
+                                    )}
                                   {/* Prescription Data */}
                                   {item.prescription_data && typeof item.prescription_data === 'object' && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200">
-                                      <div className="text-xs font-semibold text-gray-700 mb-1">{t('prescriptionData')}:</div>
-                                      {item.prescription_data.pd && (
-                                        <div className="text-xs text-gray-600 mb-1">
-                                          <span className="font-medium">{t('binocularPD')}:</span> {item.prescription_data.pd}mm
-                                        </div>
-                                      )}
-                                      {item.prescription_data.pd_right && (
-                                        <div className="text-xs text-gray-600 mb-1">
-                                          <span className="font-medium">{t('pdRight')}:</span> {item.prescription_data.pd_right}mm
-                                        </div>
-                                      )}
-                                      {item.prescription_data.pd_left && (
-                                        <div className="text-xs text-gray-600 mb-1">
-                                          <span className="font-medium">{t('pdLeft')}:</span> {item.prescription_data.pd_left}mm
-                                        </div>
-                                      )}
-                                      {item.prescription_data.h && (
-                                        <div className="text-xs text-gray-600 mb-1">
-                                          <span className="font-medium">{t('height')}:</span> {item.prescription_data.h}mm
-                                        </div>
-                                      )}
-                                      {item.prescription_data.od && (
-                                        <div className="text-xs text-gray-600 mb-1">
-                                          <span className="font-medium">{t('rightEye')} (OD):</span> {item.prescription_data.od.sph && `Sph: ${item.prescription_data.od.sph}`} {item.prescription_data.od.cyl && `Cyl: ${item.prescription_data.od.cyl}`} {item.prescription_data.od.axis && `Axis: ${item.prescription_data.od.axis}`}
-                                        </div>
-                                      )}
-                                      {item.prescription_data.os && (
-                                        <div className="text-xs text-gray-600 mb-1">
-                                          <span className="font-medium">{t('leftEye')} (OS):</span> {item.prescription_data.os.sph && `Sph: ${item.prescription_data.os.sph}`} {item.prescription_data.os.cyl && `Cyl: ${item.prescription_data.os.cyl}`} {item.prescription_data.os.axis && `Axis: ${item.prescription_data.os.axis}`}
-                                        </div>
-                                      )}
-                                      {item.prescription_data.year_of_birth && (
-                                        <div className="text-xs text-gray-600 mb-1">
-                                          <span className="font-medium">{t('yearOfBirth')}:</span> {item.prescription_data.year_of_birth}
+                                    <div className="mt-3 pt-3 border-t border-gray-200 bg-gray-50 rounded-md p-2">
+                                      <div className="text-xs font-bold text-gray-800 mb-2 uppercase tracking-wide">{t('prescriptionData')}</div>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {item.prescription_data.pd && (
+                                          <div className="text-xs">
+                                            <span className="font-semibold text-gray-700">{t('binocularPD')}:</span>
+                                            <span className="ml-1 text-gray-600">{item.prescription_data.pd}mm</span>
+                                          </div>
+                                        )}
+                                        {item.prescription_data.pd_right && (
+                                          <div className="text-xs">
+                                            <span className="font-semibold text-gray-700">{t('pdRight')}:</span>
+                                            <span className="ml-1 text-gray-600">{item.prescription_data.pd_right}mm</span>
+                                          </div>
+                                        )}
+                                        {item.prescription_data.pd_left && (
+                                          <div className="text-xs">
+                                            <span className="font-semibold text-gray-700">{t('pdLeft')}:</span>
+                                            <span className="ml-1 text-gray-600">{item.prescription_data.pd_left}mm</span>
+                                          </div>
+                                        )}
+                                        {item.prescription_data.h && (
+                                          <div className="text-xs">
+                                            <span className="font-semibold text-gray-700">{t('height')}:</span>
+                                            <span className="ml-1 text-gray-600">{item.prescription_data.h}mm</span>
+                                          </div>
+                                        )}
+                                        {item.prescription_data.year_of_birth && (
+                                          <div className="text-xs">
+                                            <span className="font-semibold text-gray-700">{t('yearOfBirth')}:</span>
+                                            <span className="ml-1 text-gray-600">{item.prescription_data.year_of_birth}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {(item.prescription_data.od || item.prescription_data.os) && (
+                                        <div className="mt-2 pt-2 border-t border-gray-300">
+                                          <div className="grid grid-cols-2 gap-3">
+                                            {item.prescription_data.od && (
+                                              <div className="bg-white rounded p-2">
+                                                <div className="text-xs font-bold text-gray-800 mb-1">{t('rightEye')} (OD)</div>
+                                                <div className="space-y-1">
+                                                  {item.prescription_data.od.sph && (
+                                                    <div className="text-xs text-gray-600">Sph: <span className="font-medium">{item.prescription_data.od.sph}</span></div>
+                                                  )}
+                                                  {item.prescription_data.od.cyl && (
+                                                    <div className="text-xs text-gray-600">Cyl: <span className="font-medium">{item.prescription_data.od.cyl}</span></div>
+                                                  )}
+                                                  {item.prescription_data.od.axis && (
+                                                    <div className="text-xs text-gray-600">Axis: <span className="font-medium">{item.prescription_data.od.axis}°</span></div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
+                                            {item.prescription_data.os && (
+                                              <div className="bg-white rounded p-2">
+                                                <div className="text-xs font-bold text-gray-800 mb-1">{t('leftEye')} (OS)</div>
+                                                <div className="space-y-1">
+                                                  {item.prescription_data.os.sph && (
+                                                    <div className="text-xs text-gray-600">Sph: <span className="font-medium">{item.prescription_data.os.sph}</span></div>
+                                                  )}
+                                                  {item.prescription_data.os.cyl && (
+                                                    <div className="text-xs text-gray-600">Cyl: <span className="font-medium">{item.prescription_data.os.cyl}</span></div>
+                                                  )}
+                                                  {item.prescription_data.os.axis && (
+                                                    <div className="text-xs text-gray-600">Axis: <span className="font-medium">{item.prescription_data.os.axis}°</span></div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -1193,42 +1317,75 @@ const OrderModal = ({ order, onClose }) => {
                               )}
                               {/* Contact Lens Details */}
                               {item.contact_lens_details && (
-                                <div className="mt-2 pt-2 border-t border-gray-200">
-                                  <div className="text-xs font-semibold text-gray-700 mb-1">Contact Lens Details:</div>
-                                  {item.contact_lens_details.right_eye && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">Right Eye:</span> {Object.entries(item.contact_lens_details.right_eye)
-                                        .filter(([_, value]) => value !== null && value !== undefined && value !== '')
-                                        .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${value}`)
-                                        .join(', ')}
-                                    </div>
-                                  )}
-                                  {item.contact_lens_details.left_eye && (
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      <span className="font-medium">Left Eye:</span> {Object.entries(item.contact_lens_details.left_eye)
-                                        .filter(([_, value]) => value !== null && value !== undefined && value !== '')
-                                        .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${value}`)
-                                        .join(', ')}
-                                    </div>
-                                  )}
+                                <div className="mt-3 pt-3 border-t border-gray-200 bg-blue-50 rounded-md p-3">
+                                  <div className="text-xs font-bold text-gray-800 mb-2 uppercase tracking-wide">Contact Lens Details</div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    {item.contact_lens_details.right_eye && (
+                                      <div className="bg-white rounded p-2">
+                                        <div className="text-xs font-bold text-gray-800 mb-2">Right Eye</div>
+                                        <div className="space-y-1">
+                                          {Object.entries(item.contact_lens_details.right_eye)
+                                            .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                                            .map(([key, value]) => (
+                                              <div key={key} className="text-xs text-gray-600">
+                                                <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span>
+                                                <span className="ml-1 font-medium">{value}</span>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {item.contact_lens_details.left_eye && (
+                                      <div className="bg-white rounded p-2">
+                                        <div className="text-xs font-bold text-gray-800 mb-2">Left Eye</div>
+                                        <div className="space-y-1">
+                                          {Object.entries(item.contact_lens_details.left_eye)
+                                            .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                                            .map(([key, value]) => (
+                                              <div key={key} className="text-xs text-gray-600">
+                                                <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span>
+                                                <span className="ml-1 font-medium">{value}</span>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
                                   {item.contact_lens_details.astigmatism && (
-                                    <div className="text-xs text-gray-600">
-                                      <span className="font-medium">Astigmatism:</span> {Object.entries(item.contact_lens_details.astigmatism)
-                                        .filter(([_, value]) => value !== null && value !== undefined && value !== '')
-                                        .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${value}`)
-                                        .join(', ')}
+                                    <div className="mt-2 pt-2 border-t border-blue-200">
+                                      <div className="bg-white rounded p-2">
+                                        <div className="text-xs font-bold text-gray-800 mb-2">Astigmatism</div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          {Object.entries(item.contact_lens_details.astigmatism)
+                                            .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                                            .map(([key, value]) => (
+                                              <div key={key} className="text-xs text-gray-600">
+                                                <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span>
+                                                <span className="ml-1 font-medium">{value}</span>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-500">
-                            {item.product_sku || item.product?.sku || t('nA')}
+                          <td className="px-6 py-4 text-sm text-gray-600 font-mono">
+                            {item.product_sku || item.product?.sku || <span className="text-gray-400 italic">{t('nA')}</span>}
                           </td>
-                          <td className="px-4 py-2 text-sm">{item.quantity}</td>
-                          <td className="px-4 py-2 text-sm">${item.unit_price || '0.00'}</td>
-                          <td className="px-4 py-2 text-sm font-medium">${item.total_price || '0.00'}</td>
+                          <td className="px-6 py-4 text-sm text-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700 font-semibold">
+                              {item.quantity}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                            ${parseFloat(item.unit_price || 0).toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-bold">
+                            ${parseFloat(item.total_price || item.unit_price * item.quantity || 0).toFixed(2)}
+                          </td>
                         </tr>
                       ))
                     ) : (

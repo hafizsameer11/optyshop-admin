@@ -25,6 +25,9 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
         left_cylinder: [],
         left_axis: [],
     });
+    const [unitPrices, setUnitPrices] = useState({}); // { "30": 990.00, "60": 1500.00 }
+    const [unitImages, setUnitImages] = useState({}); // { "30": ["url1", "url2"], "60": ["url3"] }
+    const [unitImageInputs, setUnitImageInputs] = useState({}); // { "30": "url", "60": "url" } - temporary input values
     const [loading, setLoading] = useState(false);
     const [subCategories, setSubCategories] = useState([]);
     const [products, setProducts] = useState([]);
@@ -64,9 +67,41 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 left_cylinder: Array.isArray(config.left_cylinder) ? config.left_cylinder.map(String) : [],
                 left_axis: Array.isArray(config.left_axis) ? config.left_axis.map(String) : [],
             });
+            
+            // Load unit_prices and unit_images if they exist
+            if (config.unit_prices && typeof config.unit_prices === 'object') {
+                // Convert all values to numbers
+                const prices = {};
+                Object.keys(config.unit_prices).forEach(key => {
+                    prices[String(key)] = typeof config.unit_prices[key] === 'number' 
+                        ? config.unit_prices[key] 
+                        : parseFloat(config.unit_prices[key]) || 0;
+                });
+                setUnitPrices(prices);
+            } else {
+                setUnitPrices({});
+            }
+            
+            if (config.unit_images && typeof config.unit_images === 'object') {
+                // Ensure all values are arrays
+                const images = {};
+                Object.keys(config.unit_images).forEach(key => {
+                    images[String(key)] = Array.isArray(config.unit_images[key]) 
+                        ? config.unit_images[key] 
+                        : [];
+                });
+                setUnitImages(images);
+            } else {
+                setUnitImages({});
+            }
+            
             setUseBackendCopy(false); // Reset when editing existing config
+            setUnitImageInputs({}); // Reset image inputs
             // Products will be fetched automatically when sub_category_id is set and subCategories are loaded
         } else {
+            setUnitPrices({});
+            setUnitImages({});
+            setUnitImageInputs({});
             setUseBackendCopy(false); // Reset when creating new config
         }
     }, [config]);
@@ -330,6 +365,35 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 submitData.copy_right_to_left = true;
             }
 
+            // Add unit_prices and unit_images if they have values
+            // Convert unit_prices values to numbers and filter out empty/zero values
+            const validUnitPrices = {};
+            Object.keys(unitPrices).forEach(unit => {
+                const price = typeof unitPrices[unit] === 'number' 
+                    ? unitPrices[unit] 
+                    : parseFloat(unitPrices[unit]);
+                if (price && price > 0) {
+                    validUnitPrices[unit] = price;
+                }
+            });
+            if (Object.keys(validUnitPrices).length > 0) {
+                submitData.unit_prices = validUnitPrices;
+            }
+
+            // Filter out empty image arrays from unit_images
+            const validUnitImages = {};
+            Object.keys(unitImages).forEach(unit => {
+                const images = Array.isArray(unitImages[unit]) 
+                    ? unitImages[unit].filter(img => img && img.trim() !== '')
+                    : [];
+                if (images.length > 0) {
+                    validUnitImages[unit] = images;
+                }
+            });
+            if (Object.keys(validUnitImages).length > 0) {
+                submitData.unit_images = validUnitImages;
+            }
+
             let response;
             if (config) {
                 response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.UPDATE(config.id), submitData);
@@ -566,6 +630,193 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                             {renderArrayField('left_cylinder', 'Left Cylinder (CYL)', 'e.g. -0.75')}
                             {renderArrayField('left_axis', 'Left Axis (AX)', 'e.g. 10')}
                         </div>
+                    </div>
+
+                    {/* Unit-Based Pricing and Images Section */}
+                    <div className="border-t pt-4">
+                        <div className="mb-4">
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Unit-Based Pricing & Images</h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Set different prices and images for each unit (qty). Units are automatically extracted from Right Qty values.
+                                When a customer selects a unit on the website, the price and images will update automatically.
+                            </p>
+                        </div>
+
+                        {/* Get unique units from right_qty */}
+                        {(() => {
+                            const units = [...new Set(formData.right_qty.filter(qty => qty && qty.trim() !== ''))];
+                            
+                            if (units.length === 0) {
+                                return (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <p className="text-sm text-blue-700">
+                                            💡 Add values to <strong>Right Qty</strong> field above to enable unit-based pricing and images.
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="space-y-4">
+                                    {units.map((unit) => {
+                                        const unitKey = String(unit);
+                                        const currentPrice = unitPrices[unitKey] || '';
+                                        const currentImages = unitImages[unitKey] || [];
+
+                                        return (
+                                            <div key={unitKey} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h4 className="text-base font-bold text-gray-900">
+                                                        Unit {unitKey}
+                                                    </h4>
+                                                    <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                                                        Qty: {unitKey}
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {/* Unit Price */}
+                                                    <div>
+                                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                            Price for Unit {unitKey}
+                                                        </label>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-gray-500">$</span>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                value={currentPrice}
+                                                                onChange={(e) => {
+                                                                    const price = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                                                    setUnitPrices(prev => ({
+                                                                        ...prev,
+                                                                        [unitKey]: price
+                                                                    }));
+                                                                }}
+                                                                className="flex-1 input-modern"
+                                                                placeholder="e.g., 990.00"
+                                                            />
+                                                        </div>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Leave empty to use base price
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Unit Images */}
+                                                    <div>
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <label className="block text-sm font-semibold text-gray-700">
+                                                                Images for Unit {unitKey}
+                                                            </label>
+                                                            {currentImages.length > 0 && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setUnitImages(prev => ({
+                                                                            ...prev,
+                                                                            [unitKey]: []
+                                                                        }));
+                                                                    }}
+                                                                    className="text-xs text-red-600 hover:text-red-800 font-medium"
+                                                                >
+                                                                    Clear All
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            {/* Display existing images */}
+                                                            {currentImages.length > 0 && (
+                                                                <div className="flex flex-wrap gap-2 mb-2">
+                                                                    {currentImages.map((imgUrl, idx) => (
+                                                                        <div key={idx} className="relative group">
+                                                                            <img
+                                                                                src={imgUrl}
+                                                                                alt={`Unit ${unitKey} image ${idx + 1}`}
+                                                                                className="w-16 h-16 object-cover rounded border-2 border-gray-200"
+                                                                                onError={(e) => {
+                                                                                    e.target.style.display = 'none';
+                                                                                }}
+                                                                            />
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setUnitImages(prev => ({
+                                                                                        ...prev,
+                                                                                        [unitKey]: prev[unitKey].filter((_, i) => i !== idx)
+                                                                                    }));
+                                                                                }}
+                                                                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                title="Remove image"
+                                                                            >
+                                                                                <FiX className="w-3 h-3" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {/* Add image URL input */}
+                                                            <div className="flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={unitImageInputs[unitKey] || ''}
+                                                                    onChange={(e) => {
+                                                                        setUnitImageInputs(prev => ({
+                                                                            ...prev,
+                                                                            [unitKey]: e.target.value
+                                                                        }));
+                                                                    }}
+                                                                    placeholder="Image URL (e.g., http://localhost:5000/uploads/products/unit30-img1.jpg)"
+                                                                    className="flex-1 input-modern text-sm"
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter') {
+                                                                            e.preventDefault();
+                                                                            const url = (unitImageInputs[unitKey] || '').trim();
+                                                                            if (url) {
+                                                                                setUnitImages(prev => ({
+                                                                                    ...prev,
+                                                                                    [unitKey]: [...(prev[unitKey] || []), url]
+                                                                                }));
+                                                                                setUnitImageInputs(prev => ({
+                                                                                    ...prev,
+                                                                                    [unitKey]: ''
+                                                                                }));
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const url = (unitImageInputs[unitKey] || '').trim();
+                                                                        if (url) {
+                                                                            setUnitImages(prev => ({
+                                                                                ...prev,
+                                                                                [unitKey]: [...(prev[unitKey] || []), url]
+                                                                            }));
+                                                                            setUnitImageInputs(prev => ({
+                                                                                ...prev,
+                                                                                [unitKey]: ''
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                    className="px-3 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 text-sm font-semibold"
+                                                                >
+                                                                    Add URL
+                                                                </button>
+                                                            </div>
+                                                            <p className="text-xs text-gray-500">
+                                                                Enter image URL and press Enter or click "Add URL"
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4 border-t sticky bottom-0 bg-white">

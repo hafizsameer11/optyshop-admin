@@ -99,9 +99,11 @@ const ProductModal = ({ product, onClose }) => {
   const [genders, setGenders] = useState([]);
   const [lensTypes, setLensTypes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [imageFiles, setImageFiles] = useState([]); // General images without color codes
-  const [imagePreviews, setImagePreviews] = useState([]); // General image previews
-  const [imagesWithColors, setImagesWithColors] = useState([]); // [{ file, preview, hexCode, id }]
+  const [imageFiles, setImageFiles] = useState([]); // Newly uploaded general images (File objects)
+  const [imagePreviews, setImagePreviews] = useState([]); // All general image previews (URLs + new file previews)
+  const [existingImages, setExistingImages] = useState([]); // Existing image URLs from product (for deletion tracking)
+  const [imagesWithColors, setImagesWithColors] = useState([]); // [{ file, preview, hexCode, id, isExisting }]
+  const [existingColorImages, setExistingColorImages] = useState([]); // Existing color images structure for deletion tracking
   const [model3DFile, setModel3DFile] = useState(null);
   const [model3DPreview, setModel3DPreview] = useState(null);
 
@@ -152,15 +154,16 @@ const ProductModal = ({ product, onClose }) => {
           checkAndSetSubSubCategory(productSubCategoryId);
         }
       }
-      // Set image previews if product has images array or image_url
-      // But don't set imageFiles - that should only be set when user selects new files
+      // Set existing images and previews if product has images array or image_url
+      // Track existing images separately for deletion support
+      let existingImageUrls = [];
       if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-        setImagePreviews(product.images.filter(img => img && typeof img === 'string'));
+        existingImageUrls = product.images.filter(img => img && typeof img === 'string');
       } else if (product.image || product.image_url) {
-        setImagePreviews([product.image || product.image_url].filter(Boolean));
-      } else {
-        setImagePreviews([]);
+        existingImageUrls = [product.image || product.image_url].filter(Boolean);
       }
+      setExistingImages(existingImageUrls);
+      setImagePreviews(existingImageUrls); // Start with existing images
       // Reset imageFiles when editing - user must explicitly select new images to update them
       setImageFiles([]);
       
@@ -175,9 +178,11 @@ const ProductModal = ({ product, onClose }) => {
       
       // Set images with colors if exists (from product.color_images)
       // Convert color_images object to imagesWithColors array format
+      // Also store the original structure for deletion tracking
       if (product.color_images && typeof product.color_images === 'object') {
         const imagesWithHexCodes = [];
         let imageIdCounter = 0;
+        const existingColorImagesStructure = [];
         
         Object.keys(product.color_images).forEach((key) => {
           // Check if key is a hex code or color name
@@ -191,6 +196,16 @@ const ProductModal = ({ product, onClose }) => {
           const imageUrls = Array.isArray(colorData?.images) ? colorData.images : 
                            Array.isArray(colorData) ? colorData : 
                            typeof colorData === 'string' ? [colorData] : [];
+          
+          // Store original structure for deletion tracking
+          if (imageUrls.length > 0) {
+            existingColorImagesStructure.push({
+              hexCode: hexCode.toUpperCase(),
+              name: colorData?.name || getColorNameFromHex(hexCode),
+              price: colorData?.price || null,
+              images: imageUrls.filter(url => url && typeof url === 'string')
+            });
+          }
           
           // Create entries for each image URL
           imageUrls.forEach((imageUrl) => {
@@ -206,12 +221,16 @@ const ProductModal = ({ product, onClose }) => {
           });
         });
         
+        setExistingColorImages(existingColorImagesStructure);
         setImagesWithColors(imagesWithHexCodes);
       } else {
+        setExistingColorImages([]);
         setImagesWithColors([]);
       }
     } else {
       // Reset form for new product
+      setExistingImages([]);
+      setExistingColorImages([]);
       setFormData({
         name: '',
         slug: '',
@@ -538,7 +557,9 @@ const ProductModal = ({ product, onClose }) => {
 
       Promise.all(previewPromises).then((previews) => {
         const validPreviews = previews.filter(Boolean);
-        const newPreviews = product ? validPreviews : [...imagePreviews, ...validPreviews];
+        // When editing, append new previews to existing ones
+        // When creating, append to current previews
+        const newPreviews = product ? [...imagePreviews, ...validPreviews] : [...imagePreviews, ...validPreviews];
         setImagePreviews(newPreviews);
         toast.success(`${validFiles.length} general image(s) added (no color code)`);
       });
@@ -548,21 +569,57 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   const removeImage = (index) => {
-    const newFiles = [...imageFiles];
+    const previewToRemove = imagePreviews[index];
+    
+    // Check if it's an existing image (URL string) or a new file preview (blob URL)
+    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('blob:') && !previewToRemove.startsWith('data:')) {
+      // It's an existing image URL - remove from existingImages
+      setExistingImages(prev => prev.filter(img => img !== previewToRemove));
+    } else {
+      // It's a new file preview - find and remove from imageFiles
+      // Count how many existing images come before this index
+      const existingCount = imagePreviews.slice(0, index).filter(preview => 
+        typeof preview === 'string' && !preview.startsWith('blob:') && !preview.startsWith('data:')
+      ).length;
+      // The file index in imageFiles array
+      const fileIndex = index - existingCount;
+      if (fileIndex >= 0 && fileIndex < imageFiles.length) {
+        const newFiles = [...imageFiles];
+        newFiles.splice(fileIndex, 1);
+        setImageFiles(newFiles);
+      }
+    }
+    
+    // Remove from previews
     const newPreviews = [...imagePreviews];
-    
-    // Remove from both arrays
-    newFiles.splice(index, 1);
     newPreviews.splice(index, 1);
-    
-    setImageFiles(newFiles);
     setImagePreviews(newPreviews);
     toast.success('Image removed');
   };
 
   const removeImageWithColor = (id) => {
-    setImagesWithColors(imagesWithColors.filter(img => img.id !== id));
-    toast.success('Image removed');
+    const imageToRemove = imagesWithColors.find(img => img.id === id);
+    if (imageToRemove) {
+      // If it's an existing image, we need to update existingColorImages structure
+      if (imageToRemove.isExisting && imageToRemove.hexCode) {
+        setExistingColorImages(prev => {
+          return prev.map(colorImg => {
+            if (colorImg.hexCode === imageToRemove.hexCode) {
+              // Remove this image URL from the color's images array
+              const updatedImages = colorImg.images.filter(imgUrl => imgUrl !== imageToRemove.preview);
+              if (updatedImages.length === 0) {
+                // If no images left for this color, remove the entire color entry
+                return null;
+              }
+              return { ...colorImg, images: updatedImages };
+            }
+            return colorImg;
+          }).filter(Boolean); // Remove null entries
+        });
+      }
+      setImagesWithColors(imagesWithColors.filter(img => img.id !== id));
+      toast.success('Image removed');
+    }
   };
 
   const updateImageHexCode = (id, hexCode) => {
@@ -894,7 +951,33 @@ const ProductModal = ({ product, onClose }) => {
             // Don't add to imageColorsArray - these are general images
           });
           
-          // Append all images to 'images' field
+          // For UPDATE: Send complete list of images that should remain (existing URLs)
+          // Backend will use this as base list and add new files to it
+          // Images not in this list will be deleted from storage
+          if (product) {
+            // Build the complete list of existing image URLs that should be kept
+            // (only URLs from existingImages that are still in imagePreviews)
+            const imagesToKeep = imagePreviews.filter(preview => 
+              typeof preview === 'string' && 
+              !preview.startsWith('blob:') && 
+              !preview.startsWith('data:') &&
+              existingImages.includes(preview)
+            );
+            
+            // Send as JSON array string FIRST (for image deletion support)
+            // Backend will use this as the base list and add new files to it
+            // If empty array, all existing images will be deleted
+            const imagesJson = JSON.stringify(imagesToKeep);
+            submitData.append('images', imagesJson);
+            
+            if (import.meta.env.DEV) {
+              console.log('Sending images array for deletion support:', imagesJson);
+              console.log('Existing images to keep:', imagesToKeep.length);
+              console.log('New files to upload:', imageFilesArray.length);
+            }
+          }
+          
+          // Append new image files (these will be added to the base list by backend)
           imageFilesArray.forEach((file) => {
             submitData.append('images', file);
           });
@@ -910,6 +993,65 @@ const ProductModal = ({ product, onClose }) => {
             
             if (import.meta.env.DEV) {
               console.log('Sending image_colors:', imageColorsJson);
+            }
+          }
+          
+          // For UPDATE: Send complete color_images structure for deletion support
+          // Always send this field when updating to support deletion
+          if (product) {
+            // Build the complete color_images structure with images that should remain
+            const colorImagesToKeep = [];
+            
+            // Group existing images by hex code (only URLs, not blob previews)
+            const existingImagesByColor = {};
+            imagesWithColors.forEach(img => {
+              if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) && 
+                  img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
+                if (!existingImagesByColor[img.hexCode]) {
+                  existingImagesByColor[img.hexCode] = [];
+                }
+                existingImagesByColor[img.hexCode].push(img.preview);
+              }
+            });
+            
+            // Build color_images structure from existing color images that should be kept
+            existingColorImages.forEach(colorImg => {
+              const keptImages = existingImagesByColor[colorImg.hexCode] || [];
+              if (keptImages.length > 0) {
+                colorImagesToKeep.push({
+                  hexCode: colorImg.hexCode,
+                  name: colorImg.name,
+                  price: colorImg.price,
+                  images: keptImages
+                });
+              }
+            });
+            
+            // Also include colors that have new files but no existing images to keep
+            imagesWithColors.forEach(img => {
+              if (img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode)) {
+                const existing = colorImagesToKeep.find(ci => ci.hexCode === img.hexCode);
+                if (!existing) {
+                  const colorData = existingColorImages.find(ci => ci.hexCode === img.hexCode);
+                  colorImagesToKeep.push({
+                    hexCode: img.hexCode,
+                    name: colorData?.name || getColorNameFromHex(img.hexCode),
+                    price: colorData?.price || null,
+                    images: [] // New files will be added by backend
+                  });
+                }
+              }
+            });
+            
+            // Send color_images as JSON array string for deletion support
+            // Backend will compare this with existing color images and delete removed ones
+            // If empty array, all color images will be deleted
+            const colorImagesJson = JSON.stringify(colorImagesToKeep);
+            submitData.append('color_images', colorImagesJson);
+            
+            if (import.meta.env.DEV) {
+              console.log('Sending color_images array for deletion support:', colorImagesJson);
+              console.log('Color images to keep:', colorImagesToKeep.length);
             }
           }
           
@@ -983,7 +1125,9 @@ const ProductModal = ({ product, onClose }) => {
       // Reset image files after successful save
       setImageFiles([]);
       setImagePreviews([]);
+      setExistingImages([]);
       setImagesWithColors([]);
+      setExistingColorImages([]);
       onClose();
     } catch (error) {
       // Log full error details for debugging
@@ -1129,32 +1273,39 @@ const ProductModal = ({ product, onClose }) => {
                     </button>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-xl border-2 border-gray-200 shadow-md hover:border-indigo-400 transition-all"
-                          onError={(e) => {
-                            console.error('Image preview error:', e);
-                            toast.error(`Failed to display image ${index + 1}`);
-                            // Remove failed image
-                            removeImage(index);
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
-                          title="Remove image"
-                        >
-                          <FiX className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs text-center py-1.5 rounded-b-xl">
-                          Image {index + 1}
+                    {imagePreviews.map((preview, index) => {
+                      const isExisting = typeof preview === 'string' && !preview.startsWith('blob:') && !preview.startsWith('data:') && existingImages.includes(preview);
+                      return (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className={`w-full h-32 object-cover rounded-xl border-2 shadow-md hover:border-indigo-400 transition-all ${
+                              isExisting ? 'border-blue-300' : 'border-gray-200'
+                            }`}
+                            onError={(e) => {
+                              console.error('Image preview error:', e);
+                              toast.error(`Failed to display image ${index + 1}`);
+                              // Remove failed image
+                              removeImage(index);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
+                            title="Remove image"
+                          >
+                            <FiX className="w-4 h-4" />
+                          </button>
+                          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs text-center py-1.5 rounded-b-xl ${
+                            isExisting ? 'bg-blue-600/80' : ''
+                          }`}>
+                            {isExisting ? 'Existing' : 'New'} - Image {index + 1}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

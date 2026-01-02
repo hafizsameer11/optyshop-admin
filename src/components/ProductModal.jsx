@@ -1028,12 +1028,15 @@ const ProductModal = ({ product, onClose }) => {
           }
           
           // For UPDATE: Send complete color_images structure for deletion support
-          // Always send this field when updating to support deletion
+          // ALWAYS send this field when updating (even if empty) to support deletion
+          // Per backend: When color_images is sent, it REPLACES all existing color images
+          // Empty array "[]" = delete all color images from storage and database
           if (product) {
             // Build the complete color_images structure with images that should remain
             const colorImagesToKeep = [];
             
             // Group existing images by hex code (only URLs, not blob previews)
+            // These are images that are still in the UI (not removed by user)
             const existingImagesByColor = {};
             imagesWithColors.forEach(img => {
               if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) && 
@@ -1046,6 +1049,7 @@ const ProductModal = ({ product, onClose }) => {
             });
             
             // Build color_images structure from existing color images that should be kept
+            // Only include colors that still have images in the UI
             existingColorImages.forEach(colorImg => {
               const keptImages = existingImagesByColor[colorImg.hexCode] || [];
               if (keptImages.length > 0) {
@@ -1056,9 +1060,12 @@ const ProductModal = ({ product, onClose }) => {
                   images: keptImages
                 });
               }
+              // If keptImages.length === 0, this color was completely removed - don't include it
+              // This ensures the color is deleted from storage and database
             });
             
             // Also include colors that have new files but no existing images to keep
+            // These are new colors being added
             imagesWithColors.forEach(img => {
               if (img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode)) {
                 const existing = colorImagesToKeep.find(ci => ci.hexCode === img.hexCode);
@@ -1074,15 +1081,22 @@ const ProductModal = ({ product, onClose }) => {
               }
             });
             
-            // Send color_images as JSON array string for deletion support
-            // Backend will compare this with existing color images and delete removed ones
-            // If empty array, all color images will be deleted
+            // ALWAYS send color_images field when updating (even if empty array)
+            // Backend behavior:
+            // - Empty array "[]" = Delete ALL color images from storage, set DB to null
+            // - Non-empty array = Replace existing with this list, delete removed images
+            // - Images NOT in this list will be DELETED from storage and database
             const colorImagesJson = JSON.stringify(colorImagesToKeep);
             submitData.append('color_images', colorImagesJson);
             
             if (import.meta.env.DEV) {
-              console.log('Sending color_images array for deletion support:', colorImagesJson);
-              console.log('Color images to keep:', colorImagesToKeep.length);
+              console.log('📤 Color Images Deletion Flow:');
+              console.log('  - Color images to KEEP (JSON string):', colorImagesJson);
+              console.log('  - Colors to keep:', colorImagesToKeep.length);
+              console.log('  - Backend will: Replace all color images with this list, Delete removed images from storage');
+              if (colorImagesToKeep.length === 0) {
+                console.log('  - ⚠️ Empty array - ALL color images will be DELETED from storage and database');
+              }
             }
           }
           
@@ -1158,9 +1172,12 @@ const ProductModal = ({ product, onClose }) => {
           dataToSend.images = imagesToKeep;
           
           // Build color_images structure for deletion support
+          // ALWAYS send this field when updating (even if empty) to support deletion
           const colorImagesToKeep = [];
           const existingImagesByColor = {};
           
+          // Group existing images by hex code (only URLs, not blob previews)
+          // These are images that are still in the UI (not removed by user)
           imagesWithColors.forEach(img => {
             if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) && 
                 img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
@@ -1171,6 +1188,8 @@ const ProductModal = ({ product, onClose }) => {
             }
           });
           
+          // Build color_images structure from existing color images that should be kept
+          // Only include colors that still have images in the UI
           existingColorImages.forEach(colorImg => {
             const keptImages = existingImagesByColor[colorImg.hexCode] || [];
             if (keptImages.length > 0) {
@@ -1181,9 +1200,14 @@ const ProductModal = ({ product, onClose }) => {
                 images: keptImages
               });
             }
+            // If keptImages.length === 0, this color was completely removed - don't include it
+            // This ensures the color is deleted from storage and database
           });
           
-          // Add color_images array for deletion support (empty array = delete all)
+          // ALWAYS add color_images array for deletion support (even if empty)
+          // Backend behavior:
+          // - Empty array [] = Delete ALL color images from storage, set DB to null
+          // - Non-empty array = Replace existing with this list, delete removed images
           dataToSend.color_images = colorImagesToKeep;
           
           if (import.meta.env.DEV) {
@@ -1191,6 +1215,12 @@ const ProductModal = ({ product, onClose }) => {
             console.log('  - Images to KEEP (array):', imagesToKeep);
             console.log('  - Color images to KEEP:', colorImagesToKeep);
             console.log('  - Backend will: Delete images NOT in keep list, Update database');
+            if (imagesToKeep.length === 0) {
+              console.log('  - ⚠️ Empty images array - ALL general images will be DELETED from storage and database');
+            }
+            if (colorImagesToKeep.length === 0) {
+              console.log('  - ⚠️ Empty color_images array - ALL color images will be DELETED from storage and database');
+            }
           }
         }
         
@@ -1352,7 +1382,7 @@ const ProductModal = ({ product, onClose }) => {
                       onClick={() => {
                         setImageFiles([]);
                         setImagePreviews([]);
-                        setExistingImages([]); // Clear existing images tracking for deletion
+                        setExistingImages([]); // Clear existing images tracking - will send images: "[]" to delete all
                         toast.success(t('clearAll'));
                       }}
                       className="text-xs text-red-600 hover:text-red-800 font-medium"
@@ -1529,7 +1559,7 @@ const ProductModal = ({ product, onClose }) => {
                     type="button"
                     onClick={() => {
                       setImagesWithColors([]);
-                      setExistingColorImages([]); // Clear existing color images tracking for deletion
+                      setExistingColorImages([]); // Clear existing color images tracking - will send color_images: "[]" to delete all
                       toast.success('All color images cleared');
                     }}
                     className="text-xs text-red-600 hover:text-red-800 font-medium"

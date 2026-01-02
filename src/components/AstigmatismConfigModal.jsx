@@ -344,7 +344,14 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             // Filter out empty strings
             const submitData = {
                 ...formData,
-                available_units: formData.available_units.filter(v => v !== '').map(v => parseInt(v) || v),
+                // Convert available_units to array of numbers, filter out empty/invalid values
+                available_units: formData.available_units
+                    .filter(v => v !== '' && v != null)
+                    .map(v => {
+                        const num = parseInt(v, 10);
+                        return !isNaN(num) ? num : null;
+                    })
+                    .filter(v => v !== null),
                 right_qty: formData.right_qty.filter(v => v !== ''),
                 right_base_curve: formData.right_base_curve.filter(v => v !== ''),
                 right_diameter: formData.right_diameter.filter(v => v !== ''),
@@ -400,15 +407,24 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                     const value = submitData[key];
                     if (value === null || value === undefined) {
                         return; // Skip null/undefined
+                    } else if (key === 'available_units' && Array.isArray(value)) {
+                        // Only send available_units if it has values
+                        if (value.length > 0) {
+                            formDataToSend.append(key, JSON.stringify(value));
+                        }
                     } else if (typeof value === 'boolean') {
                         formDataToSend.append(key, value.toString());
                     } else if (typeof value === 'number') {
                         formDataToSend.append(key, value.toString());
                     } else if (Array.isArray(value)) {
-                        formDataToSend.append(key, JSON.stringify(value));
+                        // Only send arrays if they have values
+                        if (value.length > 0) {
+                            formDataToSend.append(key, JSON.stringify(value));
+                        }
                     } else if (typeof value === 'object') {
                         formDataToSend.append(key, JSON.stringify(value));
-                    } else {
+                    } else if (value !== '') {
+                        // Only send non-empty strings
                         formDataToSend.append(key, String(value));
                     }
                 });
@@ -474,6 +490,11 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                     submitData.unit_images = validUnitImages;
                 }
 
+                // Remove available_units if empty to avoid validation errors
+                if (submitData.available_units && submitData.available_units.length === 0) {
+                    delete submitData.available_units;
+                }
+
                 let response;
                 if (config) {
                     response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.UPDATE(config.id), submitData);
@@ -499,8 +520,12 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 toast.error('Backend unavailable - Cannot save configuration');
             } else if (error.response.status === 401) {
                 toast.error('❌ Demo mode - Please log in with real credentials');
+            } else if (error.response.status === 500) {
+                const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Server error occurred. Please check the console for details.';
+                console.error('Server error details:', error.response?.data);
+                toast.error(`Server Error: ${errorMessage}`);
             } else {
-                const errorMessage = error.response?.data?.message || 'Failed to save configuration';
+                const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to save configuration';
                 toast.error(errorMessage);
             }
         } finally {

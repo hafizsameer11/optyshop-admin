@@ -12,6 +12,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
     display_name: '',
     price: '',
     is_active: true,
+    available_units: [],
     right_qty: [],
     right_base_curve: [],
     right_diameter: [],
@@ -22,8 +23,9 @@ const SphericalConfigModal = ({ config, onClose }) => {
     left_power: [],
   });
   const [unitPrices, setUnitPrices] = useState({}); // { "30": 990.00, "60": 1500.00 }
-  const [unitImages, setUnitImages] = useState({}); // { "30": ["url1", "url2"], "60": ["url3"] }
-  const [unitImageInputs, setUnitImageInputs] = useState({}); // { "30": "url", "60": "url" } - temporary input values
+  const [unitImages, setUnitImages] = useState({}); // { "30": ["url1", "url2"], "60": ["url3"] } - existing URLs
+  const [unitImageFiles, setUnitImageFiles] = useState({}); // { "30": [File, File], "60": [File] } - new files to upload
+  const [unitImagePreviews, setUnitImagePreviews] = useState({}); // { "30": ["data:image/...", ...], "60": [...] } - preview URLs
   const [loading, setLoading] = useState(false);
   const [subCategories, setSubCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -50,6 +52,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
         display_name: config.display_name || config.displayName || '',
         price: config.price !== undefined ? config.price : '',
         is_active: config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true),
+        available_units: Array.isArray(config.available_units) ? config.available_units.map(String) : (Array.isArray(config.availableUnits) ? config.availableUnits.map(String) : []),
         right_qty: Array.isArray(config.right_qty) ? config.right_qty.map(String) : (Array.isArray(config.rightQty) ? config.rightQty.map(String) : []),
         right_base_curve: Array.isArray(config.right_base_curve) ? config.right_base_curve.map(String) : (Array.isArray(config.rightBaseCurve) ? config.rightBaseCurve.map(String) : []),
         right_diameter: Array.isArray(config.right_diameter) ? config.right_diameter.map(String) : (Array.isArray(config.rightDiameter) ? config.rightDiameter.map(String) : []),
@@ -88,12 +91,14 @@ const SphericalConfigModal = ({ config, onClose }) => {
       }
       
       setUseBackendCopy(false); // Reset when editing existing config
-      setUnitImageInputs({}); // Reset image inputs
+      setUnitImageFiles({}); // Reset image files
+      setUnitImagePreviews({}); // Reset image previews
       // Products will be fetched automatically when sub_category_id is set and subCategories are loaded
     } else {
       setUnitPrices({});
       setUnitImages({});
-      setUnitImageInputs({});
+      setUnitImageFiles({});
+      setUnitImagePreviews({});
       setUseBackendCopy(false); // Reset when creating new config
     }
   }, [config]);
@@ -329,6 +334,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
     try {
       const submitData = {
         ...formData,
+        available_units: formData.available_units.filter(v => v !== '').map(v => parseInt(v) || v),
         right_qty: formData.right_qty.filter(v => v !== ''),
         right_base_curve: formData.right_base_curve.filter(v => v !== ''),
         right_diameter: formData.right_diameter.filter(v => v !== ''),
@@ -366,34 +372,109 @@ const SphericalConfigModal = ({ config, onClose }) => {
         submitData.unit_prices = validUnitPrices;
       }
 
-      // Filter out empty image arrays from unit_images
-      const validUnitImages = {};
-      Object.keys(unitImages).forEach(unit => {
-        const images = Array.isArray(unitImages[unit]) 
-          ? unitImages[unit].filter(img => img && img.trim() !== '')
-          : [];
-        if (images.length > 0) {
-          validUnitImages[unit] = images;
-        }
-      });
-      if (Object.keys(validUnitImages).length > 0) {
-        submitData.unit_images = validUnitImages;
-      }
+      // Check if we have any files to upload
+      const hasUnitImageFiles = Object.keys(unitImageFiles).some(unit => 
+        unitImageFiles[unit] && unitImageFiles[unit].length > 0
+      );
 
-      let response;
-      if (config) {
-        response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.UPDATE(config.id), submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Spherical configuration updated successfully');
+      // If we have files, use FormData; otherwise use JSON
+      if (hasUnitImageFiles) {
+        const formDataToSend = new FormData();
+
+        // Add all form fields to FormData
+        Object.keys(submitData).forEach(key => {
+          const value = submitData[key];
+          if (value === null || value === undefined) {
+            return; // Skip null/undefined
+          } else if (typeof value === 'boolean') {
+            formDataToSend.append(key, value.toString());
+          } else if (typeof value === 'number') {
+            formDataToSend.append(key, value.toString());
+          } else if (Array.isArray(value)) {
+            formDataToSend.append(key, JSON.stringify(value));
+          } else if (typeof value === 'object') {
+            formDataToSend.append(key, JSON.stringify(value));
+          } else {
+            formDataToSend.append(key, String(value));
+          }
+        });
+
+        // Add existing unit_images URLs as JSON (for units without new files)
+        const validUnitImages = {};
+        Object.keys(unitImages).forEach(unit => {
+          const images = Array.isArray(unitImages[unit]) 
+            ? unitImages[unit].filter(img => img && img.trim() !== '')
+            : [];
+          if (images.length > 0) {
+            validUnitImages[unit] = images;
+          }
+        });
+        if (Object.keys(validUnitImages).length > 0) {
+          formDataToSend.append('unit_images', JSON.stringify(validUnitImages));
+        }
+
+        // Add unit_prices as JSON
+        if (Object.keys(validUnitPrices).length > 0) {
+          formDataToSend.append('unit_prices', JSON.stringify(validUnitPrices));
+        }
+
+        // Add files for each unit
+        // Format: unit_images_30[], unit_images_60[], etc.
+        Object.keys(unitImageFiles).forEach(unit => {
+          const files = unitImageFiles[unit];
+          if (files && files.length > 0) {
+            files.forEach(file => {
+              formDataToSend.append(`unit_images_${unit}[]`, file);
+            });
+          }
+        });
+
+        let response;
+        if (config) {
+          response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.UPDATE(config.id), formDataToSend, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
         } else {
-          toast.success('Spherical configuration updated successfully');
+          response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.CREATE, formDataToSend, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+        }
+
+        if (response.data?.success) {
+          toast.success(response.data.message || (config ? 'Spherical configuration updated successfully' : 'Spherical configuration created successfully'));
+        } else {
+          toast.success(config ? 'Spherical configuration updated successfully' : 'Spherical configuration created successfully');
         }
       } else {
-        response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.CREATE, submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Spherical configuration created successfully');
+        // No files, use JSON (existing URLs only)
+        const validUnitImages = {};
+        Object.keys(unitImages).forEach(unit => {
+          const images = Array.isArray(unitImages[unit]) 
+            ? unitImages[unit].filter(img => img && img.trim() !== '')
+            : [];
+          if (images.length > 0) {
+            validUnitImages[unit] = images;
+          }
+        });
+        if (Object.keys(validUnitImages).length > 0) {
+          submitData.unit_images = validUnitImages;
+        }
+
+        let response;
+        if (config) {
+          response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.UPDATE(config.id), submitData);
+          if (response.data?.success) {
+            toast.success(response.data.message || 'Spherical configuration updated successfully');
+          } else {
+            toast.success('Spherical configuration updated successfully');
+          }
         } else {
-          toast.success('Spherical configuration created successfully');
+          response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.CREATE, submitData);
+          if (response.data?.success) {
+            toast.success(response.data.message || 'Spherical configuration created successfully');
+          } else {
+            toast.success('Spherical configuration created successfully');
+          }
         }
       }
       setUseBackendCopy(false); // Reset flag after submission
@@ -614,25 +695,53 @@ const SphericalConfigModal = ({ config, onClose }) => {
             </div>
           </div>
 
+          {/* Available Units Field */}
+          <div className="border-t pt-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Available Units (Pack Sizes)</h3>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>📦 Important:</strong> Units represent pack sizes (e.g., 10, 20, 30 lenses per pack) and are <strong>independent</strong> from qty fields. 
+                Qty is used for right/left eye quantity selection in the form, while units control pack size, pricing, and images.
+              </p>
+            </div>
+            {renderArrayField('available_units', 'Available Units', 'e.g., 10, 20, 30 (pack sizes)')}
+          </div>
+
           {/* Unit-Based Pricing and Images Section */}
           <div className="border-t pt-4">
             <div className="mb-4">
               <h3 className="text-lg font-bold text-gray-900 mb-2">Unit-Based Pricing & Images</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Set different prices and images for each unit (qty). Units are automatically extracted from Right Qty values.
-                When a customer selects a unit on the website, the price and images will update automatically.
-              </p>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gray-900">
+                    🎯 How It Works:
+                  </p>
+                  <ol className="text-sm text-gray-700 space-y-1 ml-4 list-decimal">
+                    <li>Units are set in <strong>Available Units</strong> field above (e.g., 10, 20, 30)</li>
+                    <li>Set different prices and images for each unit (e.g., Unit 10: $32, Unit 20: $60, Unit 30: $90)</li>
+                    <li>When a customer selects a unit on the website, the price and images update automatically</li>
+                    <li>The website calls <code className="bg-white px-1 rounded text-xs">GET /api/contact-lens-forms/config/:id/unit/:unit</code> to get unit-specific data</li>
+                    <li><strong>Units are independent from qty:</strong> Units = pack sizes, Qty = right/left eye quantity in form</li>
+                  </ol>
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <p className="text-xs text-gray-600">
+                      <strong>Fallback:</strong> If a unit doesn't have a specific price, the base price will be used. 
+                      If no unit-specific images are set, product or config images will be used.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Get unique units from right_qty */}
+            {/* Get unique units from available_units */}
             {(() => {
-              const units = [...new Set(formData.right_qty.filter(qty => qty && qty.trim() !== ''))];
+              const units = [...new Set(formData.available_units.filter(unit => unit && unit.trim() !== ''))];
               
               if (units.length === 0) {
                 return (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-700">
-                      💡 Add values to <strong>Right Qty</strong> field above to enable unit-based pricing and images.
+                      💡 Add values to <strong>Available Units</strong> field above to enable unit-based pricing and images.
                     </p>
                   </div>
                 );
@@ -644,16 +753,39 @@ const SphericalConfigModal = ({ config, onClose }) => {
                     const unitKey = String(unit);
                     const currentPrice = unitPrices[unitKey] || '';
                     const currentImages = unitImages[unitKey] || [];
+                    const currentFiles = unitImageFiles[unitKey] || [];
+                    const hasPrice = currentPrice && currentPrice > 0;
+                    const hasImages = (currentImages && currentImages.length > 0) || (currentFiles && currentFiles.length > 0);
+                    const totalImages = (currentImages?.length || 0) + (currentFiles?.length || 0);
 
                     return (
-                      <div key={unitKey} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div key={unitKey} className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary-500 text-white rounded-lg flex items-center justify-center font-bold text-lg">
+                              {unitKey}
+                            </div>
+                            <div>
                           <h4 className="text-base font-bold text-gray-900">
                             Unit {unitKey}
                           </h4>
-                          <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
-                            Qty: {unitKey}
-                          </span>
+                          <p className="text-xs text-gray-500">
+                            Pack Size: {unitKey} lenses
+                          </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            {hasPrice && (
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium">
+                                ✓ Price Set
+                              </span>
+                            )}
+                            {hasImages && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
+                                ✓ {totalImages} Image{totalImages !== 1 ? 's' : ''} {currentFiles.length > 0 ? `(${currentFiles.length} new)` : ''}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -680,7 +812,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
                               />
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                              Leave empty to use base price
+                              Leave empty to use base price ({formData.price ? `$${formData.price}` : 'not set'})
                             </p>
                           </div>
 
@@ -737,58 +869,92 @@ const SphericalConfigModal = ({ config, onClose }) => {
                                 </div>
                               )}
                               
-                              {/* Add image URL input */}
-                              <div className="flex gap-2">
+                              {/* Display file previews */}
+                              {unitImagePreviews[unitKey] && unitImagePreviews[unitKey].length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {unitImagePreviews[unitKey].map((preview, idx) => (
+                                    <div key={idx} className="relative group">
+                                      <img
+                                        src={preview}
+                                        alt={`Unit ${unitKey} preview ${idx + 1}`}
+                                        className="w-16 h-16 object-cover rounded border-2 border-blue-300"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newFiles = [...(unitImageFiles[unitKey] || [])];
+                                          const newPreviews = [...(unitImagePreviews[unitKey] || [])];
+                                          newFiles.splice(idx, 1);
+                                          newPreviews.splice(idx, 1);
+                                          setUnitImageFiles(prev => ({
+                                            ...prev,
+                                            [unitKey]: newFiles
+                                          }));
+                                          setUnitImagePreviews(prev => ({
+                                            ...prev,
+                                            [unitKey]: newPreviews
+                                          }));
+                                        }}
+                                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Remove image"
+                                      >
+                                        <FiX className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* File upload input */}
+                              <label
+                                htmlFor={`unit-image-input-${unitKey}`}
+                                className="flex flex-col items-center justify-center w-full min-h-[100px] border-2 border-dashed border-primary-300 rounded-lg cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 transition-all duration-200 bg-gradient-to-br from-primary-50/30 to-purple-50/30 group"
+                              >
+                                <div className="flex flex-col items-center justify-center pt-3 pb-4 px-4">
+                                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center mb-2 group-hover:bg-primary-200 transition-colors">
+                                    <FiPlus className="w-5 h-5 text-primary-600" />
+                                  </div>
+                                  <p className="text-sm font-semibold text-gray-700 mb-1">
+                                    Click to Upload Images
+                                  </p>
+                                  <p className="text-xs text-gray-500 text-center">
+                                    PNG, JPG, WEBP up to 10MB
+                                  </p>
+                                </div>
                                 <input
-                                  type="text"
-                                  value={unitImageInputs[unitKey] || ''}
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
                                   onChange={(e) => {
-                                    setUnitImageInputs(prev => ({
-                                      ...prev,
-                                      [unitKey]: e.target.value
-                                    }));
-                                  }}
-                                  placeholder="Image URL (e.g., http://localhost:5000/uploads/products/unit30-img1.jpg)"
-                                  className="flex-1 input-modern text-sm"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      const url = (unitImageInputs[unitKey] || '').trim();
-                                      if (url) {
-                                        setUnitImages(prev => ({
-                                          ...prev,
-                                          [unitKey]: [...(prev[unitKey] || []), url]
-                                        }));
-                                        setUnitImageInputs(prev => ({
-                                          ...prev,
-                                          [unitKey]: ''
-                                        }));
-                                      }
+                                    const files = Array.from(e.target.files || []);
+                                    if (files.length > 0) {
+                                      const newFiles = [...(unitImageFiles[unitKey] || []), ...files];
+                                      setUnitImageFiles(prev => ({
+                                        ...prev,
+                                        [unitKey]: newFiles
+                                      }));
+
+                                      // Create previews
+                                      files.forEach(file => {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                          setUnitImagePreviews(prev => ({
+                                            ...prev,
+                                            [unitKey]: [...(prev[unitKey] || []), reader.result]
+                                          }));
+                                        };
+                                        reader.readAsDataURL(file);
+                                      });
                                     }
+                                    // Reset input
+                                    e.target.value = '';
                                   }}
+                                  className="hidden"
+                                  id={`unit-image-input-${unitKey}`}
                                 />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const url = (unitImageInputs[unitKey] || '').trim();
-                                    if (url) {
-                                      setUnitImages(prev => ({
-                                        ...prev,
-                                        [unitKey]: [...(prev[unitKey] || []), url]
-                                      }));
-                                      setUnitImageInputs(prev => ({
-                                        ...prev,
-                                        [unitKey]: ''
-                                      }));
-                                    }
-                                  }}
-                                  className="px-3 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 text-sm font-semibold"
-                                >
-                                  Add URL
-                                </button>
-                              </div>
+                              </label>
                               <p className="text-xs text-gray-500">
-                                Enter image URL and press Enter or click "Add URL"
+                                Select multiple images. Files will be uploaded when you save the configuration.
                               </p>
                             </div>
                           </div>
@@ -796,6 +962,54 @@ const SphericalConfigModal = ({ config, onClose }) => {
                       </div>
                     );
                   })}
+                  
+                  {/* Data Preview Section */}
+                  {/* Website Flow Info */}
+                  <div className="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">🌐</span>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-bold text-gray-900 mb-2">Website Flow</h4>
+                        <div className="text-xs text-gray-700 space-y-1">
+                          <p><strong>1.</strong> Website loads configuration with <code className="bg-white px-1 rounded">available_units</code>, <code className="bg-white px-1 rounded">unit_prices</code>, and <code className="bg-white px-1 rounded">unit_images</code></p>
+                          <p><strong>2.</strong> User selects a unit from available units (e.g., "unit 10", "unit 20", "unit 30")</p>
+                          <p><strong>3.</strong> Frontend calls: <code className="bg-white px-1 rounded">GET /api/contact-lens-forms/config/:id/unit/10</code></p>
+                          <p><strong>4.</strong> Backend returns price and images for that unit</p>
+                          <p><strong>5.</strong> Website updates displayed price and images automatically</p>
+                          <p><strong>6.</strong> User fills form with qty and other parameters (independent from unit selection)</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Data Preview Section */}
+                  <div className="mt-4 bg-gray-900 text-white rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">📊</span>
+                      <h4 className="text-sm font-bold">Data Preview (What will be sent to backend)</h4>
+                    </div>
+                    <div className="bg-gray-800 rounded p-3 overflow-x-auto">
+                      <pre className="text-xs font-mono">
+{JSON.stringify({
+  available_units: formData.available_units.filter(v => v !== '').map(v => parseInt(v) || v),
+  unit_prices: Object.keys(unitPrices).reduce((acc, key) => {
+    const price = typeof unitPrices[key] === 'number' ? unitPrices[key] : parseFloat(unitPrices[key]);
+    if (price && price > 0) acc[key] = price;
+    return acc;
+  }, {}),
+  unit_images: Object.keys(unitImages).reduce((acc, key) => {
+    const images = Array.isArray(unitImages[key]) ? unitImages[key].filter(img => img && img.trim() !== '') : [];
+    if (images.length > 0) acc[key] = images;
+    return acc;
+  }, {})
+}, null, 2)}
+                      </pre>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      This data will be included in the configuration when saved. Empty values are automatically filtered out.
+                      <strong className="text-white"> Note:</strong> Units are independent from qty fields.
+                    </p>
+                  </div>
                 </div>
               );
             })()}

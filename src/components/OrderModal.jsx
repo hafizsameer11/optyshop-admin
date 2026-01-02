@@ -1237,6 +1237,7 @@ const OrderModal = ({ order, onClose }) => {
                                         </span>
                                       </div>
                                     )}
+                                  </div>
                                   {/* Prescription Data */}
                                   {item.prescription_data && typeof item.prescription_data === 'object' && (
                                     <div className="mt-3 pt-3 border-t border-gray-200 bg-gray-50 rounded-md p-2">

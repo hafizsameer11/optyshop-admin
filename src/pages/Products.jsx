@@ -438,12 +438,14 @@ const Products = () => {
   const handleModalClose = () => {
     setModalOpen(false);
     setEditingProduct(null);
-    // Add a small delay to ensure backend has processed the update
-    setTimeout(() => {
-      fetchProducts();
-      // Force image refresh by updating the refresh key
-      setImageRefreshKey(Date.now());
-    }, 500);
+    // Refresh products list immediately to reflect changes (removed images, etc.)
+    // Flow: User saves product → Backend deletes removed images from storage & DB → 
+    //       Modal closes → We fetch updated products → Table shows updated data
+    // The backend has already processed the update, so we can refresh right away
+    fetchProducts();
+    // Force image refresh by updating the refresh key to ensure removed images disappear from table
+    // This cache-busts the ProductImage component so it loads fresh images
+    setImageRefreshKey(Date.now());
   };
 
   if (loading) {

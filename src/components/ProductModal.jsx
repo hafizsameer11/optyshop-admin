@@ -840,6 +840,26 @@ const ProductModal = ({ product, onClose }) => {
 
       let response;
       
+      // ====================================================================
+      // IMAGE UPDATE FLOW - Handles all 4 scenarios per backend specification:
+      // ====================================================================
+      // Scenario 1: Clear All Images
+      //   - Send: images: "[]" (empty JSON array)
+      //   - Result: Backend deletes ALL existing images from storage, sets DB to null
+      //
+      // Scenario 2: Replace Images
+      //   - Send: images: "[\"url1\", \"url2\"]" (JSON array string with URLs to keep)
+      //   - Result: Backend keeps only these images, deletes all others from storage
+      //
+      // Scenario 3: Add New Images (Keep Existing)
+      //   - Send: Upload files via images file field (no JSON array)
+      //   - Result: Backend adds new images to existing ones
+      //
+      // Scenario 4: Replace + Add New Images
+      //   - Send: images: "[\"url1\"]" (text field) + upload new files via images (file field)
+      //   - Result: Backend keeps specified URLs, adds new uploaded files, deletes rest
+      // ====================================================================
+      
       // Check if we need to use FormData (images, 3D model, or images with colors)
       const hasImageFiles = imageFiles && imageFiles.length > 0 && imageFiles.every(file => file instanceof File);
       const has3DModel = model3DFile && model3DFile instanceof File;
@@ -952,8 +972,9 @@ const ProductModal = ({ product, onClose }) => {
           });
           
           // For UPDATE: Send complete list of images that should remain (existing URLs)
-          // Backend will use this as base list and add new files to it
-          // Images not in this list will be deleted from storage
+          // Per backend flow: Send images as JSON array string to specify which images to KEEP
+          // Backend will compare existing vs new list and delete removed images from storage
+          // Images not in this list will be deleted from storage (local filesystem)
           if (product) {
             // Build the complete list of existing image URLs that should be kept
             // (only URLs from existingImages that are still in imagePreviews)
@@ -964,20 +985,30 @@ const ProductModal = ({ product, onClose }) => {
               existingImages.includes(preview)
             );
             
-            // Send as JSON array string FIRST (for image deletion support)
-            // Backend will use this as the base list and add new files to it
-            // If empty array, all existing images will be deleted
+            // Send as JSON array string (text field) FIRST (for image deletion support)
+            // Backend flow:
+            // 1. Reads req.body.images (JSON array string) - this is the list to KEEP
+            // 2. Compares existing images vs. new images list
+            // 3. Identifies images to delete (exist in old list but NOT in new list)
+            // 4. Deletes removed images from local storage (uploads/ folder)
+            // 5. Uploads new files via multer (if any)
+            // 6. Updates database with final image list
+            // If empty array "[]", all existing images will be deleted
             const imagesJson = JSON.stringify(imagesToKeep);
             submitData.append('images', imagesJson);
             
             if (import.meta.env.DEV) {
-              console.log('Sending images array for deletion support:', imagesJson);
-              console.log('Existing images to keep:', imagesToKeep.length);
-              console.log('New files to upload:', imageFilesArray.length);
+              console.log('📤 Image Update Flow - FormData:');
+              console.log('  - Images to KEEP (JSON string):', imagesJson);
+              console.log('  - Existing images to keep:', imagesToKeep.length);
+              console.log('  - New files to upload:', imageFilesArray.length);
+              console.log('  - Backend will: Delete images NOT in keep list, Upload new files, Update database');
             }
           }
           
-          // Append new image files (these will be added to the base list by backend)
+          // Append new image files (file field) - these will be added to the keep list by backend
+          // Backend flow: After processing the JSON array (keep list), it uploads new files via multer
+          // New files are saved to uploads/products/ folder and added to the final image list
           imageFilesArray.forEach((file) => {
             submitData.append('images', file);
           });
@@ -1108,8 +1139,9 @@ const ProductModal = ({ product, onClose }) => {
           throw imageError;
         }
       } else {
-        // No files to upload - send as JSON
+        // No files to upload - send as JSON body
         // But if updating, we still need to send image deletion arrays
+        // Per backend flow: When sending JSON (not FormData), backend accepts arrays directly
         if (product) {
           // When updating without new files, we still need to send deletion arrays
           // Build the complete list of existing image URLs that should be kept
@@ -1120,7 +1152,9 @@ const ProductModal = ({ product, onClose }) => {
             existingImages.includes(preview)
           );
           
-          // Add images array for deletion support (empty array = delete all)
+          // Add images array for deletion support
+          // Backend flow: Compares existing images vs. new list, deletes removed ones
+          // Empty array [] = delete all existing images
           dataToSend.images = imagesToKeep;
           
           // Build color_images structure for deletion support
@@ -1153,10 +1187,10 @@ const ProductModal = ({ product, onClose }) => {
           dataToSend.color_images = colorImagesToKeep;
           
           if (import.meta.env.DEV) {
-            console.log('Sending JSON update with image deletion arrays:', {
-              images: imagesToKeep,
-              color_images: colorImagesToKeep
-            });
+            console.log('📤 Image Update Flow - JSON Body:');
+            console.log('  - Images to KEEP (array):', imagesToKeep);
+            console.log('  - Color images to KEEP:', colorImagesToKeep);
+            console.log('  - Backend will: Delete images NOT in keep list, Update database');
           }
         }
         
@@ -1179,6 +1213,8 @@ const ProductModal = ({ product, onClose }) => {
       setExistingImages([]);
       setImagesWithColors([]);
       setExistingColorImages([]);
+      
+      // Close modal - parent component will refresh the products list
       onClose();
     } catch (error) {
       // Log full error details for debugging

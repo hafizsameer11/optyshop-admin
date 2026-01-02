@@ -1108,7 +1108,58 @@ const ProductModal = ({ product, onClose }) => {
           throw imageError;
         }
       } else {
-        // No images - send as JSON
+        // No files to upload - send as JSON
+        // But if updating, we still need to send image deletion arrays
+        if (product) {
+          // When updating without new files, we still need to send deletion arrays
+          // Build the complete list of existing image URLs that should be kept
+          const imagesToKeep = imagePreviews.filter(preview => 
+            typeof preview === 'string' && 
+            !preview.startsWith('blob:') && 
+            !preview.startsWith('data:') &&
+            existingImages.includes(preview)
+          );
+          
+          // Add images array for deletion support (empty array = delete all)
+          dataToSend.images = imagesToKeep;
+          
+          // Build color_images structure for deletion support
+          const colorImagesToKeep = [];
+          const existingImagesByColor = {};
+          
+          imagesWithColors.forEach(img => {
+            if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) && 
+                img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
+              if (!existingImagesByColor[img.hexCode]) {
+                existingImagesByColor[img.hexCode] = [];
+              }
+              existingImagesByColor[img.hexCode].push(img.preview);
+            }
+          });
+          
+          existingColorImages.forEach(colorImg => {
+            const keptImages = existingImagesByColor[colorImg.hexCode] || [];
+            if (keptImages.length > 0) {
+              colorImagesToKeep.push({
+                hexCode: colorImg.hexCode,
+                name: colorImg.name,
+                price: colorImg.price,
+                images: keptImages
+              });
+            }
+          });
+          
+          // Add color_images array for deletion support (empty array = delete all)
+          dataToSend.color_images = colorImagesToKeep;
+          
+          if (import.meta.env.DEV) {
+            console.log('Sending JSON update with image deletion arrays:', {
+              images: imagesToKeep,
+              color_images: colorImagesToKeep
+            });
+          }
+        }
+        
         if (product) {
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), dataToSend);
         } else {
@@ -1265,6 +1316,7 @@ const ProductModal = ({ product, onClose }) => {
                       onClick={() => {
                         setImageFiles([]);
                         setImagePreviews([]);
+                        setExistingImages([]); // Clear existing images tracking for deletion
                         toast.success(t('clearAll'));
                       }}
                       className="text-xs text-red-600 hover:text-red-800 font-medium"
@@ -1441,6 +1493,7 @@ const ProductModal = ({ product, onClose }) => {
                     type="button"
                     onClick={() => {
                       setImagesWithColors([]);
+                      setExistingColorImages([]); // Clear existing color images tracking for deletion
                       toast.success('All color images cleared');
                     }}
                     className="text-xs text-red-600 hover:text-red-800 font-medium"

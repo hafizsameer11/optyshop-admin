@@ -1342,7 +1342,7 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   const modalContent = (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200/50 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Fixed Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white flex-shrink-0">

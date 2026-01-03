@@ -63,6 +63,13 @@ export const API_ROUTES = {
     BY_ID: (id) => `/products/${id}`,           // PUBLIC
     BY_SLUG: (slug) => `/products/slug/${slug}`, // PUBLIC
     RELATED: (id) => `/products/${id}/related`,  // PUBLIC
+    // Section-specific endpoints
+    SECTION: {
+      SUNGLASSES: `/products/section/sunglasses`,        // PUBLIC - Filters by product_type='sunglasses'
+      EYEGLASSES: `/products/section/eyeglasses`,        // PUBLIC - Filters by product_type='frame'
+      CONTACT_LENSES: `/products/section/contact-lenses`, // PUBLIC - Filters by product_type='contact_lens'
+      EYE_HYGIENE: `/products/section/eye-hygiene`,      // PUBLIC - Filters by product_type='eye_hygiene'
+    },
   },
 
   // ============================================
@@ -376,6 +383,13 @@ export const API_ROUTES = {
       UPDATE: (id) => `/admin/products/${id}`,
       DELETE: (id) => `/admin/products/${id}`,
       BULK_UPLOAD: `/admin/products/bulk-upload`,
+      // Section-specific endpoints
+      SECTION: {
+        SUNGLASSES: `/admin/products/section/sunglasses`,        // ADMIN - Filters by product_type='sunglasses'
+        EYEGLASSES: `/admin/products/section/eyeglasses`,        // ADMIN - Filters by product_type='frame'
+        CONTACT_LENSES: `/admin/products/section/contact-lenses`, // ADMIN - Filters by product_type='contact_lens'
+        EYE_HYGIENE: `/admin/products/section/eye-hygiene`,      // ADMIN - Filters by product_type='eye_hygiene'
+      },
     },
 
     // Orders Management (Admin view)

@@ -1953,9 +1953,11 @@ const ProductModal = ({ product, onClose }) => {
               required
             >
               <option value="">Select Product Type</option>
-              <option value="frame">Frame</option>
-              <option value="lens">Lens</option>
+              <option value="frame">Frame (Eyeglasses)</option>
+              <option value="sunglasses">Sunglasses</option>
               <option value="contact_lens">Contact Lens</option>
+              <option value="eye_hygiene">Eye Hygiene</option>
+              <option value="lens">Lens</option>
               <option value="accessory">Accessory</option>
             </select>
           </div>

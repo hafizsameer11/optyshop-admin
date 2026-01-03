@@ -241,6 +241,7 @@ const Products = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [subCategoriesMap, setSubCategoriesMap] = useState({});
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
+  const [selectedSection, setSelectedSection] = useState('all'); // 'all', 'sunglasses', 'eyeglasses', 'contact-lenses', 'eye-hygiene'
 
   useEffect(() => {
     fetchCategories();
@@ -249,7 +250,7 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [page, searchTerm, categoryFilter, subCategoryFilter]);
+  }, [page, searchTerm, categoryFilter, subCategoryFilter, selectedSection]);
 
   // Fetch subcategories when category filter changes
   useEffect(() => {
@@ -357,7 +358,22 @@ const Products = () => {
         params.append('sub_category_id', subCategoryFilter);
       }
       
-      const response = await api.get(`${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`);
+      // Determine which endpoint to use based on selected section
+      let endpoint;
+      if (selectedSection === 'all') {
+        endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
+      } else {
+        // Use section-specific endpoint
+        const sectionEndpoints = {
+          'sunglasses': API_ROUTES.ADMIN.PRODUCTS.SECTION.SUNGLASSES,
+          'eyeglasses': API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES,
+          'contact-lenses': API_ROUTES.ADMIN.PRODUCTS.SECTION.CONTACT_LENSES,
+          'eye-hygiene': API_ROUTES.ADMIN.PRODUCTS.SECTION.EYE_HYGIENE,
+        };
+        endpoint = `${sectionEndpoints[selectedSection]}?${params.toString()}`;
+      }
+      
+      const response = await api.get(endpoint);
       
       // Handle the nested data structure from the API
       // Response structure: { success, message, data: { products: [], pagination: {} } }
@@ -456,6 +472,20 @@ const Products = () => {
     );
   }
 
+  // Section options
+  const sections = [
+    { value: 'all', label: 'All Products', icon: '📦' },
+    { value: 'sunglasses', label: 'Sunglasses', icon: '🕶️' },
+    { value: 'eyeglasses', label: 'Eyeglasses', icon: '👓' },
+    { value: 'contact-lenses', label: 'Contact Lenses', icon: '🔍' },
+    { value: 'eye-hygiene', label: 'Eye Hygiene', icon: '💧' },
+  ];
+
+  const handleSectionChange = (section) => {
+    setSelectedSection(section);
+    setPage(1); // Reset to first page when section changes
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Enhanced Header Section - Responsive */}
@@ -473,6 +503,28 @@ const Products = () => {
             <FiPlus className="w-5 h-5" />
             <span>{t('addProduct')}</span>
           </button>
+        </div>
+      </div>
+
+      {/* Section Navigation Tabs */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            {sections.map((section) => (
+              <button
+                key={section.value}
+                onClick={() => handleSectionChange(section.value)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                  selectedSection === section.value
+                    ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-indigo-500/25'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <span className="text-base">{section.icon}</span>
+                <span>{section.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -537,13 +589,14 @@ const Products = () => {
             </div>
             
             {/* Clear Filters Button */}
-            {(categoryFilter || subCategoryFilter || searchTerm) && (
+            {(categoryFilter || subCategoryFilter || searchTerm || selectedSection !== 'all') && (
               <div>
                 <button
                   onClick={() => {
                     setCategoryFilter('');
                     setSubCategoryFilter('');
                     setSearchTerm('');
+                    setSelectedSection('all');
                     setPage(1);
                   }}
                   className="w-full px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"

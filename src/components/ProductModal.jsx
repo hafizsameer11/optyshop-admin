@@ -1521,7 +1521,8 @@ const ProductModal = ({ product, onClose }) => {
             </div>
           </div>
 
-          {/* 3D Model Upload - Per Postman Collection */}
+          {/* 3D Model Upload - Per Postman Collection - Hide for Eye Hygiene */}
+          {formData.product_type !== 'eye_hygiene' && (
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               {t('model3D')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
@@ -1589,8 +1590,10 @@ const ProductModal = ({ product, onClose }) => {
               </label>
             </div>
           </div>
+          )}
 
-          {/* Images with Color Codes - Single Upload System */}
+          {/* Images with Color Codes - Single Upload System - Hide for Eye Hygiene */}
+          {formData.product_type !== 'eye_hygiene' && (
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               {t('imagesWithColorCodes')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
@@ -1741,6 +1744,7 @@ const ProductModal = ({ product, onClose }) => {
               </div>
             </div>
           </div>
+          )}
           
           {/* General Images (without color codes) - Optional */}
           <div className="border-t border-gray-200 pt-6">
@@ -2120,98 +2124,103 @@ const ProductModal = ({ product, onClose }) => {
           </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Shape
-              </label>
-              <input
-                type="text"
-                name="frame_shape"
-                value={formData.frame_shape}
-                onChange={handleChange}
-                className="input-modern"
-                placeholder="Enter any frame shape"
-              />
-            </div>
+          {/* Frame/Lens Fields - Hide for Eye Hygiene products */}
+          {formData.product_type !== 'eye_hygiene' && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Frame Shape
+                  </label>
+                  <input
+                    type="text"
+                    name="frame_shape"
+                    value={formData.frame_shape}
+                    onChange={handleChange}
+                    className="input-modern"
+                    placeholder="Enter any frame shape"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Material
-              </label>
-              <input
-                type="text"
-                name="frame_material"
-                value={Array.isArray(formData.frame_material) ? formData.frame_material.join(', ') : formData.frame_material || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Convert comma-separated string to array, or keep as single value
-                  if (value.includes(',')) {
-                    setFormData({
-                      ...formData,
-                      frame_material: value.split(',').map(m => m.trim()).filter(m => m)
-                    });
-                  } else {
-                    setFormData({
-                      ...formData,
-                      frame_material: value ? [value.trim()] : []
-                    });
-                  }
-                }}
-                className="input-modern"
-                placeholder="Enter frame material(s), comma-separated for multiple"
-              />
-            </div>
-          </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Frame Material
+                  </label>
+                  <input
+                    type="text"
+                    name="frame_material"
+                    value={Array.isArray(formData.frame_material) ? formData.frame_material.join(', ') : formData.frame_material || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Convert comma-separated string to array, or keep as single value
+                      if (value.includes(',')) {
+                        setFormData({
+                          ...formData,
+                          frame_material: value.split(',').map(m => m.trim()).filter(m => m)
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          frame_material: value ? [value.trim()] : []
+                        });
+                      }
+                    }}
+                    className="input-modern"
+                    placeholder="Enter frame material(s), comma-separated for multiple"
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Color
-              </label>
-              <input
-                type="text"
-                name="frame_color"
-                value={formData.frame_color}
-                onChange={handleChange}
-                className="input-modern"
-                placeholder="e.g., Black, Gold"
-              />
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Frame Color
+                  </label>
+                  <input
+                    type="text"
+                    name="frame_color"
+                    value={formData.frame_color}
+                    onChange={handleChange}
+                    className="input-modern"
+                    placeholder="e.g., Black, Gold"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Gender
-              </label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="input-modern"
-              >
-                <option value="">Select Gender</option>
-                {genders.map((gender) => (
-                  <option key={gender} value={gender}>
-                    {gender.charAt(0).toUpperCase() + gender.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Gender
+                  </label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="input-modern"
+                  >
+                    <option value="">Select Gender</option>
+                    {genders.map((gender) => (
+                      <option key={gender} value={gender}>
+                        {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Lens Type
-            </label>
-            <input
-              type="text"
-              name="lens_type"
-              value={formData.lens_type}
-              onChange={handleChange}
-              className="input-modern"
-              placeholder="Enter any lens type"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Lens Type
+                </label>
+                <input
+                  type="text"
+                  name="lens_type"
+                  value={formData.lens_type}
+                  onChange={handleChange}
+                  className="input-modern"
+                  placeholder="Enter any lens type"
+                />
+              </div>
+            </>
+          )}
 
           {/* SEO Fields */}
           <div className="border-t border-gray-200 pt-6">

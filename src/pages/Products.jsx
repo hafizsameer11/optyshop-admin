@@ -572,8 +572,46 @@ const Products = () => {
           </div>
         </div>
         
-        {/* Lens Management Sections for Sunglasses, Eyeglasses, and Opty Kids */}
-        {(selectedSection === 'eyeglasses' || selectedSection === 'sunglasses' || selectedSection === 'opty-kids') && (
+        {/* Contact Lens Forms Sections for Contact Lenses and All */}
+        {(selectedSection === 'contact-lenses' || selectedSection === 'all') && (
+          <div className="p-6 border-t border-gray-200 bg-gradient-to-br from-blue-50/50 to-cyan-50/50">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Contact Lens Forms</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <Link
+                to="/contact-lens-forms/spherical"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors">
+                  <span className="text-2xl">🌐</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-600 text-center">Spherical Configurations</span>
+              </Link>
+              
+              <Link
+                to="/contact-lens-forms/astigmatism"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors">
+                  <span className="text-2xl">📚</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-600 text-center">Astigmatism Configurations</span>
+              </Link>
+              
+              <Link
+                to="/contact-lens-forms/dropdown-values"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors">
+                  <span className="text-2xl">⚙️</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-600 text-center">Astigmatism Dropdown Values</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Lens Management Sections for Sunglasses, Eyeglasses, Opty Kids, and All */}
+        {(selectedSection === 'eyeglasses' || selectedSection === 'sunglasses' || selectedSection === 'opty-kids' || selectedSection === 'all') && (
           <div className="p-6 border-t border-gray-200 bg-gradient-to-br from-indigo-50/50 to-purple-50/50">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Lens Management</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">

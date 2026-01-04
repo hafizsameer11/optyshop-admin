@@ -2309,6 +2309,7 @@ const ProductModal = ({ product, onClose }) => {
                     <FrameSizeModal
                       frameSize={selectedFrameSize}
                       onClose={() => {
+                        // Close modal and refresh table data - NO page refresh
                         setFrameSizeModalOpen(false);
                         setSelectedFrameSize(null);
                         fetchLensManagementData();

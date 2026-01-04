@@ -1458,64 +1458,101 @@ const ProductModal = ({ product, onClose }) => {
       ]);
 
       // Helper function to extract data from response - handles multiple response formats
+      // Matches the pattern used in FrameSizes.jsx and LensOptions.jsx
       const extractData = (response, key) => {
         if (response.status === 'fulfilled' && response.value) {
-          const responseData = response.value;
+          const axiosResponse = response.value; // This is the axios response object
+          const responseData = axiosResponse.data; // This is the actual API response
           let extractedData = [];
           
-          // Handle different response structures (similar to FrameSizes.jsx logic)
-          if (responseData.data) {
+          // Generate snake_case version of key
+          const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+          
+          // Generate singular versions
+          const singularKey = key.slice(0, -1); // Remove last 's'
+          const singularSnakeKey = snakeKey.slice(0, -1);
+          
+          // Special handling for certain keys
+          const alternativeKeys = {
+            'lensOptions': ['options', 'lens_options'],
+            'prescriptionSunLenses': ['prescription_sun_lenses', 'prescriptionSunLens', 'prescription_sun_lens'],
+            'photochromicLenses': ['photochromic_lenses', 'photochromicLens', 'photochromic_lens'],
+            'thicknessMaterials': ['thickness_materials', 'thicknessMaterial', 'thickness_material'],
+            'thicknessOptions': ['thickness_options', 'thicknessOption', 'thickness_option'],
+            'prescriptionLensTypes': ['prescription_lens_types', 'prescriptionLensType', 'prescription_lens_type'],
+            'dropdownValues': ['dropdown_values', 'dropdownValue', 'dropdown_value', 'prescription_form_dropdown_values']
+          };
+          
+          const altKeys = alternativeKeys[key] || [];
+          const allKeysToCheck = [key, snakeKey, singularKey, singularSnakeKey, ...altKeys];
+          
+          // Strategy 1: Check responseData.data (most common structure)
+          if (responseData?.data) {
             const dataObj = responseData.data;
             
-            // Direct array in data
+            // Direct array in data.data
             if (Array.isArray(dataObj)) {
               extractedData = dataObj;
             }
-            // Check for camelCase key (e.g., frameSizes)
-            else if (dataObj[key] && Array.isArray(dataObj[key])) {
-              extractedData = dataObj[key];
-            }
-            // Check for snake_case key (e.g., frame_sizes)
-            else {
-              const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-              if (dataObj[snakeKey] && Array.isArray(dataObj[snakeKey])) {
-                extractedData = dataObj[snakeKey];
+            // Check all possible keys in data.data
+            else if (typeof dataObj === 'object') {
+              for (const checkKey of allKeysToCheck) {
+                if (dataObj[checkKey] && Array.isArray(dataObj[checkKey])) {
+                  extractedData = dataObj[checkKey];
+                  break;
+                }
               }
-              // Check for nested data.data
-              else if (dataObj.data) {
+              
+              // If still not found, check nested data.data.data
+              if (extractedData.length === 0 && dataObj.data) {
                 if (Array.isArray(dataObj.data)) {
                   extractedData = dataObj.data;
-                } else if (dataObj.data[key] && Array.isArray(dataObj.data[key])) {
-                  extractedData = dataObj.data[key];
-                } else {
-                  const snakeKey2 = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-                  if (dataObj.data[snakeKey2] && Array.isArray(dataObj.data[snakeKey2])) {
-                    extractedData = dataObj.data[snakeKey2];
+                } else if (typeof dataObj.data === 'object') {
+                  for (const checkKey of allKeysToCheck) {
+                    if (dataObj.data[checkKey] && Array.isArray(dataObj.data[checkKey])) {
+                      extractedData = dataObj.data[checkKey];
+                      break;
+                    }
                   }
                 }
               }
-              // Try results array
-              else if (dataObj.results && Array.isArray(dataObj.results)) {
-                extractedData = dataObj.results;
-              }
-              // Try items array
-              else if (dataObj.items && Array.isArray(dataObj.items)) {
-                extractedData = dataObj.items;
+              
+              // Try common array keys
+              if (extractedData.length === 0) {
+                if (dataObj.results && Array.isArray(dataObj.results)) {
+                  extractedData = dataObj.results;
+                } else if (dataObj.items && Array.isArray(dataObj.items)) {
+                  extractedData = dataObj.items;
+                } else if (dataObj.list && Array.isArray(dataObj.list)) {
+                  extractedData = dataObj.list;
+                }
               }
             }
           }
-          // Direct array response
-          else if (Array.isArray(responseData)) {
+          
+          // Strategy 2: Check if responseData is directly an array
+          if (extractedData.length === 0 && Array.isArray(responseData)) {
             extractedData = responseData;
           }
-          // Check root level keys
-          else if (responseData[key] && Array.isArray(responseData[key])) {
-            extractedData = responseData[key];
-          }
-          else {
-            const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-            if (responseData[snakeKey] && Array.isArray(responseData[snakeKey])) {
-              extractedData = responseData[snakeKey];
+          
+          // Strategy 3: Check for keys at root level
+          if (extractedData.length === 0 && responseData && typeof responseData === 'object') {
+            for (const checkKey of allKeysToCheck) {
+              if (responseData[checkKey] && Array.isArray(responseData[checkKey])) {
+                extractedData = responseData[checkKey];
+                break;
+              }
+            }
+            
+            // Try common array keys at root
+            if (extractedData.length === 0) {
+              if (responseData.data && Array.isArray(responseData.data)) {
+                extractedData = responseData.data;
+              } else if (responseData.results && Array.isArray(responseData.results)) {
+                extractedData = responseData.results;
+              } else if (responseData.items && Array.isArray(responseData.items)) {
+                extractedData = responseData.items;
+              }
             }
           }
           
@@ -1523,7 +1560,34 @@ const ProductModal = ({ product, onClose }) => {
           if (extractedData.length > 0) {
             console.log(`✅ Successfully extracted ${extractedData.length} ${key} items`);
           } else {
-            console.warn(`⚠️ No data extracted for ${key}. Response structure:`, responseData);
+            // Enhanced logging to show actual response structure
+            const logData = {
+              'Looking for keys': allKeysToCheck,
+              'Response structure': JSON.stringify(responseData, null, 2).substring(0, 500)
+            };
+            
+            // Try to find any array in the response
+            const findArrays = (obj, path = '') => {
+              const arrays = [];
+              if (obj && typeof obj === 'object') {
+                for (const [k, v] of Object.entries(obj)) {
+                  const currentPath = path ? `${path}.${k}` : k;
+                  if (Array.isArray(v)) {
+                    arrays.push({ path: currentPath, length: v.length, sample: v.slice(0, 2) });
+                  } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+                    arrays.push(...findArrays(v, currentPath));
+                  }
+                }
+              }
+              return arrays;
+            };
+            
+            const foundArrays = findArrays(responseData);
+            if (foundArrays.length > 0) {
+              console.warn(`⚠️ No data extracted for ${key}. Found arrays at:`, foundArrays);
+            } else {
+              console.warn(`⚠️ No data extracted for ${key}. Response:`, logData);
+            }
           }
           
           return Array.isArray(extractedData) ? extractedData : [];

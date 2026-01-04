@@ -356,9 +356,10 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?product_id=${product.id}&limit=1000`);
       let configsData = [];
       
-      // Handle different response structures
+      // Comprehensive response structure handling
       if (response.data) {
         const data = response.data;
+        const keysToCheck = ['configs', 'sphericalConfigs', 'spherical_configs', 'data', 'results', 'items', 'list'];
         
         // Direct array
         if (Array.isArray(data)) {
@@ -368,24 +369,35 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         else if (data.data) {
           if (Array.isArray(data.data)) {
             configsData = data.data;
-          } else if (data.data.configs && Array.isArray(data.data.configs)) {
-            configsData = data.data.configs;
-          } else if (data.data.data && Array.isArray(data.data.data)) {
-            configsData = data.data.data;
+          } else if (typeof data.data === 'object') {
+            // Check all possible keys in data.data
+            for (const key of keysToCheck) {
+              if (data.data[key] && Array.isArray(data.data[key])) {
+                configsData = data.data[key];
+                break;
+              }
+            }
+            // Check nested data.data.data
+            if (configsData.length === 0 && data.data.data && Array.isArray(data.data.data)) {
+              configsData = data.data.data;
+            }
           }
         }
-        // Configs key
-        else if (data.configs && Array.isArray(data.configs)) {
-          configsData = data.configs;
+        // Check root level keys
+        else if (typeof data === 'object') {
+          for (const key of keysToCheck) {
+            if (data[key] && Array.isArray(data[key])) {
+              configsData = data[key];
+              break;
+            }
+          }
         }
-        // Results key
-        else if (data.results && Array.isArray(data.results)) {
-          configsData = data.results;
-        }
-        // Items key
-        else if (data.items && Array.isArray(data.items)) {
-          configsData = data.items;
-        }
+      }
+      
+      if (configsData.length > 0) {
+        console.log(`✅ Successfully extracted ${configsData.length} spherical configs`);
+      } else {
+        console.warn('⚠️ No spherical configs extracted. Response:', JSON.stringify(response.data, null, 2).substring(0, 500));
       }
       
       setSphericalConfigs(Array.isArray(configsData) ? configsData : []);
@@ -409,9 +421,10 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?product_id=${product.id}&limit=1000`);
       let configsData = [];
       
-      // Handle different response structures
+      // Comprehensive response structure handling
       if (response.data) {
         const data = response.data;
+        const keysToCheck = ['configs', 'astigmatismConfigs', 'astigmatism_configs', 'data', 'results', 'items', 'list'];
         
         // Direct array
         if (Array.isArray(data)) {
@@ -421,24 +434,35 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         else if (data.data) {
           if (Array.isArray(data.data)) {
             configsData = data.data;
-          } else if (data.data.configs && Array.isArray(data.data.configs)) {
-            configsData = data.data.configs;
-          } else if (data.data.data && Array.isArray(data.data.data)) {
-            configsData = data.data.data;
+          } else if (typeof data.data === 'object') {
+            // Check all possible keys in data.data
+            for (const key of keysToCheck) {
+              if (data.data[key] && Array.isArray(data.data[key])) {
+                configsData = data.data[key];
+                break;
+              }
+            }
+            // Check nested data.data.data
+            if (configsData.length === 0 && data.data.data && Array.isArray(data.data.data)) {
+              configsData = data.data.data;
+            }
           }
         }
-        // Configs key
-        else if (data.configs && Array.isArray(data.configs)) {
-          configsData = data.configs;
+        // Check root level keys
+        else if (typeof data === 'object') {
+          for (const key of keysToCheck) {
+            if (data[key] && Array.isArray(data[key])) {
+              configsData = data[key];
+              break;
+            }
+          }
         }
-        // Results key
-        else if (data.results && Array.isArray(data.results)) {
-          configsData = data.results;
-        }
-        // Items key
-        else if (data.items && Array.isArray(data.items)) {
-          configsData = data.items;
-        }
+      }
+      
+      if (configsData.length > 0) {
+        console.log(`✅ Successfully extracted ${configsData.length} astigmatism configs`);
+      } else {
+        console.warn('⚠️ No astigmatism configs extracted. Response:', JSON.stringify(response.data, null, 2).substring(0, 500));
       }
       
       setAstigmatismConfigs(Array.isArray(configsData) ? configsData : []);
@@ -458,9 +482,15 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.LIST}?limit=1000`);
       let valuesData = [];
       
-      // Handle different response structures
+      // Comprehensive response structure handling
       if (response.data) {
         const data = response.data;
+        const keysToCheck = [
+          'values', 'dropdownValues', 'dropdown_values', 
+          'prescriptionFormDropdownValues', 'prescription_form_dropdown_values',
+          'astigmatismDropdownValues', 'astigmatism_dropdown_values',
+          'data', 'results', 'items', 'list'
+        ];
         
         // Direct array
         if (Array.isArray(data)) {
@@ -470,28 +500,35 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         else if (data.data) {
           if (Array.isArray(data.data)) {
             valuesData = data.data;
-          } else if (data.data.values && Array.isArray(data.data.values)) {
-            valuesData = data.data.values;
-          } else if (data.data.data && Array.isArray(data.data.data)) {
-            valuesData = data.data.data;
+          } else if (typeof data.data === 'object') {
+            // Check all possible keys in data.data
+            for (const key of keysToCheck) {
+              if (data.data[key] && Array.isArray(data.data[key])) {
+                valuesData = data.data[key];
+                break;
+              }
+            }
+            // Check nested data.data.data
+            if (valuesData.length === 0 && data.data.data && Array.isArray(data.data.data)) {
+              valuesData = data.data.data;
+            }
           }
         }
-        // Values key
-        else if (data.values && Array.isArray(data.values)) {
-          valuesData = data.values;
+        // Check root level keys
+        else if (typeof data === 'object') {
+          for (const key of keysToCheck) {
+            if (data[key] && Array.isArray(data[key])) {
+              valuesData = data[key];
+              break;
+            }
+          }
         }
-        // Results key
-        else if (data.results && Array.isArray(data.results)) {
-          valuesData = data.results;
-        }
-        // Items key
-        else if (data.items && Array.isArray(data.items)) {
-          valuesData = data.items;
-        }
-        // Dropdown values key
-        else if (data.dropdownValues && Array.isArray(data.dropdownValues)) {
-          valuesData = data.dropdownValues;
-        }
+      }
+      
+      if (valuesData.length > 0) {
+        console.log(`✅ Successfully extracted ${valuesData.length} dropdown values`);
+      } else {
+        console.warn('⚠️ No dropdown values extracted. Response:', JSON.stringify(response.data, null, 2).substring(0, 500));
       }
       
       setDropdownValues(Array.isArray(valuesData) ? valuesData : []);

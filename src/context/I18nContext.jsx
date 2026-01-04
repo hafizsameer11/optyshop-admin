@@ -450,7 +450,6 @@ const translations = {
     height: 'Height',
     sphere: 'Sphere',
     cylinder: 'Cylinder',
-    axis: 'Axis',
     yearOfBirth: 'Year of Birth',
   },
   ar: {

@@ -1461,55 +1461,121 @@ const ProductModal = ({ product, onClose }) => {
       const extractData = (response, key) => {
         if (response.status === 'fulfilled' && response.value) {
           const responseData = response.value;
-          let data = responseData.data || responseData;
+          let extractedData = [];
           
-          // Handle different response structures
-          if (Array.isArray(data)) {
-            return data;
+          // Handle different response structures (similar to FrameSizes.jsx logic)
+          if (responseData.data) {
+            const dataObj = responseData.data;
+            
+            // Direct array in data
+            if (Array.isArray(dataObj)) {
+              extractedData = dataObj;
+            }
+            // Check for camelCase key (e.g., frameSizes)
+            else if (dataObj[key] && Array.isArray(dataObj[key])) {
+              extractedData = dataObj[key];
+            }
+            // Check for snake_case key (e.g., frame_sizes)
+            else {
+              const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+              if (dataObj[snakeKey] && Array.isArray(dataObj[snakeKey])) {
+                extractedData = dataObj[snakeKey];
+              }
+              // Check for nested data.data
+              else if (dataObj.data) {
+                if (Array.isArray(dataObj.data)) {
+                  extractedData = dataObj.data;
+                } else if (dataObj.data[key] && Array.isArray(dataObj.data[key])) {
+                  extractedData = dataObj.data[key];
+                } else {
+                  const snakeKey2 = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+                  if (dataObj.data[snakeKey2] && Array.isArray(dataObj.data[snakeKey2])) {
+                    extractedData = dataObj.data[snakeKey2];
+                  }
+                }
+              }
+              // Try results array
+              else if (dataObj.results && Array.isArray(dataObj.results)) {
+                extractedData = dataObj.results;
+              }
+              // Try items array
+              else if (dataObj.items && Array.isArray(dataObj.items)) {
+                extractedData = dataObj.items;
+              }
+            }
+          }
+          // Direct array response
+          else if (Array.isArray(responseData)) {
+            extractedData = responseData;
+          }
+          // Check root level keys
+          else if (responseData[key] && Array.isArray(responseData[key])) {
+            extractedData = responseData[key];
+          }
+          else {
+            const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+            if (responseData[snakeKey] && Array.isArray(responseData[snakeKey])) {
+              extractedData = responseData[snakeKey];
+            }
           }
           
-          // Try common keys
-          if (data && typeof data === 'object') {
-            // Try the specific key first
-            if (data[key] && Array.isArray(data[key])) {
-              return data[key];
-            }
-            // Try nested data
-            if (data.data && Array.isArray(data.data)) {
-              return data.data;
-            }
-            // Try results array
-            if (data.results && Array.isArray(data.results)) {
-              return data.results;
-            }
-            // Try items array
-            if (data.items && Array.isArray(data.items)) {
-              return data.items;
-            }
-            // Try list array
-            if (data.list && Array.isArray(data.list)) {
-              return data.list;
-            }
+          // Debug logging
+          if (extractedData.length > 0) {
+            console.log(`✅ Successfully extracted ${extractedData.length} ${key} items`);
+          } else {
+            console.warn(`⚠️ No data extracted for ${key}. Response structure:`, responseData);
           }
+          
+          return Array.isArray(extractedData) ? extractedData : [];
         } else if (response.status === 'rejected') {
-          console.error(`Failed to fetch ${key}:`, response.reason);
+          console.error(`❌ Failed to fetch ${key}:`, response.reason);
         }
         return [];
       };
 
-      setFrameSizes(extractData(frameSizesRes, 'frameSizes'));
-      setLensTypesList(extractData(lensTypesRes, 'lensTypes'));
-      setLensOptions(extractData(lensOptionsRes, 'lensOptions'));
-      setPrescriptionSunLenses(extractData(prescriptionSunRes, 'prescriptionSunLenses'));
-      setPhotochromicLenses(extractData(photochromicRes, 'photochromicLenses'));
-      setLensCoatings(extractData(lensCoatingsRes, 'lensCoatings'));
-      setLensColors(extractData(lensColorsRes, 'lensColors'));
-      setLensFinishes(extractData(lensFinishesRes, 'lensFinishes'));
-      setLensTreatments(extractData(lensTreatmentsRes, 'lensTreatments'));
-      setThicknessMaterials(extractData(thicknessMaterialsRes, 'thicknessMaterials'));
-      setThicknessOptions(extractData(thicknessOptionsRes, 'thicknessOptions'));
-      setPrescriptionLensTypes(extractData(prescriptionLensTypesRes, 'prescriptionLensTypes'));
-      setPrescriptionDropdownValues(extractData(prescriptionDropdownRes, 'dropdownValues'));
+      const frameSizesData = extractData(frameSizesRes, 'frameSizes');
+      const lensTypesData = extractData(lensTypesRes, 'lensTypes');
+      const lensOptionsData = extractData(lensOptionsRes, 'lensOptions');
+      const prescriptionSunData = extractData(prescriptionSunRes, 'prescriptionSunLenses');
+      const photochromicData = extractData(photochromicRes, 'photochromicLenses');
+      const lensCoatingsData = extractData(lensCoatingsRes, 'lensCoatings');
+      const lensColorsData = extractData(lensColorsRes, 'lensColors');
+      const lensFinishesData = extractData(lensFinishesRes, 'lensFinishes');
+      const lensTreatmentsData = extractData(lensTreatmentsRes, 'lensTreatments');
+      const thicknessMaterialsData = extractData(thicknessMaterialsRes, 'thicknessMaterials');
+      const thicknessOptionsData = extractData(thicknessOptionsRes, 'thicknessOptions');
+      const prescriptionLensTypesData = extractData(prescriptionLensTypesRes, 'prescriptionLensTypes');
+      const prescriptionDropdownData = extractData(prescriptionDropdownRes, 'dropdownValues');
+      
+      console.log('📊 Setting lens management data:', {
+        frameSizes: frameSizesData.length,
+        lensTypes: lensTypesData.length,
+        lensOptions: lensOptionsData.length,
+        prescriptionSunLenses: prescriptionSunData.length,
+        photochromicLenses: photochromicData.length,
+        lensCoatings: lensCoatingsData.length,
+        lensColors: lensColorsData.length,
+        lensFinishes: lensFinishesData.length,
+        lensTreatments: lensTreatmentsData.length,
+        thicknessMaterials: thicknessMaterialsData.length,
+        thicknessOptions: thicknessOptionsData.length,
+        prescriptionLensTypes: prescriptionLensTypesData.length,
+        prescriptionDropdownValues: prescriptionDropdownData.length,
+      });
+      
+      setFrameSizes(frameSizesData);
+      setLensTypesList(lensTypesData);
+      setLensOptions(lensOptionsData);
+      setPrescriptionSunLenses(prescriptionSunData);
+      setPhotochromicLenses(photochromicData);
+      setLensCoatings(lensCoatingsData);
+      setLensColors(lensColorsData);
+      setLensFinishes(lensFinishesData);
+      setLensTreatments(lensTreatmentsData);
+      setThicknessMaterials(thicknessMaterialsData);
+      setThicknessOptions(thicknessOptionsData);
+      setPrescriptionLensTypes(prescriptionLensTypesData);
+      setPrescriptionDropdownValues(prescriptionDropdownData);
     } catch (error) {
       console.error('Failed to fetch lens management data:', error);
       toast.error('Failed to load some lens management data. Please refresh the page.');
@@ -1520,6 +1586,13 @@ const ProductModal = ({ product, onClose }) => {
 
   // Generic table component for lens management items
   const LensManagementTable = ({ title, data, loading, onAdd, onEdit, onDelete, columns, getRowData }) => {
+    // Debug logging
+    React.useEffect(() => {
+      if (!loading && data) {
+        console.log(`📋 ${title} table - Data length: ${data.length}`, data);
+      }
+    }, [title, data, loading]);
+    
     if (loading) {
       return <div className="text-center py-4 text-gray-500">Loading {title}...</div>;
     }

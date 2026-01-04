@@ -3,6 +3,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
+import ContactLensProductModal from '../components/ContactLensProductModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
@@ -449,6 +450,46 @@ const Products = () => {
   const handleAdd = () => {
     setEditingProduct(null);
     setModalOpen(true);
+  };
+
+  // Determine which modal to use based on selected section
+  const getProductModal = () => {
+    if (selectedSection === 'contact-lenses') {
+      return (
+        <ContactLensProductModal
+          product={editingProduct}
+          onClose={handleModalClose}
+          selectedSection={selectedSection}
+        />
+      );
+    } else {
+      // For sunglasses, eyeglasses, eye-hygiene, and all - use standard ProductModal
+      // Set product_type based on selected section when creating new product
+      const productTypeMap = {
+        'sunglasses': 'sunglasses',
+        'eyeglasses': 'frame',
+        'eye-hygiene': 'eye_hygiene',
+        'all': null // Will use default or existing product type
+      };
+      
+      // When creating new product, set default product type based on section
+      // When editing, use existing product type
+      let productToPass = editingProduct;
+      if (!editingProduct && selectedSection !== 'all') {
+        // Creating new product - set default product type
+        productToPass = { product_type: productTypeMap[selectedSection] };
+      } else if (editingProduct && !editingProduct.product_type && selectedSection !== 'all') {
+        // Editing product without product_type - set based on section
+        productToPass = { ...editingProduct, product_type: productTypeMap[selectedSection] };
+      }
+      
+      return (
+        <ProductModal
+          product={productToPass}
+          onClose={handleModalClose}
+        />
+      );
+    }
   };
 
   const handleModalClose = () => {
@@ -924,12 +965,7 @@ const Products = () => {
         </div>
       </div>
 
-      {modalOpen && (
-        <ProductModal
-          product={editingProduct}
-          onClose={handleModalClose}
-        />
-      )}
+      {modalOpen && getProductModal()}
     </div>
   );
 };

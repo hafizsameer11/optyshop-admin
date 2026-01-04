@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiUpload, FiPlus } from 'react-icons/fi';
+import { FiX, FiUpload, FiPlus, FiChevronRight } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -106,6 +106,7 @@ const ProductModal = ({ product, onClose }) => {
   const [existingColorImages, setExistingColorImages] = useState([]); // Existing color images structure for deletion tracking
   const [model3DFile, setModel3DFile] = useState(null);
   const [model3DPreview, setModel3DPreview] = useState(null);
+  const [selectedImageSection, setSelectedImageSection] = useState('first'); // 'first' or 'second' for frames/sunglasses
 
   useEffect(() => {
     fetchProductOptions();
@@ -1369,6 +1370,57 @@ const ProductModal = ({ product, onClose }) => {
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               {t('productImages')} <span className="text-indigo-600 font-bold">({t('multipleSelectionSupported')})</span>
             </label>
+            
+            {/* Image Section Selection for Sunglasses/Eyeglasses */}
+            {(formData.product_type === 'sunglasses' || formData.product_type === 'frame') && (
+              <div className="mb-4 space-y-3">
+                <p className="text-sm font-medium text-gray-700">Select Image Section:</p>
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedImageSection('first')}
+                    className={`px-6 py-4 rounded-xl border-2 transition-all text-left ${
+                      selectedImageSection === 'first'
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">First Image</p>
+                        <p className="text-xs text-gray-500 mt-1">Upload images for the first image section</p>
+                      </div>
+                      <FiChevronRight className={`w-5 h-5 transition-transform ${selectedImageSection === 'first' ? 'rotate-90' : ''}`} />
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedImageSection('second')}
+                    className={`px-6 py-4 rounded-xl border-2 transition-all text-left ${
+                      selectedImageSection === 'second'
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">Second Image</p>
+                        <p className="text-xs text-gray-500 mt-1">Upload images for the second image section</p>
+                      </div>
+                      <FiChevronRight className={`w-5 h-5 transition-transform ${selectedImageSection === 'second' ? 'rotate-90' : ''}`} />
+                    </div>
+                  </button>
+                </div>
+                {selectedImageSection && (
+                  <div className="mt-3 px-4 py-2 bg-indigo-100 rounded-lg">
+                    <p className="text-sm text-indigo-700 font-semibold">
+                      Currently editing: <span className="capitalize">{selectedImageSection}</span> Image Section
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="space-y-4">
               {/* Display existing/preview images */}
               {imagePreviews.length > 0 && (

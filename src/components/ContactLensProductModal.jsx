@@ -1225,7 +1225,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                 )}
                 {sphericalModalOpen && (
                   <SphericalConfigModal
-                    config={selectedSphericalConfig}
+                    config={selectedSphericalConfig || (product?.id ? { product_id: product.id } : null)}
                     onClose={() => {
                       setSphericalModalOpen(false);
                       setSelectedSphericalConfig(null);
@@ -1309,7 +1309,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                 )}
                 {astigmatismModalOpen && (
                   <AstigmatismConfigModal
-                    config={selectedAstigmatismConfig}
+                    config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
                     onClose={() => {
                       setAstigmatismModalOpen(false);
                       setSelectedAstigmatismConfig(null);

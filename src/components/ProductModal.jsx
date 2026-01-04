@@ -6,6 +6,19 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import FrameSizeModal from './FrameSizeModal';
+import LensTypeModal from './LensTypeModal';
+import LensOptionModal from './LensOptionModal';
+import PrescriptionSunLensModal from './PrescriptionSunLensModal';
+import PhotochromicLensModal from './PhotochromicLensModal';
+import LensCoatingModal from './LensCoatingModal';
+import LensColorModal from './LensColorModal';
+import LensFinishModal from './LensFinishModal';
+import LensTreatmentModal from './LensTreatmentModal';
+import LensThicknessMaterialModal from './LensThicknessMaterialModal';
+import LensThicknessOptionModal from './LensThicknessOptionModal';
+import PrescriptionLensTypeModal from './PrescriptionLensTypeModal';
+import PrescriptionFormDropdownValueModal from './PrescriptionFormDropdownValueModal';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -2023,8 +2036,14 @@ const ProductModal = ({ product, onClose }) => {
                     title="Frame Sizes"
                     data={frameSizes}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Frame Sizes page to add new frame size', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Frame Sizes page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedFrameSize(null);
+                      setFrameSizeModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedFrameSize(item);
+                      setFrameSizeModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this frame size?')) {
                         try {
@@ -2049,14 +2068,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {frameSizeModalOpen && (
+                    <FrameSizeModal
+                      frameSize={selectedFrameSize}
+                      onClose={() => {
+                        setFrameSizeModalOpen(false);
+                        setSelectedFrameSize(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Lens Types Table */}
                   <LensManagementTable
                     title="Lens Types"
                     data={lensTypesList}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Lens Types page to add new lens type', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Lens Types page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedLensType(null);
+                      setLensTypeModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedLensType(item);
+                      setLensTypeModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this lens type?')) {
                         try {
@@ -2081,14 +2116,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {lensTypeModalOpen && (
+                    <LensTypeModal
+                      lensType={selectedLensType}
+                      onClose={() => {
+                        setLensTypeModalOpen(false);
+                        setSelectedLensType(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Lens Options Table */}
                   <LensManagementTable
                     title="Lens Options"
                     data={lensOptions}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Lens Options page to add new lens option', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Lens Options page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedLensOption(null);
+                      setLensOptionModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedLensOption(item);
+                      setLensOptionModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this lens option?')) {
                         try {
@@ -2112,14 +2163,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {lensOptionModalOpen && (
+                    <LensOptionModal
+                      lensOption={selectedLensOption}
+                      onClose={() => {
+                        setLensOptionModalOpen(false);
+                        setSelectedLensOption(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Prescription Sun Lenses Table */}
                   <LensManagementTable
                     title="Prescription Sun Lenses"
                     data={prescriptionSunLenses}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Prescription Sun Lenses page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Prescription Sun Lenses page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedPrescriptionSunLens(null);
+                      setPrescriptionSunLensModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedPrescriptionSunLens(item);
+                      setPrescriptionSunLensModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this prescription sun lens?')) {
                         try {
@@ -2143,14 +2210,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {prescriptionSunLensModalOpen && (
+                    <PrescriptionSunLensModal
+                      lens={selectedPrescriptionSunLens}
+                      onClose={() => {
+                        setPrescriptionSunLensModalOpen(false);
+                        setSelectedPrescriptionSunLens(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Photochromic Lenses Table */}
                   <LensManagementTable
                     title="Photochromic Lenses"
                     data={photochromicLenses}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Photochromic Lenses page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Photochromic Lenses page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedPhotochromicLens(null);
+                      setPhotochromicLensModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedPhotochromicLens(item);
+                      setPhotochromicLensModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this photochromic lens?')) {
                         try {
@@ -2173,14 +2256,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {photochromicLensModalOpen && (
+                    <PhotochromicLensModal
+                      lens={selectedPhotochromicLens}
+                      onClose={() => {
+                        setPhotochromicLensModalOpen(false);
+                        setSelectedPhotochromicLens(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Lens Coatings Table */}
                   <LensManagementTable
                     title="Lens Coatings"
                     data={lensCoatings}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Lens Coatings page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Lens Coatings page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedLensCoating(null);
+                      setLensCoatingModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedLensCoating(item);
+                      setLensCoatingModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this lens coating?')) {
                         try {
@@ -2203,14 +2302,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {lensCoatingModalOpen && (
+                    <LensCoatingModal
+                      lensCoating={selectedLensCoating}
+                      onClose={() => {
+                        setLensCoatingModalOpen(false);
+                        setSelectedLensCoating(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Lens Colors Table */}
                   <LensManagementTable
                     title="Lens Colors"
                     data={lensColors}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Lens Colors page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Lens Colors page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedLensColor(null);
+                      setLensColorModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedLensColor(item);
+                      setLensColorModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this lens color?')) {
                         try {
@@ -2238,14 +2353,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {lensColorModalOpen && (
+                    <LensColorModal
+                      lensColor={selectedLensColor}
+                      onClose={() => {
+                        setLensColorModalOpen(false);
+                        setSelectedLensColor(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Lens Finishes Table */}
                   <LensManagementTable
                     title="Lens Finishes"
                     data={lensFinishes}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Lens Finishes page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Lens Finishes page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedLensFinish(null);
+                      setLensFinishModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedLensFinish(item);
+                      setLensFinishModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this lens finish?')) {
                         try {
@@ -2268,14 +2399,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {lensFinishModalOpen && (
+                    <LensFinishModal
+                      lensFinish={selectedLensFinish}
+                      onClose={() => {
+                        setLensFinishModalOpen(false);
+                        setSelectedLensFinish(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Lens Treatments Table */}
                   <LensManagementTable
                     title="Lens Treatments"
                     data={lensTreatments}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Lens Treatments page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Lens Treatments page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedLensTreatment(null);
+                      setLensTreatmentModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedLensTreatment(item);
+                      setLensTreatmentModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this lens treatment?')) {
                         try {
@@ -2298,14 +2445,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {lensTreatmentModalOpen && (
+                    <LensTreatmentModal
+                      lensTreatment={selectedLensTreatment}
+                      onClose={() => {
+                        setLensTreatmentModalOpen(false);
+                        setSelectedLensTreatment(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Thickness Materials Table */}
                   <LensManagementTable
                     title="Thickness Materials"
                     data={thicknessMaterials}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Thickness Materials page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Thickness Materials page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedThicknessMaterial(null);
+                      setThicknessMaterialModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedThicknessMaterial(item);
+                      setThicknessMaterialModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this thickness material?')) {
                         try {
@@ -2327,14 +2490,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {thicknessMaterialModalOpen && (
+                    <LensThicknessMaterialModal
+                      material={selectedThicknessMaterial}
+                      onClose={() => {
+                        setThicknessMaterialModalOpen(false);
+                        setSelectedThicknessMaterial(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Thickness Options Table */}
                   <LensManagementTable
                     title="Thickness Options"
                     data={thicknessOptions}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Thickness Options page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Thickness Options page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedThicknessOption(null);
+                      setThicknessOptionModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedThicknessOption(item);
+                      setThicknessOptionModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this thickness option?')) {
                         try {
@@ -2356,14 +2535,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {thicknessOptionModalOpen && (
+                    <LensThicknessOptionModal
+                      option={selectedThicknessOption}
+                      onClose={() => {
+                        setThicknessOptionModalOpen(false);
+                        setSelectedThicknessOption(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Prescription Lens Types Table */}
                   <LensManagementTable
                     title="Prescription Lens Types"
                     data={prescriptionLensTypes}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Prescription Lens Types page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Prescription Lens Types page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedPrescriptionLensType(null);
+                      setPrescriptionLensTypeModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedPrescriptionLensType(item);
+                      setPrescriptionLensTypeModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this prescription lens type?')) {
                         try {
@@ -2385,14 +2580,30 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {prescriptionLensTypeModalOpen && (
+                    <PrescriptionLensTypeModal
+                      lensType={selectedPrescriptionLensType}
+                      onClose={() => {
+                        setPrescriptionLensTypeModalOpen(false);
+                        setSelectedPrescriptionLensType(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
 
                   {/* Prescription Form Dropdown Values Table */}
                   <LensManagementTable
                     title="Prescription Form Dropdown Values"
                     data={prescriptionDropdownValues}
                     loading={loadingLensManagement.all}
-                    onAdd={() => toast('Open Prescription Form Dropdown Values page to add new', { icon: 'ℹ️' })}
-                    onEdit={() => toast('Open Prescription Form Dropdown Values page to edit', { icon: 'ℹ️' })}
+                    onAdd={() => {
+                      setSelectedPrescriptionDropdown(null);
+                      setPrescriptionDropdownModalOpen(true);
+                    }}
+                    onEdit={(item) => {
+                      setSelectedPrescriptionDropdown(item);
+                      setPrescriptionDropdownModalOpen(true);
+                    }}
                     onDelete={async (id) => {
                       if (window.confirm('Delete this dropdown value?')) {
                         try {
@@ -2417,6 +2628,16 @@ const ProductModal = ({ product, onClose }) => {
                       </span>
                     ]}
                   />
+                  {prescriptionDropdownModalOpen && (
+                    <PrescriptionFormDropdownValueModal
+                      value={selectedPrescriptionDropdown}
+                      onClose={() => {
+                        setPrescriptionDropdownModalOpen(false);
+                        setSelectedPrescriptionDropdown(null);
+                        fetchLensManagementData();
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             )}

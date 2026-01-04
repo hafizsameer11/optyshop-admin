@@ -347,28 +347,51 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
 
   // Fetch Spherical Configurations
   const fetchSphericalConfigs = async () => {
-    if (!product?.id) return;
+    if (!product?.id) {
+      setSphericalConfigs([]);
+      return;
+    }
     try {
       setLoadingSpherical(true);
       const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?product_id=${product.id}&limit=1000`);
       let configsData = [];
-      if (response.data?.data) {
-        const dataObj = response.data.data;
-        if (Array.isArray(dataObj)) {
-          configsData = dataObj;
-        } else if (dataObj.configs) {
-          configsData = dataObj.configs;
-        } else if (dataObj.data) {
-          configsData = dataObj.data;
+      
+      // Handle different response structures
+      if (response.data) {
+        const data = response.data;
+        
+        // Direct array
+        if (Array.isArray(data)) {
+          configsData = data;
         }
-      } else if (Array.isArray(response.data)) {
-        configsData = response.data;
-      } else if (response.data?.configs) {
-        configsData = response.data.configs;
+        // Nested data object
+        else if (data.data) {
+          if (Array.isArray(data.data)) {
+            configsData = data.data;
+          } else if (data.data.configs && Array.isArray(data.data.configs)) {
+            configsData = data.data.configs;
+          } else if (data.data.data && Array.isArray(data.data.data)) {
+            configsData = data.data.data;
+          }
+        }
+        // Configs key
+        else if (data.configs && Array.isArray(data.configs)) {
+          configsData = data.configs;
+        }
+        // Results key
+        else if (data.results && Array.isArray(data.results)) {
+          configsData = data.results;
+        }
+        // Items key
+        else if (data.items && Array.isArray(data.items)) {
+          configsData = data.items;
+        }
       }
+      
       setSphericalConfigs(Array.isArray(configsData) ? configsData : []);
     } catch (error) {
       console.error('Failed to fetch spherical configs:', error);
+      toast.error('Failed to load spherical configurations');
       setSphericalConfigs([]);
     } finally {
       setLoadingSpherical(false);
@@ -377,28 +400,51 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
 
   // Fetch Astigmatism Configurations
   const fetchAstigmatismConfigs = async () => {
-    if (!product?.id) return;
+    if (!product?.id) {
+      setAstigmatismConfigs([]);
+      return;
+    }
     try {
       setLoadingAstigmatism(true);
       const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?product_id=${product.id}&limit=1000`);
       let configsData = [];
-      if (response.data?.data) {
-        const dataObj = response.data.data;
-        if (Array.isArray(dataObj)) {
-          configsData = dataObj;
-        } else if (dataObj.configs) {
-          configsData = dataObj.configs;
-        } else if (dataObj.data) {
-          configsData = dataObj.data;
+      
+      // Handle different response structures
+      if (response.data) {
+        const data = response.data;
+        
+        // Direct array
+        if (Array.isArray(data)) {
+          configsData = data;
         }
-      } else if (Array.isArray(response.data)) {
-        configsData = response.data;
-      } else if (response.data?.configs) {
-        configsData = response.data.configs;
+        // Nested data object
+        else if (data.data) {
+          if (Array.isArray(data.data)) {
+            configsData = data.data;
+          } else if (data.data.configs && Array.isArray(data.data.configs)) {
+            configsData = data.data.configs;
+          } else if (data.data.data && Array.isArray(data.data.data)) {
+            configsData = data.data.data;
+          }
+        }
+        // Configs key
+        else if (data.configs && Array.isArray(data.configs)) {
+          configsData = data.configs;
+        }
+        // Results key
+        else if (data.results && Array.isArray(data.results)) {
+          configsData = data.results;
+        }
+        // Items key
+        else if (data.items && Array.isArray(data.items)) {
+          configsData = data.items;
+        }
       }
+      
       setAstigmatismConfigs(Array.isArray(configsData) ? configsData : []);
     } catch (error) {
       console.error('Failed to fetch astigmatism configs:', error);
+      toast.error('Failed to load astigmatism configurations');
       setAstigmatismConfigs([]);
     } finally {
       setLoadingAstigmatism(false);
@@ -411,23 +457,47 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       setLoadingDropdown(true);
       const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.LIST}?limit=1000`);
       let valuesData = [];
-      if (response.data?.data) {
-        const dataObj = response.data.data;
-        if (Array.isArray(dataObj)) {
-          valuesData = dataObj;
-        } else if (dataObj.values) {
-          valuesData = dataObj.values;
-        } else if (dataObj.data) {
-          valuesData = dataObj.data;
+      
+      // Handle different response structures
+      if (response.data) {
+        const data = response.data;
+        
+        // Direct array
+        if (Array.isArray(data)) {
+          valuesData = data;
         }
-      } else if (Array.isArray(response.data)) {
-        valuesData = response.data;
-      } else if (response.data?.values) {
-        valuesData = response.data.values;
+        // Nested data object
+        else if (data.data) {
+          if (Array.isArray(data.data)) {
+            valuesData = data.data;
+          } else if (data.data.values && Array.isArray(data.data.values)) {
+            valuesData = data.data.values;
+          } else if (data.data.data && Array.isArray(data.data.data)) {
+            valuesData = data.data.data;
+          }
+        }
+        // Values key
+        else if (data.values && Array.isArray(data.values)) {
+          valuesData = data.values;
+        }
+        // Results key
+        else if (data.results && Array.isArray(data.results)) {
+          valuesData = data.results;
+        }
+        // Items key
+        else if (data.items && Array.isArray(data.items)) {
+          valuesData = data.items;
+        }
+        // Dropdown values key
+        else if (data.dropdownValues && Array.isArray(data.dropdownValues)) {
+          valuesData = data.dropdownValues;
+        }
       }
+      
       setDropdownValues(Array.isArray(valuesData) ? valuesData : []);
     } catch (error) {
       console.error('Failed to fetch dropdown values:', error);
+      toast.error('Failed to load dropdown values');
       setDropdownValues([]);
     } finally {
       setLoadingDropdown(false);

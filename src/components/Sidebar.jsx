@@ -46,12 +46,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { t } = useI18n();
   const [openSubmenus, setOpenSubmenus] = useState({
     catalog: false,
-    lens: false,
     prescription: false,
     marketing: false,
     content: false,
-    forms: false,
-    contactLensForms: false
+    forms: false
   });
 
   const toggleSubmenu = (key) => {
@@ -96,29 +94,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     },
     {
       type: 'divider',
-      label: t('frameAndLens')
-    },
-    {
-      type: 'group',
-      key: 'lens',
-      label: t('lensManagement'),
-      icon: FiAperture,
-      children: [
-        { path: '/frame-sizes', icon: FiLayers, label: t('frameSizes') },
-        { path: '/lens-types', icon: FiEye, label: t('lensTypes') },
-        { path: '/lens-options', icon: FiSettings, label: t('lensOptions') },
-        { path: '/prescription-sun-lenses', icon: FiEye, label: t('prescriptionSunLenses') || 'Prescription Sun Lenses' },
-        { path: '/photochromic-lenses', icon: FiZap, label: t('photochromicLenses') || 'Photochromic Lenses' },
-        { path: '/lens-coatings', icon: FiBox, label: t('lensCoatings') },
-        { path: '/lens-colors', icon: FiDroplet, label: t('lensColors') },
-        { path: '/lens-finishes', icon: FiLayers, label: t('lensFinishes') },
-        { path: '/lens-treatments', icon: FiShield, label: t('lensTreatments') },
-        { path: '/lens-thickness-materials', icon: FiBox, label: t('thicknessMaterials') },
-        { path: '/lens-thickness-options', icon: FiLayers, label: t('thicknessOptions') },
-      ]
-    },
-    {
-      type: 'divider',
       label: t('prescriptions')
     },
     {
@@ -128,9 +103,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: FiFileText,
       children: [
         { path: '/prescriptions', icon: FiFileText, label: t('prescriptions') },
-        { path: '/prescription-lens-types', icon: FiEye, label: t('prescriptionLensTypes') },
-        { path: '/prescription-lens-variants', icon: FiLayers, label: t('lensVariants') },
-        { path: '/prescription-forms/dropdown-values', icon: FiSettings, label: t('prescriptionFormDropdownValues') || 'Prescription Form Dropdown Values' },
       ]
     },
     {
@@ -188,17 +160,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { path: '/forms/credentials', label: t('credentialsRequests') },
         { path: '/forms/support', label: t('supportRequests') },
         { path: '/forms/job-applications', label: t('jobApplications') },
-      ]
-    },
-    {
-      type: 'group',
-      key: 'contactLensForms',
-      label: t('contactLensForms'),
-      icon: FiEye,
-      children: [
-        { path: '/contact-lens-forms/spherical', icon: FiAperture, label: t('sphericalConfigurations') },
-        { path: '/contact-lens-forms/astigmatism', icon: FiLayers, label: t('astigmatismConfigurations') || 'Astigmatism Configs' },
-        { path: '/contact-lens-forms/dropdown-values', icon: FiSettings, label: t('astigmatismDropdownValues') || 'Dropdown Values' },
       ]
     },
     {

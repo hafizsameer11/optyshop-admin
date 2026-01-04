@@ -1457,13 +1457,42 @@ const ProductModal = ({ product, onClose }) => {
         api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.LIST}?limit=1000`),
       ]);
 
-      // Helper function to extract data from response
+      // Helper function to extract data from response - handles multiple response formats
       const extractData = (response, key) => {
-        if (response.status === 'fulfilled' && response.value?.data) {
-          const data = response.value.data;
-          if (Array.isArray(data)) return data;
-          if (data[key] && Array.isArray(data[key])) return data[key];
-          if (data.data && Array.isArray(data.data)) return data.data;
+        if (response.status === 'fulfilled' && response.value) {
+          const responseData = response.value;
+          let data = responseData.data || responseData;
+          
+          // Handle different response structures
+          if (Array.isArray(data)) {
+            return data;
+          }
+          
+          // Try common keys
+          if (data && typeof data === 'object') {
+            // Try the specific key first
+            if (data[key] && Array.isArray(data[key])) {
+              return data[key];
+            }
+            // Try nested data
+            if (data.data && Array.isArray(data.data)) {
+              return data.data;
+            }
+            // Try results array
+            if (data.results && Array.isArray(data.results)) {
+              return data.results;
+            }
+            // Try items array
+            if (data.items && Array.isArray(data.items)) {
+              return data.items;
+            }
+            // Try list array
+            if (data.list && Array.isArray(data.list)) {
+              return data.list;
+            }
+          }
+        } else if (response.status === 'rejected') {
+          console.error(`Failed to fetch ${key}:`, response.reason);
         }
         return [];
       };
@@ -1483,6 +1512,7 @@ const ProductModal = ({ product, onClose }) => {
       setPrescriptionDropdownValues(extractData(prescriptionDropdownRes, 'dropdownValues'));
     } catch (error) {
       console.error('Failed to fetch lens management data:', error);
+      toast.error('Failed to load some lens management data. Please refresh the page.');
     } finally {
       setLoadingLensManagement({ all: false });
     }

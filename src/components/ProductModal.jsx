@@ -2047,14 +2047,14 @@ const ProductModal = ({ product, onClose }) => {
             </div>
           </div>
 
-          {/* Eye Hygiene Fields Section */}
+          {/* Eye Hygiene Fields Section - Only show for eye_hygiene products */}
+          {formData.product_type === 'eye_hygiene' && (
           <div className="border-t border-gray-200 pt-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               Eye Hygiene Fields <span className="text-gray-500 text-sm font-normal">(Optional)</span>
             </h3>
             <p className="text-xs text-gray-600 mb-4">
-              These fields are typically used for Eye Hygiene products (eye drops, solutions, etc.). 
-              They can be added to any product type.
+              These fields are typically used for Eye Hygiene products (eye drops, solutions, etc.).
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -2118,6 +2118,7 @@ const ProductModal = ({ product, onClose }) => {
               </p>
             </div>
           </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

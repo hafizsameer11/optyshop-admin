@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -368,6 +369,7 @@ const Products = () => {
         const sectionEndpoints = {
           'sunglasses': API_ROUTES.ADMIN.PRODUCTS.SECTION.SUNGLASSES,
           'eyeglasses': API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES,
+          'opty-kids': API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES, // Opty Kids uses same endpoint as eyeglasses
           'contact-lenses': API_ROUTES.ADMIN.PRODUCTS.SECTION.CONTACT_LENSES,
           'eye-hygiene': API_ROUTES.ADMIN.PRODUCTS.SECTION.EYE_HYGIENE,
         };
@@ -463,11 +465,12 @@ const Products = () => {
         />
       );
     } else {
-      // For sunglasses, eyeglasses, eye-hygiene, and all - use standard ProductModal
+      // For sunglasses, eyeglasses, opty-kids, eye-hygiene, and all - use standard ProductModal
       // Set product_type based on selected section when creating new product
       const productTypeMap = {
         'sunglasses': 'sunglasses',
         'eyeglasses': 'frame',
+        'opty-kids': 'frame', // Opty Kids uses same product type as eyeglasses
         'eye-hygiene': 'eye_hygiene',
         'all': null // Will use default or existing product type
       };
@@ -518,6 +521,7 @@ const Products = () => {
     { value: 'all', label: 'All Products', icon: '📦' },
     { value: 'sunglasses', label: 'Sunglasses', icon: '🕶️' },
     { value: 'eyeglasses', label: 'Eyeglasses', icon: '👓' },
+    { value: 'opty-kids', label: 'Opty Kids', icon: '👶' },
     { value: 'contact-lenses', label: 'Contact Lenses', icon: '🔍' },
     { value: 'eye-hygiene', label: 'Eye Hygiene', icon: '💧' },
   ];
@@ -567,6 +571,154 @@ const Products = () => {
             ))}
           </div>
         </div>
+        
+        {/* Lens Management Sections for Sunglasses, Eyeglasses, and Opty Kids */}
+        {(selectedSection === 'eyeglasses' || selectedSection === 'sunglasses' || selectedSection === 'opty-kids') && (
+          <div className="p-6 border-t border-gray-200 bg-gradient-to-br from-indigo-50/50 to-purple-50/50">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Lens Management</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <Link
+                to="/frame-sizes"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">📏</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Frame Sizes</span>
+              </Link>
+              
+              <Link
+                to="/lens-types"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">👁️</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Lens Types</span>
+              </Link>
+              
+              <Link
+                to="/lens-options"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">⚙️</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Lens Options</span>
+              </Link>
+              
+              <Link
+                to="/prescription-sun-lenses"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">☀️</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Prescription Sun Lenses</span>
+              </Link>
+              
+              <Link
+                to="/photochromic-lenses"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">🔆</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Photochromic Lenses</span>
+              </Link>
+              
+              <Link
+                to="/lens-coatings"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">🛡️</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Lens Coatings</span>
+              </Link>
+              
+              <Link
+                to="/lens-colors"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">🎨</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Lens Colors</span>
+              </Link>
+              
+              <Link
+                to="/lens-finishes"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">✨</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Lens Finishes</span>
+              </Link>
+              
+              <Link
+                to="/lens-treatments"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">💊</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Lens Treatments</span>
+              </Link>
+              
+              <Link
+                to="/lens-thickness-materials"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">📦</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Thickness Materials</span>
+              </Link>
+              
+              <Link
+                to="/lens-thickness-options"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">📐</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Thickness Options</span>
+              </Link>
+              
+              <Link
+                to="/prescription-lens-types"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">🔬</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Prescription Lens Types</span>
+              </Link>
+              
+              <Link
+                to="/prescription-lens-variants"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">🔀</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Lens Variants</span>
+              </Link>
+              
+              <Link
+                to="/prescription-forms/dropdown-values"
+                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <span className="text-2xl">📋</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">Prescription Form Dropdown Values</span>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Enhanced Search and Table Card - Responsive */}

@@ -131,6 +131,36 @@ const ProductModal = ({ product, onClose }) => {
   const [prescriptionDropdownValues, setPrescriptionDropdownValues] = useState([]);
   
   const [loadingLensManagement, setLoadingLensManagement] = useState({});
+  
+  // Modal states for lens management
+  const [frameSizeModalOpen, setFrameSizeModalOpen] = useState(false);
+  const [lensTypeModalOpen, setLensTypeModalOpen] = useState(false);
+  const [lensOptionModalOpen, setLensOptionModalOpen] = useState(false);
+  const [prescriptionSunLensModalOpen, setPrescriptionSunLensModalOpen] = useState(false);
+  const [photochromicLensModalOpen, setPhotochromicLensModalOpen] = useState(false);
+  const [lensCoatingModalOpen, setLensCoatingModalOpen] = useState(false);
+  const [lensColorModalOpen, setLensColorModalOpen] = useState(false);
+  const [lensFinishModalOpen, setLensFinishModalOpen] = useState(false);
+  const [lensTreatmentModalOpen, setLensTreatmentModalOpen] = useState(false);
+  const [thicknessMaterialModalOpen, setThicknessMaterialModalOpen] = useState(false);
+  const [thicknessOptionModalOpen, setThicknessOptionModalOpen] = useState(false);
+  const [prescriptionLensTypeModalOpen, setPrescriptionLensTypeModalOpen] = useState(false);
+  const [prescriptionDropdownModalOpen, setPrescriptionDropdownModalOpen] = useState(false);
+  
+  const [selectedFrameSize, setSelectedFrameSize] = useState(null);
+  const [selectedLensType, setSelectedLensType] = useState(null);
+  const [selectedLensOption, setSelectedLensOption] = useState(null);
+  const [selectedPrescriptionSunLens, setSelectedPrescriptionSunLens] = useState(null);
+  const [selectedPhotochromicLens, setSelectedPhotochromicLens] = useState(null);
+  const [selectedLensCoating, setSelectedLensCoating] = useState(null);
+  const [selectedLensColor, setSelectedLensColor] = useState(null);
+  const [selectedLensFinish, setSelectedLensFinish] = useState(null);
+  const [selectedLensTreatment, setSelectedLensTreatment] = useState(null);
+  const [selectedThicknessMaterial, setSelectedThicknessMaterial] = useState(null);
+  const [selectedThicknessOption, setSelectedThicknessOption] = useState(null);
+  const [selectedPrescriptionLensType, setSelectedPrescriptionLensType] = useState(null);
+  const [selectedPrescriptionDropdown, setSelectedPrescriptionDropdown] = useState(null);
+  
   const [imageFiles, setImageFiles] = useState([]); // Newly uploaded general images (File objects)
   const [imagePreviews, setImagePreviews] = useState([]); // All general image previews (URLs + new file previews)
   const [existingImages, setExistingImages] = useState([]); // Existing image URLs from product (for deletion tracking)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiUpload, FiPlus, FiChevronRight } from 'react-icons/fi';
+import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -98,7 +98,26 @@ const ProductModal = ({ product, onClose }) => {
   const [frameMaterials, setFrameMaterials] = useState([]);
   const [genders, setGenders] = useState([]);
   const [lensTypes, setLensTypes] = useState([]);
+  const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
+  
+  // Lens Management tables state
+  const [frameSizes, setFrameSizes] = useState([]);
+  const [lensTypesList, setLensTypesList] = useState([]);
+  const [lensOptions, setLensOptions] = useState([]);
+  const [prescriptionSunLenses, setPrescriptionSunLenses] = useState([]);
+  const [photochromicLenses, setPhotochromicLenses] = useState([]);
+  const [lensCoatings, setLensCoatings] = useState([]);
+  const [lensColors, setLensColors] = useState([]);
+  const [lensFinishes, setLensFinishes] = useState([]);
+  const [lensTreatments, setLensTreatments] = useState([]);
+  const [thicknessMaterials, setThicknessMaterials] = useState([]);
+  const [thicknessOptions, setThicknessOptions] = useState([]);
+  const [prescriptionLensTypes, setPrescriptionLensTypes] = useState([]);
+  const [lensVariants, setLensVariants] = useState([]);
+  const [prescriptionDropdownValues, setPrescriptionDropdownValues] = useState([]);
+  
+  const [loadingLensManagement, setLoadingLensManagement] = useState({});
   const [imageFiles, setImageFiles] = useState([]); // Newly uploaded general images (File objects)
   const [imagePreviews, setImagePreviews] = useState([]); // All general image previews (URLs + new file previews)
   const [existingImages, setExistingImages] = useState([]); // Existing image URLs from product (for deletion tracking)
@@ -106,7 +125,6 @@ const ProductModal = ({ product, onClose }) => {
   const [existingColorImages, setExistingColorImages] = useState([]); // Existing color images structure for deletion tracking
   const [model3DFile, setModel3DFile] = useState(null);
   const [model3DPreview, setModel3DPreview] = useState(null);
-  const [selectedImageSection, setSelectedImageSection] = useState('first'); // 'first' or 'second' for frames/sunglasses
 
   useEffect(() => {
     fetchProductOptions();
@@ -1342,9 +1360,171 @@ const ProductModal = ({ product, onClose }) => {
     }
   };
 
+  // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids
+  const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
+  
+  const tabs = [
+    { id: 'general', label: 'General' },
+    ...(isFrameOrSunglasses ? [
+      { id: 'lens-management', label: 'Lens Management' },
+    ] : []),
+    { id: 'images', label: 'Images' },
+    { id: 'seo', label: 'SEO' },
+  ];
+
+  // Fetch lens management data when tab changes
+  useEffect(() => {
+    if (activeTab === 'lens-management') {
+      fetchLensManagementData();
+    }
+  }, [activeTab]);
+
+  // Fetch all lens management configurations
+  const fetchLensManagementData = async () => {
+    setLoadingLensManagement({ all: true });
+    try {
+      // Fetch all lens management types in parallel
+      const [
+        frameSizesRes,
+        lensTypesRes,
+        lensOptionsRes,
+        prescriptionSunRes,
+        photochromicRes,
+        lensCoatingsRes,
+        lensColorsRes,
+        lensFinishesRes,
+        lensTreatmentsRes,
+        thicknessMaterialsRes,
+        thicknessOptionsRes,
+        prescriptionLensTypesRes,
+        prescriptionDropdownRes,
+      ] = await Promise.allSettled([
+        api.get(`${API_ROUTES.ADMIN.FRAME_SIZES.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.LENS_TYPES.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.LENS_OPTIONS.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_SUN_LENSES.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.PHOTOCHROMIC_LENSES.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.LENS_COATINGS.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.LENS_COLORS.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.LENS_FINISHES.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.LENS_TREATMENTS.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.LENS_THICKNESS_MATERIALS.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.LENS_THICKNESS_OPTIONS.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.LIST}?limit=1000`),
+        api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.LIST}?limit=1000`),
+      ]);
+
+      // Helper function to extract data from response
+      const extractData = (response, key) => {
+        if (response.status === 'fulfilled' && response.value?.data) {
+          const data = response.value.data;
+          if (Array.isArray(data)) return data;
+          if (data[key] && Array.isArray(data[key])) return data[key];
+          if (data.data && Array.isArray(data.data)) return data.data;
+        }
+        return [];
+      };
+
+      setFrameSizes(extractData(frameSizesRes, 'frameSizes'));
+      setLensTypesList(extractData(lensTypesRes, 'lensTypes'));
+      setLensOptions(extractData(lensOptionsRes, 'lensOptions'));
+      setPrescriptionSunLenses(extractData(prescriptionSunRes, 'prescriptionSunLenses'));
+      setPhotochromicLenses(extractData(photochromicRes, 'photochromicLenses'));
+      setLensCoatings(extractData(lensCoatingsRes, 'lensCoatings'));
+      setLensColors(extractData(lensColorsRes, 'lensColors'));
+      setLensFinishes(extractData(lensFinishesRes, 'lensFinishes'));
+      setLensTreatments(extractData(lensTreatmentsRes, 'lensTreatments'));
+      setThicknessMaterials(extractData(thicknessMaterialsRes, 'thicknessMaterials'));
+      setThicknessOptions(extractData(thicknessOptionsRes, 'thicknessOptions'));
+      setPrescriptionLensTypes(extractData(prescriptionLensTypesRes, 'prescriptionLensTypes'));
+      setPrescriptionDropdownValues(extractData(prescriptionDropdownRes, 'dropdownValues'));
+    } catch (error) {
+      console.error('Failed to fetch lens management data:', error);
+    } finally {
+      setLoadingLensManagement({ all: false });
+    }
+  };
+
+  // Generic table component for lens management items
+  const LensManagementTable = ({ title, data, loading, onAdd, onEdit, onDelete, columns, getRowData }) => {
+    if (loading) {
+      return <div className="text-center py-4 text-gray-500">Loading {title}...</div>;
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h4 className="text-md font-semibold text-gray-800">{title}</h4>
+                    <button
+                      type="button"
+            onClick={onAdd}
+            className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 text-sm"
+                    >
+            <FiPlus className="w-3 h-3" />
+            Add
+                    </button>
+                  </div>
+        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                {columns.map((col, idx) => (
+                  <th key={idx} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    {col}
+                  </th>
+                ))}
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length + 1} className="px-3 py-4 text-center text-xs text-gray-500">
+                    No {title.toLowerCase()} found
+                  </td>
+                </tr>
+              ) : (
+                data.map((item) => {
+                  const rowData = getRowData(item);
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      {rowData.map((cell, idx) => (
+                        <td key={idx} className="px-3 py-2 text-xs text-gray-700">
+                          {cell}
+                        </td>
+                      ))}
+                      <td className="px-3 py-2">
+                        <div className="flex gap-2">
+                  <button
+                    type="button"
+                            onClick={() => onEdit(item)}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            <FiEdit2 className="w-3 h-3" />
+                  </button>
+                        <button
+                          type="button"
+                            onClick={() => onDelete(item.id)}
+                            className="text-red-600 hover:text-red-900"
+                        >
+                            <FiTrash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+                          </div>
+                        </div>
+    );
+  };
+
   const modalContent = (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200/50 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-gray-200/50 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Fixed Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
@@ -1352,74 +1532,903 @@ const ProductModal = ({ product, onClose }) => {
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
-            <button 
+                  <button
               onClick={onClose} 
               className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
               aria-label="Close"
             >
               <FiX className="w-6 h-6" />
-            </button>
+                  </button>
+            </div>
           </div>
-        </div>
+          
+        {/* Tabs */}
+        <div className="border-b border-gray-200 bg-white px-6 flex gap-1 flex-shrink-0">
+          {tabs.map((tab) => (
+                        <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+                        </button>
+          ))}
+          </div>
 
         {/* Scrollable Form Content */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(90vh - 200px)' }}>
           <div className="p-6 space-y-6">
-          {/* Multiple Images Upload - Enhanced Design */}
-          <div className="border-t border-gray-200 pt-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              {t('productImages')} <span className="text-indigo-600 font-bold">({t('multipleSelectionSupported')})</span>
+            {/* General Tab */}
+            {activeTab === 'general' && (
+              <>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t('productName')} <span className="text-red-500">*</span>
             </label>
-            
-            {/* Image Section Selection for Sunglasses/Eyeglasses */}
-            {(formData.product_type === 'sunglasses' || formData.product_type === 'frame') && (
-              <div className="mb-4 space-y-3">
-                <p className="text-sm font-medium text-gray-700">Select Image Section:</p>
-                <div className="flex flex-col gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedImageSection('first')}
-                    className={`px-6 py-4 rounded-xl border-2 transition-all text-left ${
-                      selectedImageSection === 'first'
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">First Image</p>
-                        <p className="text-xs text-gray-500 mt-1">Upload images for the first image section</p>
-                      </div>
-                      <FiChevronRight className={`w-5 h-5 transition-transform ${selectedImageSection === 'first' ? 'rotate-90' : ''}`} />
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedImageSection('second')}
-                    className={`px-6 py-4 rounded-xl border-2 transition-all text-left ${
-                      selectedImageSection === 'second'
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">Second Image</p>
-                        <p className="text-xs text-gray-500 mt-1">Upload images for the second image section</p>
-                      </div>
-                      <FiChevronRight className={`w-5 h-5 transition-transform ${selectedImageSection === 'second' ? 'rotate-90' : ''}`} />
-                    </div>
-                  </button>
-                </div>
-                {selectedImageSection && (
-                  <div className="mt-3 px-4 py-2 bg-indigo-100 rounded-lg">
-                    <p className="text-sm text-indigo-700 font-semibold">
-                      Currently editing: <span className="capitalize">{selectedImageSection}</span> Image Section
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="input-modern"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t('slug')}
+            </label>
+            <input
+              type="text"
+              name="slug"
+              value={formData.slug}
+              onChange={handleChange}
+              className="input-modern"
+              placeholder="product-slug"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                SKU <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="sku"
+                value={formData.sku}
+                onChange={handleChange}
+                className="input-modern"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t('price')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                step="0.01"
+                className="input-modern"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t('compareAtPrice')}
+              </label>
+              <input
+                type="number"
+                name="compare_at_price"
+                value={formData.compare_at_price}
+                onChange={handleChange}
+                step="0.01"
+                className="input-modern"
+                placeholder={t('originalPrice')}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t('costPrice')}
+              </label>
+              <input
+                type="number"
+                name="cost_price"
+                value={formData.cost_price}
+                onChange={handleChange}
+                step="0.01"
+                className="input-modern"
+                placeholder={t('wholesaleCost')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t('shortDescription')}
+            </label>
+            <input
+              type="text"
+              name="short_description"
+              value={formData.short_description}
+              onChange={handleChange}
+              className="input-modern"
+              placeholder={t('briefProductDescription')}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t('description')}
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="4"
+              className="input-modern resize-none"
+              placeholder="Enter product description..."
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t('category')} <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="category_id"
+                  value={formData.category_id}
+                  onChange={handleChange}
+                  className="input-modern"
+                  required
+                >
+                  <option value="">{t('selectCategory')}</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t('subCategories')}
+                </label>
+                <select
+                  name="sub_category_id"
+                  value={formData.sub_category_id}
+                  onChange={handleChange}
+                  disabled={!formData.category_id}
+                  className="input-modern disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">{formData.category_id ? t('selectCategory').replace('Category', 'SubCategory') : t('selectCategory') + ' First'}</option>
+                  {subCategories.map((subCat) => (
+                    <option key={subCat.id} value={subCat.id}>
+                      {subCat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+                  {/* Sub-SubCategory Selection */}
+            {formData.sub_category_id && (
+              <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t('parentSubCategory')} <span className="text-gray-500 text-xs font-normal">({t('optional')} - {t('nestedSubCategoryNote')})</span>
+                </label>
+                {nestedSubCategories.length > 0 ? (
+                  <>
+                    <select
+                      name="parent_subcategory_id"
+                      value={formData.parent_subcategory_id}
+                      onChange={handleChange}
+                      className="input-modern border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      <option value="">{t('noneTopLevel')}</option>
+                      {nestedSubCategories.map((nestedSubCat) => (
+                        <option key={nestedSubCat.id} value={nestedSubCat.id}>
+                          {nestedSubCat.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-blue-600 mt-2 flex items-center">
+                      <span className="mr-1">ℹ️</span>
+                      Select a sub-subcategory if this product belongs to a nested subcategory under "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}"
                     </p>
+                  </>
+                ) : (
+                  <div className="text-sm text-gray-500 italic py-2 bg-white rounded px-3 border border-gray-200">
+                    No sub-subcategories available for "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}". This product will use the parent SubCategory.
                   </div>
                 )}
               </div>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Product Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="product_type"
+              value={formData.product_type}
+              onChange={handleChange}
+              className="input-modern"
+              required
+            >
+              <option value="">Select Product Type</option>
+              <option value="frame">Frame (Eyeglasses)</option>
+              <option value="sunglasses">Sunglasses</option>
+              <option value="contact_lens">Contact Lens</option>
+              <option value="eye_hygiene">Eye Hygiene</option>
+              <option value="lens">Lens</option>
+              <option value="accessory">Accessory</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Stock Quantity
+              </label>
+              <input
+                type="number"
+                name="stock_quantity"
+                value={formData.stock_quantity}
+                onChange={handleChange}
+                min="0"
+                className="input-modern"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Stock Status
+              </label>
+              <select
+                name="stock_status"
+                value={formData.stock_status}
+                onChange={handleChange}
+                className="input-modern"
+              >
+                <option value="in_stock">In Stock</option>
+                <option value="out_of_stock">Out of Stock</option>
+                <option value="backorder">Backorder</option>
+                <option value="preorder">Preorder</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Eye Hygiene Fields Section */}
+                {formData.product_type === 'eye_hygiene' && (
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Eye Hygiene Fields <span className="text-gray-500 text-sm font-normal">(Optional)</span>
+            </h3>
+            <p className="text-xs text-gray-600 mb-4">
+              These fields are typically used for Eye Hygiene products (eye drops, solutions, etc.). 
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Size / Volume
+                </label>
+                <input
+                  type="text"
+                  name="size_volume"
+                  value={formData.size_volume}
+                  onChange={handleChange}
+                  className="input-modern"
+                  placeholder="e.g., 5ml, 10ml, 30ml"
+                  list="size-volume-options"
+                />
+                <datalist id="size-volume-options">
+                  <option value="5ml" />
+                  <option value="10ml" />
+                  <option value="15ml" />
+                  <option value="30ml" />
+                  <option value="50ml" />
+                </datalist>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Pack Type
+                </label>
+                <input
+                  type="text"
+                  name="pack_type"
+                  value={formData.pack_type}
+                  onChange={handleChange}
+                  className="input-modern"
+                  placeholder="e.g., Single, Pack of 2, Pack of 3"
+                  list="pack-type-options"
+                />
+                <datalist id="pack-type-options">
+                  <option value="Single" />
+                  <option value="Pack of 2" />
+                  <option value="Pack of 3" />
+                  <option value="Pack of 6" />
+                </datalist>
+            </div>
+
+                      <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Expiry Date
+              </label>
+              <input
+                type="date"
+                name="expiry_date"
+                value={formData.expiry_date}
+                onChange={handleChange}
+                className="input-modern"
+              />
+            </div>
+          </div>
+                  </div>
+                )}
+
+                {/* Frame/Lens related fields - Only show for frames, sunglasses, opty-kids */}
+                {formData.product_type !== 'eye_hygiene' && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-200 pt-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Frame Shape
+              </label>
+                        <select
+                name="frame_shape"
+                value={formData.frame_shape}
+                onChange={handleChange}
+                className="input-modern"
+                        >
+                          <option value="">Select Frame Shape</option>
+                          {frameShapes.map((shape) => (
+                            <option key={shape} value={shape}>
+                              {shape.charAt(0).toUpperCase() + shape.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Frame Material
+              </label>
+                        <select
+                name="frame_material"
+                          value={Array.isArray(formData.frame_material) ? formData.frame_material[0] : formData.frame_material}
+                onChange={(e) => {
+                  const value = e.target.value;
+                            setFormData({ ...formData, frame_material: value ? [value] : [] });
+                }}
+                className="input-modern"
+                        >
+                          <option value="">Select Frame Material</option>
+                          {frameMaterials.map((material) => (
+                            <option key={material} value={material}>
+                              {material.charAt(0).toUpperCase() + material.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Frame Color
+              </label>
+              <input
+                type="text"
+                name="frame_color"
+                value={formData.frame_color}
+                onChange={handleChange}
+                className="input-modern"
+                          placeholder="e.g., Black, Brown, Blue"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Gender
+              </label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className="input-modern"
+              >
+                <option value="">Select Gender</option>
+                {genders.map((gender) => (
+                  <option key={gender} value={gender}>
+                    {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Lens Type
+            </label>
+            <input
+              type="text"
+              name="lens_type"
+              value={formData.lens_type}
+              onChange={handleChange}
+              className="input-modern"
+              placeholder="Enter any lens type"
+            />
+          </div>
+                  </>
+                )}
+
+                {/* Status Checkboxes */}
+                <div className="flex items-center space-x-6 border-t border-gray-200 pt-6">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={formData.is_active}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                    />
+                    <span className="ml-2 text-sm font-medium text-gray-700">Active</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_featured"
+                      checked={formData.is_featured}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                    />
+                    <span className="ml-2 text-sm font-medium text-gray-700">{t('isFeatured')}</span>
+                  </label>
+                </div>
+              </>
+            )}
+
+            {/* Lens Management Tab */}
+            {activeTab === 'lens-management' && (
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>ℹ️ Note:</strong> Lens Management configurations are global settings that apply to all frames, sunglasses, and opty-kids products.
+                  </p>
+                </div>
+                
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto">
+                  {/* Frame Sizes Table */}
+                  <LensManagementTable
+                    title="Frame Sizes"
+                    data={frameSizes}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Frame Sizes page to add new frame size')}
+                    onEdit={() => toast.info('Open Frame Sizes page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this frame size?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.FRAME_SIZES.DELETE(id));
+                          toast.success('Frame size deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Width', 'Bridge', 'Temple', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.width || 'N/A',
+                      item.bridge || 'N/A',
+                      item.temple || 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Lens Types Table */}
+                  <LensManagementTable
+                    title="Lens Types"
+                    data={lensTypesList}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Lens Types page to add new lens type')}
+                    onEdit={() => toast.info('Open Lens Types page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this lens type?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.LENS_TYPES.DELETE(id));
+                          toast.success('Lens type deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Index', 'Thickness Factor', 'Price Adjustment', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.index || 'N/A',
+                      item.thickness_factor || 'N/A',
+                      item.price_adjustment || 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Lens Options Table */}
+                  <LensManagementTable
+                    title="Lens Options"
+                    data={lensOptions}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Lens Options page to add new lens option')}
+                    onEdit={() => toast.info('Open Lens Options page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this lens option?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.LENS_OPTIONS.DELETE(id));
+                          toast.success('Lens option deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Type', 'Base Price', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.type || 'N/A',
+                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Prescription Sun Lenses Table */}
+                  <LensManagementTable
+                    title="Prescription Sun Lenses"
+                    data={prescriptionSunLenses}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Prescription Sun Lenses page to add new')}
+                    onEdit={() => toast.info('Open Prescription Sun Lenses page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this prescription sun lens?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.PRESCRIPTION_SUN_LENSES.DELETE(id));
+                          toast.success('Prescription sun lens deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Type', 'Base Price', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.type || 'N/A',
+                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Photochromic Lenses Table */}
+                  <LensManagementTable
+                    title="Photochromic Lenses"
+                    data={photochromicLenses}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Photochromic Lenses page to add new')}
+                    onEdit={() => toast.info('Open Photochromic Lenses page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this photochromic lens?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.PHOTOCHROMIC_LENSES.DELETE(id));
+                          toast.success('Photochromic lens deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Base Price', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Lens Coatings Table */}
+                  <LensManagementTable
+                    title="Lens Coatings"
+                    data={lensCoatings}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Lens Coatings page to add new')}
+                    onEdit={() => toast.info('Open Lens Coatings page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this lens coating?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.LENS_COATINGS.DELETE(id));
+                          toast.success('Lens coating deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Base Price', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Lens Colors Table */}
+                  <LensManagementTable
+                    title="Lens Colors"
+                    data={lensColors}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Lens Colors page to add new')}
+                    onEdit={() => toast.info('Open Lens Colors page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this lens color?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.LENS_COLORS.DELETE(id));
+                          toast.success('Lens color deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Hex Code', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.hex_code ? (
+                        <div key="hex" className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded border" style={{ backgroundColor: item.hex_code }}></div>
+                          <span>{item.hex_code}</span>
+                        </div>
+                      ) : 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Lens Finishes Table */}
+                  <LensManagementTable
+                    title="Lens Finishes"
+                    data={lensFinishes}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Lens Finishes page to add new')}
+                    onEdit={() => toast.info('Open Lens Finishes page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this lens finish?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.LENS_FINISHES.DELETE(id));
+                          toast.success('Lens finish deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Base Price', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Lens Treatments Table */}
+                  <LensManagementTable
+                    title="Lens Treatments"
+                    data={lensTreatments}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Lens Treatments page to add new')}
+                    onEdit={() => toast.info('Open Lens Treatments page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this lens treatment?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.LENS_TREATMENTS.DELETE(id));
+                          toast.success('Lens treatment deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Base Price', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Thickness Materials Table */}
+                  <LensManagementTable
+                    title="Thickness Materials"
+                    data={thicknessMaterials}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Thickness Materials page to add new')}
+                    onEdit={() => toast.info('Open Thickness Materials page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this thickness material?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.LENS_THICKNESS_MATERIALS.DELETE(id));
+                          toast.success('Thickness material deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Thickness Options Table */}
+                  <LensManagementTable
+                    title="Thickness Options"
+                    data={thicknessOptions}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Thickness Options page to add new')}
+                    onEdit={() => toast.info('Open Thickness Options page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this thickness option?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.LENS_THICKNESS_OPTIONS.DELETE(id));
+                          toast.success('Thickness option deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Prescription Lens Types Table */}
+                  <LensManagementTable
+                    title="Prescription Lens Types"
+                    data={prescriptionLensTypes}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Prescription Lens Types page to add new')}
+                    onEdit={() => toast.info('Open Prescription Lens Types page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this prescription lens type?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.DELETE(id));
+                          toast.success('Prescription lens type deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Name', 'Slug', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      item.name || 'N/A',
+                      item.slug || 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+
+                  {/* Prescription Form Dropdown Values Table */}
+                  <LensManagementTable
+                    title="Prescription Form Dropdown Values"
+                    data={prescriptionDropdownValues}
+                    loading={loadingLensManagement.all}
+                    onAdd={() => toast.info('Open Prescription Form Dropdown Values page to add new')}
+                    onEdit={() => toast.info('Open Prescription Form Dropdown Values page to edit')}
+                    onDelete={async (id) => {
+                      if (window.confirm('Delete this dropdown value?')) {
+                        try {
+                          await api.delete(API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.DELETE(id));
+                          toast.success('Dropdown value deleted');
+                          fetchLensManagementData();
+                        } catch (error) {
+                          toast.error('Failed to delete');
+                        }
+                      }
+                    }}
+                    columns={['ID', 'Field Type', 'Value', 'Label', 'Status']}
+                    getRowData={(item) => [
+                      item.id,
+                      <span key="field" className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        {item.field_type || item.fieldType || 'N/A'}
+                      </span>,
+                      item.value || 'N/A',
+                      item.label || item.value || 'N/A',
+                      <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {item.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    ]}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Images Tab */}
+            {activeTab === 'images' && (
+              <>
+                {/* Multiple Images Upload - Enhanced Design */}
+          <div className="border-t border-gray-200 pt-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              {t('productImages')} <span className="text-indigo-600 font-bold">({t('multipleSelectionSupported')})</span>
+            </label>
             
             <div className="space-y-4">
               {/* Display existing/preview images */}
@@ -1799,433 +2808,12 @@ const ProductModal = ({ product, onClose }) => {
               </label>
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('productName')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="input-modern"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('slug')}
-            </label>
-            <input
-              type="text"
-              name="slug"
-              value={formData.slug}
-              onChange={handleChange}
-              className="input-modern"
-              placeholder="product-slug"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                SKU <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="sku"
-                value={formData.sku}
-                onChange={handleChange}
-                className="input-modern"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('price')} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                step="0.01"
-                className="input-modern"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('compareAtPrice')}
-              </label>
-              <input
-                type="number"
-                name="compare_at_price"
-                value={formData.compare_at_price}
-                onChange={handleChange}
-                step="0.01"
-                className="input-modern"
-                placeholder={t('originalPrice')}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('costPrice')}
-              </label>
-              <input
-                type="number"
-                name="cost_price"
-                value={formData.cost_price}
-                onChange={handleChange}
-                step="0.01"
-                className="input-modern"
-                placeholder={t('wholesaleCost')}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('shortDescription')}
-            </label>
-            <input
-              type="text"
-              name="short_description"
-              value={formData.short_description}
-              onChange={handleChange}
-              className="input-modern"
-              placeholder={t('briefProductDescription')}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('description')}
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="4"
-              className="input-modern resize-none"
-              placeholder="Enter product description..."
-            />
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('category')} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleChange}
-                  className="input-modern"
-                  required
-                >
-                  <option value="">{t('selectCategory')}</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('subCategories')}
-                </label>
-                <select
-                  name="sub_category_id"
-                  value={formData.sub_category_id}
-                  onChange={handleChange}
-                  disabled={!formData.category_id}
-                  className="input-modern disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">{formData.category_id ? t('selectCategory').replace('Category', 'SubCategory') : t('selectCategory') + ' First'}</option>
-                  {subCategories.map((subCat) => (
-                    <option key={subCat.id} value={subCat.id}>
-                      {subCat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Sub-SubCategory Selection - Show when subcategory is selected */}
-            {formData.sub_category_id && (
-              <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('parentSubCategory')} <span className="text-gray-500 text-xs font-normal">({t('optional')} - {t('nestedSubCategoryNote')})</span>
-                </label>
-                {nestedSubCategories.length > 0 ? (
-                  <>
-                    <select
-                      name="parent_subcategory_id"
-                      value={formData.parent_subcategory_id}
-                      onChange={handleChange}
-                      className="input-modern border-blue-300 focus:border-blue-500 focus:ring-blue-500"
-                    >
-                      <option value="">{t('noneTopLevel')}</option>
-                      {nestedSubCategories.map((nestedSubCat) => (
-                        <option key={nestedSubCat.id} value={nestedSubCat.id}>
-                          {nestedSubCat.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-blue-600 mt-2 flex items-center">
-                      <span className="mr-1">ℹ️</span>
-                      Select a sub-subcategory if this product belongs to a nested subcategory under "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}"
-                    </p>
-                  </>
-                ) : (
-                  <div className="text-sm text-gray-500 italic py-2 bg-white rounded px-3 border border-gray-200">
-                    No sub-subcategories available for "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}". This product will use the parent SubCategory.
-                  </div>
-                )}
-              </div>
+                </>
             )}
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Product Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="product_type"
-              value={formData.product_type}
-              onChange={handleChange}
-              className="input-modern"
-              required
-            >
-              <option value="">Select Product Type</option>
-              <option value="frame">Frame (Eyeglasses)</option>
-              <option value="sunglasses">Sunglasses</option>
-              <option value="contact_lens">Contact Lens</option>
-              <option value="eye_hygiene">Eye Hygiene</option>
-              <option value="lens">Lens</option>
-              <option value="accessory">Accessory</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Stock Quantity
-              </label>
-              <input
-                type="number"
-                name="stock_quantity"
-                value={formData.stock_quantity}
-                onChange={handleChange}
-                min="0"
-                className="input-modern"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Stock Status
-              </label>
-              <select
-                name="stock_status"
-                value={formData.stock_status}
-                onChange={handleChange}
-                className="input-modern"
-              >
-                <option value="in_stock">In Stock</option>
-                <option value="out_of_stock">Out of Stock</option>
-                <option value="backorder">Backorder</option>
-                <option value="preorder">Preorder</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Eye Hygiene Fields Section - Only show for eye_hygiene products */}
-          {formData.product_type === 'eye_hygiene' && (
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Eye Hygiene Fields <span className="text-gray-500 text-sm font-normal">(Optional)</span>
-            </h3>
-            <p className="text-xs text-gray-600 mb-4">
-              These fields are typically used for Eye Hygiene products (eye drops, solutions, etc.).
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Size / Volume
-                </label>
-                <input
-                  type="text"
-                  name="size_volume"
-                  value={formData.size_volume}
-                  onChange={handleChange}
-                  className="input-modern"
-                  placeholder="e.g., 5ml, 10ml, 30ml"
-                  list="size-volume-options"
-                />
-                <datalist id="size-volume-options">
-                  <option value="5ml" />
-                  <option value="10ml" />
-                  <option value="15ml" />
-                  <option value="30ml" />
-                  <option value="50ml" />
-                </datalist>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Pack Type
-                </label>
-                <input
-                  type="text"
-                  name="pack_type"
-                  value={formData.pack_type}
-                  onChange={handleChange}
-                  className="input-modern"
-                  placeholder="e.g., Single, Pack of 2, Pack of 3"
-                  list="pack-type-options"
-                />
-                <datalist id="pack-type-options">
-                  <option value="Single" />
-                  <option value="Pack of 2" />
-                  <option value="Pack of 3" />
-                  <option value="Pack of 6" />
-                </datalist>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Expiry Date
-              </label>
-              <input
-                type="date"
-                name="expiry_date"
-                value={formData.expiry_date}
-                onChange={handleChange}
-                className="input-modern"
-                placeholder="Select expiry date"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Product expiry date (optional) - Format: YYYY-MM-DD
-              </p>
-            </div>
-          </div>
-          )}
-
-          {/* Frame/Lens Fields - Hide for Eye Hygiene products */}
-          {formData.product_type !== 'eye_hygiene' && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Frame Shape
-                  </label>
-                  <input
-                    type="text"
-                    name="frame_shape"
-                    value={formData.frame_shape}
-                    onChange={handleChange}
-                    className="input-modern"
-                    placeholder="Enter any frame shape"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Frame Material
-                  </label>
-                  <input
-                    type="text"
-                    name="frame_material"
-                    value={Array.isArray(formData.frame_material) ? formData.frame_material.join(', ') : formData.frame_material || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Convert comma-separated string to array, or keep as single value
-                      if (value.includes(',')) {
-                        setFormData({
-                          ...formData,
-                          frame_material: value.split(',').map(m => m.trim()).filter(m => m)
-                        });
-                      } else {
-                        setFormData({
-                          ...formData,
-                          frame_material: value ? [value.trim()] : []
-                        });
-                      }
-                    }}
-                    className="input-modern"
-                    placeholder="Enter frame material(s), comma-separated for multiple"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Frame Color
-                  </label>
-                  <input
-                    type="text"
-                    name="frame_color"
-                    value={formData.frame_color}
-                    onChange={handleChange}
-                    className="input-modern"
-                    placeholder="e.g., Black, Gold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Gender
-                  </label>
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className="input-modern"
-                  >
-                    <option value="">Select Gender</option>
-                    {genders.map((gender) => (
-                      <option key={gender} value={gender}>
-                        {gender.charAt(0).toUpperCase() + gender.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Lens Type
-                </label>
-                <input
-                  type="text"
-                  name="lens_type"
-                  value={formData.lens_type}
-                  onChange={handleChange}
-                  className="input-modern"
-                  placeholder="Enter any lens type"
-                />
-              </div>
-            </>
-          )}
-
-          {/* SEO Fields */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">SEO Settings</h3>
-            <div className="space-y-4">
+            {/* SEO Tab */}
+            {activeTab === 'seo' && (
+              <>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Meta Title
@@ -2265,8 +2853,8 @@ const ProductModal = ({ product, onClose }) => {
                   placeholder="keyword1, keyword2, keyword3"
                 />
               </div>
-            </div>
-          </div>
+              </>
+            )}
 
           {/* Status Checkboxes */}
           <div className="flex items-center space-x-6 border-t border-gray-200 pt-6">

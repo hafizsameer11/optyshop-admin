@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiUpload, FiChevronRight } from 'react-icons/fi';
+import { FiX, FiUpload, FiChevronRight, FiPlus, FiTrash2, FiCopy, FiEdit2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import SphericalConfigModal from './SphericalConfigModal';
+import AstigmatismConfigModal from './AstigmatismConfigModal';
+import AstigmatismDropdownValueModal from './AstigmatismDropdownValueModal';
 
 const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   const { t } = useI18n();
@@ -53,6 +56,22 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   const [existingImages, setExistingImages] = useState([]);
   const [baseCurveInput, setBaseCurveInput] = useState('');
   const [diameterInput, setDiameterInput] = useState('');
+  const [nestedSubCategoriesForConfig, setNestedSubCategoriesForConfig] = useState([]);
+  const [productsForConfig, setProductsForConfig] = useState([]);
+  
+  // Configuration tables state
+  const [sphericalConfigs, setSphericalConfigs] = useState([]);
+  const [astigmatismConfigs, setAstigmatismConfigs] = useState([]);
+  const [dropdownValues, setDropdownValues] = useState([]);
+  const [loadingSpherical, setLoadingSpherical] = useState(false);
+  const [loadingAstigmatism, setLoadingAstigmatism] = useState(false);
+  const [loadingDropdown, setLoadingDropdown] = useState(false);
+  const [sphericalModalOpen, setSphericalModalOpen] = useState(false);
+  const [astigmatismModalOpen, setAstigmatismModalOpen] = useState(false);
+  const [dropdownModalOpen, setDropdownModalOpen] = useState(false);
+  const [selectedSphericalConfig, setSelectedSphericalConfig] = useState(null);
+  const [selectedAstigmatismConfig, setSelectedAstigmatismConfig] = useState(null);
+  const [selectedDropdownValue, setSelectedDropdownValue] = useState(null);
 
   useEffect(() => {
     fetchProductOptions();
@@ -109,10 +128,31 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   useEffect(() => {
     if (formData.sub_category_id) {
       fetchNestedSubCategories(formData.sub_category_id);
+      // Also fetch nested subcategories for configurations
+      fetchNestedSubCategoriesForConfig(formData.sub_category_id);
+      // Fetch products for configurations
+      if (formData.sub_category_id) {
+        fetchProductsForConfig(formData.sub_category_id);
+      }
     } else {
       setNestedSubCategories([]);
+      setNestedSubCategoriesForConfig([]);
+      setProductsForConfig([]);
     }
   }, [formData.sub_category_id]);
+  
+  // Fetch configurations when tab changes
+  useEffect(() => {
+    if (product?.id) {
+      if (activeTab === 'spherical') {
+        fetchSphericalConfigs();
+      } else if (activeTab === 'astigmatism') {
+        fetchAstigmatismConfigs();
+      } else if (activeTab === 'astigmatism-dropdown') {
+        fetchDropdownValues();
+      }
+    }
+  }, [activeTab, product?.id]);
 
   const fetchProductOptions = async () => {
     try {
@@ -305,6 +345,159 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     setFormData({ ...formData, diameter_options: newOptions });
   };
 
+  // Fetch Spherical Configurations
+  const fetchSphericalConfigs = async () => {
+    if (!product?.id) return;
+    try {
+      setLoadingSpherical(true);
+      const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?product_id=${product.id}&limit=1000`);
+      let configsData = [];
+      if (response.data?.data) {
+        const dataObj = response.data.data;
+        if (Array.isArray(dataObj)) {
+          configsData = dataObj;
+        } else if (dataObj.configs) {
+          configsData = dataObj.configs;
+        } else if (dataObj.data) {
+          configsData = dataObj.data;
+        }
+      } else if (Array.isArray(response.data)) {
+        configsData = response.data;
+      } else if (response.data?.configs) {
+        configsData = response.data.configs;
+      }
+      setSphericalConfigs(Array.isArray(configsData) ? configsData : []);
+    } catch (error) {
+      console.error('Failed to fetch spherical configs:', error);
+      setSphericalConfigs([]);
+    } finally {
+      setLoadingSpherical(false);
+    }
+  };
+
+  // Fetch Astigmatism Configurations
+  const fetchAstigmatismConfigs = async () => {
+    if (!product?.id) return;
+    try {
+      setLoadingAstigmatism(true);
+      const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?product_id=${product.id}&limit=1000`);
+      let configsData = [];
+      if (response.data?.data) {
+        const dataObj = response.data.data;
+        if (Array.isArray(dataObj)) {
+          configsData = dataObj;
+        } else if (dataObj.configs) {
+          configsData = dataObj.configs;
+        } else if (dataObj.data) {
+          configsData = dataObj.data;
+        }
+      } else if (Array.isArray(response.data)) {
+        configsData = response.data;
+      } else if (response.data?.configs) {
+        configsData = response.data.configs;
+      }
+      setAstigmatismConfigs(Array.isArray(configsData) ? configsData : []);
+    } catch (error) {
+      console.error('Failed to fetch astigmatism configs:', error);
+      setAstigmatismConfigs([]);
+    } finally {
+      setLoadingAstigmatism(false);
+    }
+  };
+
+  // Fetch Dropdown Values
+  const fetchDropdownValues = async () => {
+    try {
+      setLoadingDropdown(true);
+      const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.LIST}?limit=1000`);
+      let valuesData = [];
+      if (response.data?.data) {
+        const dataObj = response.data.data;
+        if (Array.isArray(dataObj)) {
+          valuesData = dataObj;
+        } else if (dataObj.values) {
+          valuesData = dataObj.values;
+        } else if (dataObj.data) {
+          valuesData = dataObj.data;
+        }
+      } else if (Array.isArray(response.data)) {
+        valuesData = response.data;
+      } else if (response.data?.values) {
+        valuesData = response.data.values;
+      }
+      setDropdownValues(Array.isArray(valuesData) ? valuesData : []);
+    } catch (error) {
+      console.error('Failed to fetch dropdown values:', error);
+      setDropdownValues([]);
+    } finally {
+      setLoadingDropdown(false);
+    }
+  };
+
+  // Handle configuration modals
+  const handleSphericalAdd = () => {
+    setSelectedSphericalConfig(null);
+    setSphericalModalOpen(true);
+  };
+
+  const handleSphericalEdit = (config) => {
+    setSelectedSphericalConfig(config);
+    setSphericalModalOpen(true);
+  };
+
+  const handleSphericalDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this spherical configuration?')) return;
+    try {
+      await api.delete(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.DELETE(id));
+      toast.success('Spherical configuration deleted successfully');
+      fetchSphericalConfigs();
+    } catch (error) {
+      toast.error('Failed to delete spherical configuration');
+    }
+  };
+
+  const handleAstigmatismAdd = () => {
+    setSelectedAstigmatismConfig(null);
+    setAstigmatismModalOpen(true);
+  };
+
+  const handleAstigmatismEdit = (config) => {
+    setSelectedAstigmatismConfig(config);
+    setAstigmatismModalOpen(true);
+  };
+
+  const handleAstigmatismDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this astigmatism configuration?')) return;
+    try {
+      await api.delete(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DELETE(id));
+      toast.success('Astigmatism configuration deleted successfully');
+      fetchAstigmatismConfigs();
+    } catch (error) {
+      toast.error('Failed to delete astigmatism configuration');
+    }
+  };
+
+  const handleDropdownAdd = () => {
+    setSelectedDropdownValue(null);
+    setDropdownModalOpen(true);
+  };
+
+  const handleDropdownEdit = (value) => {
+    setSelectedDropdownValue(value);
+    setDropdownModalOpen(true);
+  };
+
+  const handleDropdownDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this dropdown value?')) return;
+    try {
+      await api.delete(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.DELETE(id));
+      toast.success('Dropdown value deleted successfully');
+      fetchDropdownValues();
+    } catch (error) {
+      toast.error('Failed to delete dropdown value');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -451,6 +644,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   const tabs = [
     { id: 'general', label: 'General' },
     { id: 'contact-lens', label: 'Contact Lens' },
+    { id: 'spherical', label: 'Spherical Configurations' },
+    { id: 'astigmatism', label: 'Astigmatism Configurations' },
+    { id: 'astigmatism-dropdown', label: 'Astigmatism Dropdown Values' },
     { id: 'images', label: 'Images' },
     { id: 'seo', label: 'SEO' },
   ];
@@ -954,6 +1150,264 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                   />
                 </label>
               </>
+            )}
+
+            {/* Spherical Configurations Tab */}
+            {activeTab === 'spherical' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-gray-900">Spherical Configurations</h3>
+                  <button
+                    type="button"
+                    onClick={handleSphericalAdd}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                  >
+                    <FiPlus className="w-4 h-4" />
+                    Add Configuration
+                  </button>
+                </div>
+                {loadingSpherical ? (
+                  <div className="text-center py-8">Loading...</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Display Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {sphericalConfigs.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
+                              No spherical configurations found. {product?.id ? 'Click "Add Configuration" to create one.' : 'Save the product first to add configurations.'}
+                            </td>
+                          </tr>
+                        ) : (
+                          sphericalConfigs.map((config) => (
+                            <tr key={config.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{config.display_name || config.displayName || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">${config.price || 0}</td>
+                              <td className="px-4 py-3 text-sm">
+                                <span className={`px-2 py-1 rounded-full text-xs ${config.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                  {config.is_active !== false ? 'Active' : 'Inactive'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSphericalEdit(config)}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                  >
+                                    <FiEdit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSphericalDelete(config.id)}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    <FiTrash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {sphericalModalOpen && (
+                  <SphericalConfigModal
+                    config={selectedSphericalConfig}
+                    onClose={() => {
+                      setSphericalModalOpen(false);
+                      setSelectedSphericalConfig(null);
+                      fetchSphericalConfigs();
+                    }}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Astigmatism Configurations Tab */}
+            {activeTab === 'astigmatism' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-gray-900">Astigmatism Configurations</h3>
+                  <button
+                    type="button"
+                    onClick={handleAstigmatismAdd}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                  >
+                    <FiPlus className="w-4 h-4" />
+                    Add Configuration
+                  </button>
+                </div>
+                {loadingAstigmatism ? (
+                  <div className="text-center py-8">Loading...</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Display Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {astigmatismConfigs.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
+                              No astigmatism configurations found. {product?.id ? 'Click "Add Configuration" to create one.' : 'Save the product first to add configurations.'}
+                            </td>
+                          </tr>
+                        ) : (
+                          astigmatismConfigs.map((config) => (
+                            <tr key={config.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{config.display_name || config.displayName || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">${config.price || 0}</td>
+                              <td className="px-4 py-3 text-sm">
+                                <span className={`px-2 py-1 rounded-full text-xs ${config.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                  {config.is_active !== false ? 'Active' : 'Inactive'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAstigmatismEdit(config)}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                  >
+                                    <FiEdit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAstigmatismDelete(config.id)}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    <FiTrash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {astigmatismModalOpen && (
+                  <AstigmatismConfigModal
+                    config={selectedAstigmatismConfig}
+                    onClose={() => {
+                      setAstigmatismModalOpen(false);
+                      setSelectedAstigmatismConfig(null);
+                      fetchAstigmatismConfigs();
+                    }}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Astigmatism Dropdown Values Tab */}
+            {activeTab === 'astigmatism-dropdown' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-gray-900">Astigmatism Dropdown Values</h3>
+                  <button
+                    type="button"
+                    onClick={handleDropdownAdd}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                  >
+                    <FiPlus className="w-4 h-4" />
+                    Add Value
+                  </button>
+                </div>
+                {loadingDropdown ? (
+                  <div className="text-center py-8">Loading...</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Field Type</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Label</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Eye Type</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {dropdownValues.length === 0 ? (
+                          <tr>
+                            <td colSpan="6" className="px-4 py-8 text-center text-sm text-gray-500">
+                              No dropdown values found. Click "Add Value" to create one.
+                            </td>
+                          </tr>
+                        ) : (
+                          dropdownValues.map((value) => (
+                            <tr key={value.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                  {value.field_type || value.fieldType || 'N/A'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{value.value || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{value.label || value.value || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{value.eye_type || value.eyeType || 'both'}</td>
+                              <td className="px-4 py-3 text-sm">
+                                <span className={`px-2 py-1 rounded-full text-xs ${value.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                  {value.is_active !== false ? 'Active' : 'Inactive'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDropdownEdit(value)}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                  >
+                                    <FiEdit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDropdownDelete(value.id)}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    <FiTrash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {dropdownModalOpen && (
+                  <AstigmatismDropdownValueModal
+                    value={selectedDropdownValue}
+                    onClose={() => {
+                      setDropdownModalOpen(false);
+                      setSelectedDropdownValue(null);
+                      fetchDropdownValues();
+                    }}
+                  />
+                )}
+              </div>
             )}
 
             {/* SEO Tab */}

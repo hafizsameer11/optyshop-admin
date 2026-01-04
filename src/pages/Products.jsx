@@ -361,19 +361,49 @@ const Products = () => {
       }
       
       // Determine which endpoint to use based on selected section
+      // Section endpoints automatically filter by product_type on the backend
       let endpoint;
       if (selectedSection === 'all') {
         endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
       } else {
-        // Use section-specific endpoint
-        const sectionEndpoints = {
-          'sunglasses': API_ROUTES.ADMIN.PRODUCTS.SECTION.SUNGLASSES,
-          'eyeglasses': API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES,
-          'opty-kids': API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES, // Opty Kids uses same endpoint as eyeglasses
-          'contact-lenses': API_ROUTES.ADMIN.PRODUCTS.SECTION.CONTACT_LENSES,
-          'eye-hygiene': API_ROUTES.ADMIN.PRODUCTS.SECTION.EYE_HYGIENE,
+        // Map sections to their corresponding product types and endpoints
+        const sectionConfig = {
+          'sunglasses': {
+            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.SUNGLASSES,
+            productType: 'sunglasses'
+          },
+          'eyeglasses': {
+            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES,
+            productType: 'frame'
+          },
+          'opty-kids': {
+            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES,
+            productType: 'frame'
+            // Note: Opty Kids uses same endpoint as eyeglasses but may need category filtering
+          },
+          'contact-lenses': {
+            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.CONTACT_LENSES,
+            productType: 'contact_lens'
+          },
+          'eye-hygiene': {
+            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYE_HYGIENE,
+            productType: 'eye_hygiene'
+          },
         };
-        endpoint = `${sectionEndpoints[selectedSection]}?${params.toString()}`;
+        
+        const config = sectionConfig[selectedSection];
+        if (config) {
+          // Add product_type as query param to ensure proper filtering
+          // The section endpoint should already filter, but this ensures it works
+          if (!params.has('product_type')) {
+            params.append('product_type', config.productType);
+          }
+          // Use section-specific endpoint (backend automatically filters by product_type)
+          endpoint = `${config.endpoint}?${params.toString()}`;
+        } else {
+          // Fallback to general products endpoint
+          endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
+        }
       }
       
       const response = await api.get(endpoint);
@@ -529,6 +559,10 @@ const Products = () => {
   const handleSectionChange = (section) => {
     setSelectedSection(section);
     setPage(1); // Reset to first page when section changes
+    // Clear category and subcategory filters when changing sections to show all products in that section
+    setCategoryFilter('');
+    setSubCategoryFilter('');
+    // Note: searchTerm is kept so users can still search within the selected section
   };
 
   return (

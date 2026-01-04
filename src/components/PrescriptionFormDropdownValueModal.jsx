@@ -97,7 +97,7 @@ const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
           }
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Save error:', error);
       if (!error.response) {

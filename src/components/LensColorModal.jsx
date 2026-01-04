@@ -457,7 +457,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
         } else {
           toast.success('Lens color updated successfully');
         }
-        onClose();
+        onClose(true); // Pass true to indicate successful save
       } else {
         // Create multiple colors
         let successCount = 0;
@@ -609,7 +609,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
           toast.error(`Failed to create ${errorCount} color(s)`);
         }
         if (successCount > 0) {
-          onClose();
+          onClose(true); // Pass true to indicate successful save
         }
       }
     } catch (error) {

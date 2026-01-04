@@ -112,7 +112,7 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
           toast.success('Lens thickness material created successfully');
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Lens thickness material save error:', error);
       if (!error.response) {

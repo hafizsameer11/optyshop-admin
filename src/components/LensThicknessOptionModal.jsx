@@ -121,7 +121,7 @@ const LensThicknessOptionModal = ({ option, onClose }) => {
           toast.success('Lens thickness option created successfully');
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Lens thickness option save error:', error);
       if (!error.response) {

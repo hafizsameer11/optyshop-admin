@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -74,6 +75,64 @@ const getColorNameFromHex = (hexCode) => {
 
 const ProductModal = ({ product, onClose }) => {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  
+  // Map lens management modal types to their routes
+  const lensManagementRoutes = {
+    'frameSize': '/frame-sizes',
+    'lensType': '/lens-types',
+    'lensOption': '/lens-options',
+    'prescriptionSunLens': '/prescription-sun-lenses',
+    'photochromicLens': '/photochromic-lenses',
+    'lensCoating': '/lens-coatings',
+    'lensColor': '/lens-colors',
+    'lensFinish': '/lens-finishes',
+    'lensTreatment': '/lens-treatments',
+    'thicknessMaterial': '/lens-thickness-materials',
+    'thicknessOption': '/lens-thickness-options',
+    'prescriptionLensType': '/prescription-lens-types',
+    'prescriptionDropdown': '/prescription-forms/dropdown-values',
+  };
+  
+  // Helper function to handle lens management modal close with navigation
+  // saved: true if form was saved successfully, false/undefined if cancelled/closed
+  const handleLensManagementClose = (modalType) => {
+    return (saved = false) => {
+      // Close the lens management modal
+      const modalStateSetters = {
+        'frameSize': [setFrameSizeModalOpen, setSelectedFrameSize],
+        'lensType': [setLensTypeModalOpen, setSelectedLensType],
+        'lensOption': [setLensOptionModalOpen, setSelectedLensOption],
+        'prescriptionSunLens': [setPrescriptionSunLensModalOpen, setSelectedPrescriptionSunLens],
+        'photochromicLens': [setPhotochromicLensModalOpen, setSelectedPhotochromicLens],
+        'lensCoating': [setLensCoatingModalOpen, setSelectedLensCoating],
+        'lensColor': [setLensColorModalOpen, setSelectedLensColor],
+        'lensFinish': [setLensFinishModalOpen, setSelectedLensFinish],
+        'lensTreatment': [setLensTreatmentModalOpen, setSelectedLensTreatment],
+        'thicknessMaterial': [setThicknessMaterialModalOpen, setSelectedThicknessMaterial],
+        'thicknessOption': [setThicknessOptionModalOpen, setSelectedThicknessOption],
+        'prescriptionLensType': [setPrescriptionLensTypeModalOpen, setSelectedPrescriptionLensType],
+        'prescriptionDropdown': [setPrescriptionDropdownModalOpen, setSelectedPrescriptionDropdown],
+      };
+      
+      const [setModalOpen, setSelected] = modalStateSetters[modalType] || [null, null];
+      if (setModalOpen) setModalOpen(false);
+      if (setSelected) setSelected(null);
+      
+      // Only navigate and close product modal if form was saved successfully
+      if (saved) {
+        // Close the product modal
+        onClose();
+        
+        // Navigate to the appropriate lens management page
+        const route = lensManagementRoutes[modalType];
+        if (route) {
+          navigate(route);
+        }
+      }
+      // If cancelled, just close the modal and stay in product modal
+    };
+  };
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -2310,14 +2369,7 @@ const ProductModal = ({ product, onClose }) => {
                   {frameSizeModalOpen && (
                     <FrameSizeModal
                       frameSize={selectedFrameSize}
-                      onClose={() => {
-                        // Close modal and refresh table data - NO page refresh
-                        // Ensure we stay on Lens Management tab
-                        setFrameSizeModalOpen(false);
-                        setSelectedFrameSize(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('frameSize')}
                     />
                   )}
 
@@ -2363,12 +2415,7 @@ const ProductModal = ({ product, onClose }) => {
                   {lensTypeModalOpen && (
                     <LensTypeModal
                       lensType={selectedLensType}
-                      onClose={() => {
-                        setLensTypeModalOpen(false);
-                        setSelectedLensType(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('lensType')}
                     />
                   )}
 
@@ -2413,12 +2460,7 @@ const ProductModal = ({ product, onClose }) => {
                   {lensOptionModalOpen && (
                     <LensOptionModal
                       lensOption={selectedLensOption}
-                      onClose={() => {
-                        setLensOptionModalOpen(false);
-                        setSelectedLensOption(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('lensOption')}
                     />
                   )}
 
@@ -2463,12 +2505,7 @@ const ProductModal = ({ product, onClose }) => {
                   {prescriptionSunLensModalOpen && (
                     <PrescriptionSunLensModal
                       lens={selectedPrescriptionSunLens}
-                      onClose={() => {
-                        setPrescriptionSunLensModalOpen(false);
-                        setSelectedPrescriptionSunLens(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('prescriptionSunLens')}
                     />
                   )}
 
@@ -2512,12 +2549,7 @@ const ProductModal = ({ product, onClose }) => {
                   {photochromicLensModalOpen && (
                     <PhotochromicLensModal
                       lens={selectedPhotochromicLens}
-                      onClose={() => {
-                        setPhotochromicLensModalOpen(false);
-                        setSelectedPhotochromicLens(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('photochromicLens')}
                     />
                   )}
 
@@ -2561,12 +2593,7 @@ const ProductModal = ({ product, onClose }) => {
                   {lensCoatingModalOpen && (
                     <LensCoatingModal
                       lensCoating={selectedLensCoating}
-                      onClose={() => {
-                        setLensCoatingModalOpen(false);
-                        setSelectedLensCoating(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('lensCoating')}
                     />
                   )}
 
@@ -2615,12 +2642,7 @@ const ProductModal = ({ product, onClose }) => {
                   {lensColorModalOpen && (
                     <LensColorModal
                       lensColor={selectedLensColor}
-                      onClose={() => {
-                        setLensColorModalOpen(false);
-                        setSelectedLensColor(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('lensColor')}
                     />
                   )}
 
@@ -2664,12 +2686,7 @@ const ProductModal = ({ product, onClose }) => {
                   {lensFinishModalOpen && (
                     <LensFinishModal
                       lensFinish={selectedLensFinish}
-                      onClose={() => {
-                        setLensFinishModalOpen(false);
-                        setSelectedLensFinish(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('lensFinish')}
                     />
                   )}
 
@@ -2713,12 +2730,7 @@ const ProductModal = ({ product, onClose }) => {
                   {lensTreatmentModalOpen && (
                     <LensTreatmentModal
                       lensTreatment={selectedLensTreatment}
-                      onClose={() => {
-                        setLensTreatmentModalOpen(false);
-                        setSelectedLensTreatment(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('lensTreatment')}
                     />
                   )}
 
@@ -2761,12 +2773,7 @@ const ProductModal = ({ product, onClose }) => {
                   {thicknessMaterialModalOpen && (
                     <LensThicknessMaterialModal
                       material={selectedThicknessMaterial}
-                      onClose={() => {
-                        setThicknessMaterialModalOpen(false);
-                        setSelectedThicknessMaterial(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('thicknessMaterial')}
                     />
                   )}
 
@@ -2809,12 +2816,7 @@ const ProductModal = ({ product, onClose }) => {
                   {thicknessOptionModalOpen && (
                     <LensThicknessOptionModal
                       option={selectedThicknessOption}
-                      onClose={() => {
-                        setThicknessOptionModalOpen(false);
-                        setSelectedThicknessOption(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('thicknessOption')}
                     />
                   )}
 
@@ -2857,12 +2859,7 @@ const ProductModal = ({ product, onClose }) => {
                   {prescriptionLensTypeModalOpen && (
                     <PrescriptionLensTypeModal
                       lensType={selectedPrescriptionLensType}
-                      onClose={() => {
-                        setPrescriptionLensTypeModalOpen(false);
-                        setSelectedPrescriptionLensType(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('prescriptionLensType')}
                     />
                   )}
 
@@ -2908,12 +2905,7 @@ const ProductModal = ({ product, onClose }) => {
                   {prescriptionDropdownModalOpen && (
                     <PrescriptionFormDropdownValueModal
                       value={selectedPrescriptionDropdown}
-                      onClose={() => {
-                        setPrescriptionDropdownModalOpen(false);
-                        setSelectedPrescriptionDropdown(null);
-                        setActiveTab('lens-management'); // Ensure Lens Management tab is active
-                        fetchLensManagementData();
-                      }}
+                      onClose={handleLensManagementClose('prescriptionDropdown')}
                     />
                   )}
                 </div>

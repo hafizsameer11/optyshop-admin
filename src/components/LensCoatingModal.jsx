@@ -94,7 +94,7 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
           toast.success('Lens coating created successfully');
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Lens coating save error:', error);
       if (!error.response) {

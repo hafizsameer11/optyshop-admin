@@ -85,7 +85,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
           toast.success('Lens type created successfully');
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Lens type save error:', error);
       if (!error.response) {

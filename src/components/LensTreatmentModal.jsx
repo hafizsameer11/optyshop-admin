@@ -120,7 +120,7 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
           toast.success('Lens treatment created successfully');
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Lens treatment save error:', error);
       if (!error.response) {

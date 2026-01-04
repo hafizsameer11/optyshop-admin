@@ -250,7 +250,7 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
           toast.success('Lens finish created successfully');
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Lens finish save error:', error);
       if (!error.response) {

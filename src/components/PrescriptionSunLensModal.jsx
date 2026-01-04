@@ -79,7 +79,7 @@ const PrescriptionSunLensModal = ({ lens, onClose }) => {
         response = await api.post(API_ROUTES.ADMIN.PRESCRIPTION_SUN_LENSES.CREATE, submitData);
         toast.success(response.data?.message || 'Prescription sun lens created successfully');
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Prescription sun lens save error:', error);
       if (!error.response) {

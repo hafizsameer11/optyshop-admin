@@ -400,6 +400,11 @@ const Products = () => {
           }
           // Use section-specific endpoint (backend automatically filters by product_type)
           endpoint = `${config.endpoint}?${params.toString()}`;
+          console.log(`🔍 Fetching products for section: ${selectedSection}`, {
+            endpoint,
+            productType: config.productType,
+            params: params.toString()
+          });
         } else {
           // Fallback to general products endpoint
           endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
@@ -413,16 +418,23 @@ const Products = () => {
       const responseData = response.data?.data || response.data || {};
       const productsData = responseData.products || responseData || [];
       
-      // Log first product to debug structure
-      if (Array.isArray(productsData) && productsData.length > 0) {
-        console.log('Sample product data structure:', productsData[0]);
-      }
+      // Log products count for debugging
+      const productsArray = Array.isArray(productsData) ? productsData : [];
+      console.log(`✅ Fetched ${productsArray.length} products for section: ${selectedSection}`, {
+        section: selectedSection,
+        count: productsArray.length,
+        sampleProduct: productsArray.length > 0 ? {
+          id: productsArray[0].id,
+          name: productsArray[0].name,
+          product_type: productsArray[0].product_type
+        } : null
+      });
       
       // Extract pagination info
       const pagination = responseData.pagination || {};
       const pages = pagination.pages || pagination.totalPages || 1;
       
-      setProducts(Array.isArray(productsData) ? productsData : []);
+      setProducts(productsArray);
       setTotalPages(pages);
       // Update refresh key to force image reload after product list update
       setImageRefreshKey(Date.now());
@@ -557,12 +569,14 @@ const Products = () => {
   ];
 
   const handleSectionChange = (section) => {
+    console.log(`🔄 Changing section to: ${section}`);
     setSelectedSection(section);
     setPage(1); // Reset to first page when section changes
     // Clear category and subcategory filters when changing sections to show all products in that section
     setCategoryFilter('');
     setSubCategoryFilter('');
     // Note: searchTerm is kept so users can still search within the selected section
+    // fetchProducts will be called automatically via useEffect when selectedSection changes
   };
 
   return (

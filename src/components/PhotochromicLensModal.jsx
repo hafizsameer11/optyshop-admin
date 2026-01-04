@@ -75,7 +75,7 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
         response = await api.post(API_ROUTES.ADMIN.PHOTOCHROMIC_LENSES.CREATE, submitData);
         toast.success(response.data?.message || 'Photochromic lens created successfully');
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Photochromic lens save error:', error);
       if (!error.response) {

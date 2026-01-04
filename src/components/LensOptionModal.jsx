@@ -87,7 +87,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
         response = await api.post(API_ROUTES.ADMIN.LENS_OPTIONS.CREATE, submitData);
         toast.success(response.data?.message || 'Lens option created successfully');
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Lens option save error:', error);
       if (!error.response) {

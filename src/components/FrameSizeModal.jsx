@@ -79,7 +79,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
           toast.success('Frame size created successfully');
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Frame size save error:', error);
       if (!error.response) {

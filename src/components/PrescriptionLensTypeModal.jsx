@@ -81,7 +81,7 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
           toast.success('Prescription lens type created successfully');
         }
       }
-      onClose();
+      onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Prescription lens type save error:', error);
       if (!error.response) {

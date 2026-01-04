@@ -1474,17 +1474,38 @@ const ProductModal = ({ product, onClose }) => {
           
           // Special handling for certain keys
           const alternativeKeys = {
-            'lensOptions': ['options', 'lens_options'],
-            'prescriptionSunLenses': ['prescription_sun_lenses', 'prescriptionSunLens', 'prescription_sun_lens'],
-            'photochromicLenses': ['photochromic_lenses', 'photochromicLens', 'photochromic_lens'],
-            'thicknessMaterials': ['thickness_materials', 'thicknessMaterial', 'thickness_material'],
-            'thicknessOptions': ['thickness_options', 'thicknessOption', 'thickness_option'],
-            'prescriptionLensTypes': ['prescription_lens_types', 'prescriptionLensType', 'prescription_lens_type'],
-            'dropdownValues': ['dropdown_values', 'dropdownValue', 'dropdown_value', 'prescription_form_dropdown_values']
+            'frameSizes': ['frame_sizes', 'frameSize', 'frame_size'],
+            'lensTypes': ['lens_types', 'lensType', 'lens_type'],
+            'lensOptions': ['options', 'lens_options', 'lensOption', 'lens_option'],
+            'prescriptionSunLenses': ['prescription_sun_lenses', 'prescriptionSunLens', 'prescription_sun_lens', 'prescription_sun', 'prescriptionSun'],
+            'photochromicLenses': ['photochromic_lenses', 'photochromicLens', 'photochromic_lens', 'photochromic'],
+            'lensCoatings': ['lens_coatings', 'lensCoating', 'lens_coating', 'coatings', 'coating'],
+            'lensColors': ['lens_colors', 'lensColor', 'lens_color', 'colors', 'color'],
+            'lensFinishes': ['lens_finishes', 'lensFinish', 'lens_finish', 'finishes', 'finish'],
+            'lensTreatments': ['lens_treatments', 'lensTreatment', 'lens_treatment', 'treatments', 'treatment'],
+            'thicknessMaterials': ['thickness_materials', 'thicknessMaterial', 'thickness_material', 'materials', 'material'],
+            'thicknessOptions': ['thickness_options', 'thicknessOption', 'thickness_option', 'options', 'option'],
+            'prescriptionLensTypes': ['prescription_lens_types', 'prescriptionLensType', 'prescription_lens_type', 'prescription_lens', 'prescriptionLens'],
+            'dropdownValues': ['dropdown_values', 'dropdownValue', 'dropdown_value', 'prescription_form_dropdown_values', 'values', 'value']
           };
           
           const altKeys = alternativeKeys[key] || [];
           const allKeysToCheck = [key, snakeKey, singularKey, singularSnakeKey, ...altKeys];
+          
+          // Helper function to recursively find arrays
+          const findFirstArray = (obj, depth = 0, maxDepth = 5) => {
+            if (depth > maxDepth || !obj || typeof obj !== 'object') return null;
+            if (Array.isArray(obj) && obj.length > 0) return obj;
+            
+            for (const value of Object.values(obj)) {
+              if (Array.isArray(value) && value.length > 0) return value;
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                const found = findFirstArray(value, depth + 1, maxDepth);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
           
           // Strategy 1: Check responseData.data (most common structure)
           if (responseData?.data) {
@@ -1496,6 +1517,7 @@ const ProductModal = ({ product, onClose }) => {
             }
             // Check all possible keys in data.data
             else if (typeof dataObj === 'object') {
+              // First, try exact key matches
               for (const checkKey of allKeysToCheck) {
                 if (dataObj[checkKey] && Array.isArray(dataObj[checkKey])) {
                   extractedData = dataObj[checkKey];
@@ -1517,14 +1539,22 @@ const ProductModal = ({ product, onClose }) => {
                 }
               }
               
-              // Try common array keys
+              // Try common array keys (results, items, list, data)
               if (extractedData.length === 0) {
-                if (dataObj.results && Array.isArray(dataObj.results)) {
-                  extractedData = dataObj.results;
-                } else if (dataObj.items && Array.isArray(dataObj.items)) {
-                  extractedData = dataObj.items;
-                } else if (dataObj.list && Array.isArray(dataObj.list)) {
-                  extractedData = dataObj.list;
+                const commonKeys = ['results', 'items', 'list', 'data', 'records'];
+                for (const commonKey of commonKeys) {
+                  if (dataObj[commonKey] && Array.isArray(dataObj[commonKey])) {
+                    extractedData = dataObj[commonKey];
+                    break;
+                  }
+                }
+              }
+              
+              // Last resort: find ANY array in the data object
+              if (extractedData.length === 0) {
+                const foundArray = findFirstArray(dataObj);
+                if (foundArray) {
+                  extractedData = foundArray;
                 }
               }
             }
@@ -1537,6 +1567,7 @@ const ProductModal = ({ product, onClose }) => {
           
           // Strategy 3: Check for keys at root level
           if (extractedData.length === 0 && responseData && typeof responseData === 'object') {
+            // Try exact key matches first
             for (const checkKey of allKeysToCheck) {
               if (responseData[checkKey] && Array.isArray(responseData[checkKey])) {
                 extractedData = responseData[checkKey];
@@ -1546,47 +1577,56 @@ const ProductModal = ({ product, onClose }) => {
             
             // Try common array keys at root
             if (extractedData.length === 0) {
-              if (responseData.data && Array.isArray(responseData.data)) {
-                extractedData = responseData.data;
-              } else if (responseData.results && Array.isArray(responseData.results)) {
-                extractedData = responseData.results;
-              } else if (responseData.items && Array.isArray(responseData.items)) {
-                extractedData = responseData.items;
+              const commonKeys = ['data', 'results', 'items', 'list', 'records'];
+              for (const commonKey of commonKeys) {
+                if (responseData[commonKey] && Array.isArray(responseData[commonKey])) {
+                  extractedData = responseData[commonKey];
+                  break;
+                }
+              }
+            }
+            
+            // Last resort: find ANY array in the response
+            if (extractedData.length === 0) {
+              const foundArray = findFirstArray(responseData);
+              if (foundArray) {
+                extractedData = foundArray;
               }
             }
           }
           
-          // Debug logging
+          // Helper function to find all arrays in response
+          const findAllArrays = (obj, path = '') => {
+            const arrays = [];
+            if (obj && typeof obj === 'object') {
+              for (const [k, v] of Object.entries(obj)) {
+                const currentPath = path ? `${path}.${k}` : k;
+                if (Array.isArray(v) && v.length > 0) {
+                  arrays.push({ path: currentPath, length: v.length, data: v });
+                } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+                  arrays.push(...findAllArrays(v, currentPath));
+                }
+              }
+            }
+            return arrays;
+          };
+          
+          // Debug logging and final fallback
           if (extractedData.length > 0) {
             console.log(`✅ Successfully extracted ${extractedData.length} ${key} items`);
           } else {
-            // Enhanced logging to show actual response structure
-            const logData = {
-              'Looking for keys': allKeysToCheck,
-              'Response structure': JSON.stringify(responseData, null, 2).substring(0, 500)
-            };
-            
-            // Try to find any array in the response
-            const findArrays = (obj, path = '') => {
-              const arrays = [];
-              if (obj && typeof obj === 'object') {
-                for (const [k, v] of Object.entries(obj)) {
-                  const currentPath = path ? `${path}.${k}` : k;
-                  if (Array.isArray(v)) {
-                    arrays.push({ path: currentPath, length: v.length, sample: v.slice(0, 2) });
-                  } else if (v && typeof v === 'object' && !Array.isArray(v)) {
-                    arrays.push(...findArrays(v, currentPath));
-                  }
-                }
-              }
-              return arrays;
-            };
-            
-            const foundArrays = findArrays(responseData);
+            // Find all arrays in the response
+            const foundArrays = findAllArrays(responseData);
             if (foundArrays.length > 0) {
-              console.warn(`⚠️ No data extracted for ${key}. Found arrays at:`, foundArrays);
+              console.warn(`⚠️ No data extracted for ${key} using expected keys. Found ${foundArrays.length} array(s) at:`, foundArrays.map(a => `${a.path} (${a.length} items)`));
+              // Use the largest array as fallback
+              const sortedArrays = foundArrays.sort((a, b) => b.length - a.length);
+              const bestArray = sortedArrays[0];
+              extractedData = bestArray.data;
+              console.log(`💡 Using fallback array from path: ${bestArray.path} (${extractedData.length} items)`);
             } else {
-              console.warn(`⚠️ No data extracted for ${key}. Response:`, logData);
+              console.warn(`⚠️ No data extracted for ${key}. Looking for:`, allKeysToCheck);
+              console.warn(`Response structure:`, JSON.stringify(responseData, null, 2).substring(0, 1000));
             }
           }
           

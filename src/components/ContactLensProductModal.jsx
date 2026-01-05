@@ -34,8 +34,10 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       if (setModalOpen) setModalOpen(false);
       if (setSelected) setSelected(null);
       
-      // Refresh data if modal was saved
-      if (saved && refreshData) {
+      // Always refresh data when modal closes (whether saved or cancelled)
+      // This ensures the table is up-to-date
+      if (refreshData && product?.id) {
+        console.log(`🔄 Refreshing ${modalType} configs after modal close`);
         refreshData();
       }
       
@@ -464,6 +466,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       
       const response = await api.get(endpoint);
       console.log('📦 Spherical configs API response:', response);
+      console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
       
       const configsData = extractConfigData(response, 'sphericalConfigs');
       console.log(`✅ Extracted ${configsData.length} spherical configs:`, configsData);
@@ -477,8 +480,12 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       console.error('❌ Failed to fetch spherical configs:', error);
       if (error.response) {
         console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
       }
-      toast.error('Failed to load spherical configurations');
+      // Don't show error toast if it's just no data (404 might be acceptable)
+      if (error.response?.status !== 404) {
+        toast.error('Failed to load spherical configurations');
+      }
       setSphericalConfigs([]);
     } finally {
       setLoadingSpherical(false);
@@ -498,6 +505,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       
       const response = await api.get(endpoint);
       console.log('📦 Astigmatism configs API response:', response);
+      console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
       
       const configsData = extractConfigData(response, 'astigmatismConfigs');
       console.log(`✅ Extracted ${configsData.length} astigmatism configs:`, configsData);
@@ -511,8 +519,12 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       console.error('❌ Failed to fetch astigmatism configs:', error);
       if (error.response) {
         console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
       }
-      toast.error('Failed to load astigmatism configurations');
+      // Don't show error toast if it's just no data (404 might be acceptable)
+      if (error.response?.status !== 404) {
+        toast.error('Failed to load astigmatism configurations');
+      }
       setAstigmatismConfigs([]);
     } finally {
       setLoadingAstigmatism(false);
@@ -1289,10 +1301,14 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                 {astigmatismModalOpen && (
                   <AstigmatismConfigModal
                     config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
-                    onClose={() => {
+                    onClose={(saved = false) => {
                       setAstigmatismModalOpen(false);
                       setSelectedAstigmatismConfig(null);
-                      fetchAstigmatismConfigs();
+                      // Always refresh data when modal closes
+                      if (product?.id) {
+                        console.log('🔄 Refreshing astigmatism configs after modal close');
+                        fetchAstigmatismConfigs();
+                      }
                     }}
                   />
                 )}

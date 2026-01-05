@@ -353,11 +353,19 @@ const SphericalConfigModal = ({ config, onClose }) => {
       };
 
       // Include product_id if selected (convert empty string to null for API)
-      if (submitData.product_id === '') {
-        submitData.product_id = null;
+      // But preserve product_id from config if it was passed
+      if (submitData.product_id === '' || submitData.product_id === null) {
+        // If config had product_id, preserve it
+        if (config?.product_id || config?.productId || config?.product?.id) {
+          submitData.product_id = parseInt(config.product_id || config.productId || config.product?.id);
+        } else {
+          submitData.product_id = null;
+        }
       } else if (submitData.product_id) {
         submitData.product_id = parseInt(submitData.product_id);
       }
+      
+      console.log('📤 Submitting spherical config with product_id:', submitData.product_id);
 
       // Add backend copy flag if user clicked copy button
       if (useBackendCopy) {

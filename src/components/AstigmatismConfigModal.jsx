@@ -513,7 +513,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 }
             }
             setUseBackendCopy(false); // Reset flag after submission
-            onClose();
+            onClose(true); // Pass true to indicate successful save
         } catch (error) {
             console.error('Save error:', error);
             if (!error.response) {

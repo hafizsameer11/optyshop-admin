@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { FiX, FiUpload, FiChevronRight, FiPlus, FiTrash2, FiCopy, FiEdit2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -8,10 +9,50 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
-import AstigmatismDropdownValueModal from './AstigmatismDropdownValueModal';
 
 const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  
+  // Map contact lens form modal types to their routes
+  const contactLensFormRoutes = {
+    'spherical': '/contact-lens-forms/spherical',
+    'astigmatism': '/contact-lens-forms/astigmatism',
+  };
+  
+  // Helper function to handle contact lens form modal close with navigation
+  // saved: true if form was saved successfully, false/undefined if cancelled/closed
+  const handleContactLensFormClose = (modalType) => {
+    return (saved = false) => {
+      // Close the contact lens form modal
+      const modalStateSetters = {
+        'spherical': [setSphericalModalOpen, setSelectedSphericalConfig, fetchSphericalConfigs],
+        'astigmatism': [setAstigmatismModalOpen, setSelectedAstigmatismConfig, fetchAstigmatismConfigs],
+      };
+      
+      const [setModalOpen, setSelected, refreshData] = modalStateSetters[modalType] || [null, null, null];
+      if (setModalOpen) setModalOpen(false);
+      if (setSelected) setSelected(null);
+      
+      // Refresh data if modal was saved
+      if (saved && refreshData) {
+        refreshData();
+      }
+      
+      // Only navigate and close product modal if form was saved successfully
+      if (saved) {
+        // Close the product modal
+        onClose();
+        
+        // Navigate to the appropriate contact lens form page
+        const route = contactLensFormRoutes[modalType];
+        if (route) {
+          navigate(route);
+        }
+      }
+      // If cancelled, just close the modal and stay in product modal
+    };
+  };
   const [activeTab, setActiveTab] = useState('general');
   const [formData, setFormData] = useState({
     name: '',
@@ -40,9 +81,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     contact_lens_type: '',
     replacement_frequency: '',
     water_content: '',
-    base_curve_options: [],
-    diameter_options: [],
-    powers_range: '',
     can_sleep_with: false,
     is_medical_device: false,
     has_uv_filter: false,
@@ -54,24 +92,18 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
-  const [baseCurveInput, setBaseCurveInput] = useState('');
-  const [diameterInput, setDiameterInput] = useState('');
   const [nestedSubCategoriesForConfig, setNestedSubCategoriesForConfig] = useState([]);
   const [productsForConfig, setProductsForConfig] = useState([]);
   
   // Configuration tables state
   const [sphericalConfigs, setSphericalConfigs] = useState([]);
   const [astigmatismConfigs, setAstigmatismConfigs] = useState([]);
-  const [dropdownValues, setDropdownValues] = useState([]);
   const [loadingSpherical, setLoadingSpherical] = useState(false);
   const [loadingAstigmatism, setLoadingAstigmatism] = useState(false);
-  const [loadingDropdown, setLoadingDropdown] = useState(false);
   const [sphericalModalOpen, setSphericalModalOpen] = useState(false);
   const [astigmatismModalOpen, setAstigmatismModalOpen] = useState(false);
-  const [dropdownModalOpen, setDropdownModalOpen] = useState(false);
   const [selectedSphericalConfig, setSelectedSphericalConfig] = useState(null);
   const [selectedAstigmatismConfig, setSelectedAstigmatismConfig] = useState(null);
-  const [selectedDropdownValue, setSelectedDropdownValue] = useState(null);
 
   useEffect(() => {
     fetchProductOptions();
@@ -103,9 +135,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         contact_lens_type: product.contact_lens_type || '',
         replacement_frequency: product.replacement_frequency || '',
         water_content: product.water_content || '',
-        base_curve_options: Array.isArray(product.base_curve_options) ? product.base_curve_options : [],
-        diameter_options: Array.isArray(product.diameter_options) ? product.diameter_options : [],
-        powers_range: product.powers_range || '',
         can_sleep_with: product.can_sleep_with || false,
         is_medical_device: product.is_medical_device || false,
         has_uv_filter: product.has_uv_filter || false,
@@ -148,8 +177,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         fetchSphericalConfigs();
       } else if (activeTab === 'astigmatism') {
         fetchAstigmatismConfigs();
-      } else if (activeTab === 'astigmatism-dropdown') {
-        fetchDropdownValues();
       }
     }
   }, [activeTab, product?.id]);
@@ -297,52 +324,122 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     setImagePreviews(newPreviews);
   };
 
-  const addBaseCurve = () => {
-    const value = parseFloat(baseCurveInput);
-    if (!isNaN(value) && value > 0) {
-      if (!formData.base_curve_options.includes(value)) {
-        setFormData({
-          ...formData,
-          base_curve_options: [...formData.base_curve_options, value].sort((a, b) => a - b)
-        });
-        setBaseCurveInput('');
-        toast.success('Base curve added');
-      } else {
-        toast.error('Base curve already exists');
+
+  // Helper function to extract data from API responses (similar to ProductModal)
+  const extractConfigData = (response, key) => {
+    if (!response || !response.data) return [];
+    
+    const responseData = response.data;
+    let extractedData = [];
+    
+    const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+    const singularKey = key.slice(0, -1);
+    const singularSnakeKey = snakeKey.slice(0, -1);
+    
+    const alternativeKeys = {
+      'sphericalConfigs': ['configs', 'spherical_configs', 'sphericalConfig'],
+      'astigmatismConfigs': ['configs', 'astigmatism_configs', 'astigmatismConfig'],
+    };
+    
+    const allKeysToCheck = [key, snakeKey, singularKey, singularSnakeKey, ...(alternativeKeys[key] || [])];
+    
+    // Strategy 1: Check responseData.data (most common structure)
+    if (responseData?.data) {
+      const dataObj = responseData.data;
+      if (Array.isArray(dataObj)) {
+        extractedData = dataObj;
+      } else if (typeof dataObj === 'object') {
+        for (const checkKey of allKeysToCheck) {
+          if (dataObj[checkKey] && Array.isArray(dataObj[checkKey])) {
+            extractedData = dataObj[checkKey];
+            break;
+          }
+        }
+        if (extractedData.length === 0 && dataObj.data) {
+          if (Array.isArray(dataObj.data)) {
+            extractedData = dataObj.data;
+          } else if (typeof dataObj.data === 'object') {
+            for (const checkKey of allKeysToCheck) {
+              if (dataObj.data[checkKey] && Array.isArray(dataObj.data[checkKey])) {
+                extractedData = dataObj.data[checkKey];
+                break;
+              }
+            }
+          }
+        }
+        if (extractedData.length === 0) {
+          if (dataObj.results && Array.isArray(dataObj.results)) {
+            extractedData = dataObj.results;
+          } else if (dataObj.items && Array.isArray(dataObj.items)) {
+            extractedData = dataObj.items;
+          } else if (dataObj.list && Array.isArray(dataObj.list)) {
+            extractedData = dataObj.list;
+          } else if (dataObj.records && Array.isArray(dataObj.records)) {
+            extractedData = dataObj.records;
+          }
+        }
       }
-    } else {
-      toast.error('Please enter a valid number');
     }
-  };
-
-  const removeBaseCurve = (index) => {
-    const newOptions = [...formData.base_curve_options];
-    newOptions.splice(index, 1);
-    setFormData({ ...formData, base_curve_options: newOptions });
-  };
-
-  const addDiameter = () => {
-    const value = parseFloat(diameterInput);
-    if (!isNaN(value) && value > 0) {
-      if (!formData.diameter_options.includes(value)) {
-        setFormData({
-          ...formData,
-          diameter_options: [...formData.diameter_options, value].sort((a, b) => a - b)
-        });
-        setDiameterInput('');
-        toast.success('Diameter added');
-      } else {
-        toast.error('Diameter already exists');
+    
+    // Strategy 2: Check if responseData is directly an array
+    if (extractedData.length === 0 && Array.isArray(responseData)) {
+      extractedData = responseData;
+    }
+    
+    // Strategy 3: Check for keys at root level
+    if (extractedData.length === 0 && responseData && typeof responseData === 'object') {
+      for (const checkKey of allKeysToCheck) {
+        if (responseData[checkKey] && Array.isArray(responseData[checkKey])) {
+          extractedData = responseData[checkKey];
+          break;
+        }
       }
-    } else {
-      toast.error('Please enter a valid number');
+      if (extractedData.length === 0) {
+        if (responseData.data && Array.isArray(responseData.data)) {
+          extractedData = responseData.data;
+        } else if (responseData.results && Array.isArray(responseData.results)) {
+          extractedData = responseData.results;
+        } else if (responseData.items && Array.isArray(responseData.items)) {
+          extractedData = responseData.items;
+        } else if (responseData.records && Array.isArray(responseData.records)) {
+          extractedData = responseData.records;
+        }
+      }
     }
-  };
-
-  const removeDiameter = (index) => {
-    const newOptions = [...formData.diameter_options];
-    newOptions.splice(index, 1);
-    setFormData({ ...formData, diameter_options: newOptions });
+    
+    // Final fallback: find any array in the response and use the largest one
+    if (extractedData.length === 0) {
+      const findArrays = (obj, path = '') => {
+        const arrays = [];
+        if (obj && typeof obj === 'object') {
+          for (const [k, v] of Object.entries(obj)) {
+            const currentPath = path ? `${path}.${k}` : k;
+            if (Array.isArray(v)) {
+              arrays.push({ path: currentPath, length: v.length, data: v });
+            } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+              arrays.push(...findArrays(v, currentPath));
+            }
+          }
+        }
+        return arrays;
+      };
+      
+      const foundArrays = findArrays(responseData);
+      if (foundArrays.length > 0) {
+        const largestArray = foundArrays.reduce((prev, current) => (prev.length > current.length ? prev : current));
+        if (largestArray.length > 0) {
+          extractedData = largestArray.data;
+          console.log(`💡 Using fallback array from path: ${largestArray.path} (${largestArray.length} items)`);
+        }
+      }
+    }
+    
+    if (extractedData.length > 0) {
+      console.log(`✅ Successfully extracted ${extractedData.length} ${key} items`);
+    } else {
+      console.warn(`⚠️ No data extracted for ${key}. Response:`, JSON.stringify(responseData, null, 2).substring(0, 500));
+    }
+    return Array.isArray(extractedData) ? extractedData : [];
   };
 
   // Fetch Spherical Configurations
@@ -354,53 +451,8 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     try {
       setLoadingSpherical(true);
       const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?product_id=${product.id}&limit=1000`);
-      let configsData = [];
-      
-      // Comprehensive response structure handling
-      if (response.data) {
-        const data = response.data;
-        const keysToCheck = ['configs', 'sphericalConfigs', 'spherical_configs', 'data', 'results', 'items', 'list'];
-        
-        // Direct array
-        if (Array.isArray(data)) {
-          configsData = data;
-        }
-        // Nested data object
-        else if (data.data) {
-          if (Array.isArray(data.data)) {
-            configsData = data.data;
-          } else if (typeof data.data === 'object') {
-            // Check all possible keys in data.data
-            for (const key of keysToCheck) {
-              if (data.data[key] && Array.isArray(data.data[key])) {
-                configsData = data.data[key];
-                break;
-              }
-            }
-            // Check nested data.data.data
-            if (configsData.length === 0 && data.data.data && Array.isArray(data.data.data)) {
-              configsData = data.data.data;
-            }
-          }
-        }
-        // Check root level keys
-        else if (typeof data === 'object') {
-          for (const key of keysToCheck) {
-            if (data[key] && Array.isArray(data[key])) {
-              configsData = data[key];
-              break;
-            }
-          }
-        }
-      }
-      
-      if (configsData.length > 0) {
-        console.log(`✅ Successfully extracted ${configsData.length} spherical configs`);
-      } else {
-        console.warn('⚠️ No spherical configs extracted. Response:', JSON.stringify(response.data, null, 2).substring(0, 500));
-      }
-      
-      setSphericalConfigs(Array.isArray(configsData) ? configsData : []);
+      const configsData = extractConfigData(response, 'sphericalConfigs');
+      setSphericalConfigs(configsData);
     } catch (error) {
       console.error('Failed to fetch spherical configs:', error);
       toast.error('Failed to load spherical configurations');
@@ -419,125 +471,14 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     try {
       setLoadingAstigmatism(true);
       const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?product_id=${product.id}&limit=1000`);
-      let configsData = [];
-      
-      // Comprehensive response structure handling
-      if (response.data) {
-        const data = response.data;
-        const keysToCheck = ['configs', 'astigmatismConfigs', 'astigmatism_configs', 'data', 'results', 'items', 'list'];
-        
-        // Direct array
-        if (Array.isArray(data)) {
-          configsData = data;
-        }
-        // Nested data object
-        else if (data.data) {
-          if (Array.isArray(data.data)) {
-            configsData = data.data;
-          } else if (typeof data.data === 'object') {
-            // Check all possible keys in data.data
-            for (const key of keysToCheck) {
-              if (data.data[key] && Array.isArray(data.data[key])) {
-                configsData = data.data[key];
-                break;
-              }
-            }
-            // Check nested data.data.data
-            if (configsData.length === 0 && data.data.data && Array.isArray(data.data.data)) {
-              configsData = data.data.data;
-            }
-          }
-        }
-        // Check root level keys
-        else if (typeof data === 'object') {
-          for (const key of keysToCheck) {
-            if (data[key] && Array.isArray(data[key])) {
-              configsData = data[key];
-              break;
-            }
-          }
-        }
-      }
-      
-      if (configsData.length > 0) {
-        console.log(`✅ Successfully extracted ${configsData.length} astigmatism configs`);
-      } else {
-        console.warn('⚠️ No astigmatism configs extracted. Response:', JSON.stringify(response.data, null, 2).substring(0, 500));
-      }
-      
-      setAstigmatismConfigs(Array.isArray(configsData) ? configsData : []);
+      const configsData = extractConfigData(response, 'astigmatismConfigs');
+      setAstigmatismConfigs(configsData);
     } catch (error) {
       console.error('Failed to fetch astigmatism configs:', error);
       toast.error('Failed to load astigmatism configurations');
       setAstigmatismConfigs([]);
     } finally {
       setLoadingAstigmatism(false);
-    }
-  };
-
-  // Fetch Dropdown Values
-  const fetchDropdownValues = async () => {
-    try {
-      setLoadingDropdown(true);
-      const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.LIST}?limit=1000`);
-      let valuesData = [];
-      
-      // Comprehensive response structure handling
-      if (response.data) {
-        const data = response.data;
-        const keysToCheck = [
-          'values', 'dropdownValues', 'dropdown_values', 
-          'prescriptionFormDropdownValues', 'prescription_form_dropdown_values',
-          'astigmatismDropdownValues', 'astigmatism_dropdown_values',
-          'data', 'results', 'items', 'list'
-        ];
-        
-        // Direct array
-        if (Array.isArray(data)) {
-          valuesData = data;
-        }
-        // Nested data object
-        else if (data.data) {
-          if (Array.isArray(data.data)) {
-            valuesData = data.data;
-          } else if (typeof data.data === 'object') {
-            // Check all possible keys in data.data
-            for (const key of keysToCheck) {
-              if (data.data[key] && Array.isArray(data.data[key])) {
-                valuesData = data.data[key];
-                break;
-              }
-            }
-            // Check nested data.data.data
-            if (valuesData.length === 0 && data.data.data && Array.isArray(data.data.data)) {
-              valuesData = data.data.data;
-            }
-          }
-        }
-        // Check root level keys
-        else if (typeof data === 'object') {
-          for (const key of keysToCheck) {
-            if (data[key] && Array.isArray(data[key])) {
-              valuesData = data[key];
-              break;
-            }
-          }
-        }
-      }
-      
-      if (valuesData.length > 0) {
-        console.log(`✅ Successfully extracted ${valuesData.length} dropdown values`);
-      } else {
-        console.warn('⚠️ No dropdown values extracted. Response:', JSON.stringify(response.data, null, 2).substring(0, 500));
-      }
-      
-      setDropdownValues(Array.isArray(valuesData) ? valuesData : []);
-    } catch (error) {
-      console.error('Failed to fetch dropdown values:', error);
-      toast.error('Failed to load dropdown values');
-      setDropdownValues([]);
-    } finally {
-      setLoadingDropdown(false);
     }
   };
 
@@ -584,26 +525,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
   };
 
-  const handleDropdownAdd = () => {
-    setSelectedDropdownValue(null);
-    setDropdownModalOpen(true);
-  };
-
-  const handleDropdownEdit = (value) => {
-    setSelectedDropdownValue(value);
-    setDropdownModalOpen(true);
-  };
-
-  const handleDropdownDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this dropdown value?')) return;
-    try {
-      await api.delete(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DROPDOWN_VALUES.DELETE(id));
-      toast.success('Dropdown value deleted successfully');
-      fetchDropdownValues();
-    } catch (error) {
-      toast.error('Failed to delete dropdown value');
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -666,9 +587,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       if (formData.contact_lens_type) dataToSend.contact_lens_type = formData.contact_lens_type.trim();
       if (formData.replacement_frequency) dataToSend.replacement_frequency = formData.replacement_frequency.trim();
       if (formData.water_content) dataToSend.water_content = formData.water_content.trim();
-      if (formData.base_curve_options.length > 0) dataToSend.base_curve_options = formData.base_curve_options;
-      if (formData.diameter_options.length > 0) dataToSend.diameter_options = formData.diameter_options;
-      if (formData.powers_range) dataToSend.powers_range = formData.powers_range.trim();
       dataToSend.can_sleep_with = formData.can_sleep_with;
       dataToSend.is_medical_device = formData.is_medical_device;
       dataToSend.has_uv_filter = formData.has_uv_filter;
@@ -753,7 +671,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     { id: 'contact-lens', label: 'Contact Lens' },
     { id: 'spherical', label: 'Spherical Configurations' },
     { id: 'astigmatism', label: 'Astigmatism Configurations' },
-    { id: 'astigmatism-dropdown', label: 'Astigmatism Dropdown Values' },
     { id: 'images', label: 'Images' },
     { id: 'seo', label: 'SEO' },
   ];
@@ -1090,94 +1007,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Powers Range</label>
-                  <input
-                    type="text"
-                    name="powers_range"
-                    value={formData.powers_range}
-                    onChange={handleChange}
-                    className="input-modern"
-                    placeholder="e.g., -0.50 to -6.00 in 0.25 steps"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Base Curve Options</label>
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={baseCurveInput}
-                      onChange={(e) => setBaseCurveInput(e.target.value)}
-                      className="input-modern flex-1"
-                      placeholder="e.g., 8.70"
-                    />
-                    <button
-                      type="button"
-                      onClick={addBaseCurve}
-                      className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.base_curve_options.map((option, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg flex items-center gap-2"
-                      >
-                        {option}
-                        <button
-                          type="button"
-                          onClick={() => removeBaseCurve(index)}
-                          className="text-indigo-700 hover:text-indigo-900"
-                        >
-                          <FiX className="w-4 h-4" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Diameter Options</label>
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={diameterInput}
-                      onChange={(e) => setDiameterInput(e.target.value)}
-                      className="input-modern flex-1"
-                      placeholder="e.g., 14.00"
-                    />
-                    <button
-                      type="button"
-                      onClick={addDiameter}
-                      className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.diameter_options.map((option, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg flex items-center gap-2"
-                      >
-                        {option}
-                        <button
-                          type="button"
-                          onClick={() => removeDiameter(index)}
-                          className="text-indigo-700 hover:text-indigo-900"
-                        >
-                          <FiX className="w-4 h-4" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="flex items-center space-x-6">
                   <label className="flex items-center cursor-pointer">
                     <input
@@ -1333,11 +1162,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                 {sphericalModalOpen && (
                   <SphericalConfigModal
                     config={selectedSphericalConfig || (product?.id ? { product_id: product.id } : null)}
-                    onClose={() => {
-                      setSphericalModalOpen(false);
-                      setSelectedSphericalConfig(null);
-                      fetchSphericalConfigs();
-                    }}
+                    onClose={handleContactLensFormClose('spherical')}
                   />
                 )}
               </div>
@@ -1421,96 +1246,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                       setAstigmatismModalOpen(false);
                       setSelectedAstigmatismConfig(null);
                       fetchAstigmatismConfigs();
-                    }}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Astigmatism Dropdown Values Tab */}
-            {activeTab === 'astigmatism-dropdown' && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-gray-900">Astigmatism Dropdown Values</h3>
-                  <button
-                    type="button"
-                    onClick={handleDropdownAdd}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                  >
-                    <FiPlus className="w-4 h-4" />
-                    Add Value
-                  </button>
-                </div>
-                {loadingDropdown ? (
-                  <div className="text-center py-8">Loading...</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Field Type</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Label</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Eye Type</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {dropdownValues.length === 0 ? (
-                          <tr>
-                            <td colSpan="6" className="px-4 py-8 text-center text-sm text-gray-500">
-                              No dropdown values found. Click "Add Value" to create one.
-                            </td>
-                          </tr>
-                        ) : (
-                          dropdownValues.map((value) => (
-                            <tr key={value.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 text-sm text-gray-900">
-                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                  {value.field_type || value.fieldType || 'N/A'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{value.value || 'N/A'}</td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{value.label || value.value || 'N/A'}</td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{value.eye_type || value.eyeType || 'both'}</td>
-                              <td className="px-4 py-3 text-sm">
-                                <span className={`px-2 py-1 rounded-full text-xs ${value.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                  {value.is_active !== false ? 'Active' : 'Inactive'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-sm">
-                                <div className="flex gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDropdownEdit(value)}
-                                    className="text-indigo-600 hover:text-indigo-900"
-                                  >
-                                    <FiEdit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDropdownDelete(value.id)}
-                                    className="text-red-600 hover:text-red-900"
-                                  >
-                                    <FiTrash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                {dropdownModalOpen && (
-                  <AstigmatismDropdownValueModal
-                    value={selectedDropdownValue}
-                    onClose={() => {
-                      setDropdownModalOpen(false);
-                      setSelectedDropdownValue(null);
-                      fetchDropdownValues();
                     }}
                   />
                 )}

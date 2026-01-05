@@ -170,13 +170,22 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
   }, [formData.sub_category_id]);
   
-  // Fetch configurations when tab changes
+  // Fetch configurations when tab changes or product changes
   useEffect(() => {
     if (product?.id) {
       if (activeTab === 'spherical') {
+        console.log('🔄 Tab changed to spherical, fetching configs for product:', product.id);
         fetchSphericalConfigs();
       } else if (activeTab === 'astigmatism') {
+        console.log('🔄 Tab changed to astigmatism, fetching configs for product:', product.id);
         fetchAstigmatismConfigs();
+      }
+    } else {
+      console.log('⚠️ No product ID, clearing configs');
+      if (activeTab === 'spherical') {
+        setSphericalConfigs([]);
+      } else if (activeTab === 'astigmatism') {
+        setAstigmatismConfigs([]);
       }
     }
   }, [activeTab, product?.id]);
@@ -450,11 +459,25 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
     try {
       setLoadingSpherical(true);
-      const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?product_id=${product.id}&limit=1000`);
+      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?product_id=${product.id}&limit=1000`;
+      console.log(`🔍 Fetching spherical configs for product ${product.id} from: ${endpoint}`);
+      
+      const response = await api.get(endpoint);
+      console.log('📦 Spherical configs API response:', response);
+      
       const configsData = extractConfigData(response, 'sphericalConfigs');
+      console.log(`✅ Extracted ${configsData.length} spherical configs:`, configsData);
+      
       setSphericalConfigs(configsData);
+      
+      if (configsData.length === 0) {
+        console.warn('⚠️ No spherical configs found. Full response:', JSON.stringify(response.data, null, 2));
+      }
     } catch (error) {
-      console.error('Failed to fetch spherical configs:', error);
+      console.error('❌ Failed to fetch spherical configs:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
       toast.error('Failed to load spherical configurations');
       setSphericalConfigs([]);
     } finally {
@@ -470,11 +493,25 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
     try {
       setLoadingAstigmatism(true);
-      const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?product_id=${product.id}&limit=1000`);
+      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?product_id=${product.id}&limit=1000`;
+      console.log(`🔍 Fetching astigmatism configs for product ${product.id} from: ${endpoint}`);
+      
+      const response = await api.get(endpoint);
+      console.log('📦 Astigmatism configs API response:', response);
+      
       const configsData = extractConfigData(response, 'astigmatismConfigs');
+      console.log(`✅ Extracted ${configsData.length} astigmatism configs:`, configsData);
+      
       setAstigmatismConfigs(configsData);
+      
+      if (configsData.length === 0) {
+        console.warn('⚠️ No astigmatism configs found. Full response:', JSON.stringify(response.data, null, 2));
+      }
     } catch (error) {
-      console.error('Failed to fetch astigmatism configs:', error);
+      console.error('❌ Failed to fetch astigmatism configs:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
       toast.error('Failed to load astigmatism configurations');
       setAstigmatismConfigs([]);
     } finally {
@@ -1106,6 +1143,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                   <div className="text-center py-8">Loading...</div>
                 ) : (
                   <div className="overflow-x-auto">
+                    {sphericalConfigs.length > 0 && (
+                      <div className="mb-2 text-sm text-gray-600">
+                        Found {sphericalConfigs.length} configuration{sphericalConfigs.length !== 1 ? 's' : ''}
+                      </div>
+                    )}
                     <table className="w-full border-collapse">
                       <thead className="bg-gray-50">
                         <tr>
@@ -1186,6 +1228,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                   <div className="text-center py-8">Loading...</div>
                 ) : (
                   <div className="overflow-x-auto">
+                    {astigmatismConfigs.length > 0 && (
+                      <div className="mb-2 text-sm text-gray-600">
+                        Found {astigmatismConfigs.length} configuration{astigmatismConfigs.length !== 1 ? 's' : ''}
+                      </div>
+                    )}
                     <table className="w-full border-collapse">
                       <thead className="bg-gray-50">
                         <tr>

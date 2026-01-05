@@ -244,6 +244,8 @@ const Products = () => {
   const [subCategoriesMap, setSubCategoriesMap] = useState({});
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
   const [selectedSection, setSelectedSection] = useState('all'); // 'all', 'sunglasses', 'eyeglasses', 'contact-lenses', 'eye-hygiene'
+  const [sectionCategoryIds, setSectionCategoryIds] = useState([]); // All category IDs for the selected section
+  const [sectionSubCategoryIds, setSectionSubCategoryIds] = useState([]); // All subcategory IDs (including nested) for the selected section
 
   useEffect(() => {
     fetchCategories();
@@ -252,7 +254,7 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [page, searchTerm, categoryFilter, subCategoryFilter, selectedSection]);
+  }, [page, searchTerm, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds]);
 
   // Fetch subcategories when category filter changes
   useEffect(() => {
@@ -350,14 +352,30 @@ const Products = () => {
         params.append('search', trimmedSearch);
       }
       
-      // Add category filter if selected (per Postman collection: category_id query param)
-      if (categoryFilter) {
-        params.append('category_id', categoryFilter);
-      }
-      
-      // Add subcategory filter if selected (per Postman collection: sub_category_id query param)
-      if (subCategoryFilter) {
-        params.append('sub_category_id', subCategoryFilter);
+      // If a section is selected, use section category and subcategory IDs
+      // Otherwise, use manual filters
+      if (selectedSection !== 'all' && sectionCategoryIds.length > 0) {
+        // Add all category IDs for the section
+        sectionCategoryIds.forEach(catId => {
+          params.append('category_id', catId);
+        });
+        
+        // Add all subcategory IDs (including nested) for the section
+        if (sectionSubCategoryIds.length > 0) {
+          sectionSubCategoryIds.forEach(subCatId => {
+            params.append('sub_category_id', subCatId);
+          });
+        }
+      } else {
+        // Manual category filter if selected (per Postman collection: category_id query param)
+        if (categoryFilter) {
+          params.append('category_id', categoryFilter);
+        }
+        
+        // Manual subcategory filter if selected (per Postman collection: sub_category_id query param)
+        if (subCategoryFilter) {
+          params.append('sub_category_id', subCategoryFilter);
+        }
       }
       
       // Determine which endpoint to use based on selected section
@@ -567,6 +585,115 @@ const Products = () => {
     { value: 'contact-lenses', label: 'Contact Lenses', icon: '🔍' },
     { value: 'eye-hygiene', label: 'Eye Hygiene', icon: '💧' },
   ];
+
+  // Map section names to category name patterns (case-insensitive matching)
+  const sectionToCategoryMap = {
+    'sunglasses': ['sunglass', 'sun glass'],
+    'eyeglasses': ['eyeglass', 'eye glass', 'frame', 'glasses'],
+    'opty-kids': ['opty', 'kids', 'child', 'children'],
+    'contact-lenses': ['contact', 'lens'],
+    'eye-hygiene': ['hygiene', 'care', 'solution'],
+  };
+
+  // Find categories matching the section
+  const findCategoriesForSection = (section) => {
+    if (section === 'all') {
+      return [];
+    }
+    
+    const patterns = sectionToCategoryMap[section] || [];
+    const matchingCategories = categories.filter(cat => {
+      const catName = (cat.name || '').toLowerCase();
+      return patterns.some(pattern => catName.includes(pattern));
+    });
+    
+    return matchingCategories.map(cat => cat.id);
+  };
+
+  // Fetch all subcategories (including nested) for given category IDs
+  const fetchAllSubCategoriesForCategories = async (categoryIds) => {
+    if (!categoryIds || categoryIds.length === 0) {
+      setSectionSubCategoryIds([]);
+      return;
+    }
+
+    try {
+      // Fetch subcategories for each category
+      const subCategoryPromises = categoryIds.map(async (categoryId) => {
+        try {
+          const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+          const responseData = response.data?.data || response.data || {};
+          const subCatData = responseData.subcategories || responseData || [];
+          return Array.isArray(subCatData) ? subCatData : [];
+        } catch (error) {
+          console.warn(`Failed to fetch subcategories for category ${categoryId}:`, error);
+          return [];
+        }
+      });
+
+      const subCategoryArrays = await Promise.all(subCategoryPromises);
+      const allSubCategories = subCategoryArrays.flat();
+      
+      // Get all top-level subcategory IDs
+      const subCategoryIds = allSubCategories.map(subCat => subCat.id).filter(Boolean);
+      
+      // Also find nested subcategories (sub-subcategories) for each subcategory
+      const nestedSubCategoryIds = [];
+      for (const subCat of allSubCategories) {
+        if (subCat.id) {
+          // Check if this subcategory has children in our subCategoriesMap
+          Object.entries(subCategoriesMap).forEach(([id, mappedSubCat]) => {
+            if (mappedSubCat.parentId === subCat.id) {
+              nestedSubCategoryIds.push(parseInt(id));
+            }
+          });
+          
+          // Also try to fetch nested subcategories from API
+          try {
+            const nestedResponse = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.BY_PARENT(subCat.id));
+            const nestedData = nestedResponse.data?.data || nestedResponse.data || {};
+            const nestedSubCats = nestedData.subcategories || nestedData || [];
+            if (Array.isArray(nestedSubCats)) {
+              nestedSubCats.forEach(nested => {
+                if (nested.id) nestedSubCategoryIds.push(nested.id);
+              });
+            }
+          } catch (error) {
+            // Ignore errors for nested subcategories
+          }
+        }
+      }
+      
+      // Combine all subcategory IDs (top-level and nested)
+      const allIds = [...subCategoryIds, ...nestedSubCategoryIds];
+      const uniqueIds = [...new Set(allIds)];
+      
+      setSectionSubCategoryIds(uniqueIds);
+      console.log(`📋 Found ${uniqueIds.length} subcategories (including nested) for categories:`, {
+        categoryIds,
+        subCategoryIds: uniqueIds.length
+      });
+    } catch (error) {
+      console.error('Failed to fetch subcategories for section:', error);
+      setSectionSubCategoryIds([]);
+    }
+  };
+
+  // Update section category and subcategory IDs when section or categories change
+  useEffect(() => {
+    if (selectedSection === 'all') {
+      setSectionCategoryIds([]);
+      setSectionSubCategoryIds([]);
+    } else if (categories.length > 0) {
+      const categoryIds = findCategoriesForSection(selectedSection);
+      setSectionCategoryIds(categoryIds);
+      if (categoryIds.length > 0) {
+        fetchAllSubCategoriesForCategories(categoryIds);
+      } else {
+        setSectionSubCategoryIds([]);
+      }
+    }
+  }, [selectedSection, categories, subCategoriesMap]);
 
   const handleSectionChange = (section) => {
     console.log(`🔄 Changing section to: ${section}`);

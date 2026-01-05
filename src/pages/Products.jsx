@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
@@ -568,14 +568,6 @@ const Products = () => {
     setImageRefreshKey(Date.now());
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
-
   // Section options
   const sections = [
     { value: 'all', label: 'All Products', icon: '📦' },
@@ -610,104 +602,126 @@ const Products = () => {
     return matchingCategories.map(cat => cat.id);
   };
 
-  // Fetch all subcategories (including nested) for given category IDs
-  const fetchAllSubCategoriesForCategories = useCallback(async (categoryIds) => {
-    if (!categoryIds || categoryIds.length === 0) {
-      setSectionSubCategoryIds([]);
-      return;
-    }
-
-    try {
-      // Fetch subcategories for each category
-      const subCategoryPromises = categoryIds.map(async (categoryId) => {
-        try {
-          return api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
-        } catch (error) {
-          console.warn(`Failed to fetch subcategories for category ${categoryId}:`, error);
-          return { data: { data: { subcategories: [] } } };
-        }
-      });
-
-      const responses = await Promise.all(subCategoryPromises);
-      const subCategoryArrays = responses.map(response => {
-        const responseData = response.data?.data || response.data || {};
-        const subCatData = responseData.subcategories || responseData || [];
-        return Array.isArray(subCatData) ? subCatData : [];
-      });
-      
-      const allSubCategories = subCategoryArrays.flat();
-      
-      // Get all top-level subcategory IDs
-      const subCategoryIds = allSubCategories.map(subCat => subCat.id).filter(Boolean);
-      
-      // Also find nested subcategories (sub-subcategories) for each subcategory
-      const nestedSubCategoryIds = [];
-      for (const subCat of allSubCategories) {
-        if (subCat.id) {
-          // Check if this subcategory has children in our subCategoriesMap
-          // Access subCategoriesMap directly from closure to avoid dependency issues
-          Object.entries(subCategoriesMap).forEach(([id, mappedSubCat]) => {
-            if (mappedSubCat.parentId === subCat.id) {
-              nestedSubCategoryIds.push(parseInt(id));
-            }
-          });
-          
-          // Also try to fetch nested subcategories from API
-          try {
-            const nestedResponse = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.BY_PARENT(subCat.id));
-            const nestedData = nestedResponse.data?.data || nestedResponse.data || {};
-            const nestedSubCats = nestedData.subcategories || nestedData || [];
-            if (Array.isArray(nestedSubCats)) {
-              nestedSubCats.forEach(nested => {
-                if (nested.id) nestedSubCategoryIds.push(nested.id);
-              });
-            }
-          } catch (error) {
-            // Ignore errors for nested subcategories
-          }
-        }
-      }
-      
-      // Combine all subcategory IDs (top-level and nested)
-      const allIds = [...subCategoryIds, ...nestedSubCategoryIds];
-      const uniqueIds = [...new Set(allIds)];
-      
-      setSectionSubCategoryIds(uniqueIds);
-      console.log(`📋 Found ${uniqueIds.length} subcategories (including nested) for categories:`, {
-        categoryIds,
-        subCategoryIds: uniqueIds.length
-      });
-    } catch (error) {
-      console.error('Failed to fetch subcategories for section:', error);
-      setSectionSubCategoryIds([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Remove subCategoriesMap from dependencies to prevent infinite loops
-
   // Update section category and subcategory IDs when section or categories change
   useEffect(() => {
-    if (selectedSection === 'all') {
-      setSectionCategoryIds([]);
-      setSectionSubCategoryIds([]);
-      return;
-    }
+    let isMounted = true;
     
-    if (categories.length === 0) {
-      setSectionCategoryIds([]);
-      setSectionSubCategoryIds([]);
-      return;
-    }
+    const updateSectionData = async () => {
+      if (selectedSection === 'all') {
+        if (isMounted) {
+          setSectionCategoryIds([]);
+          setSectionSubCategoryIds([]);
+        }
+        return;
+      }
+      
+      if (categories.length === 0) {
+        if (isMounted) {
+          setSectionCategoryIds([]);
+          setSectionSubCategoryIds([]);
+        }
+        return;
+      }
+      
+      const categoryIds = findCategoriesForSection(selectedSection);
+      
+      if (isMounted) {
+        setSectionCategoryIds(categoryIds);
+      }
+      
+      if (categoryIds.length === 0) {
+        if (isMounted) {
+          setSectionSubCategoryIds([]);
+        }
+        return;
+      }
+      
+      // Fetch all subcategories (including nested) for given category IDs
+      try {
+        // Fetch subcategories for each category
+        const subCategoryPromises = categoryIds.map(async (categoryId) => {
+          try {
+            return api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+          } catch (error) {
+            console.warn(`Failed to fetch subcategories for category ${categoryId}:`, error);
+            return { data: { data: { subcategories: [] } } };
+          }
+        });
+
+        const responses = await Promise.all(subCategoryPromises);
+        const subCategoryArrays = responses.map(response => {
+          const responseData = response.data?.data || response.data || {};
+          const subCatData = responseData.subcategories || responseData || [];
+          return Array.isArray(subCatData) ? subCatData : [];
+        });
+        
+        const allSubCategories = subCategoryArrays.flat();
+        
+        // Get all top-level subcategory IDs
+        const subCategoryIds = allSubCategories.map(subCat => subCat.id).filter(Boolean);
+        
+        // Also find nested subcategories (sub-subcategories) for each subcategory
+        const nestedSubCategoryIds = [];
+        for (const subCat of allSubCategories) {
+          if (subCat.id) {
+            // Check if this subcategory has children in our subCategoriesMap
+            Object.entries(subCategoriesMap).forEach(([id, mappedSubCat]) => {
+              if (mappedSubCat.parentId === subCat.id) {
+                nestedSubCategoryIds.push(parseInt(id));
+              }
+            });
+            
+            // Also try to fetch nested subcategories from API
+            try {
+              const nestedResponse = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.BY_PARENT(subCat.id));
+              const nestedData = nestedResponse.data?.data || nestedResponse.data || {};
+              const nestedSubCats = nestedData.subcategories || nestedData || [];
+              if (Array.isArray(nestedSubCats)) {
+                nestedSubCats.forEach(nested => {
+                  if (nested.id) nestedSubCategoryIds.push(nested.id);
+                });
+              }
+            } catch (error) {
+              // Ignore errors for nested subcategories
+            }
+          }
+        }
+        
+        // Combine all subcategory IDs (top-level and nested)
+        const allIds = [...subCategoryIds, ...nestedSubCategoryIds];
+        const uniqueIds = [...new Set(allIds)];
+        
+        if (isMounted) {
+          setSectionSubCategoryIds(uniqueIds);
+          console.log(`📋 Found ${uniqueIds.length} subcategories (including nested) for categories:`, {
+            categoryIds,
+            subCategoryIds: uniqueIds.length
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch subcategories for section:', error);
+        if (isMounted) {
+          setSectionSubCategoryIds([]);
+        }
+      }
+    };
     
-    const categoryIds = findCategoriesForSection(selectedSection);
-    setSectionCategoryIds(categoryIds);
+    updateSectionData();
     
-    if (categoryIds.length > 0) {
-      // Only fetch subcategories if we have category IDs
-      fetchAllSubCategoriesForCategories(categoryIds);
-    } else {
-      setSectionSubCategoryIds([]);
-    }
-  }, [selectedSection, categories.length, fetchAllSubCategoriesForCategories]);
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSection, categories.length]); // Only depend on selectedSection and categories.length
+
+  // Early return must be AFTER all hooks
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
   const handleSectionChange = (section) => {
     console.log(`🔄 Changing section to: ${section}`);

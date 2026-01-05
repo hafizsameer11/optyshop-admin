@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
@@ -611,7 +611,7 @@ const Products = () => {
   };
 
   // Fetch all subcategories (including nested) for given category IDs
-  const fetchAllSubCategoriesForCategories = async (categoryIds) => {
+  const fetchAllSubCategoriesForCategories = useCallback(async (categoryIds) => {
     if (!categoryIds || categoryIds.length === 0) {
       setSectionSubCategoryIds([]);
       return;
@@ -621,17 +621,20 @@ const Products = () => {
       // Fetch subcategories for each category
       const subCategoryPromises = categoryIds.map(async (categoryId) => {
         try {
-          const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
-          const responseData = response.data?.data || response.data || {};
-          const subCatData = responseData.subcategories || responseData || [];
-          return Array.isArray(subCatData) ? subCatData : [];
+          return api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
         } catch (error) {
           console.warn(`Failed to fetch subcategories for category ${categoryId}:`, error);
-          return [];
+          return { data: { data: { subcategories: [] } } };
         }
       });
 
-      const subCategoryArrays = await Promise.all(subCategoryPromises);
+      const responses = await Promise.all(subCategoryPromises);
+      const subCategoryArrays = responses.map(response => {
+        const responseData = response.data?.data || response.data || {};
+        const subCatData = responseData.subcategories || responseData || [];
+        return Array.isArray(subCatData) ? subCatData : [];
+      });
+      
       const allSubCategories = subCategoryArrays.flat();
       
       // Get all top-level subcategory IDs
@@ -642,6 +645,7 @@ const Products = () => {
       for (const subCat of allSubCategories) {
         if (subCat.id) {
           // Check if this subcategory has children in our subCategoriesMap
+          // Access subCategoriesMap directly from closure to avoid dependency issues
           Object.entries(subCategoriesMap).forEach(([id, mappedSubCat]) => {
             if (mappedSubCat.parentId === subCat.id) {
               nestedSubCategoryIds.push(parseInt(id));
@@ -677,23 +681,33 @@ const Products = () => {
       console.error('Failed to fetch subcategories for section:', error);
       setSectionSubCategoryIds([]);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Remove subCategoriesMap from dependencies to prevent infinite loops
 
   // Update section category and subcategory IDs when section or categories change
   useEffect(() => {
     if (selectedSection === 'all') {
       setSectionCategoryIds([]);
       setSectionSubCategoryIds([]);
-    } else if (categories.length > 0) {
-      const categoryIds = findCategoriesForSection(selectedSection);
-      setSectionCategoryIds(categoryIds);
-      if (categoryIds.length > 0) {
-        fetchAllSubCategoriesForCategories(categoryIds);
-      } else {
-        setSectionSubCategoryIds([]);
-      }
+      return;
     }
-  }, [selectedSection, categories, subCategoriesMap]);
+    
+    if (categories.length === 0) {
+      setSectionCategoryIds([]);
+      setSectionSubCategoryIds([]);
+      return;
+    }
+    
+    const categoryIds = findCategoriesForSection(selectedSection);
+    setSectionCategoryIds(categoryIds);
+    
+    if (categoryIds.length > 0) {
+      // Only fetch subcategories if we have category IDs
+      fetchAllSubCategoriesForCategories(categoryIds);
+    } else {
+      setSectionSubCategoryIds([]);
+    }
+  }, [selectedSection, categories.length, fetchAllSubCategoriesForCategories]);
 
   const handleSectionChange = (section) => {
     console.log(`🔄 Changing section to: ${section}`);

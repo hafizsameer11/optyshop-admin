@@ -1798,12 +1798,12 @@ const ProductModal = ({ product, onClose }) => {
     if (responseData.data) {
       const dataObj = responseData.data;
       
-      // Direct array in data.data
+      // Direct array in data.data (most common)
       if (Array.isArray(dataObj)) {
         extractedData = dataObj;
         console.log(`✅ Found array in response.data.data (${dataObj.length} items)`);
       } 
-      // Object with configs key
+      // Object with configs key (prioritize this - most common structure)
       else if (dataObj.configs && Array.isArray(dataObj.configs)) {
         extractedData = dataObj.configs;
         console.log(`✅ Found configs array in response.data.data.configs (${dataObj.configs.length} items)`);
@@ -1813,12 +1813,17 @@ const ProductModal = ({ product, onClose }) => {
         extractedData = dataObj.data;
         console.log(`✅ Found data array in response.data.data.data (${dataObj.data.length} items)`);
       } 
-      // Object with key-specific arrays
+      // Object with results key
+      else if (dataObj.results && Array.isArray(dataObj.results)) {
+        extractedData = dataObj.results;
+        console.log(`✅ Found results array in response.data.data.results (${dataObj.results.length} items)`);
+      }
+      // Object with key-specific arrays (sphericalConfigs/astigmatismConfigs)
       else if (dataObj[key] && Array.isArray(dataObj[key])) {
         extractedData = dataObj[key];
         console.log(`✅ Found ${key} array in response.data.data.${key} (${dataObj[key].length} items)`);
       } 
-      // Object with sphericalConfigs/astigmatismConfigs
+      // Object with sphericalConfigs/astigmatismConfigs (fallback)
       else if (dataObj.sphericalConfigs && Array.isArray(dataObj.sphericalConfigs)) {
         extractedData = dataObj.sphericalConfigs;
         console.log(`✅ Found sphericalConfigs array in response.data.data (${dataObj.sphericalConfigs.length} items)`);
@@ -1826,11 +1831,6 @@ const ProductModal = ({ product, onClose }) => {
       else if (dataObj.astigmatismConfigs && Array.isArray(dataObj.astigmatismConfigs)) {
         extractedData = dataObj.astigmatismConfigs;
         console.log(`✅ Found astigmatismConfigs array in response.data.data (${dataObj.astigmatismConfigs.length} items)`);
-      } 
-      // Object with results key
-      else if (dataObj.results && Array.isArray(dataObj.results)) {
-        extractedData = dataObj.results;
-        console.log(`✅ Found results array in response.data.data.results (${dataObj.results.length} items)`);
       }
     } 
     // Pattern 2: Direct array response
@@ -1840,14 +1840,22 @@ const ProductModal = ({ product, onClose }) => {
     } 
     // Pattern 3: Root level keys
     else if (responseData && typeof responseData === 'object') {
+      // Prioritize configs key (most common)
       if (responseData.configs && Array.isArray(responseData.configs)) {
         extractedData = responseData.configs;
         console.log(`✅ Found configs array in response.data.configs (${responseData.configs.length} items)`);
       } 
+      // Then check for results
+      else if (responseData.results && Array.isArray(responseData.results)) {
+        extractedData = responseData.results;
+        console.log(`✅ Found results array in response.data.results (${responseData.results.length} items)`);
+      }
+      // Then check for key-specific arrays
       else if (responseData[key] && Array.isArray(responseData[key])) {
         extractedData = responseData[key];
         console.log(`✅ Found ${key} array in response.data.${key} (${responseData[key].length} items)`);
       } 
+      // Fallback to sphericalConfigs/astigmatismConfigs
       else if (responseData.sphericalConfigs && Array.isArray(responseData.sphericalConfigs)) {
         extractedData = responseData.sphericalConfigs;
         console.log(`✅ Found sphericalConfigs array in response.data (${responseData.sphericalConfigs.length} items)`);
@@ -1855,10 +1863,6 @@ const ProductModal = ({ product, onClose }) => {
       else if (responseData.astigmatismConfigs && Array.isArray(responseData.astigmatismConfigs)) {
         extractedData = responseData.astigmatismConfigs;
         console.log(`✅ Found astigmatismConfigs array in response.data (${responseData.astigmatismConfigs.length} items)`);
-      } 
-      else if (responseData.results && Array.isArray(responseData.results)) {
-        extractedData = responseData.results;
-        console.log(`✅ Found results array in response.data.results (${responseData.results.length} items)`);
       }
     }
     
@@ -1950,16 +1954,29 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       
-      // Extract data from response
+      // Extract data from response - try multiple extraction strategies
       let configsData = extractConfigData(response, 'sphericalConfigs');
       console.log(`📊 Raw extracted data:`, configsData);
       
+      // If extraction returned empty, try alternative extraction methods
+      if (!configsData || configsData.length === 0) {
+        console.log('🔍 Primary extraction returned empty, trying alternative methods...');
+        // Try extracting with generic 'configs' key
+        const altData = extractConfigData({ data: response.data }, 'configs');
+        if (altData && altData.length > 0) {
+          configsData = altData;
+          console.log(`✅ Alternative extraction found ${configsData.length} items`);
+        }
+      }
+      
       // If we fetched all configs, filter by product_id client-side
-      if (!useProductIdFilter && configsData.length > 0) {
+      if (!useProductIdFilter && configsData && configsData.length > 0) {
         const beforeFilter = configsData.length;
         configsData = configsData.filter(config => {
+          if (!config) return false;
           const configProductId = config.product_id || config.productId || config.product?.id;
-          const matches = configProductId === product.id || configProductId === parseInt(product.id);
+          const productId = product.id || product?.id;
+          const matches = configProductId == productId || configProductId === parseInt(productId) || String(configProductId) === String(productId);
           return matches;
         });
         console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
@@ -2048,16 +2065,29 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       
-      // Extract data from response
+      // Extract data from response - try multiple extraction strategies
       let configsData = extractConfigData(response, 'astigmatismConfigs');
       console.log(`📊 Raw extracted data:`, configsData);
       
+      // If extraction returned empty, try alternative extraction methods
+      if (!configsData || configsData.length === 0) {
+        console.log('🔍 Primary extraction returned empty, trying alternative methods...');
+        // Try extracting with generic 'configs' key
+        const altData = extractConfigData({ data: response.data }, 'configs');
+        if (altData && altData.length > 0) {
+          configsData = altData;
+          console.log(`✅ Alternative extraction found ${configsData.length} items`);
+        }
+      }
+      
       // If we fetched all configs, filter by product_id client-side
-      if (!useProductIdFilter && configsData.length > 0) {
+      if (!useProductIdFilter && configsData && configsData.length > 0) {
         const beforeFilter = configsData.length;
         configsData = configsData.filter(config => {
+          if (!config) return false;
           const configProductId = config.product_id || config.productId || config.product?.id;
-          const matches = configProductId === product.id || configProductId === parseInt(product.id);
+          const productId = product.id || product?.id;
+          const matches = configProductId == productId || configProductId === parseInt(productId) || String(configProductId) === String(productId);
           return matches;
         });
         console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);

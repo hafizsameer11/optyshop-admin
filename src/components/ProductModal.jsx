@@ -20,6 +20,8 @@ import LensThicknessMaterialModal from './LensThicknessMaterialModal';
 import LensThicknessOptionModal from './LensThicknessOptionModal';
 import PrescriptionLensTypeModal from './PrescriptionLensTypeModal';
 import PrescriptionFormDropdownValueModal from './PrescriptionFormDropdownValueModal';
+import SphericalConfigModal from './SphericalConfigModal';
+import AstigmatismConfigModal from './AstigmatismConfigModal';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -219,6 +221,16 @@ const ProductModal = ({ product, onClose }) => {
   const [selectedThicknessOption, setSelectedThicknessOption] = useState(null);
   const [selectedPrescriptionLensType, setSelectedPrescriptionLensType] = useState(null);
   const [selectedPrescriptionDropdown, setSelectedPrescriptionDropdown] = useState(null);
+  
+  // Contact Lens Configuration state
+  const [sphericalConfigs, setSphericalConfigs] = useState([]);
+  const [astigmatismConfigs, setAstigmatismConfigs] = useState([]);
+  const [loadingSpherical, setLoadingSpherical] = useState(false);
+  const [loadingAstigmatism, setLoadingAstigmatism] = useState(false);
+  const [sphericalModalOpen, setSphericalModalOpen] = useState(false);
+  const [astigmatismModalOpen, setAstigmatismModalOpen] = useState(false);
+  const [selectedSphericalConfig, setSelectedSphericalConfig] = useState(null);
+  const [selectedAstigmatismConfig, setSelectedAstigmatismConfig] = useState(null);
   
   const [imageFiles, setImageFiles] = useState([]); // Newly uploaded general images (File objects)
   const [imagePreviews, setImagePreviews] = useState([]); // All general image previews (URLs + new file previews)
@@ -1463,12 +1475,18 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids
+  // Show Spherical and Astigmatism Configurations for contact lens products
   const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
+  const isContactLens = formData.product_type === 'contact_lens';
   
   const tabs = [
     { id: 'general', label: 'General' },
     ...(isFrameOrSunglasses ? [
       { id: 'lens-management', label: 'Lens Management' },
+    ] : []),
+    ...(isContactLens ? [
+      { id: 'spherical', label: 'Spherical Configurations' },
+      { id: 'astigmatism', label: 'Astigmatism Configurations' },
     ] : []),
     { id: 'images', label: 'Images' },
     { id: 'seo', label: 'SEO' },
@@ -1480,6 +1498,23 @@ const ProductModal = ({ product, onClose }) => {
       fetchLensManagementData();
     }
   }, [activeTab]);
+
+  // Fetch configurations when tab changes or product changes
+  useEffect(() => {
+    if (product?.id) {
+      if (activeTab === 'spherical') {
+        fetchSphericalConfigs();
+      } else if (activeTab === 'astigmatism') {
+        fetchAstigmatismConfigs();
+      }
+    } else {
+      if (activeTab === 'spherical') {
+        setSphericalConfigs([]);
+      } else if (activeTab === 'astigmatism') {
+        setAstigmatismConfigs([]);
+      }
+    }
+  }, [activeTab, product?.id]);
 
   // Fetch all lens management configurations
   const fetchLensManagementData = async () => {
@@ -1744,6 +1779,267 @@ const ProductModal = ({ product, onClose }) => {
       toast.error('Failed to load some lens management data. Please refresh the page.');
     } finally {
       setLoadingLensManagement({ all: false });
+    }
+  };
+
+  // Helper function to extract configuration data from API response
+  const extractConfigData = (response, key) => {
+    if (!response || !response.data) {
+      console.warn(`⚠️ No response data for ${key}`);
+      return [];
+    }
+
+    const responseData = response.data;
+    let extractedData = [];
+
+    // Try different response structures
+    if (responseData.data) {
+      // Structure: { success: true, data: { sphericalConfigs: [...] } }
+      if (Array.isArray(responseData.data)) {
+        extractedData = responseData.data;
+      } else if (responseData.data[key]) {
+        extractedData = responseData.data[key];
+      } else if (responseData.data.configs) {
+        extractedData = responseData.data.configs;
+      } else if (responseData.data.configurations) {
+        extractedData = responseData.data.configurations;
+      } else {
+        // Try to find any array in the data object
+        const dataObj = responseData.data;
+        for (const value of Object.values(dataObj)) {
+          if (Array.isArray(value)) {
+            extractedData = value;
+            break;
+          }
+        }
+      }
+    } else if (Array.isArray(responseData)) {
+      // Direct array response
+      extractedData = responseData;
+    } else if (responseData[key]) {
+      extractedData = responseData[key];
+    } else if (responseData.configs) {
+      extractedData = responseData.configs;
+    } else if (responseData.configurations) {
+      extractedData = responseData.configurations;
+    }
+
+    if (!Array.isArray(extractedData)) {
+      console.warn(`⚠️ No array data extracted for ${key}. Response structure:`, JSON.stringify(responseData, null, 2).substring(0, 500));
+      return [];
+    }
+
+    return extractedData;
+  };
+
+  // Fetch Spherical Configurations
+  const fetchSphericalConfigs = async () => {
+    if (!product?.id) {
+      setSphericalConfigs([]);
+      return;
+    }
+    try {
+      setLoadingSpherical(true);
+      
+      // Build endpoint with query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('limit', '1000');
+      queryParams.append('page', '1');
+      queryParams.append('product_id', product.id);
+      
+      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}`;
+      console.log(`🔍 Fetching spherical configs for product ${product.id} from: ${endpoint}`);
+      
+      const response = await api.get(endpoint);
+      console.log('📦 Spherical configs API response:', response);
+      
+      // Extract data from response
+      let configsData = extractConfigData(response, 'sphericalConfigs');
+      console.log(`📊 Raw extracted data:`, configsData);
+      
+      // Filter by product_id if needed (in case API doesn't filter)
+      if (configsData.length > 0) {
+        const beforeFilter = configsData.length;
+        configsData = configsData.filter(config => {
+          const configProductId = config.product_id || config.productId || config.product?.id;
+          const matches = configProductId === product.id || configProductId === parseInt(product.id);
+          return matches;
+        });
+        if (beforeFilter !== configsData.length) {
+          console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
+        }
+      }
+      
+      // Validate and set data
+      if (Array.isArray(configsData)) {
+        console.log(`✅ Successfully extracted ${configsData.length} spherical configs:`, configsData);
+        setSphericalConfigs(configsData);
+        
+        if (configsData.length === 0) {
+          console.log('ℹ️ No spherical configs found for this product');
+        }
+      } else {
+        console.warn('⚠️ Extracted data is not an array:', configsData);
+        setSphericalConfigs([]);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch spherical configs:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+      
+      // Handle different error cases
+      if (!error.response) {
+        toast.error('Cannot connect to server. Check if backend is running.');
+      } else if (error.response.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else if (error.response.status === 404) {
+        // 404 might be acceptable if no configs exist yet
+        console.log('ℹ️ No spherical configs endpoint or no data found (404)');
+        setSphericalConfigs([]);
+      } else if (error.response.status === 403) {
+        toast.error('Access denied. You may not have permission to access this resource.');
+        setSphericalConfigs([]);
+      } else if (error.response.status !== 400) {
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to load spherical configurations';
+        toast.error(errorMessage);
+        setSphericalConfigs([]);
+      } else {
+        setSphericalConfigs([]);
+      }
+    } finally {
+      setLoadingSpherical(false);
+    }
+  };
+
+  // Fetch Astigmatism Configurations
+  const fetchAstigmatismConfigs = async () => {
+    if (!product?.id) {
+      setAstigmatismConfigs([]);
+      return;
+    }
+    try {
+      setLoadingAstigmatism(true);
+      
+      // Build endpoint with query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('limit', '1000');
+      queryParams.append('page', '1');
+      queryParams.append('product_id', product.id);
+      
+      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}`;
+      console.log(`🔍 Fetching astigmatism configs for product ${product.id} from: ${endpoint}`);
+      
+      const response = await api.get(endpoint);
+      console.log('📦 Astigmatism configs API response:', response);
+      
+      // Extract data from response
+      let configsData = extractConfigData(response, 'astigmatismConfigs');
+      console.log(`📊 Raw extracted data:`, configsData);
+      
+      // Filter by product_id if needed (in case API doesn't filter)
+      if (configsData.length > 0) {
+        const beforeFilter = configsData.length;
+        configsData = configsData.filter(config => {
+          const configProductId = config.product_id || config.productId || config.product?.id;
+          const matches = configProductId === product.id || configProductId === parseInt(product.id);
+          return matches;
+        });
+        if (beforeFilter !== configsData.length) {
+          console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
+        }
+      }
+      
+      // Validate and set data
+      if (Array.isArray(configsData)) {
+        console.log(`✅ Successfully extracted ${configsData.length} astigmatism configs:`, configsData);
+        setAstigmatismConfigs(configsData);
+        
+        if (configsData.length === 0) {
+          console.log('ℹ️ No astigmatism configs found for this product');
+        }
+      } else {
+        console.warn('⚠️ Extracted data is not an array:', configsData);
+        setAstigmatismConfigs([]);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch astigmatism configs:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+      
+      // Handle different error cases
+      if (!error.response) {
+        toast.error('Cannot connect to server. Check if backend is running.');
+      } else if (error.response.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else if (error.response.status === 404) {
+        // 404 might be acceptable if no configs exist yet
+        console.log('ℹ️ No astigmatism configs endpoint or no data found (404)');
+        setAstigmatismConfigs([]);
+      } else if (error.response.status === 403) {
+        toast.error('Access denied. You may not have permission to access this resource.');
+        setAstigmatismConfigs([]);
+      } else if (error.response.status !== 400) {
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to load astigmatism configurations';
+        toast.error(errorMessage);
+        setAstigmatismConfigs([]);
+      } else {
+        setAstigmatismConfigs([]);
+      }
+    } finally {
+      setLoadingAstigmatism(false);
+    }
+  };
+
+  // Handle configuration modals
+  const handleSphericalAdd = () => {
+    setSelectedSphericalConfig(null);
+    setSphericalModalOpen(true);
+  };
+
+  const handleSphericalEdit = (config) => {
+    setSelectedSphericalConfig(config);
+    setSphericalModalOpen(true);
+  };
+
+  const handleSphericalDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this spherical configuration?')) {
+      return;
+    }
+    try {
+      await api.delete(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.DELETE(id));
+      toast.success('Spherical configuration deleted');
+      fetchSphericalConfigs();
+    } catch (error) {
+      console.error('Failed to delete spherical config:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete configuration');
+    }
+  };
+
+  const handleAstigmatismAdd = () => {
+    setSelectedAstigmatismConfig(null);
+    setAstigmatismModalOpen(true);
+  };
+
+  const handleAstigmatismEdit = (config) => {
+    setSelectedAstigmatismConfig(config);
+    setAstigmatismModalOpen(true);
+  };
+
+  const handleAstigmatismDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this astigmatism configuration?')) {
+      return;
+    }
+    try {
+      await api.delete(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DELETE(id));
+      toast.success('Astigmatism configuration deleted');
+      fetchAstigmatismConfigs();
+    } catch (error) {
+      console.error('Failed to delete astigmatism config:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete configuration');
     }
   };
 
@@ -3300,6 +3596,198 @@ const ProductModal = ({ product, onClose }) => {
             </div>
           </div>
                 </>
+            )}
+
+            {/* Spherical Configurations Tab */}
+            {activeTab === 'spherical' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-gray-900">Spherical Configurations</h3>
+                  {product?.id ? (
+                    <button
+                      type="button"
+                      onClick={handleSphericalAdd}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                    >
+                      <FiPlus className="w-4 h-4" />
+                      Add Configuration
+                    </button>
+                  ) : (
+                    <p className="text-sm text-gray-500">Save the product first to add configurations</p>
+                  )}
+                </div>
+                {loadingSpherical ? (
+                  <div className="text-center py-8">Loading...</div>
+                ) : (
+                  <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">NAME</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DISPLAY NAME</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PRICE</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STATUS</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {sphericalConfigs.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
+                              {product?.id 
+                                ? 'No spherical configurations found. Click "Add Configuration" to create one.'
+                                : 'No spherical configurations found. Save the product first to add configurations.'}
+                            </td>
+                          </tr>
+                        ) : (
+                          sphericalConfigs.map((config) => (
+                            <tr key={config.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-700">{config.display_name || config.name || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-700">${config.price || '0.00'}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-1 rounded text-xs ${config.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                  {config.is_active !== false ? 'Active' : 'Inactive'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSphericalEdit(config)}
+                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded"
+                                    title="Edit"
+                                  >
+                                    <FiEdit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSphericalDelete(config.id)}
+                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                    title="Delete"
+                                  >
+                                    <FiTrash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {sphericalModalOpen && (
+                  <SphericalConfigModal
+                    config={selectedSphericalConfig || (product?.id ? { product_id: product.id } : null)}
+                    onClose={(saved = false) => {
+                      setSphericalModalOpen(false);
+                      setSelectedSphericalConfig(null);
+                      if (saved && product?.id) {
+                        setTimeout(() => {
+                          fetchSphericalConfigs();
+                        }, 100);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Astigmatism Configurations Tab */}
+            {activeTab === 'astigmatism' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-gray-900">Astigmatism Configurations</h3>
+                  {product?.id ? (
+                    <button
+                      type="button"
+                      onClick={handleAstigmatismAdd}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                    >
+                      <FiPlus className="w-4 h-4" />
+                      Add Configuration
+                    </button>
+                  ) : (
+                    <p className="text-sm text-gray-500">Save the product first to add configurations</p>
+                  )}
+                </div>
+                {loadingAstigmatism ? (
+                  <div className="text-center py-8">Loading...</div>
+                ) : (
+                  <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">NAME</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DISPLAY NAME</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PRICE</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STATUS</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {astigmatismConfigs.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
+                              {product?.id 
+                                ? 'No astigmatism configurations found. Click "Add Configuration" to create one.'
+                                : 'No astigmatism configurations found. Save the product first to add configurations.'}
+                            </td>
+                          </tr>
+                        ) : (
+                          astigmatismConfigs.map((config) => (
+                            <tr key={config.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-700">{config.display_name || config.name || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-700">${config.price || '0.00'}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-1 rounded text-xs ${config.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                  {config.is_active !== false ? 'Active' : 'Inactive'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAstigmatismEdit(config)}
+                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded"
+                                    title="Edit"
+                                  >
+                                    <FiEdit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAstigmatismDelete(config.id)}
+                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                    title="Delete"
+                                  >
+                                    <FiTrash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {astigmatismModalOpen && (
+                  <AstigmatismConfigModal
+                    config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
+                    onClose={(saved = false) => {
+                      setAstigmatismModalOpen(false);
+                      setSelectedAstigmatismConfig(null);
+                      if (saved && product?.id) {
+                        setTimeout(() => {
+                          fetchAstigmatismConfigs();
+                        }, 100);
+                      }
+                    }}
+                  />
+                )}
+              </div>
             )}
 
             {/* SEO Tab */}

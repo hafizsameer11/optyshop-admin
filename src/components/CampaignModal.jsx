@@ -158,24 +158,31 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
       formDataToSend.append('description', formData.description.trim());
       
       // Convert dates to ISO format (backend expects ISO format)
+      // Use direct string concatenation to avoid timezone shifts
       const formatDateForAPI = (dateString) => {
         if (!dateString) return '';
         // If already in ISO format, return as is
         if (dateString.includes('T')) return dateString;
         // Convert YYYY-MM-DD to ISO format (YYYY-MM-DDTHH:mm:ssZ)
+        // Use midnight UTC to avoid timezone issues (without milliseconds to match Postman example)
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return `${dateString}T00:00:00Z`;
+        }
+        // Try parsing as date if format is different
         const date = new Date(dateString);
-        return date.toISOString();
+        if (!isNaN(date.getTime())) {
+          return date.toISOString();
+        }
+        return dateString;
       };
       
       formDataToSend.append('starts_at', formatDateForAPI(formData.starts_at));
       formDataToSend.append('ends_at', formatDateForAPI(formData.ends_at));
       formDataToSend.append('is_active', formData.is_active.toString());
       
-      // Always send campaign_type, even if empty
+      // Send optional fields only if they have values (per Postman collection)
       if (formData.campaign_type && formData.campaign_type.trim()) {
         formDataToSend.append('campaign_type', formData.campaign_type.trim());
-      } else {
-        formDataToSend.append('campaign_type', '');
       }
       
       // Only append image if a new file is selected
@@ -183,11 +190,9 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
         formDataToSend.append('image', imageFile);
       }
       
-      // Always send link_url, even if empty
+      // Send link_url only if it has a value
       if (formData.link_url && formData.link_url.trim()) {
         formDataToSend.append('link_url', formData.link_url.trim());
-      } else {
-        formDataToSend.append('link_url', '');
       }
 
       let response;
@@ -225,6 +230,18 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
         const errorData = error.response?.data || {};
         const errorMessage = errorData.message || errorData.errors?.[0]?.msg || 'Validation failed';
         toast.error(errorMessage);
+      } else if (error.response.status === 500) {
+        const errorData = error.response?.data || {};
+        const errorMessage = errorData.message || errorData.error || 'Server error - Please check the console for details';
+        console.error('Server error details:', errorData);
+        console.error('Request payload:', {
+          name: formData.name,
+          slug: formData.slug,
+          starts_at: formData.starts_at,
+          ends_at: formData.ends_at,
+          hasImage: imageFile instanceof File
+        });
+        toast.error(`Server Error: ${errorMessage}`);
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to save campaign';
         toast.error(errorMessage);

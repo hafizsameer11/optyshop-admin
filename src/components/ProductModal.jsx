@@ -3790,20 +3790,6 @@ const ProductModal = ({ product, onClose }) => {
                     </table>
                   </div>
                 )}
-                {sphericalModalOpen && (
-                  <SphericalConfigModal
-                    config={selectedSphericalConfig || (product?.id ? { product_id: product.id } : null)}
-                    onClose={(saved = false) => {
-                      setSphericalModalOpen(false);
-                      setSelectedSphericalConfig(null);
-                      if (saved && product?.id) {
-                        setTimeout(() => {
-                          fetchSphericalConfigs();
-                        }, 100);
-                      }
-                    }}
-                  />
-                )}
               </div>
             )}
 
@@ -3885,20 +3871,6 @@ const ProductModal = ({ product, onClose }) => {
                       </tbody>
                     </table>
                   </div>
-                )}
-                {astigmatismModalOpen && (
-                  <AstigmatismConfigModal
-                    config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
-                    onClose={(saved = false) => {
-                      setAstigmatismModalOpen(false);
-                      setSelectedAstigmatismConfig(null);
-                      if (saved && product?.id) {
-                        setTimeout(() => {
-                          fetchAstigmatismConfigs();
-                        }, 100);
-                      }
-                    }}
-                  />
                 )}
               </div>
             )}
@@ -3991,6 +3963,36 @@ const ProductModal = ({ product, onClose }) => {
             </button>
           </div>
         </form>
+        
+        {/* Configuration Modals - Rendered outside form to avoid nested forms */}
+        {sphericalModalOpen && (
+          <SphericalConfigModal
+            config={selectedSphericalConfig || (product?.id ? { product_id: product.id } : null)}
+            onClose={(saved = false) => {
+              setSphericalModalOpen(false);
+              setSelectedSphericalConfig(null);
+              if (saved && product?.id) {
+                setTimeout(() => {
+                  fetchSphericalConfigs();
+                }, 100);
+              }
+            }}
+          />
+        )}
+        {astigmatismModalOpen && (
+          <AstigmatismConfigModal
+            config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
+            onClose={(saved = false) => {
+              setAstigmatismModalOpen(false);
+              setSelectedAstigmatismConfig(null);
+              if (saved && product?.id) {
+                setTimeout(() => {
+                  fetchAstigmatismConfigs();
+                }, 100);
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );

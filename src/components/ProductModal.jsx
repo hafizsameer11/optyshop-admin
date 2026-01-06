@@ -232,6 +232,9 @@ const ProductModal = ({ product, onClose }) => {
   const [selectedSphericalConfig, setSelectedSphericalConfig] = useState(null);
   const [selectedAstigmatismConfig, setSelectedAstigmatismConfig] = useState(null);
   
+  // Local state for current product (updated after save to allow config creation)
+  const [currentProduct, setCurrentProduct] = useState(product);
+  
   const [imageFiles, setImageFiles] = useState([]); // Newly uploaded general images (File objects)
   const [imagePreviews, setImagePreviews] = useState([]); // All general image previews (URLs + new file previews)
   const [existingImages, setExistingImages] = useState([]); // Existing image URLs from product (for deletion tracking)
@@ -239,6 +242,11 @@ const ProductModal = ({ product, onClose }) => {
   const [existingColorImages, setExistingColorImages] = useState([]); // Existing color images structure for deletion tracking
   const [model3DFile, setModel3DFile] = useState(null);
   const [model3DPreview, setModel3DPreview] = useState(null);
+
+  // Sync currentProduct with product prop
+  useEffect(() => {
+    setCurrentProduct(product);
+  }, [product]);
 
   useEffect(() => {
     fetchProductOptions();
@@ -1366,7 +1374,13 @@ const ProductModal = ({ product, onClose }) => {
       
       // Handle nested response structure: { success, message, data: { product: {...} } }
       const responseData = response.data?.data || response.data;
+      const savedProduct = responseData?.product || responseData;
       const successMessage = response.data?.message || (product ? 'Product updated successfully' : 'Product created successfully');
+      
+      // Update currentProduct with saved product data (especially important for new products to get the ID)
+      if (savedProduct && savedProduct.id) {
+        setCurrentProduct(savedProduct);
+      }
       
       toast.success(successMessage);
       
@@ -1501,20 +1515,21 @@ const ProductModal = ({ product, onClose }) => {
 
   // Fetch configurations when tab changes or product changes
   useEffect(() => {
-    if (product?.id) {
+    if (currentProduct?.id) {
       if (activeTab === 'spherical') {
         fetchSphericalConfigs();
       } else if (activeTab === 'astigmatism') {
         fetchAstigmatismConfigs();
       }
     } else {
+      // No product ID - clear configs silently (this is normal for new products)
       if (activeTab === 'spherical') {
         setSphericalConfigs([]);
       } else if (activeTab === 'astigmatism') {
         setAstigmatismConfigs([]);
       }
     }
-  }, [activeTab, product?.id]);
+  }, [activeTab, currentProduct?.id]);
 
   // Fetch all lens management configurations
   const fetchLensManagementData = async () => {
@@ -1783,7 +1798,7 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   // Helper function to extract configuration data from API response
-  // Matches the pattern used in SphericalConfigurations.jsx for consistency
+  // Enhanced to match the robust pattern used in lens management extraction
   const extractConfigData = (response, key) => {
     if (!response || !response.data) {
       console.warn(`⚠️ No response data for ${key}`);
@@ -1794,103 +1809,158 @@ const ProductModal = ({ product, onClose }) => {
     console.log(`🔍 Extracting data for ${key}. Full response:`, JSON.stringify(responseData, null, 2));
     let extractedData = [];
 
-    // Pattern 1: response.data.data structure (nested data)
-    if (responseData.data) {
+    // Generate all possible key variations
+    const keyVariations = {
+      'sphericalConfigs': [
+        'sphericalConfigs', 'spherical_configs', 'sphericalConfig', 'spherical_config',
+        'spherical', 'configs', 'data', 'results', 'items', 'list', 'records'
+      ],
+      'astigmatismConfigs': [
+        'astigmatismConfigs', 'astigmatism_configs', 'astigmatismConfig', 'astigmatism_config',
+        'astigmatism', 'configs', 'data', 'results', 'items', 'list', 'records'
+      ]
+    };
+
+    const allKeysToCheck = keyVariations[key] || [key, 'configs', 'data', 'results', 'items', 'list', 'records'];
+
+    // Helper function to recursively find arrays
+    const findFirstArray = (obj, depth = 0, maxDepth = 5) => {
+      if (depth > maxDepth || !obj || typeof obj !== 'object') return null;
+      if (Array.isArray(obj) && obj.length > 0) return obj;
+      
+      for (const value of Object.values(obj)) {
+        if (Array.isArray(value) && value.length > 0) return value;
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const found = findFirstArray(value, depth + 1, maxDepth);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    // Strategy 1: Check responseData.data (most common structure)
+    if (responseData?.data) {
       const dataObj = responseData.data;
       
-      // Direct array in data.data (most common)
+      // Direct array in data.data
       if (Array.isArray(dataObj)) {
         extractedData = dataObj;
         console.log(`✅ Found array in response.data.data (${dataObj.length} items)`);
-      } 
-      // Object with configs key (prioritize this - most common structure)
-      else if (dataObj.configs && Array.isArray(dataObj.configs)) {
-        extractedData = dataObj.configs;
-        console.log(`✅ Found configs array in response.data.data.configs (${dataObj.configs.length} items)`);
-      } 
-      // Object with data key (triple nested)
-      else if (dataObj.data && Array.isArray(dataObj.data)) {
-        extractedData = dataObj.data;
-        console.log(`✅ Found data array in response.data.data.data (${dataObj.data.length} items)`);
-      } 
-      // Object with results key
-      else if (dataObj.results && Array.isArray(dataObj.results)) {
-        extractedData = dataObj.results;
-        console.log(`✅ Found results array in response.data.data.results (${dataObj.results.length} items)`);
       }
-      // Object with key-specific arrays (sphericalConfigs/astigmatismConfigs)
-      else if (dataObj[key] && Array.isArray(dataObj[key])) {
-        extractedData = dataObj[key];
-        console.log(`✅ Found ${key} array in response.data.data.${key} (${dataObj[key].length} items)`);
-      } 
-      // Object with sphericalConfigs/astigmatismConfigs (fallback)
-      else if (dataObj.sphericalConfigs && Array.isArray(dataObj.sphericalConfigs)) {
-        extractedData = dataObj.sphericalConfigs;
-        console.log(`✅ Found sphericalConfigs array in response.data.data (${dataObj.sphericalConfigs.length} items)`);
-      } 
-      else if (dataObj.astigmatismConfigs && Array.isArray(dataObj.astigmatismConfigs)) {
-        extractedData = dataObj.astigmatismConfigs;
-        console.log(`✅ Found astigmatismConfigs array in response.data.data (${dataObj.astigmatismConfigs.length} items)`);
-      }
-    } 
-    // Pattern 2: Direct array response
-    else if (Array.isArray(responseData)) {
-      extractedData = responseData;
-      console.log(`✅ Found direct array response (${responseData.length} items)`);
-    } 
-    // Pattern 3: Root level keys
-    else if (responseData && typeof responseData === 'object') {
-      // Prioritize configs key (most common)
-      if (responseData.configs && Array.isArray(responseData.configs)) {
-        extractedData = responseData.configs;
-        console.log(`✅ Found configs array in response.data.configs (${responseData.configs.length} items)`);
-      } 
-      // Then check for results
-      else if (responseData.results && Array.isArray(responseData.results)) {
-        extractedData = responseData.results;
-        console.log(`✅ Found results array in response.data.results (${responseData.results.length} items)`);
-      }
-      // Then check for key-specific arrays
-      else if (responseData[key] && Array.isArray(responseData[key])) {
-        extractedData = responseData[key];
-        console.log(`✅ Found ${key} array in response.data.${key} (${responseData[key].length} items)`);
-      } 
-      // Fallback to sphericalConfigs/astigmatismConfigs
-      else if (responseData.sphericalConfigs && Array.isArray(responseData.sphericalConfigs)) {
-        extractedData = responseData.sphericalConfigs;
-        console.log(`✅ Found sphericalConfigs array in response.data (${responseData.sphericalConfigs.length} items)`);
-      } 
-      else if (responseData.astigmatismConfigs && Array.isArray(responseData.astigmatismConfigs)) {
-        extractedData = responseData.astigmatismConfigs;
-        console.log(`✅ Found astigmatismConfigs array in response.data (${responseData.astigmatismConfigs.length} items)`);
+      // Check all possible keys in data.data
+      else if (typeof dataObj === 'object') {
+        // First, try exact key matches
+        for (const checkKey of allKeysToCheck) {
+          if (dataObj[checkKey] && Array.isArray(dataObj[checkKey])) {
+            extractedData = dataObj[checkKey];
+            console.log(`✅ Found ${checkKey} array in response.data.data.${checkKey} (${dataObj[checkKey].length} items)`);
+            break;
+          }
+        }
+        
+        // If still not found, check nested data.data.data
+        if (extractedData.length === 0 && dataObj.data) {
+          if (Array.isArray(dataObj.data)) {
+            extractedData = dataObj.data;
+            console.log(`✅ Found array in response.data.data.data (${dataObj.data.length} items)`);
+          } else if (typeof dataObj.data === 'object') {
+            for (const checkKey of allKeysToCheck) {
+              if (dataObj.data[checkKey] && Array.isArray(dataObj.data[checkKey])) {
+                extractedData = dataObj.data[checkKey];
+                console.log(`✅ Found ${checkKey} array in response.data.data.data.${checkKey} (${dataObj.data[checkKey].length} items)`);
+                break;
+              }
+            }
+          }
+        }
+        
+        // Try common array keys (results, items, list, data)
+        if (extractedData.length === 0) {
+          const commonKeys = ['results', 'items', 'list', 'data', 'records', 'configs'];
+          for (const commonKey of commonKeys) {
+            if (dataObj[commonKey] && Array.isArray(dataObj[commonKey])) {
+              extractedData = dataObj[commonKey];
+              console.log(`✅ Found ${commonKey} array in response.data.data.${commonKey} (${dataObj[commonKey].length} items)`);
+              break;
+            }
+          }
+        }
+        
+        // Last resort: find ANY array in the data object
+        if (extractedData.length === 0) {
+          const foundArray = findFirstArray(dataObj);
+          if (foundArray) {
+            extractedData = foundArray;
+            console.log(`💡 Using first array found in response.data.data (${foundArray.length} items)`);
+          }
+        }
       }
     }
     
-    // Final fallback: find any array in the response and use the largest one
+    // Strategy 2: Check if responseData is directly an array
+    if (extractedData.length === 0 && Array.isArray(responseData)) {
+      extractedData = responseData;
+      console.log(`✅ Found direct array response (${responseData.length} items)`);
+    }
+    
+    // Strategy 3: Check for keys at root level
+    if (extractedData.length === 0 && responseData && typeof responseData === 'object') {
+      // Try exact key matches first
+      for (const checkKey of allKeysToCheck) {
+        if (responseData[checkKey] && Array.isArray(responseData[checkKey])) {
+          extractedData = responseData[checkKey];
+          console.log(`✅ Found ${checkKey} array in response.data.${checkKey} (${responseData[checkKey].length} items)`);
+          break;
+        }
+      }
+      
+      // Try common array keys at root
+      if (extractedData.length === 0) {
+        const commonKeys = ['data', 'results', 'items', 'list', 'records', 'configs'];
+        for (const commonKey of commonKeys) {
+          if (responseData[commonKey] && Array.isArray(responseData[commonKey])) {
+            extractedData = responseData[commonKey];
+            console.log(`✅ Found ${commonKey} array in response.data.${commonKey} (${responseData[commonKey].length} items)`);
+            break;
+          }
+        }
+      }
+      
+      // Last resort: find ANY array in the response
+      if (extractedData.length === 0) {
+        const foundArray = findFirstArray(responseData);
+        if (foundArray) {
+          extractedData = foundArray;
+          console.log(`💡 Using first array found in response.data (${foundArray.length} items)`);
+        }
+      }
+    }
+
+    // Final fallback: find all arrays and use the largest one
     if (extractedData.length === 0) {
-      console.log('🔍 No standard structure found, searching for arrays in response...');
-      const findArrays = (obj, path = '') => {
+      console.log('🔍 No standard structure found, searching for all arrays in response...');
+      const findAllArrays = (obj, path = '') => {
         const arrays = [];
-        if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        if (obj && typeof obj === 'object') {
           for (const [k, v] of Object.entries(obj)) {
             const currentPath = path ? `${path}.${k}` : k;
             if (Array.isArray(v) && v.length > 0) {
               arrays.push({ path: currentPath, length: v.length, data: v });
             } else if (v && typeof v === 'object' && !Array.isArray(v)) {
-              arrays.push(...findArrays(v, currentPath));
+              arrays.push(...findAllArrays(v, currentPath));
             }
           }
         }
         return arrays;
       };
       
-      const foundArrays = findArrays(responseData);
+      const foundArrays = findAllArrays(responseData);
       if (foundArrays.length > 0) {
-        const largestArray = foundArrays.reduce((prev, current) => (prev.length > current.length ? prev : current));
-        if (largestArray.length > 0) {
-          extractedData = largestArray.data;
-          console.log(`💡 Using fallback array from path: ${largestArray.path} (${largestArray.length} items)`);
-        }
+        const sortedArrays = foundArrays.sort((a, b) => b.length - a.length);
+        const bestArray = sortedArrays[0];
+        extractedData = bestArray.data;
+        console.log(`💡 Using largest array from path: ${bestArray.path} (${bestArray.length} items)`);
+        console.log(`📊 All found arrays:`, foundArrays.map(a => `${a.path} (${a.length} items)`));
       }
     }
     
@@ -1906,7 +1976,10 @@ const ProductModal = ({ product, onClose }) => {
       // Log first item structure for debugging
       if (extractedData[0]) {
         console.log(`📋 Sample item structure:`, Object.keys(extractedData[0]));
-        console.log(`📋 Sample item:`, extractedData[0]);
+        console.log(`📋 Sample item (first 3 keys):`, Object.keys(extractedData[0]).slice(0, 3).reduce((acc, k) => {
+          acc[k] = extractedData[0][k];
+          return acc;
+        }, {}));
       }
     } else {
       console.warn(`⚠️ No data extracted for ${key}. Response structure:`, JSON.stringify(responseData, null, 2).substring(0, 1000));
@@ -1917,7 +1990,7 @@ const ProductModal = ({ product, onClose }) => {
 
   // Fetch Spherical Configurations
   const fetchSphericalConfigs = async () => {
-    if (!product?.id) {
+    if (!currentProduct?.id) {
       setSphericalConfigs([]);
       return;
     }
@@ -1930,8 +2003,8 @@ const ProductModal = ({ product, onClose }) => {
       queryParams.append('page', '1');
       
       // Try product_id filter first
-      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}&product_id=${product.id}`;
-      console.log(`🔍 Fetching spherical configs for product ${product.id} from: ${endpoint}`);
+      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}&product_id=${currentProduct.id}`;
+      console.log(`🔍 Fetching spherical configs for product ${currentProduct.id} from: ${endpoint}`);
       
       let response;
       let useProductIdFilter = true;
@@ -1975,11 +2048,12 @@ const ProductModal = ({ product, onClose }) => {
         configsData = configsData.filter(config => {
           if (!config) return false;
           const configProductId = config.product_id || config.productId || config.product?.id;
-          const productId = product.id || product?.id;
+          const productId = currentProduct?.id;
+          if (!productId) return false; // Skip filtering if no product ID
           const matches = configProductId == productId || configProductId === parseInt(productId) || String(configProductId) === String(productId);
           return matches;
         });
-        console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
+        console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${currentProduct?.id}`);
       }
       
       // Validate and set data
@@ -2028,7 +2102,7 @@ const ProductModal = ({ product, onClose }) => {
 
   // Fetch Astigmatism Configurations
   const fetchAstigmatismConfigs = async () => {
-    if (!product?.id) {
+    if (!currentProduct?.id) {
       setAstigmatismConfigs([]);
       return;
     }
@@ -2041,8 +2115,8 @@ const ProductModal = ({ product, onClose }) => {
       queryParams.append('page', '1');
       
       // Try product_id filter first
-      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}&product_id=${product.id}`;
-      console.log(`🔍 Fetching astigmatism configs for product ${product.id} from: ${endpoint}`);
+      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}&product_id=${currentProduct.id}`;
+      console.log(`🔍 Fetching astigmatism configs for product ${currentProduct.id} from: ${endpoint}`);
       
       let response;
       let useProductIdFilter = true;
@@ -2086,11 +2160,11 @@ const ProductModal = ({ product, onClose }) => {
         configsData = configsData.filter(config => {
           if (!config) return false;
           const configProductId = config.product_id || config.productId || config.product?.id;
-          const productId = product.id || product?.id;
+          const productId = currentProduct.id || currentProduct?.id;
           const matches = configProductId == productId || configProductId === parseInt(productId) || String(configProductId) === String(productId);
           return matches;
         });
-        console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
+        console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${currentProduct.id}`);
       }
       
       // Validate and set data
@@ -3746,7 +3820,7 @@ const ProductModal = ({ product, onClose }) => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold text-gray-900">Spherical Configurations</h3>
-                  {product?.id ? (
+                  {currentProduct?.id ? (
                     <button
                       type="button"
                       onClick={handleSphericalAdd}
@@ -3777,44 +3851,51 @@ const ProductModal = ({ product, onClose }) => {
                         {sphericalConfigs.length === 0 ? (
                           <tr>
                             <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
-                              {product?.id 
+                              {currentProduct?.id 
                                 ? 'No spherical configurations found. Click "Add Configuration" to create one.'
                                 : 'No spherical configurations found. Save the product first to add configurations.'}
                             </td>
                           </tr>
                         ) : (
-                          sphericalConfigs.map((config) => (
-                            <tr key={config.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
-                              <td className="px-4 py-3 text-sm text-gray-700">{config.display_name || config.name || 'N/A'}</td>
-                              <td className="px-4 py-3 text-sm text-gray-700">${config.price || '0.00'}</td>
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-1 rounded text-xs ${config.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                  {config.is_active !== false ? 'Active' : 'Inactive'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSphericalEdit(config)}
-                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded"
-                                    title="Edit"
-                                  >
-                                    <FiEdit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSphericalDelete(config.id)}
-                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                    title="Delete"
-                                  >
-                                    <FiTrash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
+                          sphericalConfigs.map((config) => {
+                            // Handle both snake_case and camelCase field names
+                            const displayName = config.display_name || config.displayName || config.name || 'N/A';
+                            const price = config.price !== undefined ? config.price : '0.00';
+                            const isActive = config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true);
+                            
+                            return (
+                              <tr key={config.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700">{displayName}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700">${price}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-1 rounded text-xs ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                    {isActive ? 'Active' : 'Inactive'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSphericalEdit(config)}
+                                      className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded"
+                                      title="Edit"
+                                    >
+                                      <FiEdit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSphericalDelete(config.id)}
+                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                      title="Delete"
+                                    >
+                                      <FiTrash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
                         )}
                       </tbody>
                     </table>
@@ -3828,7 +3909,7 @@ const ProductModal = ({ product, onClose }) => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold text-gray-900">Astigmatism Configurations</h3>
-                  {product?.id ? (
+                  {currentProduct?.id ? (
                     <button
                       type="button"
                       onClick={handleAstigmatismAdd}
@@ -3859,44 +3940,51 @@ const ProductModal = ({ product, onClose }) => {
                         {astigmatismConfigs.length === 0 ? (
                           <tr>
                             <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
-                              {product?.id 
+                              {currentProduct?.id 
                                 ? 'No astigmatism configurations found. Click "Add Configuration" to create one.'
                                 : 'No astigmatism configurations found. Save the product first to add configurations.'}
                             </td>
                           </tr>
                         ) : (
-                          astigmatismConfigs.map((config) => (
-                            <tr key={config.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
-                              <td className="px-4 py-3 text-sm text-gray-700">{config.display_name || config.name || 'N/A'}</td>
-                              <td className="px-4 py-3 text-sm text-gray-700">${config.price || '0.00'}</td>
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-1 rounded text-xs ${config.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                  {config.is_active !== false ? 'Active' : 'Inactive'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAstigmatismEdit(config)}
-                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded"
-                                    title="Edit"
-                                  >
-                                    <FiEdit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAstigmatismDelete(config.id)}
-                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                    title="Delete"
-                                  >
-                                    <FiTrash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
+                          astigmatismConfigs.map((config) => {
+                            // Handle both snake_case and camelCase field names
+                            const displayName = config.display_name || config.displayName || config.name || 'N/A';
+                            const price = config.price !== undefined ? config.price : '0.00';
+                            const isActive = config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true);
+                            
+                            return (
+                              <tr key={config.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700">{displayName}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700">${price}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-1 rounded text-xs ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                    {isActive ? 'Active' : 'Inactive'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAstigmatismEdit(config)}
+                                      className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded"
+                                      title="Edit"
+                                    >
+                                      <FiEdit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAstigmatismDelete(config.id)}
+                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                      title="Delete"
+                                    >
+                                      <FiTrash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
                         )}
                       </tbody>
                     </table>
@@ -3997,11 +4085,11 @@ const ProductModal = ({ product, onClose }) => {
         {/* Configuration Modals - Rendered outside form to avoid nested forms */}
         {sphericalModalOpen && (
           <SphericalConfigModal
-            config={selectedSphericalConfig || (product?.id ? { product_id: product.id } : null)}
+            config={selectedSphericalConfig || (currentProduct?.id ? { product_id: currentProduct.id } : null)}
             onClose={(saved = false) => {
               setSphericalModalOpen(false);
               setSelectedSphericalConfig(null);
-              if (saved && product?.id) {
+              if (saved && currentProduct?.id) {
                 setTimeout(() => {
                   fetchSphericalConfigs();
                 }, 100);
@@ -4011,11 +4099,11 @@ const ProductModal = ({ product, onClose }) => {
         )}
         {astigmatismModalOpen && (
           <AstigmatismConfigModal
-            config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
+            config={selectedAstigmatismConfig || (currentProduct?.id ? { product_id: currentProduct.id } : null)}
             onClose={(saved = false) => {
               setAstigmatismModalOpen(false);
               setSelectedAstigmatismConfig(null);
-              if (saved && product?.id) {
+              if (saved && currentProduct?.id) {
                 setTimeout(() => {
                   fetchAstigmatismConfigs();
                 }, 100);

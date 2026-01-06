@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
 import { FiX, FiUpload, FiChevronRight, FiPlus, FiTrash2, FiCopy, FiEdit2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -12,15 +11,8 @@ import AstigmatismConfigModal from './AstigmatismConfigModal';
 
 const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   const { t } = useI18n();
-  const navigate = useNavigate();
   
-  // Map contact lens form modal types to their routes
-  const contactLensFormRoutes = {
-    'spherical': '/contact-lens-forms/spherical',
-    'astigmatism': '/contact-lens-forms/astigmatism',
-  };
-  
-  // Helper function to handle contact lens form modal close with navigation
+  // Helper function to handle contact lens form modal close with refresh
   // saved: true if form was saved successfully, false/undefined if cancelled/closed
   const handleContactLensFormClose = (modalType) => {
     return (saved = false) => {
@@ -35,7 +27,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       if (setSelected) setSelected(null);
       
       // Always refresh data when modal closes (whether saved or cancelled)
-      // This ensures the table is up-to-date with the latest data
+      // This ensures the table is up-to-date with the latest data and stays on the same page
       if (refreshData && product?.id) {
         console.log(`🔄 Refreshing ${modalType} configs after modal close`);
         // Use setTimeout to ensure modal is fully closed before refreshing
@@ -43,19 +35,8 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
           refreshData();
         }, 100);
       }
-      
-      // Only navigate and close product modal if form was saved successfully
-      if (saved) {
-        // Close the product modal
-        onClose();
-        
-        // Navigate to the appropriate contact lens form page
-        const route = contactLensFormRoutes[modalType];
-        if (route) {
-          navigate(route);
-        }
-      }
       // If cancelled, just close the modal and stay in product modal
+      // If saved, refresh data and stay on the same page (no navigation)
     };
   };
   const [activeTab, setActiveTab] = useState('general');

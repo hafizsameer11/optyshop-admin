@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiImage, FiExternalLink } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import CampaignModal from '../components/CampaignModal';
@@ -105,16 +105,19 @@ const Campaigns = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
+                  Image
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Slug
+                  Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Description
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Link URL
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Period
@@ -129,23 +132,64 @@ const Campaigns = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {campaigns.map((campaign) => (
-                <tr key={campaign.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {campaign.name}
+                <tr key={campaign.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {campaign.image_url ? (
+                      <div className="relative group">
+                        <img
+                          src={campaign.image_url}
+                          alt={campaign.name}
+                          className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => window.open(campaign.image_url, '_blank')}
+                          title="Click to view full image"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                        <FiImage className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{campaign.name}</div>
+                    <div className="text-xs text-gray-500 font-mono">{campaign.slug || 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-500 max-w-xs truncate" title={campaign.description}>
+                      {campaign.description}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {campaign.slug || 'N/A'}
+                    {campaign.campaign_type || (
+                      <span className="text-gray-400 italic">N/A</span>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {campaign.description}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {campaign.link_url ? (
+                      <a
+                        href={campaign.link_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline"
+                        title={campaign.link_url}
+                      >
+                        <FiExternalLink className="w-4 h-4" />
+                        <span className="max-w-xs truncate">View Link</span>
+                      </a>
+                    ) : (
+                      <span className="text-sm text-gray-400 italic">No Link</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {campaign.campaign_type || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {campaign.starts_at && campaign.ends_at 
-                      ? `${new Date(campaign.starts_at).toLocaleDateString()} - ${new Date(campaign.ends_at).toLocaleDateString()}`
-                      : 'N/A'}
+                    {campaign.starts_at && campaign.ends_at ? (
+                      <div>
+                        <div>{new Date(campaign.starts_at).toLocaleDateString()}</div>
+                        <div className="text-xs text-gray-400">to</div>
+                        <div>{new Date(campaign.ends_at).toLocaleDateString()}</div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 italic">N/A</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -159,20 +203,22 @@ const Campaigns = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
-                      onClick={() => handleEdit(campaign)}
-                      className="text-primary-600 hover:text-primary-900 mr-4"
-                      title="Edit campaign"
-                    >
-                      <FiEdit2 />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(campaign.id)}
-                      className="text-red-600 hover:text-red-900"
-                      title="Delete campaign"
-                    >
-                      <FiTrash2 />
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => handleEdit(campaign)}
+                        className="text-indigo-600 hover:text-indigo-900 transition-colors p-1.5 hover:bg-indigo-50 rounded"
+                        title="Edit campaign"
+                      >
+                        <FiEdit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(campaign.id)}
+                        className="text-red-600 hover:text-red-900 transition-colors p-1.5 hover:bg-red-50 rounded"
+                        title="Delete campaign"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
 import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -77,26 +76,8 @@ const getColorNameFromHex = (hexCode) => {
 
 const ProductModal = ({ product, onClose }) => {
   const { t } = useI18n();
-  const navigate = useNavigate();
   
-  // Map lens management modal types to their routes
-  const lensManagementRoutes = {
-    'frameSize': '/frame-sizes',
-    'lensType': '/lens-types',
-    'lensOption': '/lens-options',
-    'prescriptionSunLens': '/prescription-sun-lenses',
-    'photochromicLens': '/photochromic-lenses',
-    'lensCoating': '/lens-coatings',
-    'lensColor': '/lens-colors',
-    'lensFinish': '/lens-finishes',
-    'lensTreatment': '/lens-treatments',
-    'thicknessMaterial': '/lens-thickness-materials',
-    'thicknessOption': '/lens-thickness-options',
-    'prescriptionLensType': '/prescription-lens-types',
-    'prescriptionDropdown': '/prescription-forms/dropdown-values',
-  };
-  
-  // Helper function to handle lens management modal close with navigation
+  // Helper function to handle lens management modal close with refresh
   // saved: true if form was saved successfully, false/undefined if cancelled/closed
   const handleLensManagementClose = (modalType) => {
     return (saved = false) => {
@@ -121,16 +102,14 @@ const ProductModal = ({ product, onClose }) => {
       if (setModalOpen) setModalOpen(false);
       if (setSelected) setSelected(null);
       
-      // Only navigate and close product modal if form was saved successfully
+      // Always refresh data when modal closes (whether saved or cancelled)
+      // This ensures the table is up-to-date with the latest data and stays on the same page
       if (saved) {
-        // Close the product modal
-        onClose();
-        
-        // Navigate to the appropriate lens management page
-        const route = lensManagementRoutes[modalType];
-        if (route) {
-          navigate(route);
-        }
+        console.log(`🔄 Refreshing lens management data after ${modalType} form save`);
+        // Use setTimeout to ensure modal is fully closed before refreshing
+        setTimeout(() => {
+          fetchLensManagementData();
+        }, 100);
       }
       // If cancelled, just close the modal and stay in product modal
     };

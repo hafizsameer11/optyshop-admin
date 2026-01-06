@@ -449,7 +449,6 @@ const translations = {
     pdLeft: 'PD Left',
     height: 'Height',
     sphere: 'Sphere',
-    cylinder: 'Cylinder',
     yearOfBirth: 'Year of Birth',
   },
   ar: {

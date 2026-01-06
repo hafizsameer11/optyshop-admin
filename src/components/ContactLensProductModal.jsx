@@ -175,25 +175,16 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
   }, [formData.sub_category_id]);
   
-  // Fetch configurations when tab changes or product changes
+  // Fetch configurations when tab changes (fetch all configs, not filtered by product)
   useEffect(() => {
-    if (product?.id) {
-      if (activeTab === 'spherical') {
-        console.log('🔄 Tab changed to spherical, fetching configs for product:', product.id);
-        fetchSphericalConfigs();
-      } else if (activeTab === 'astigmatism') {
-        console.log('🔄 Tab changed to astigmatism, fetching configs for product:', product.id);
-        fetchAstigmatismConfigs();
-      }
-    } else {
-      console.log('⚠️ No product ID, clearing configs');
-      if (activeTab === 'spherical') {
-        setSphericalConfigs([]);
-      } else if (activeTab === 'astigmatism') {
-        setAstigmatismConfigs([]);
-      }
+    if (activeTab === 'spherical') {
+      console.log('🔄 Tab changed to spherical, fetching all spherical configs');
+      fetchSphericalConfigs();
+    } else if (activeTab === 'astigmatism') {
+      console.log('🔄 Tab changed to astigmatism, fetching all astigmatism configs');
+      fetchAstigmatismConfigs();
     }
-  }, [activeTab, product?.id]);
+  }, [activeTab]);
 
   const fetchProductOptions = async () => {
     try {
@@ -465,55 +456,34 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
 
   // Fetch Spherical Configurations
   const fetchSphericalConfigs = async () => {
-    if (!product?.id) {
-      setSphericalConfigs([]);
-      return;
-    }
     try {
       setLoadingSpherical(true);
       
-      // Build endpoint with query parameters
+      // Build endpoint with query parameters - fetch ALL configs, not filtered by product
       const queryParams = new URLSearchParams();
       queryParams.append('limit', '1000');
       queryParams.append('page', '1');
       
-      // Try product_id filter first
-      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}&product_id=${product.id}`;
-      console.log(`🔍 Fetching spherical configs for product ${product.id} from: ${endpoint}`);
+      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}`;
+      console.log(`🔍 Fetching all spherical configs from: ${endpoint}`);
       
-      let response;
-      let useProductIdFilter = true;
-      
-      try {
-        response = await api.get(endpoint);
-        console.log('📦 Spherical configs API response:', response);
-        console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
-      } catch (filterError) {
-        // If product_id filter fails, fetch all and filter client-side
-        if (filterError.response?.status === 400 || filterError.response?.status === 422) {
-          console.log('⚠️ product_id filter not supported, fetching all configs and filtering client-side');
-          useProductIdFilter = false;
-          endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}`;
-          response = await api.get(endpoint);
-          console.log('📦 Spherical configs API response (all):', response);
-        } else {
-          throw filterError;
-        }
-      }
+      const response = await api.get(endpoint);
+      console.log('📦 Spherical configs API response:', response);
+      console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
       
       // Extract data from response
       let configsData = extractConfigData(response, 'sphericalConfigs');
       console.log(`📊 Raw extracted data:`, configsData);
       
-      // If we fetched all configs, filter by product_id client-side
-      if (!useProductIdFilter && configsData.length > 0) {
-        const beforeFilter = configsData.length;
-        configsData = configsData.filter(config => {
-          const configProductId = config.product_id || config.productId || config.product?.id;
-          const matches = configProductId === product.id || configProductId === parseInt(product.id);
-          return matches;
-        });
-        console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
+      // If extraction returned empty, try alternative extraction methods
+      if (!configsData || configsData.length === 0) {
+        console.log('🔍 Primary extraction returned empty, trying alternative methods...');
+        // Try extracting with generic 'configs' key
+        const altData = extractConfigData({ data: response.data }, 'configs');
+        if (altData && altData.length > 0) {
+          configsData = altData;
+          console.log(`✅ Alternative extraction found ${configsData.length} items`);
+        }
       }
       
       // Validate and set data
@@ -522,7 +492,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         setSphericalConfigs(configsData);
         
         if (configsData.length === 0) {
-          console.log('ℹ️ No spherical configs found for this product');
+          console.log('ℹ️ No spherical configs found');
         }
       } else {
         console.warn('⚠️ Extracted data is not an array:', configsData);
@@ -544,13 +514,17 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       } else if (error.response.status === 404) {
         // 404 might be acceptable if no configs exist yet
         console.log('ℹ️ No spherical configs endpoint or no data found (404)');
+        setSphericalConfigs([]);
       } else if (error.response.status === 403) {
         toast.error('Access denied. You may not have permission to access this resource.');
+        setSphericalConfigs([]);
       } else if (error.response.status !== 400) {
         const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to load spherical configurations';
         toast.error(errorMessage);
+        setSphericalConfigs([]);
+      } else {
+        setSphericalConfigs([]);
       }
-      setSphericalConfigs([]);
     } finally {
       setLoadingSpherical(false);
     }
@@ -558,55 +532,34 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
 
   // Fetch Astigmatism Configurations
   const fetchAstigmatismConfigs = async () => {
-    if (!product?.id) {
-      setAstigmatismConfigs([]);
-      return;
-    }
     try {
       setLoadingAstigmatism(true);
       
-      // Build endpoint with query parameters
+      // Build endpoint with query parameters - fetch ALL configs, not filtered by product
       const queryParams = new URLSearchParams();
       queryParams.append('limit', '1000');
       queryParams.append('page', '1');
       
-      // Try product_id filter first
-      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}&product_id=${product.id}`;
-      console.log(`🔍 Fetching astigmatism configs for product ${product.id} from: ${endpoint}`);
+      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}`;
+      console.log(`🔍 Fetching all astigmatism configs from: ${endpoint}`);
       
-      let response;
-      let useProductIdFilter = true;
-      
-      try {
-        response = await api.get(endpoint);
-        console.log('📦 Astigmatism configs API response:', response);
-        console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
-      } catch (filterError) {
-        // If product_id filter fails, fetch all and filter client-side
-        if (filterError.response?.status === 400 || filterError.response?.status === 422) {
-          console.log('⚠️ product_id filter not supported, fetching all configs and filtering client-side');
-          useProductIdFilter = false;
-          endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}`;
-          response = await api.get(endpoint);
-          console.log('📦 Astigmatism configs API response (all):', response);
-        } else {
-          throw filterError;
-        }
-      }
+      const response = await api.get(endpoint);
+      console.log('📦 Astigmatism configs API response:', response);
+      console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
       
       // Extract data from response
       let configsData = extractConfigData(response, 'astigmatismConfigs');
       console.log(`📊 Raw extracted data:`, configsData);
       
-      // If we fetched all configs, filter by product_id client-side
-      if (!useProductIdFilter && configsData.length > 0) {
-        const beforeFilter = configsData.length;
-        configsData = configsData.filter(config => {
-          const configProductId = config.product_id || config.productId || config.product?.id;
-          const matches = configProductId === product.id || configProductId === parseInt(product.id);
-          return matches;
-        });
-        console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
+      // If extraction returned empty, try alternative extraction methods
+      if (!configsData || configsData.length === 0) {
+        console.log('🔍 Primary extraction returned empty, trying alternative methods...');
+        // Try extracting with generic 'configs' key
+        const altData = extractConfigData({ data: response.data }, 'configs');
+        if (altData && altData.length > 0) {
+          configsData = altData;
+          console.log(`✅ Alternative extraction found ${configsData.length} items`);
+        }
       }
       
       // Validate and set data
@@ -615,7 +568,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         setAstigmatismConfigs(configsData);
         
         if (configsData.length === 0) {
-          console.log('ℹ️ No astigmatism configs found for this product');
+          console.log('ℹ️ No astigmatism configs found');
         }
       } else {
         console.warn('⚠️ Extracted data is not an array:', configsData);
@@ -637,13 +590,17 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       } else if (error.response.status === 404) {
         // 404 might be acceptable if no configs exist yet
         console.log('ℹ️ No astigmatism configs endpoint or no data found (404)');
+        setAstigmatismConfigs([]);
       } else if (error.response.status === 403) {
         toast.error('Access denied. You may not have permission to access this resource.');
+        setAstigmatismConfigs([]);
       } else if (error.response.status !== 400) {
         const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to load astigmatism configurations';
         toast.error(errorMessage);
+        setAstigmatismConfigs([]);
+      } else {
+        setAstigmatismConfigs([]);
       }
-      setAstigmatismConfigs([]);
     } finally {
       setLoadingAstigmatism(false);
     }

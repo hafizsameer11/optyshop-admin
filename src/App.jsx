@@ -29,6 +29,7 @@ import PrescriptionLensVariants from './pages/PrescriptionLensVariants';
 import Coupons from './pages/Coupons';
 import Campaigns from './pages/Campaigns';
 import Banners from './pages/Banners';
+import Brands from './pages/Brands';
 import BlogPosts from './pages/BlogPosts';
 import FAQs from './pages/FAQs';
 import Pages from './pages/Pages';
@@ -129,6 +130,7 @@ function App() {
                       <Route path="/coupons" element={<Coupons />} />
                       <Route path="/campaigns" element={<Campaigns />} />
                       <Route path="/banners" element={<Banners />} />
+                      <Route path="/brands" element={<Brands />} />
                       <Route path="/blog" element={<BlogPosts />} />
                       <Route path="/faqs" element={<FAQs />} />
                       <Route path="/pages" element={<Pages />} />

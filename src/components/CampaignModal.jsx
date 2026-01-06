@@ -248,123 +248,219 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
   };
 
   return (
-    <div className=" fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4\>
- <div className=\bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50\>
- <div className=\flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10\>
- <h2 className=\text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent\>
- {campaign ? t('editCampaign') : t('addCampaign')}
- </h2>
- <div className=\flex items-center gap-3\>
- <LanguageSwitcher variant=\compact\ />
- <button onClick={onClose} className=\p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200\ aria-label=\Close\>
- <FiX className=\w-6 h-6\ />
- </button>
- </div>
- </div>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+          <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
+            {campaign ? t('editCampaign') : t('addCampaign')}
+          </h2>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="compact" />
+            <button 
+              onClick={onClose} 
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
+              aria-label="Close"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
 
- <form onSubmit={handleSubmit} className=\p-6 space-y-5\>
- <div>
- <label className=\block text-sm font-semibold text-gray-700 mb-2\>
- {t('campaignName')} <span className=\text-red-500\>*</span>
- </label>
- <input type=\text\ name=\name\ value={formData.name} onChange={handleChange} className=\input-modern\ required placeholder=\e.g. Winter Sale 2025\ />
- </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t('campaignName')} <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="input-modern"
+              required
+              placeholder="e.g., Winter Sale 2025"
+            />
+          </div>
 
- <div>
- <label className=\block text-sm font-semibold text-gray-700 mb-2\>
- Slug <span className=\text-red-500\>*</span>
- </label>
- <input type=\text\ name=\slug\ value={formData.slug} onChange={handleChange} className=\input-modern font-mono\ required placeholder=\e.g. winter-sale-2025\ />
- <p className=\mt-1 text-xs text-gray-500\>URL-friendly identifier (auto-generated from name)</p>
- </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Slug <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="slug"
+              value={formData.slug}
+              onChange={handleChange}
+              className="input-modern font-mono"
+              required
+              placeholder="e.g., winter-sale-2025"
+            />
+            <p className="mt-1 text-xs text-gray-500">URL-friendly identifier (auto-generated from name)</p>
+          </div>
 
- <div>
- <label className=\block text-sm font-semibold text-gray-700 mb-2\>
- {t('description')} <span className=\text-red-500\>*</span>
- </label>
- <textarea name=\description\ value={formData.description} onChange={handleChange} rows=\3\ className=\input-modern resize-none\ required placeholder=\Brief description of the campaign...\ />
- </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t('description')} <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="3"
+              className="input-modern resize-none"
+              required
+              placeholder="Brief description of the campaign..."
+            />
+          </div>
 
- <div>
- <label className=\block text-sm font-semibold text-gray-700 mb-2\>
- {t('campaignType')}
- </label>
- <input type=\text\ name=\campaign_type\ value={formData.campaign_type} onChange={handleChange} className=\input-modern\ placeholder=\Optional: e.g. discount promotion seasonal\ />
- </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t('campaignType')}
+            </label>
+            <input
+              type="text"
+              name="campaign_type"
+              value={formData.campaign_type}
+              onChange={handleChange}
+              className="input-modern"
+              placeholder="Optional: e.g., discount, promotion, seasonal"
+            />
+          </div>
 
- <div className=\grid grid-cols-1 sm:grid-cols-2 gap-4\>
- <div>
- <label className=\block text-sm font-semibold text-gray-700 mb-2\>
- {t('startsAt')} <span className=\text-red-500\>*</span>
- </label>
- <input type=\date\ name=\starts_at\ value={formData.starts_at} onChange={handleChange} className=\input-modern\ required />
- </div>
- <div>
- <label className=\block text-sm font-semibold text-gray-700 mb-2\>
- {t('endsAt')} <span className=\text-red-500\>*</span>
- </label>
- <input type=\date\ name=\ends_at\ value={formData.ends_at} onChange={handleChange} className=\input-modern\ required />
- </div>
- </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t('startsAt')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                name="starts_at"
+                value={formData.starts_at}
+                onChange={handleChange}
+                className="input-modern"
+                required
+              />
+            </div>
 
- <div className=\flex items-center\>
- <input type=\checkbox\ name=\is_active\ id=\is_active\ checked={formData.is_active} onChange={handleChange} className=\w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer\ />
- <label htmlFor=\is_active\ className=\ml-2 block text-sm font-medium text-gray-700 cursor-pointer\>Active Campaign</label>
- </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t('endsAt')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                name="ends_at"
+                value={formData.ends_at}
+                onChange={handleChange}
+                className="input-modern"
+                required
+              />
+            </div>
+          </div>
 
- <div>
- <label className=\block text-sm font-semibold text-gray-700 mb-2\>
- <FiImage className=\inline w-4 h-4 mr-1\ />
- Campaign Image
- </label>
- <div className=\space-y-3\>
- {imagePreview ? (
- <div className=\relative group\>
- <div className=\relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 shadow-sm\>
- <img src={imagePreview} alt=\Campaign preview\ className=\w-full h-full object-cover\ />
- <div className=\absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center\>
- <button type=\button\ onClick={handleRemoveImage} className=\opacity-0 group-hover:opacity-100 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 shadow-lg\>
- <FiX className=\w-4 h-4\ />
- Remove Image
- </button>
- </div>
- </div>
- </div>
- ) : (
- <label className=\flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-indigo-400 transition-all duration-200\>
- <div className=\flex flex-col items-center justify-center pt-5 pb-6\>
- <FiUpload className=\w-8 h-8 mb-2 text-gray-400\ />
- <p className=\mb-2 text-sm text-gray-500\><span className=\font-semibold\>Click to upload</span> or drag and drop</p>
- <p className=\text-xs text-gray-500\>JPG, PNG, GIF, WEBP (MAX. 10MB)</p>
- </div>
- <input type=\file\ id=\campaign-image\ accept=\image/jpeg,image/jpg,image/png,image/gif,image/webp\ onChange={handleImageChange} className=\hidden\ />
- </label>
- )}
- </div>
- <p className=\mt-1 text-xs text-gray-500\>Upload campaign image (JPG, PNG, GIF, WEBP - Max 10MB)</p>
- </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="is_active"
+              id="is_active"
+              checked={formData.is_active}
+              onChange={handleChange}
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer"
+            />
+            <label htmlFor="is_active" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
+              Active Campaign
+            </label>
+          </div>
 
- <div>
- <label className=\block text-sm font-semibold text-gray-700 mb-2\>
- <FiLink className=\inline w-4 h-4 mr-1\ />
- Campaign Link URL
- </label>
- <input type=\url\ name=\link_url\ value={formData.link_url} onChange={handleChange} className=\input-modern\ placeholder=\https://example.com/campaign-page\ />
- <p className=\mt-1 text-xs text-gray-500\>Optional: URL to redirect when campaign is clicked</p>
- </div>
+          {/* Campaign Image Upload */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <FiImage className="inline w-4 h-4 mr-1" />
+              Campaign Image
+            </label>
+            <div className="space-y-3">
+              {imagePreview ? (
+                <div className="relative group">
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 shadow-sm">
+                    <img
+                      src={imagePreview}
+                      alt="Campaign preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="opacity-0 group-hover:opacity-100 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 shadow-lg"
+                      >
+                        <FiX className="w-4 h-4" />
+                        Remove Image
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-indigo-400 transition-all duration-200">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <FiUpload className="w-8 h-8 mb-2 text-gray-400" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">JPG, PNG, GIF, WEBP (MAX. 10MB)</p>
+                  </div>
+                  <input
+                    type="file"
+                    id="campaign-image"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Upload campaign image (JPG, PNG, GIF, WEBP - Max 10MB)
+            </p>
+          </div>
 
- <div className=\flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200\>
- <button type=\button\ onClick={onClose} className=\px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700\>
- {t('cancel')}
- </button>
- <button type=\submit\ disabled={loading} className=\btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed\>
- {loading ? t('saving') : t('save')}
- </button>
- </div>
- </form>
- </div>
- </div>
- );
+          {/* Link URL Field */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <FiLink className="inline w-4 h-4 mr-1" />
+              Campaign Link URL
+            </label>
+            <input
+              type="url"
+              name="link_url"
+              value={formData.link_url}
+              onChange={handleChange}
+              className="input-modern"
+              placeholder="https://example.com/campaign-page"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Optional: URL to redirect when campaign is clicked
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
+            >
+              {t('cancel')}
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? t('saving') : t('save')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default CampaignModal;

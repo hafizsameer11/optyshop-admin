@@ -279,6 +279,13 @@ export const API_ROUTES = {
   },
 
   // ============================================
+  // BRANDS (PUBLIC - GET only)
+  // ============================================
+  BRANDS: {
+    LIST: `/brands`,                                   // PUBLIC - ?activeOnly=true
+  },
+
+  // ============================================
   // FAQs (PUBLIC - GET only)
   // ============================================
   FAQS: {
@@ -492,6 +499,15 @@ export const API_ROUTES = {
       CREATE: `/admin/campaigns`,
       UPDATE: (id) => `/admin/campaigns/${id}`,
       DELETE: (id) => `/admin/campaigns/${id}`,
+    },
+
+    // Brands Management
+    BRANDS: {
+      LIST: `/admin/brands`,
+      BY_ID: (id) => `/admin/brands/${id}`,
+      CREATE: `/admin/brands`,
+      UPDATE: (id) => `/admin/brands/${id}`,
+      DELETE: (id) => `/admin/brands/${id}`,
     },
 
     // Jobs Management

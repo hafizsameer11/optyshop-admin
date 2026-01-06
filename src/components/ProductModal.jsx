@@ -1783,6 +1783,7 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   // Helper function to extract configuration data from API response
+  // Matches the pattern used in SphericalConfigurations.jsx for consistency
   const extractConfigData = (response, key) => {
     if (!response || !response.data) {
       console.warn(`⚠️ No response data for ${key}`);
@@ -1790,45 +1791,123 @@ const ProductModal = ({ product, onClose }) => {
     }
 
     const responseData = response.data;
+    console.log(`🔍 Extracting data for ${key}. Full response:`, JSON.stringify(responseData, null, 2));
     let extractedData = [];
 
-    // Try different response structures
+    // Pattern 1: response.data.data structure (nested data)
     if (responseData.data) {
-      // Structure: { success: true, data: { sphericalConfigs: [...] } }
-      if (Array.isArray(responseData.data)) {
-        extractedData = responseData.data;
-      } else if (responseData.data[key]) {
-        extractedData = responseData.data[key];
-      } else if (responseData.data.configs) {
-        extractedData = responseData.data.configs;
-      } else if (responseData.data.configurations) {
-        extractedData = responseData.data.configurations;
-      } else {
-        // Try to find any array in the data object
-        const dataObj = responseData.data;
-        for (const value of Object.values(dataObj)) {
-          if (Array.isArray(value)) {
-            extractedData = value;
-            break;
+      const dataObj = responseData.data;
+      
+      // Direct array in data.data
+      if (Array.isArray(dataObj)) {
+        extractedData = dataObj;
+        console.log(`✅ Found array in response.data.data (${dataObj.length} items)`);
+      } 
+      // Object with configs key
+      else if (dataObj.configs && Array.isArray(dataObj.configs)) {
+        extractedData = dataObj.configs;
+        console.log(`✅ Found configs array in response.data.data.configs (${dataObj.configs.length} items)`);
+      } 
+      // Object with data key (triple nested)
+      else if (dataObj.data && Array.isArray(dataObj.data)) {
+        extractedData = dataObj.data;
+        console.log(`✅ Found data array in response.data.data.data (${dataObj.data.length} items)`);
+      } 
+      // Object with key-specific arrays
+      else if (dataObj[key] && Array.isArray(dataObj[key])) {
+        extractedData = dataObj[key];
+        console.log(`✅ Found ${key} array in response.data.data.${key} (${dataObj[key].length} items)`);
+      } 
+      // Object with sphericalConfigs/astigmatismConfigs
+      else if (dataObj.sphericalConfigs && Array.isArray(dataObj.sphericalConfigs)) {
+        extractedData = dataObj.sphericalConfigs;
+        console.log(`✅ Found sphericalConfigs array in response.data.data (${dataObj.sphericalConfigs.length} items)`);
+      } 
+      else if (dataObj.astigmatismConfigs && Array.isArray(dataObj.astigmatismConfigs)) {
+        extractedData = dataObj.astigmatismConfigs;
+        console.log(`✅ Found astigmatismConfigs array in response.data.data (${dataObj.astigmatismConfigs.length} items)`);
+      } 
+      // Object with results key
+      else if (dataObj.results && Array.isArray(dataObj.results)) {
+        extractedData = dataObj.results;
+        console.log(`✅ Found results array in response.data.data.results (${dataObj.results.length} items)`);
+      }
+    } 
+    // Pattern 2: Direct array response
+    else if (Array.isArray(responseData)) {
+      extractedData = responseData;
+      console.log(`✅ Found direct array response (${responseData.length} items)`);
+    } 
+    // Pattern 3: Root level keys
+    else if (responseData && typeof responseData === 'object') {
+      if (responseData.configs && Array.isArray(responseData.configs)) {
+        extractedData = responseData.configs;
+        console.log(`✅ Found configs array in response.data.configs (${responseData.configs.length} items)`);
+      } 
+      else if (responseData[key] && Array.isArray(responseData[key])) {
+        extractedData = responseData[key];
+        console.log(`✅ Found ${key} array in response.data.${key} (${responseData[key].length} items)`);
+      } 
+      else if (responseData.sphericalConfigs && Array.isArray(responseData.sphericalConfigs)) {
+        extractedData = responseData.sphericalConfigs;
+        console.log(`✅ Found sphericalConfigs array in response.data (${responseData.sphericalConfigs.length} items)`);
+      } 
+      else if (responseData.astigmatismConfigs && Array.isArray(responseData.astigmatismConfigs)) {
+        extractedData = responseData.astigmatismConfigs;
+        console.log(`✅ Found astigmatismConfigs array in response.data (${responseData.astigmatismConfigs.length} items)`);
+      } 
+      else if (responseData.results && Array.isArray(responseData.results)) {
+        extractedData = responseData.results;
+        console.log(`✅ Found results array in response.data.results (${responseData.results.length} items)`);
+      }
+    }
+    
+    // Final fallback: find any array in the response and use the largest one
+    if (extractedData.length === 0) {
+      console.log('🔍 No standard structure found, searching for arrays in response...');
+      const findArrays = (obj, path = '') => {
+        const arrays = [];
+        if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+          for (const [k, v] of Object.entries(obj)) {
+            const currentPath = path ? `${path}.${k}` : k;
+            if (Array.isArray(v) && v.length > 0) {
+              arrays.push({ path: currentPath, length: v.length, data: v });
+            } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+              arrays.push(...findArrays(v, currentPath));
+            }
           }
         }
+        return arrays;
+      };
+      
+      const foundArrays = findArrays(responseData);
+      if (foundArrays.length > 0) {
+        const largestArray = foundArrays.reduce((prev, current) => (prev.length > current.length ? prev : current));
+        if (largestArray.length > 0) {
+          extractedData = largestArray.data;
+          console.log(`💡 Using fallback array from path: ${largestArray.path} (${largestArray.length} items)`);
+        }
       }
-    } else if (Array.isArray(responseData)) {
-      // Direct array response
-      extractedData = responseData;
-    } else if (responseData[key]) {
-      extractedData = responseData[key];
-    } else if (responseData.configs) {
-      extractedData = responseData.configs;
-    } else if (responseData.configurations) {
-      extractedData = responseData.configurations;
     }
-
+    
+    // Validate extracted data
     if (!Array.isArray(extractedData)) {
-      console.warn(`⚠️ No array data extracted for ${key}. Response structure:`, JSON.stringify(responseData, null, 2).substring(0, 500));
+      console.warn(`⚠️ Extracted data is not an array for ${key}:`, typeof extractedData, extractedData);
+      console.warn(`⚠️ Full response structure:`, JSON.stringify(responseData, null, 2));
       return [];
     }
-
+    
+    if (extractedData.length > 0) {
+      console.log(`✅ Successfully extracted ${extractedData.length} ${key} items`);
+      // Log first item structure for debugging
+      if (extractedData[0]) {
+        console.log(`📋 Sample item structure:`, Object.keys(extractedData[0]));
+        console.log(`📋 Sample item:`, extractedData[0]);
+      }
+    } else {
+      console.warn(`⚠️ No data extracted for ${key}. Response structure:`, JSON.stringify(responseData, null, 2).substring(0, 1000));
+    }
+    
     return extractedData;
   };
 
@@ -1845,29 +1924,45 @@ const ProductModal = ({ product, onClose }) => {
       const queryParams = new URLSearchParams();
       queryParams.append('limit', '1000');
       queryParams.append('page', '1');
-      queryParams.append('product_id', product.id);
       
-      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}`;
+      // Try product_id filter first
+      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}&product_id=${product.id}`;
       console.log(`🔍 Fetching spherical configs for product ${product.id} from: ${endpoint}`);
       
-      const response = await api.get(endpoint);
-      console.log('📦 Spherical configs API response:', response);
+      let response;
+      let useProductIdFilter = true;
+      
+      try {
+        response = await api.get(endpoint);
+        console.log('📦 Spherical configs API response:', response);
+        console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
+      } catch (filterError) {
+        // If product_id filter fails, fetch all and filter client-side
+        if (filterError.response?.status === 400 || filterError.response?.status === 422) {
+          console.log('⚠️ product_id filter not supported, fetching all configs and filtering client-side');
+          useProductIdFilter = false;
+          endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}`;
+          response = await api.get(endpoint);
+          console.log('📦 Spherical configs API response (all):', response);
+          console.log('📦 Full response data (all):', JSON.stringify(response.data, null, 2));
+        } else {
+          throw filterError;
+        }
+      }
       
       // Extract data from response
       let configsData = extractConfigData(response, 'sphericalConfigs');
       console.log(`📊 Raw extracted data:`, configsData);
       
-      // Filter by product_id if needed (in case API doesn't filter)
-      if (configsData.length > 0) {
+      // If we fetched all configs, filter by product_id client-side
+      if (!useProductIdFilter && configsData.length > 0) {
         const beforeFilter = configsData.length;
         configsData = configsData.filter(config => {
           const configProductId = config.product_id || config.productId || config.product?.id;
           const matches = configProductId === product.id || configProductId === parseInt(product.id);
           return matches;
         });
-        if (beforeFilter !== configsData.length) {
-          console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
-        }
+        console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
       }
       
       // Validate and set data
@@ -1887,6 +1982,7 @@ const ProductModal = ({ product, onClose }) => {
       if (error.response) {
         console.error('Error response:', error.response.data);
         console.error('Error status:', error.response.status);
+        console.error('Error headers:', error.response.headers);
       }
       
       // Handle different error cases
@@ -1926,29 +2022,45 @@ const ProductModal = ({ product, onClose }) => {
       const queryParams = new URLSearchParams();
       queryParams.append('limit', '1000');
       queryParams.append('page', '1');
-      queryParams.append('product_id', product.id);
       
-      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}`;
+      // Try product_id filter first
+      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}&product_id=${product.id}`;
       console.log(`🔍 Fetching astigmatism configs for product ${product.id} from: ${endpoint}`);
       
-      const response = await api.get(endpoint);
-      console.log('📦 Astigmatism configs API response:', response);
+      let response;
+      let useProductIdFilter = true;
+      
+      try {
+        response = await api.get(endpoint);
+        console.log('📦 Astigmatism configs API response:', response);
+        console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
+      } catch (filterError) {
+        // If product_id filter fails, fetch all and filter client-side
+        if (filterError.response?.status === 400 || filterError.response?.status === 422) {
+          console.log('⚠️ product_id filter not supported, fetching all configs and filtering client-side');
+          useProductIdFilter = false;
+          endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}`;
+          response = await api.get(endpoint);
+          console.log('📦 Astigmatism configs API response (all):', response);
+          console.log('📦 Full response data (all):', JSON.stringify(response.data, null, 2));
+        } else {
+          throw filterError;
+        }
+      }
       
       // Extract data from response
       let configsData = extractConfigData(response, 'astigmatismConfigs');
       console.log(`📊 Raw extracted data:`, configsData);
       
-      // Filter by product_id if needed (in case API doesn't filter)
-      if (configsData.length > 0) {
+      // If we fetched all configs, filter by product_id client-side
+      if (!useProductIdFilter && configsData.length > 0) {
         const beforeFilter = configsData.length;
         configsData = configsData.filter(config => {
           const configProductId = config.product_id || config.productId || config.product?.id;
           const matches = configProductId === product.id || configProductId === parseInt(product.id);
           return matches;
         });
-        if (beforeFilter !== configsData.length) {
-          console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
-        }
+        console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${product.id}`);
       }
       
       // Validate and set data
@@ -1968,6 +2080,7 @@ const ProductModal = ({ product, onClose }) => {
       if (error.response) {
         console.error('Error response:', error.response.data);
         console.error('Error status:', error.response.status);
+        console.error('Error headers:', error.response.headers);
       }
       
       // Handle different error cases

@@ -151,67 +151,54 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
         return;
       }
 
-      const hasImage = imageFile instanceof File;
+      // Always use FormData for campaign creation/update (backend expects multipart/form-data)
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name.trim());
+      formDataToSend.append('slug', formData.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-'));
+      formDataToSend.append('description', formData.description.trim());
       
-      if (hasImage || campaign) {
-        const formDataToSend = new FormData();
-        formDataToSend.append('name', formData.name.trim());
-        formDataToSend.append('slug', formData.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-'));
-        formDataToSend.append('description', formData.description.trim());
-        formDataToSend.append('starts_at', formData.starts_at);
-        formDataToSend.append('ends_at', formData.ends_at);
-        formDataToSend.append('is_active', formData.is_active.toString());
-        
-        if (formData.campaign_type && formData.campaign_type.trim()) {
-          formDataToSend.append('campaign_type', formData.campaign_type.trim());
-        }
-        
-        if (imageFile instanceof File) {
-          formDataToSend.append('image', imageFile);
-        }
-        
-        if (formData.link_url && formData.link_url.trim()) {
-          formDataToSend.append('link_url', formData.link_url.trim());
-        } else {
-          formDataToSend.append('link_url', '');
-        }
-
-        let response;
-        if (campaign) {
-          response = await api.put(API_ROUTES.ADMIN.CAMPAIGNS.UPDATE(campaign.id), formDataToSend);
-        } else {
-          response = await api.post(API_ROUTES.ADMIN.CAMPAIGNS.CREATE, formDataToSend);
-        }
-        
-        const successMessage = response.data?.message || (campaign ? 'Campaign updated successfully' : 'Campaign created successfully');
-        toast.success(successMessage);
+      // Convert dates to ISO format (backend expects ISO format)
+      const formatDateForAPI = (dateString) => {
+        if (!dateString) return '';
+        // If already in ISO format, return as is
+        if (dateString.includes('T')) return dateString;
+        // Convert YYYY-MM-DD to ISO format (YYYY-MM-DDTHH:mm:ssZ)
+        const date = new Date(dateString);
+        return date.toISOString();
+      };
+      
+      formDataToSend.append('starts_at', formatDateForAPI(formData.starts_at));
+      formDataToSend.append('ends_at', formatDateForAPI(formData.ends_at));
+      formDataToSend.append('is_active', formData.is_active.toString());
+      
+      // Always send campaign_type, even if empty
+      if (formData.campaign_type && formData.campaign_type.trim()) {
+        formDataToSend.append('campaign_type', formData.campaign_type.trim());
       } else {
-        const dataToSend = {
-          name: formData.name.trim(),
-          slug: formData.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-'),
-          description: formData.description.trim(),
-          starts_at: formData.starts_at,
-          ends_at: formData.ends_at,
-          is_active: formData.is_active,
-        };
-
-        if (formData.campaign_type && formData.campaign_type.trim()) {
-          dataToSend.campaign_type = formData.campaign_type.trim();
-        } else {
-          dataToSend.campaign_type = null;
-        }
-
-        if (formData.link_url && formData.link_url.trim()) {
-          dataToSend.link_url = formData.link_url.trim();
-        } else {
-          dataToSend.link_url = null;
-        }
-
-        let response;
-        response = await api.post(API_ROUTES.ADMIN.CAMPAIGNS.CREATE, dataToSend);
-        const successMessage = response.data?.message || 'Campaign created successfully';
-        toast.success(successMessage);
+        formDataToSend.append('campaign_type', '');
       }
+      
+      // Only append image if a new file is selected
+      if (imageFile instanceof File) {
+        formDataToSend.append('image', imageFile);
+      }
+      
+      // Always send link_url, even if empty
+      if (formData.link_url && formData.link_url.trim()) {
+        formDataToSend.append('link_url', formData.link_url.trim());
+      } else {
+        formDataToSend.append('link_url', '');
+      }
+
+      let response;
+      if (campaign) {
+        response = await api.put(API_ROUTES.ADMIN.CAMPAIGNS.UPDATE(campaign.id), formDataToSend);
+      } else {
+        response = await api.post(API_ROUTES.ADMIN.CAMPAIGNS.CREATE, formDataToSend);
+      }
+      
+      const successMessage = response.data?.message || (campaign ? 'Campaign updated successfully' : 'Campaign created successfully');
+      toast.success(successMessage);
       
       if (areAllFieldsFilled()) {
         try {

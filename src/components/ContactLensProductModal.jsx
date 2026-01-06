@@ -1345,12 +1345,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                     </table>
                   </div>
                 )}
-                {sphericalModalOpen && (
-                  <SphericalConfigModal
-                    config={selectedSphericalConfig || (product?.id ? { product_id: product.id } : null)}
-                    onClose={handleContactLensFormClose('spherical')}
-                  />
-                )}
               </div>
             )}
 
@@ -1444,22 +1438,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                     </table>
                   </div>
                 )}
-                {astigmatismModalOpen && (
-                  <AstigmatismConfigModal
-                    config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
-                    onClose={(saved = false) => {
-                      setAstigmatismModalOpen(false);
-                      setSelectedAstigmatismConfig(null);
-                      // Always refresh data when modal closes to show latest data
-                      if (product?.id) {
-                        console.log('🔄 Refreshing astigmatism configs after modal close');
-                        setTimeout(() => {
-                          fetchAstigmatismConfigs();
-                        }, 100);
-                      }
-                    }}
-                  />
-                )}
               </div>
             )}
 
@@ -1519,6 +1497,30 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
             </button>
           </div>
         </form>
+
+        {/* Configuration Modals - Rendered outside form to avoid nested forms */}
+        {sphericalModalOpen && (
+          <SphericalConfigModal
+            config={selectedSphericalConfig || (product?.id ? { product_id: product.id } : null)}
+            onClose={handleContactLensFormClose('spherical')}
+          />
+        )}
+        {astigmatismModalOpen && (
+          <AstigmatismConfigModal
+            config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
+            onClose={(saved = false) => {
+              setAstigmatismModalOpen(false);
+              setSelectedAstigmatismConfig(null);
+              // Always refresh data when modal closes to show latest data
+              if (product?.id) {
+                console.log('🔄 Refreshing astigmatism configs after modal close');
+                setTimeout(() => {
+                  fetchAstigmatismConfigs();
+                }, 100);
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );

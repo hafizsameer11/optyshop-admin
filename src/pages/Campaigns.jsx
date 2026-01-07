@@ -18,18 +18,30 @@ const Campaigns = () => {
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching campaigns from:', API_ROUTES.ADMIN.CAMPAIGNS.LIST);
       const response = await api.get(API_ROUTES.ADMIN.CAMPAIGNS.LIST);
       // API response structure: { success: true, message: "...", data: { campaigns: [...] } }
       const campaignsData = response.data?.data?.campaigns || response.data?.campaigns || [];
       setCampaigns(Array.isArray(campaignsData) ? campaignsData : []);
+      console.log('✅ Successfully fetched campaigns:', campaignsData.length);
     } catch (error) {
-      console.error('Campaigns API error:', error);
+      console.error('❌ Campaigns API error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error config:', error.config);
+      
       if (!error.response) {
         toast.error('Backend unavailable - Cannot fetch campaigns');
       } else if (error.response.status === 401) {
         toast.error('❌ Demo mode - Please log in with real credentials');
+      } else if (error.response.status === 500) {
+        const errorData = error.response?.data || {};
+        const errorMessage = errorData.message || errorData.error || 'Server error - Please check backend logs';
+        console.error('Server error details:', errorData);
+        toast.error(`Server Error: ${errorMessage}. Check console for details.`);
       } else {
-        toast.error('Failed to fetch campaigns');
+        const errorMessage = error.response?.data?.message || 'Failed to fetch campaigns';
+        toast.error(errorMessage);
       }
       setCampaigns([]);
     } finally {

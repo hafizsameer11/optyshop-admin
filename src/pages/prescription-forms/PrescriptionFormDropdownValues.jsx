@@ -391,6 +391,7 @@ const PrescriptionFormDropdownValues = () => {
 
       {modalOpen && (
         <PrescriptionFormDropdownValueModal
+          key={selectedValue?.id || 'new'}
           value={selectedValue}
           onClose={() => {
             setModalOpen(false);

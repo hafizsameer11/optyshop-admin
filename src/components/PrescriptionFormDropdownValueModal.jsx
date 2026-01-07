@@ -17,17 +17,37 @@ const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (value) {
-      setFormData({
-        field_type: value.field_type || value.fieldType || 'sph',
-        value: value.value || '',
-        label: value.label || value.value || '',
-        eye_type: value.eye_type || value.eyeType || 'both',
-        form_type: value.form_type || value.formType || null,
-        sort_order: value.sort_order !== null && value.sort_order !== undefined ? value.sort_order : (value.sortOrder !== null && value.sortOrder !== undefined ? value.sortOrder : 0),
-        is_active: value.is_active !== undefined ? value.is_active : (value.isActive !== undefined ? value.isActive : true),
+    if (value && value.id) {
+      // Reset form data when editing a different value
+      // Normalize field names (handle both snake_case and camelCase)
+      const fieldType = value.field_type || value.fieldType || 'sph';
+      const val = value.value || '';
+      const label = value.label || val || '';
+      const eyeType = value.eye_type || value.eyeType;
+      const formType = value.form_type || value.formType;
+      const sortOrder = value.sort_order !== null && value.sort_order !== undefined 
+        ? value.sort_order 
+        : (value.sortOrder !== null && value.sortOrder !== undefined ? value.sortOrder : 0);
+      const isActive = value.is_active !== undefined 
+        ? value.is_active 
+        : (value.isActive !== undefined ? value.isActive : true);
+      
+      const newFormData = {
+        field_type: fieldType,
+        value: val,
+        label: label,
+        eye_type: eyeType === null || eyeType === undefined ? 'both' : eyeType,
+        form_type: formType === null || formType === undefined ? null : formType,
+        sort_order: sortOrder,
+        is_active: isActive,
+      };
+      console.log('Setting form data for edit:', { 
+        originalValue: value, 
+        normalizedFormData: newFormData 
       });
+      setFormData(newFormData);
     } else {
+      // Reset to defaults for new value
       setFormData({
         field_type: 'sph',
         value: '',
@@ -42,13 +62,24 @@ const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value: val, type, checked } = e.target;
-    const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (val === '' ? '' : parseFloat(val) || 0) : (val === '' ? null : val);
+    let fieldValue;
+    
+    if (type === 'checkbox') {
+      fieldValue = checked;
+    } else if (type === 'number') {
+      fieldValue = val === '' ? '' : parseFloat(val) || 0;
+    } else if (name === 'form_type') {
+      // Handle form_type: empty string becomes null
+      fieldValue = val === '' ? null : val;
+    } else {
+      fieldValue = val === '' ? (name === 'label' ? '' : null) : val;
+    }
 
     // Auto-update label when value changes (if label is empty or matches old value)
     if (name === 'value' && (!formData.label || formData.label === formData.value)) {
-      setFormData({ ...formData, value: fieldValue, label: fieldValue });
+      setFormData(prev => ({ ...prev, value: fieldValue, label: fieldValue }));
     } else {
-      setFormData({ ...formData, [name]: fieldValue });
+      setFormData(prev => ({ ...prev, [name]: fieldValue }));
     }
   };
 
@@ -226,7 +257,7 @@ const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
             </label>
             <select
               name="form_type"
-              value={formData.form_type || ''}
+              value={formData.form_type === null || formData.form_type === undefined ? '' : formData.form_type}
               onChange={handleChange}
               className="input-modern"
             >

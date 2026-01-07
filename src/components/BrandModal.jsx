@@ -92,26 +92,34 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
     setLoading(true);
 
     try {
+      // Validate required fields
+      if (!formData.name || !formData.name.trim()) {
+        toast.error('Brand name is required');
+        setLoading(false);
+        return;
+      }
+
       const formDataToSend = new FormData();
       
       // Required fields
-      formDataToSend.append('name', formData.name);
+      formDataToSend.append('name', formData.name.trim());
       
-      // Optional fields
-      if (formData.slug) {
-        formDataToSend.append('slug', formData.slug);
+      // Optional fields - only send if they have values (per Postman collection)
+      if (formData.slug && formData.slug.trim()) {
+        formDataToSend.append('slug', formData.slug.trim());
       }
-      if (formData.description) {
-        formDataToSend.append('description', formData.description);
+      if (formData.description && formData.description.trim()) {
+        formDataToSend.append('description', formData.description.trim());
       }
-      if (formData.website_url) {
-        formDataToSend.append('website_url', formData.website_url);
+      if (formData.website_url && formData.website_url.trim()) {
+        formDataToSend.append('website_url', formData.website_url.trim());
       }
+      // Always send sort_order and is_active (required by backend)
       formDataToSend.append('sort_order', formData.sort_order.toString());
       formDataToSend.append('is_active', formData.is_active.toString());
       
       // Logo upload (only if new logo selected)
-      if (logoFile) {
+      if (logoFile instanceof File) {
         formDataToSend.append('logo', logoFile);
       }
 
@@ -129,13 +137,28 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
       onClose();
     } catch (error) {
       console.error('Brand save error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Request payload:', {
+        name: formData.name,
+        slug: formData.slug,
+        hasLogo: logoFile instanceof File,
+        sort_order: formData.sort_order,
+        is_active: formData.is_active
+      });
+      
       if (!error.response) {
         toast.error('Backend unavailable - Cannot save brand');
       } else if (error.response.status === 401) {
         toast.error('❌ Demo mode - Please log in with real credentials');
       } else if (error.response.status === 400 || error.response.status === 422) {
-        const errorMessage = error.response?.data?.message || 'Validation error';
+        const errorData = error.response?.data || {};
+        const errorMessage = errorData.message || errorData.errors?.[0]?.msg || 'Validation error';
         toast.error(errorMessage);
+      } else if (error.response.status === 500) {
+        const errorData = error.response?.data || {};
+        const errorMessage = errorData.message || errorData.error || 'Server error - Please check the console for details';
+        console.error('Server error details:', errorData);
+        toast.error(`Server Error: ${errorMessage}`);
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to save brand';
         toast.error(errorMessage);

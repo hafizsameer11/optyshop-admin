@@ -352,10 +352,10 @@ const Products = () => {
         params.append('search', trimmedSearch);
       }
       
-      // If a section is selected, use section category and subcategory IDs
-      // Otherwise, use manual filters
+      // If a section is selected, use section category and subcategory IDs for filtering
+      // This ensures products are filtered by both product_type (via endpoint) and category (via params)
       if (selectedSection !== 'all' && sectionCategoryIds.length > 0) {
-        // Add all category IDs for the section
+        // Add all category IDs for the section to ensure proper filtering
         sectionCategoryIds.forEach(catId => {
           params.append('category_id', catId);
         });
@@ -366,7 +366,7 @@ const Products = () => {
             params.append('sub_category_id', subCatId);
           });
         }
-      } else {
+      } else if (selectedSection === 'all') {
         // Manual category filter if selected (per Postman collection: category_id query param)
         if (categoryFilter) {
           params.append('category_id', categoryFilter);
@@ -396,8 +396,7 @@ const Products = () => {
           },
           'opty-kids': {
             endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES,
-            productType: 'frame'
-            // Note: Opty Kids uses same endpoint as eyeglasses but may need category filtering
+            productType: 'opty-kids' // Try opty-kids product type first, fallback to frame if needed
           },
           'contact-lenses': {
             endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.CONTACT_LENSES,
@@ -411,18 +410,35 @@ const Products = () => {
         
         const config = sectionConfig[selectedSection];
         if (config) {
-          // Add product_type as query param to ensure proper filtering
-          // The section endpoint should already filter, but this ensures it works
+          // Always add product_type to params to ensure proper filtering
+          // This works with both section-specific endpoints and general endpoint
           if (!params.has('product_type')) {
             params.append('product_type', config.productType);
           }
-          // Use section-specific endpoint (backend automatically filters by product_type)
-          endpoint = `${config.endpoint}?${params.toString()}`;
-          console.log(`🔍 Fetching products for section: ${selectedSection}`, {
-            endpoint,
-            productType: config.productType,
-            params: params.toString()
-          });
+          
+          // For Opty Kids, always use general endpoint with category filtering
+          // since it might share product_type with eyeglasses
+          if (selectedSection === 'opty-kids') {
+            // Use general products endpoint to ensure category filtering works
+            endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
+            console.log(`🔍 Fetching Opty Kids products with category filtering:`, {
+              endpoint,
+              categoryIds: sectionCategoryIds,
+              subCategoryIds: sectionSubCategoryIds,
+              productType: config.productType,
+              params: params.toString()
+            });
+          } else {
+            // For other sections, use section-specific endpoint (which filters by product_type)
+            // Category IDs are already in params, so they'll be included if available
+            endpoint = `${config.endpoint}?${params.toString()}`;
+            console.log(`🔍 Fetching products for section: ${selectedSection}`, {
+              endpoint,
+              productType: config.productType,
+              categoryIds: sectionCategoryIds.length > 0 ? sectionCategoryIds : 'none',
+              params: params.toString()
+            });
+          }
         } else {
           // Fallback to general products endpoint
           endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
@@ -578,13 +594,14 @@ const Products = () => {
     { value: 'eye-hygiene', label: 'Eye Hygiene', icon: '💧' },
   ];
 
-  // Map section names to category name patterns (case-insensitive matching)
+  // Map section names to exact category names/slugs (case-insensitive matching)
+  // Based on actual categories: eye glasses, sun glasses, opty kids, contact-lenses, eye hygiene
   const sectionToCategoryMap = {
-    'sunglasses': ['sunglass', 'sun glass'],
-    'eyeglasses': ['eyeglass', 'eye glass', 'frame', 'glasses'],
-    'opty-kids': ['opty', 'kids', 'child', 'children'],
-    'contact-lenses': ['contact', 'lens'],
-    'eye-hygiene': ['hygiene', 'care', 'solution'],
+    'sunglasses': ['sun glasses', 'sunglasses', 'sun-glasses', 'sunglass'],
+    'eyeglasses': ['eye glasses', 'eyeglasses', 'eye-glasses', 'eyeglass'],
+    'opty-kids': ['opty kids', 'opty-kids', 'optykids'],
+    'contact-lenses': ['contact lenses', 'contact-lenses', 'contactlenses'],
+    'eye-hygiene': ['eye hygiene', 'eye-hygiene', 'eyehygiene'],
   };
 
   // Find categories matching the section
@@ -595,9 +612,33 @@ const Products = () => {
     
     const patterns = sectionToCategoryMap[section] || [];
     const matchingCategories = categories.filter(cat => {
-      const catName = (cat.name || '').toLowerCase();
-      return patterns.some(pattern => catName.includes(pattern));
+      const catName = (cat.name || '').toLowerCase().trim();
+      const catSlug = (cat.slug || '').toLowerCase().trim();
+      
+      // Match against both category name and slug
+      const matchesName = patterns.some(pattern => catName === pattern || catName.includes(pattern));
+      const matchesSlug = patterns.some(pattern => catSlug === pattern || catSlug.includes(pattern));
+      
+      // Special handling: Eyeglasses should exclude Opty Kids categories
+      if (section === 'eyeglasses') {
+        const isOptyKids = catName.includes('opty') || catName.includes('kids') || 
+                          catSlug.includes('opty') || catSlug.includes('kids');
+        return (matchesName || matchesSlug) && !isOptyKids;
+      }
+      
+      // Special handling: Opty Kids should only match Opty/Kids categories
+      if (section === 'opty-kids') {
+        const isOptyKids = catName.includes('opty') || catName.includes('kids') || 
+                          catSlug.includes('opty') || catSlug.includes('kids');
+        return isOptyKids;
+      }
+      
+      return matchesName || matchesSlug;
     });
+    
+    console.log(`🔍 Found ${matchingCategories.length} categories for section "${section}":`, 
+      matchingCategories.map(cat => ({ id: cat.id, name: cat.name, slug: cat.slug }))
+    );
     
     return matchingCategories.map(cat => cat.id);
   };

@@ -143,6 +143,8 @@ const ProductModal = ({ product, onClose }) => {
     size_volume: '',
     pack_type: '',
     expiry_date: '',
+    // Size/Volume Variants (for Eye Hygiene products)
+    sizeVolumeVariants: [],
   });
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -263,6 +265,8 @@ const ProductModal = ({ product, onClose }) => {
         size_volume: product.size_volume || '',
         pack_type: product.pack_type || '',
         expiry_date: product.expiry_date ? new Date(product.expiry_date).toISOString().split('T')[0] : '',
+        // Size/Volume Variants (for Eye Hygiene products)
+        sizeVolumeVariants: product.sizeVolumeVariants || product.size_volume_variants || [],
       });
       // Fetch subcategories if category is set
       if (product.category_id) {
@@ -380,6 +384,8 @@ const ProductModal = ({ product, onClose }) => {
         size_volume: '',
         pack_type: '',
         expiry_date: '',
+        // Size/Volume Variants
+        sizeVolumeVariants: [],
       });
       setSubCategories([]);
       setNestedSubCategories([]);
@@ -958,6 +964,94 @@ const ProductModal = ({ product, onClose }) => {
         dataToSend.expiry_date = null;
       }
 
+      // Size/Volume Variants (for Eye Hygiene products)
+      // Format variants for submission: convert expiry_date to ISO string and ensure proper types
+      // Sort variants by sort_order before submission
+      if (formData.sizeVolumeVariants && Array.isArray(formData.sizeVolumeVariants) && formData.sizeVolumeVariants.length > 0) {
+        // Sort by sort_order (ascending), then by size_volume as secondary sort
+        const sortedVariants = [...formData.sizeVolumeVariants].sort((a, b) => {
+          const orderA = a.sort_order !== undefined ? parseInt(a.sort_order) : 0;
+          const orderB = b.sort_order !== undefined ? parseInt(b.sort_order) : 0;
+          if (orderA !== orderB) {
+            return orderA - orderB;
+          }
+          // Secondary sort by size_volume
+          return (a.size_volume || '').localeCompare(b.size_volume || '');
+        });
+
+        dataToSend.sizeVolumeVariants = sortedVariants.map(variant => {
+          const formattedVariant = {
+            ...variant,
+            // Ensure required fields are present and have correct types
+            size_volume: variant.size_volume ? String(variant.size_volume).trim() : '',
+            price: variant.price ? parseFloat(variant.price) : 0,
+            stock_quantity: variant.stock_quantity !== undefined ? parseInt(variant.stock_quantity) : 0,
+            stock_status: variant.stock_status || 'in_stock',
+            is_active: variant.is_active !== undefined ? Boolean(variant.is_active) : true,
+            sort_order: variant.sort_order !== undefined ? parseInt(variant.sort_order) : 0,
+          };
+
+          // Handle optional fields
+          if (variant.pack_type && variant.pack_type.trim()) {
+            formattedVariant.pack_type = variant.pack_type.trim();
+          } else {
+            formattedVariant.pack_type = null;
+          }
+
+          if (variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '') {
+            formattedVariant.compare_at_price = parseFloat(variant.compare_at_price);
+          } else {
+            formattedVariant.compare_at_price = null;
+          }
+
+          if (variant.cost_price !== undefined && variant.cost_price !== null && variant.cost_price !== '') {
+            formattedVariant.cost_price = parseFloat(variant.cost_price);
+          } else {
+            formattedVariant.cost_price = null;
+          }
+
+          if (variant.sku && variant.sku.trim()) {
+            formattedVariant.sku = variant.sku.trim();
+          } else {
+            formattedVariant.sku = null;
+          }
+
+          // Convert expiry_date to ISO string if present
+          if (variant.expiry_date) {
+            if (typeof variant.expiry_date === 'string') {
+              // If it's already a string, try to parse and format it
+              const dateStr = variant.expiry_date.trim();
+              if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                formattedVariant.expiry_date = `${dateStr}T00:00:00.000Z`;
+              } else {
+                const expiryDate = new Date(variant.expiry_date);
+                if (!isNaN(expiryDate.getTime())) {
+                  formattedVariant.expiry_date = expiryDate.toISOString();
+                } else {
+                  formattedVariant.expiry_date = null;
+                }
+              }
+            } else {
+              // If it's a Date object, convert to ISO string
+              formattedVariant.expiry_date = new Date(variant.expiry_date).toISOString();
+            }
+          } else {
+            formattedVariant.expiry_date = null;
+          }
+
+          // Include id if present (for updates)
+          if (variant.id) {
+            formattedVariant.id = parseInt(variant.id);
+          }
+
+          return formattedVariant;
+        });
+      } else {
+        // If no variants, send empty array (or null depending on API requirement)
+        // Per documentation: set to null to skip variant updates, but empty array to clear all
+        dataToSend.sizeVolumeVariants = [];
+      }
+
       let response;
       
       // ====================================================================
@@ -1469,8 +1563,10 @@ const ProductModal = ({ product, onClose }) => {
 
   // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids
   // Show Spherical and Astigmatism Configurations for contact lens products
+  // Show Size/Volume Variants for eye hygiene products
   const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
   const isContactLens = formData.product_type === 'contact_lens';
+  const isEyeHygiene = formData.product_type === 'eye_hygiene';
   
   const tabs = [
     { id: 'general', label: 'General' },
@@ -1480,6 +1576,9 @@ const ProductModal = ({ product, onClose }) => {
     ...(isContactLens ? [
       { id: 'spherical', label: 'Spherical Configurations' },
       { id: 'astigmatism', label: 'Astigmatism Configurations' },
+    ] : []),
+    ...(isEyeHygiene ? [
+      { id: 'size-volume-variants', label: 'Size/Volume Variants' },
     ] : []),
     { id: 'images', label: 'Images' },
     { id: 'seo', label: 'SEO' },
@@ -3401,6 +3500,369 @@ const ProductModal = ({ product, onClose }) => {
                     />
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Size/Volume Variants Tab */}
+            {activeTab === 'size-volume-variants' && (
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    Size/Volume Variants
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Add multiple size/volume options for this Eye Hygiene product. Each variant can have its own price, stock quantity, and other properties.
+                  </p>
+                </div>
+
+                {/* Add Variant Button */}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newVariant = {
+                        size_volume: '',
+                        pack_type: '',
+                        price: '',
+                        compare_at_price: '',
+                        cost_price: '',
+                        stock_quantity: 0,
+                        stock_status: 'in_stock',
+                        sku: '',
+                        expiry_date: '',
+                        is_active: true,
+                        sort_order: formData.sizeVolumeVariants.length,
+                      };
+                      setFormData({
+                        ...formData,
+                        sizeVolumeVariants: [...formData.sizeVolumeVariants, newVariant],
+                      });
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                  >
+                    <FiPlus className="w-5 h-5" />
+                    Add Variant
+                  </button>
+                </div>
+
+                {/* Variants List */}
+                {formData.sizeVolumeVariants.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                    <p className="text-gray-500">No variants added yet. Click "Add Variant" to create one.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {formData.sizeVolumeVariants.map((variant, index) => (
+                      <div
+                        key={index}
+                        className="border border-gray-200 rounded-lg p-6 bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-md font-semibold text-gray-900">
+                            Variant #{index + 1}
+                            {variant.id && (
+                              <span className="ml-2 text-xs text-gray-500">(ID: {variant.id})</span>
+                            )}
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updatedVariants = formData.sizeVolumeVariants.filter((_, i) => i !== index);
+                              // Update sort_order for remaining variants
+                              const reorderedVariants = updatedVariants.map((v, i) => ({
+                                ...v,
+                                sort_order: i,
+                              }));
+                              setFormData({
+                                ...formData,
+                                sizeVolumeVariants: reorderedVariants,
+                              });
+                            }}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                          >
+                            <FiTrash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {/* Size/Volume */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Size/Volume <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={variant.size_volume || ''}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  size_volume: e.target.value,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                              placeholder="e.g., 5ml, 10ml, 30ml"
+                              required
+                            />
+                          </div>
+
+                          {/* Pack Type */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Pack Type
+                            </label>
+                            <input
+                              type="text"
+                              value={variant.pack_type || ''}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  pack_type: e.target.value,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                              placeholder="e.g., Single, Pack of 2"
+                            />
+                          </div>
+
+                          {/* Price */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Price <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={variant.price || ''}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  price: e.target.value ? parseFloat(e.target.value) : '',
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                              placeholder="0.00"
+                              required
+                            />
+                          </div>
+
+                          {/* Compare At Price */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Compare At Price
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={variant.compare_at_price || ''}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  compare_at_price: e.target.value ? parseFloat(e.target.value) : null,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                              placeholder="0.00"
+                            />
+                          </div>
+
+                          {/* Cost Price */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Cost Price
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={variant.cost_price || ''}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  cost_price: e.target.value ? parseFloat(e.target.value) : null,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                              placeholder="0.00"
+                            />
+                          </div>
+
+                          {/* Stock Quantity */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Stock Quantity <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={variant.stock_quantity ?? 0}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  stock_quantity: parseInt(e.target.value) || 0,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                              required
+                            />
+                          </div>
+
+                          {/* Stock Status */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Stock Status <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                              value={variant.stock_status || 'in_stock'}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  stock_status: e.target.value,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                              required
+                            >
+                              <option value="in_stock">In Stock</option>
+                              <option value="out_of_stock">Out of Stock</option>
+                              <option value="backorder">Backorder</option>
+                            </select>
+                          </div>
+
+                          {/* SKU */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              SKU
+                            </label>
+                            <input
+                              type="text"
+                              value={variant.sku || ''}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  sku: e.target.value,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                              placeholder="Variant SKU"
+                            />
+                          </div>
+
+                          {/* Expiry Date */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Expiry Date
+                            </label>
+                            <input
+                              type="date"
+                              value={variant.expiry_date ? new Date(variant.expiry_date).toISOString().split('T')[0] : ''}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  expiry_date: e.target.value ? new Date(e.target.value).toISOString() : null,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                            />
+                          </div>
+
+                          {/* Sort Order */}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Sort Order
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={variant.sort_order ?? index}
+                              onChange={(e) => {
+                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                updatedVariants[index] = {
+                                  ...updatedVariants[index],
+                                  sort_order: parseInt(e.target.value) || 0,
+                                };
+                                setFormData({
+                                  ...formData,
+                                  sizeVolumeVariants: updatedVariants,
+                                });
+                              }}
+                              className="input-modern"
+                            />
+                          </div>
+
+                          {/* Is Active */}
+                          <div className="flex items-center pt-6">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={variant.is_active !== false}
+                                onChange={(e) => {
+                                  const updatedVariants = [...formData.sizeVolumeVariants];
+                                  updatedVariants[index] = {
+                                    ...updatedVariants[index],
+                                    is_active: e.target.checked,
+                                  };
+                                  setFormData({
+                                    ...formData,
+                                    sizeVolumeVariants: updatedVariants,
+                                  });
+                                }}
+                                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              <span className="text-sm font-semibold text-gray-700">Active</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

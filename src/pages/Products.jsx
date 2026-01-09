@@ -488,7 +488,7 @@ const Products = () => {
           },
           'eye-hygiene': {
             endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYE_HYGIENE,
-            productType: 'accessory' // Backend uses 'accessory' for eye hygiene products
+            productType: 'eye_hygiene'
           },
         };
         
@@ -798,7 +798,7 @@ const Products = () => {
       'sunglasses': 'sunglasses',
       'eyeglasses': 'frame',
       'opty-kids': 'frame', // Opty Kids uses same product type as eyeglasses
-      'eye-hygiene': 'accessory', // Backend uses 'accessory' for eye hygiene products
+      'eye-hygiene': 'eye_hygiene',
       'contact-lenses': 'contact_lens',
       'all': null // Will use default product type
     };
@@ -816,7 +816,8 @@ const Products = () => {
       );
     }
     
-    // For other product types, use ProductModal with default product type
+    // For other product types (including eye-hygiene), use ProductModal with default product type
+    // ProductModal will automatically show the appropriate tabs based on product_type
     return (
       <ProductModal
         product={defaultProductType ? { product_type: defaultProductType } : null}

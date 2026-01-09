@@ -1173,64 +1173,73 @@ const ProductModal = ({ product, onClose }) => {
           return (a.size_volume || '').localeCompare(b.size_volume || '');
         });
 
+        // Per Postman API spec: Build variant objects with proper types
+        // Required fields: size_volume, price, stock_quantity
+        // Optional fields: pack_type, compare_at_price, cost_price, sku, expiry_date, stock_status (default: "in_stock"), is_active (default: true), sort_order (default: 0)
         dataToSend.sizeVolumeVariants = sortedVariants.map(variant => {
+          // Build variant object per Postman API spec format
           const formattedVariant = {
-            ...variant,
-            // Ensure required fields are present and have correct types
+            // Required fields
             size_volume: variant.size_volume ? String(variant.size_volume).trim() : '',
             price: variant.price ? parseFloat(variant.price) : 0,
-            stock_quantity: variant.stock_quantity !== undefined ? parseInt(variant.stock_quantity) : 0,
-            stock_status: variant.stock_status || 'in_stock',
-            is_active: variant.is_active !== undefined ? Boolean(variant.is_active) : true,
-            sort_order: variant.sort_order !== undefined ? parseInt(variant.sort_order) : 0,
+            stock_quantity: variant.stock_quantity !== undefined && variant.stock_quantity !== null ? parseInt(variant.stock_quantity) : 0,
           };
 
-          // Handle optional fields
+          // Optional fields - only include if they have values (per Postman example format)
+          // Stock status (optional, default: "in_stock")
+          if (variant.stock_status && variant.stock_status.trim()) {
+            formattedVariant.stock_status = variant.stock_status.trim();
+          }
+
+          // Pack type (optional)
           if (variant.pack_type && variant.pack_type.trim()) {
             formattedVariant.pack_type = variant.pack_type.trim();
-          } else {
-            formattedVariant.pack_type = null;
           }
 
-          if (variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '') {
-            formattedVariant.compare_at_price = parseFloat(variant.compare_at_price);
-          } else {
-            formattedVariant.compare_at_price = null;
-          }
-
-          if (variant.cost_price !== undefined && variant.cost_price !== null && variant.cost_price !== '') {
-            formattedVariant.cost_price = parseFloat(variant.cost_price);
-          } else {
-            formattedVariant.cost_price = null;
-          }
-
+          // SKU (optional)
           if (variant.sku && variant.sku.trim()) {
             formattedVariant.sku = variant.sku.trim();
-          } else {
-            formattedVariant.sku = null;
           }
 
-          // Convert expiry_date to ISO string if present
+          // Compare at price (optional)
+          if (variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '' && !isNaN(parseFloat(variant.compare_at_price))) {
+            formattedVariant.compare_at_price = parseFloat(variant.compare_at_price);
+          }
+
+          // Cost price (optional)
+          if (variant.cost_price !== undefined && variant.cost_price !== null && variant.cost_price !== '' && !isNaN(parseFloat(variant.cost_price))) {
+            formattedVariant.cost_price = parseFloat(variant.cost_price);
+          }
+
+          // Expiry date (optional, ISO 8601 format)
           if (variant.expiry_date) {
             if (typeof variant.expiry_date === 'string') {
-              // If it's already a string, try to parse and format it
               const dateStr = variant.expiry_date.trim();
-              if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                formattedVariant.expiry_date = `${dateStr}T00:00:00.000Z`;
-              } else {
-                const expiryDate = new Date(variant.expiry_date);
-                if (!isNaN(expiryDate.getTime())) {
-                  formattedVariant.expiry_date = expiryDate.toISOString();
+              if (dateStr) {
+                // If it's already in YYYY-MM-DD format, convert to ISO 8601
+                if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                  formattedVariant.expiry_date = `${dateStr}T00:00:00.000Z`;
                 } else {
-                  formattedVariant.expiry_date = null;
+                  // Try to parse and convert to ISO 8601
+                  const expiryDate = new Date(variant.expiry_date);
+                  if (!isNaN(expiryDate.getTime())) {
+                    formattedVariant.expiry_date = expiryDate.toISOString();
+                  }
                 }
               }
-            } else {
-              // If it's a Date object, convert to ISO string
-              formattedVariant.expiry_date = new Date(variant.expiry_date).toISOString();
+            } else if (variant.expiry_date instanceof Date) {
+              formattedVariant.expiry_date = variant.expiry_date.toISOString();
             }
-          } else {
-            formattedVariant.expiry_date = null;
+          }
+
+          // Is active (optional, default: true)
+          if (variant.is_active !== undefined && variant.is_active !== null) {
+            formattedVariant.is_active = Boolean(variant.is_active);
+          }
+
+          // Sort order (optional, default: 0)
+          if (variant.sort_order !== undefined && variant.sort_order !== null && !isNaN(parseInt(variant.sort_order))) {
+            formattedVariant.sort_order = parseInt(variant.sort_order);
           }
 
           // Include id if present (for updates) - per Postman API spec
@@ -1253,9 +1262,6 @@ const ProductModal = ({ product, onClose }) => {
         // We're sending the complete list of variants that should remain
         // Variants not in this list will be DELETED by the backend
         // For UPDATE: Variants with 'id' will be updated, variants without 'id' will be created
-        // Per Postman API spec: sizeVolumeVariants REPLACES all existing variants
-        // We're sending the complete list of variants that should remain
-        // Variants not in this list will be DELETED by the backend
       } else {
         // If no variants in form, always send empty array for eye hygiene products when updating
         // This ensures variants are updated even if the user removes all variants
@@ -1708,14 +1714,42 @@ const ProductModal = ({ product, onClose }) => {
       
       // Log saved product data including variants for verification
       if (savedProduct) {
-        const savedVariants = savedProduct.sizeVolumeVariants || savedProduct.size_volume_variants || [];
-        console.log('✅ Product saved successfully:', {
+        // Check multiple possible field names for variants in response
+        const savedVariants = savedProduct.sizeVolumeVariants || 
+                             savedProduct.size_volume_variants || 
+                             savedProduct.SizeVolumeVariants ||
+                             savedProduct.variants ||
+                             [];
+        
+        console.log('✅ Product saved successfully - Response Analysis:', {
           productId: savedProduct.id,
           productName: savedProduct.name,
-          variantsCount: Array.isArray(savedVariants) ? savedVariants.length : 0,
-          hasVariants: Array.isArray(savedVariants) && savedVariants.length > 0,
-          variants: savedVariants
+          productType: savedProduct.product_type,
+          responseStructure: {
+            hasData: !!response.data?.data,
+            hasProduct: !!response.data?.data?.product,
+            directData: !!response.data,
+            responseKeys: Object.keys(response.data || {}),
+            dataKeys: Object.keys(response.data?.data || {}),
+            productKeys: Object.keys(savedProduct || {})
+          },
+          variantsInResponse: {
+            sizeVolumeVariants: !!savedProduct.sizeVolumeVariants,
+            size_volume_variants: !!savedProduct.size_volume_variants,
+            SizeVolumeVariants: !!savedProduct.SizeVolumeVariants,
+            variants: !!savedProduct.variants,
+            variantsCount: Array.isArray(savedVariants) ? savedVariants.length : 0,
+            variantsType: Array.isArray(savedVariants) ? 'array' : typeof savedVariants,
+            hasVariants: Array.isArray(savedVariants) && savedVariants.length > 0,
+            variants: savedVariants
+          },
+          fullProductData: savedProduct
         });
+        
+        // Log if variants are missing but product type is eye_hygiene
+        if (savedProduct.product_type === 'eye_hygiene' && (!Array.isArray(savedVariants) || savedVariants.length === 0)) {
+          console.warn('⚠️ Eye hygiene product saved but no variants found in response. This might be normal if no variants were sent.');
+        }
       }
       
       // Update currentProduct with saved product data (especially important for new products to get the ID)

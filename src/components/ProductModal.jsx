@@ -1716,17 +1716,20 @@ const ProductModal = ({ product, onClose }) => {
       }
       
       // Handle nested response structure: { success, message, data: { product: {...} } }
+      // Per Postman API spec: Response should include variants for eye_hygiene products
       const responseData = response.data?.data || response.data;
       const savedProduct = responseData?.product || responseData;
       const successMessage = response.data?.message || (product ? 'Product updated successfully' : 'Product created successfully');
       
       // Log saved product data including variants for verification
-      if (savedProduct) {
-        // Check multiple possible field names for variants in response
+      if (savedProduct && savedProduct.id) {
+        // Check multiple possible field names for variants in response (check all possible locations)
         const savedVariants = savedProduct.sizeVolumeVariants || 
                              savedProduct.size_volume_variants || 
                              savedProduct.SizeVolumeVariants ||
                              savedProduct.variants ||
+                             responseData?.sizeVolumeVariants ||
+                             responseData?.size_volume_variants ||
                              [];
         
         console.log('✅ Product saved successfully - Response Analysis:', {
@@ -1746,33 +1749,59 @@ const ProductModal = ({ product, onClose }) => {
             size_volume_variants: !!savedProduct.size_volume_variants,
             SizeVolumeVariants: !!savedProduct.SizeVolumeVariants,
             variants: !!savedProduct.variants,
+            inResponseData: !!(responseData?.sizeVolumeVariants || responseData?.size_volume_variants),
             variantsCount: Array.isArray(savedVariants) ? savedVariants.length : 0,
             variantsType: Array.isArray(savedVariants) ? 'array' : typeof savedVariants,
             hasVariants: Array.isArray(savedVariants) && savedVariants.length > 0,
             variants: savedVariants
           },
+          fullResponseData: response.data,
           fullProductData: savedProduct
         });
         
-        // Log if variants are missing but product type is eye_hygiene
+        // Per Postman API spec: Response should include variants for eye_hygiene products
+        // If variants were sent but not in response, fetch full product details to verify they were saved
         if (savedProduct.product_type === 'eye_hygiene' && (!Array.isArray(savedVariants) || savedVariants.length === 0)) {
           if (variantsWereSent) {
             console.warn(`⚠️ Eye hygiene product saved - ${variantsSentCount} variant(s) were SENT but not found in response.`);
-            console.info('ℹ️ Note: Backend may not return variants in save response. This is normal behavior.');
-            console.info(`✅ Variants should be saved successfully. To verify: edit this product (ID: ${savedProduct.id}) and the variants should be loaded.`);
+            console.info('ℹ️ Per Postman API spec, variants should be in response. Fetching full product details to verify they were saved...');
+            
             if (variantsSentData) {
               console.log('📋 Variants that were sent to backend:', variantsSentData);
+            }
+            
+            // Fetch full product details to verify variants were saved (as per API spec, they should be in the response)
+            try {
+              const verifyResponse = await api.get(API_ROUTES.PRODUCTS.BY_ID(savedProduct.id));
+              const verifyData = verifyResponse.data?.data?.product || verifyResponse.data?.product || verifyResponse.data;
+              const verifyVariants = verifyData?.sizeVolumeVariants || 
+                                   verifyData?.size_volume_variants || 
+                                   verifyData?.SizeVolumeVariants ||
+                                   verifyData?.variants ||
+                                   [];
+              
+              if (Array.isArray(verifyVariants) && verifyVariants.length > 0) {
+                console.log(`✅ Variants verified! Found ${verifyVariants.length} variant(s) in full product details:`, verifyVariants);
+                // Update savedProduct with variants for consistency
+                savedProduct.sizeVolumeVariants = verifyVariants;
+                savedProduct.size_volume_variants = verifyVariants;
+              } else {
+                console.warn(`⚠️ Variants not found in full product details either. Please check backend implementation.`);
+              }
+            } catch (verifyError) {
+              console.warn('⚠️ Could not verify variants by fetching full product details:', verifyError);
             }
           } else {
             console.info('ℹ️ Eye hygiene product saved - No variants were sent. This is normal if you did not add any variants.');
           }
         } else if (savedProduct.product_type === 'eye_hygiene' && Array.isArray(savedVariants) && savedVariants.length > 0) {
-          console.log(`✅ Variants found in response: ${savedVariants.length} variant(s) - variants were saved successfully!`);
+          console.log(`✅ Variants found in response (per API spec): ${savedVariants.length} variant(s) - variants were saved successfully!`);
           console.log('📋 Variants in response:', savedVariants);
         }
       }
       
       // Update currentProduct with saved product data (especially important for new products to get the ID)
+      // Also include variants if they were found in response or verification
       if (savedProduct && savedProduct.id) {
         setCurrentProduct(savedProduct);
       }

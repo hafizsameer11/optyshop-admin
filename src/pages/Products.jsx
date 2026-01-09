@@ -294,6 +294,8 @@ const Products = () => {
   const [selectedSection, setSelectedSection] = useState(initialState.selectedSection); // 'all', 'sunglasses', 'eyeglasses', 'contact-lenses', 'eye-hygiene'
   const [sectionCategoryIds, setSectionCategoryIds] = useState([]); // All category IDs for the selected section
   const [sectionSubCategoryIds, setSectionSubCategoryIds] = useState([]); // All subcategory IDs (including nested) for the selected section
+  // Track if this is the initial mount to prevent clearing restored subcategory filter
+  const [isInitialMount, setIsInitialMount] = useState(true);
 
   // Save state to localStorage whenever relevant state changes
   useEffect(() => {
@@ -321,9 +323,6 @@ const Products = () => {
   useEffect(() => {
     fetchProducts();
   }, [page, searchTerm, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds]);
-
-  // Track if this is the initial mount to prevent clearing restored subcategory filter
-  const [isInitialMount, setIsInitialMount] = useState(true);
   
   // Fetch subcategories when category filter changes
   useEffect(() => {

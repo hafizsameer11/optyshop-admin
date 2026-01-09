@@ -139,10 +139,6 @@ const ProductModal = ({ product, onClose }) => {
     meta_keywords: '',
     is_active: true,
     is_featured: false,
-    // Eye Hygiene fields
-    size_volume: '',
-    pack_type: '',
-    expiry_date: '',
     // Size/Volume Variants (for Eye Hygiene products)
     sizeVolumeVariants: [],
   });
@@ -261,10 +257,6 @@ const ProductModal = ({ product, onClose }) => {
         meta_keywords: product.meta_keywords || '',
         is_active: product.is_active !== undefined ? product.is_active : true,
         is_featured: product.is_featured || false,
-        // Eye Hygiene fields
-        size_volume: product.size_volume || '',
-        pack_type: product.pack_type || '',
-        expiry_date: product.expiry_date ? new Date(product.expiry_date).toISOString().split('T')[0] : '',
         // Size/Volume Variants (for Eye Hygiene products)
         sizeVolumeVariants: product.sizeVolumeVariants || product.size_volume_variants || [],
       });
@@ -380,10 +372,6 @@ const ProductModal = ({ product, onClose }) => {
         meta_keywords: '',
         is_active: true,
         is_featured: false,
-        // Eye Hygiene fields
-        size_volume: '',
-        pack_type: '',
-        expiry_date: '',
         // Size/Volume Variants
         sizeVolumeVariants: [],
       });
@@ -930,40 +918,6 @@ const ProductModal = ({ product, onClose }) => {
       if (formData.is_active !== undefined) dataToSend.is_active = formData.is_active;
       if (formData.is_featured !== undefined) dataToSend.is_featured = formData.is_featured;
       
-      // Eye Hygiene fields (optional)
-      if (formData.size_volume && formData.size_volume.trim()) {
-        dataToSend.size_volume = formData.size_volume.trim();
-      } else {
-        dataToSend.size_volume = null;
-      }
-      
-      if (formData.pack_type && formData.pack_type.trim()) {
-        dataToSend.pack_type = formData.pack_type.trim();
-      } else {
-        dataToSend.pack_type = null;
-      }
-      
-      if (formData.expiry_date && formData.expiry_date.trim()) {
-        // Convert date to ISO 8601 format (preserve date without timezone shift)
-        // Date input gives YYYY-MM-DD, we need to convert to ISO 8601
-        const dateStr = formData.expiry_date.trim();
-        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          // Format: YYYY-MM-DD, convert to ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ)
-          // Use midnight UTC to avoid timezone issues
-          dataToSend.expiry_date = `${dateStr}T00:00:00.000Z`;
-        } else {
-          // Try parsing as date
-          const expiryDate = new Date(dateStr);
-          if (!isNaN(expiryDate.getTime())) {
-            dataToSend.expiry_date = expiryDate.toISOString();
-          } else {
-            dataToSend.expiry_date = null;
-          }
-        }
-      } else {
-        dataToSend.expiry_date = null;
-      }
-
       // Size/Volume Variants (for Eye Hygiene products)
       // Format variants for submission: convert expiry_date to ISO string and ensure proper types
       // Sort variants by sort_order before submission
@@ -2716,74 +2670,6 @@ const ProductModal = ({ product, onClose }) => {
             </div>
           </div>
 
-          {/* Eye Hygiene Fields Section */}
-                {formData.product_type === 'eye_hygiene' && (
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Eye Hygiene Fields <span className="text-gray-500 text-sm font-normal">(Optional)</span>
-            </h3>
-            <p className="text-xs text-gray-600 mb-4">
-              These fields are typically used for Eye Hygiene products (eye drops, solutions, etc.). 
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Size / Volume
-                </label>
-                <input
-                  type="text"
-                  name="size_volume"
-                  value={formData.size_volume}
-                  onChange={handleChange}
-                  className="input-modern"
-                  placeholder="e.g., 5ml, 10ml, 30ml"
-                  list="size-volume-options"
-                />
-                <datalist id="size-volume-options">
-                  <option value="5ml" />
-                  <option value="10ml" />
-                  <option value="15ml" />
-                  <option value="30ml" />
-                  <option value="50ml" />
-                </datalist>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Pack Type
-                </label>
-                <input
-                  type="text"
-                  name="pack_type"
-                  value={formData.pack_type}
-                  onChange={handleChange}
-                  className="input-modern"
-                  placeholder="e.g., Single, Pack of 2, Pack of 3"
-                  list="pack-type-options"
-                />
-                <datalist id="pack-type-options">
-                  <option value="Single" />
-                  <option value="Pack of 2" />
-                  <option value="Pack of 3" />
-                  <option value="Pack of 6" />
-                </datalist>
-            </div>
-
-                      <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Expiry Date
-              </label>
-              <input
-                type="date"
-                name="expiry_date"
-                value={formData.expiry_date}
-                onChange={handleChange}
-                className="input-modern"
-              />
-            </div>
-          </div>
-                  </div>
-                )}
 
                 {/* Frame/Lens related fields - Only show for frames, sunglasses, opty-kids */}
                 {formData.product_type !== 'eye_hygiene' && (

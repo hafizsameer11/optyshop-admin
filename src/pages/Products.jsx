@@ -487,10 +487,26 @@ const Products = () => {
         } else if (error.response.status === 500) {
           // Handle backend/database errors
           const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Server error';
-          if (errorMessage.includes('prisma') || errorMessage.includes('Prisma') || errorMessage.includes('database')) {
-            toast.error('Database error: Please try a different search term or contact support.');
+          const errorDetails = error.response?.data?.details || '';
+          
+          // Check for common database/relation errors related to size/volume variants
+          if (errorMessage.toLowerCase().includes('prisma') || 
+              errorMessage.toLowerCase().includes('database') ||
+              errorMessage.toLowerCase().includes('relation') ||
+              errorMessage.toLowerCase().includes('sizevolume') ||
+              errorMessage.toLowerCase().includes('size_volume')) {
+            toast.error(
+              'Database error: The Size/Volume Variants feature may require a database migration. Please contact support or check backend logs.',
+              { duration: 6000 }
+            );
+            console.error('Database/Relation Error Details:', {
+              message: errorMessage,
+              details: errorDetails,
+              fullError: error.response?.data
+            });
           } else {
             toast.error(`Failed to load products: ${errorMessage}`);
+            console.error('Server Error Details:', error.response?.data);
           }
         } else {
           toast.error(`Failed to load products: ${error.response?.data?.message || error.message}`);

@@ -354,17 +354,26 @@ const Products = () => {
       
       // If a section is selected, use section category and subcategory IDs for filtering
       // This ensures products are filtered by both product_type (via endpoint) and category (via params)
-      if (selectedSection !== 'all' && sectionCategoryIds.length > 0) {
-        // Add all category IDs for the section to ensure proper filtering
-        sectionCategoryIds.forEach(catId => {
-          params.append('category_id', catId);
-        });
-        
-        // Add all subcategory IDs (including nested) for the section
-        if (sectionSubCategoryIds.length > 0) {
-          sectionSubCategoryIds.forEach(subCatId => {
-            params.append('sub_category_id', subCatId);
+      // IMPORTANT: Only show products that belong to the selected section's categories
+      if (selectedSection !== 'all') {
+        // If section categories are found, filter strictly by those categories
+        if (sectionCategoryIds.length > 0) {
+          // Add all category IDs for the section to ensure proper filtering
+          sectionCategoryIds.forEach(catId => {
+            params.append('category_id', catId);
           });
+          
+          // Add all subcategory IDs (including nested) for the section
+          if (sectionSubCategoryIds.length > 0) {
+            sectionSubCategoryIds.forEach(subCatId => {
+              params.append('sub_category_id', subCatId);
+            });
+          }
+        } else {
+          // If no categories found for this section, we still want to show products
+          // but the backend will filter by product_type only
+          // Note: This handles edge cases where categories might not be set up yet
+          console.warn(`⚠️ No categories found for section "${selectedSection}". Products will be filtered by product_type only.`);
         }
       } else if (selectedSection === 'all') {
         // Manual category filter if selected (per Postman collection: category_id query param)
@@ -457,12 +466,23 @@ const Products = () => {
       console.log(`✅ Fetched ${productsArray.length} products for section: ${selectedSection}`, {
         section: selectedSection,
         count: productsArray.length,
+        categoryIds: selectedSection !== 'all' ? sectionCategoryIds : 'all categories',
+        subCategoryIds: selectedSection !== 'all' ? sectionSubCategoryIds.length : 0,
         sampleProduct: productsArray.length > 0 ? {
           id: productsArray[0].id,
           name: productsArray[0].name,
+          category_id: productsArray[0].category_id,
           product_type: productsArray[0].product_type
         } : null
       });
+      
+      // Log a summary of category filtering
+      if (selectedSection !== 'all' && sectionCategoryIds.length > 0) {
+        console.log(`📋 Filtering by categories:`, sectionCategoryIds.map(id => {
+          const cat = categories.find(c => c.id === id);
+          return cat ? `${cat.name} (ID: ${id})` : `ID: ${id}`;
+        }));
+      }
       
       // Extract pagination info
       const pagination = responseData.pagination || {};
@@ -590,10 +610,13 @@ const Products = () => {
   const handleModalClose = () => {
     setModalOpen(false);
     setEditingProduct(null);
-    // Refresh products list immediately to reflect changes (removed images, etc.)
-    // Flow: User saves product → Backend deletes removed images from storage & DB → 
+    // Refresh products list immediately to reflect changes (new products, updates, removed images, etc.)
+    // Flow: User saves product → Backend saves product with category_id → 
     //       Modal closes → We fetch updated products → Table shows updated data
-    // The backend has already processed the update, so we can refresh right away
+    // Note: New products will appear in:
+    //       1. "All Products" section (always shows all products)
+    //       2. Their specific category section (filtered by category_id)
+    // The backend has already processed the save, so we can refresh right away
     fetchProducts();
     // Force image refresh by updating the refresh key to ensure removed images disappear from table
     // This cache-busts the ProductImage component so it loads fresh images
@@ -611,16 +634,24 @@ const Products = () => {
   ];
 
   // Map section names to exact category names/slugs (case-insensitive matching)
-  // Based on actual categories: eye glasses, sun glasses, opty kids, contact-lenses, eye hygiene
+  // Based on actual categories in the system:
+  // - "opty kids" (exact match)
+  // - "sun glasses" (exact match - two words)
+  // - "contact-lenses" (exact match - with hyphen)
+  // - "eye glasses" (exact match - two words)
+  // - "eye hygiene" (exact match)
   const sectionToCategoryMap = {
-    'sunglasses': ['sun glasses', 'sunglasses', 'sun-glasses', 'sunglass'],
-    'eyeglasses': ['eye glasses', 'eyeglasses', 'eye-glasses', 'eyeglass'],
-    'opty-kids': ['opty kids', 'opty-kids', 'optykids'],
-    'contact-lenses': ['contact lenses', 'contact-lenses', 'contactlenses'],
-    'eye-hygiene': ['eye hygiene', 'eye-hygiene', 'eyehygiene'],
+    'sunglasses': ['sun glasses', 'sunglasses', 'sun-glasses', 'sunglass', 'sun glasses'],
+    'eyeglasses': ['eye glasses', 'eyeglasses', 'eye-glasses', 'eyeglass', 'eye glasses'],
+    'opty-kids': ['opty kids', 'opty-kids', 'optykids', 'opty kids'],
+    'contact-lenses': ['contact-lenses', 'contact lenses', 'contactlenses', 'contact-lenses'],
+    'eye-hygiene': ['eye hygiene', 'eye-hygiene', 'eyehygiene', 'eye hygiene'],
   };
 
   // Find categories matching the section
+  // This function finds all categories that match a given section (e.g., "Sunglasses", "Eyeglasses")
+  // Products are then filtered by these category IDs to show only relevant products
+  // Categories in system: "opty kids", "sun glasses", "contact-lenses", "eye glasses", "eye hygiene"
   const findCategoriesForSection = (section) => {
     if (section === 'all') {
       return [];
@@ -631,24 +662,44 @@ const Products = () => {
       const catName = (cat.name || '').toLowerCase().trim();
       const catSlug = (cat.slug || '').toLowerCase().trim();
       
-      // Match against both category name and slug
-      const matchesName = patterns.some(pattern => catName === pattern || catName.includes(pattern));
-      const matchesSlug = patterns.some(pattern => catSlug === pattern || catSlug.includes(pattern));
+      // First, try exact matches (most specific)
+      const exactNameMatch = patterns.some(pattern => catName === pattern.toLowerCase());
+      const exactSlugMatch = patterns.some(pattern => catSlug === pattern.toLowerCase());
+      
+      // Then, try partial matches (for variations)
+      const partialNameMatch = patterns.some(pattern => {
+        const patternLower = pattern.toLowerCase();
+        return catName === patternLower || catName.includes(patternLower) || patternLower.includes(catName);
+      });
+      const partialSlugMatch = patterns.some(pattern => {
+        const patternLower = pattern.toLowerCase();
+        return catSlug === patternLower || catSlug.includes(patternLower) || patternLower.includes(catSlug);
+      });
+      
+      const matchesName = exactNameMatch || partialNameMatch;
+      const matchesSlug = exactSlugMatch || partialSlugMatch;
       
       // Special handling: Eyeglasses should exclude Opty Kids categories
+      // "eye glasses" should NOT match "opty kids"
       if (section === 'eyeglasses') {
-        const isOptyKids = catName.includes('opty') || catName.includes('kids') || 
-                          catSlug.includes('opty') || catSlug.includes('kids');
+        const isOptyKids = catName === 'opty kids' || catName.includes('opty kids') || 
+                          catSlug === 'opty-kids' || catSlug.includes('opty-kids') ||
+                          catName.includes('opty') && catName.includes('kids') ||
+                          catSlug.includes('opty') && catSlug.includes('kids');
         return (matchesName || matchesSlug) && !isOptyKids;
       }
       
-      // Special handling: Opty Kids should only match Opty/Kids categories
+      // Special handling: Opty Kids should only match "opty kids" categories
+      // Must contain both "opty" and "kids"
       if (section === 'opty-kids') {
-        const isOptyKids = catName.includes('opty') || catName.includes('kids') || 
-                          catSlug.includes('opty') || catSlug.includes('kids');
+        const isOptyKids = catName === 'opty kids' || catName.includes('opty kids') ||
+                          catSlug === 'opty-kids' || catSlug.includes('opty-kids') ||
+                          (catName.includes('opty') && catName.includes('kids')) ||
+                          (catSlug.includes('opty') && catSlug.includes('kids'));
         return isOptyKids;
       }
       
+      // For other sections, return if name or slug matches
       return matchesName || matchesSlug;
     });
     
@@ -656,6 +707,7 @@ const Products = () => {
       matchingCategories.map(cat => ({ id: cat.id, name: cat.name, slug: cat.slug }))
     );
     
+    // Return array of category IDs - these will be used to filter products
     return matchingCategories.map(cat => cat.id);
   };
 
@@ -781,14 +833,36 @@ const Products = () => {
   }
 
   const handleSectionChange = (section) => {
-    console.log(`🔄 Changing section to: ${section}`);
+    console.log(`🔄 User clicked category button: "${section}"`);
+    console.log(`📦 Current section: ${selectedSection} → New section: ${section}`);
+    
+    // Update selected section
     setSelectedSection(section);
-    setPage(1); // Reset to first page when section changes
-    // Clear category and subcategory filters when changing sections to show all products in that section
+    
+    // Reset to first page when section changes
+    setPage(1);
+    
+    // Clear category and subcategory filters when changing sections
+    // This ensures that when a section is selected, we show ALL products belonging to that section's categories
     setCategoryFilter('');
     setSubCategoryFilter('');
+    
     // Note: searchTerm is kept so users can still search within the selected section
     // fetchProducts will be called automatically via useEffect when selectedSection changes
+    // 
+    // When a category button is clicked, products will be filtered by:
+    // 1. Section's category IDs (sectionCategoryIds) - finds matching categories like "sun glasses", "eye glasses", etc.
+    // 2. Section's subcategory IDs (sectionSubCategoryIds) - includes nested subcategories for those categories
+    // 3. Product type (via endpoint) - backend automatically filters by product_type ('sunglasses', 'frame', 'contact_lens', 'eye_hygiene')
+    // 
+    // This ensures ONLY products from the selected category section are displayed
+    
+    if (section === 'all') {
+      console.log(`✅ Showing ALL products (no category filter)`);
+    } else {
+      const sectionLabel = sections.find(s => s.value === section)?.label || section;
+      console.log(`✅ Filtering products for "${sectionLabel}" category section`);
+    }
   };
 
   return (

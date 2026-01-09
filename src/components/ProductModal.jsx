@@ -4364,30 +4364,6 @@ const ProductModal = ({ product, onClose }) => {
               </div>
               </>
             )}
-
-          {/* Status Checkboxes */}
-          <div className="flex items-center space-x-6 border-t border-gray-200 pt-6">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                name="is_active"
-                checked={formData.is_active}
-                onChange={handleChange}
-                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
-              />
-              <span className="ml-2 text-sm font-medium text-gray-700">Active</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                name="is_featured"
-                checked={formData.is_featured}
-                onChange={handleChange}
-                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
-              />
-              <span className="ml-2 text-sm font-medium text-gray-700">{t('isFeatured')}</span>
-            </label>
-          </div>
           </div>
 
           {/* Fixed Footer with Action Buttons */}

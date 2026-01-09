@@ -251,7 +251,18 @@ const ProductModal = ({ product, onClose }) => {
         stock_quantity: product.stock_quantity || product.stock || '',
         stock_status: product.stock_status || 'in_stock',
         compare_at_price: product.compare_at_price || '',
-        product_type: product.product_type || 'frame',
+        product_type: (() => {
+          // If product_type is missing, try to infer from category
+          let productType = product.product_type;
+          if (!productType && product.category_id) {
+            const productCategoryName = (product.category?.name || '').toLowerCase().trim();
+            if (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) {
+              productType = 'eye_hygiene';
+              console.log('🔍 Inferred eye_hygiene product_type from category for product initialization');
+            }
+          }
+          return productType || 'frame';
+        })(),
         meta_title: product.meta_title || '',
         meta_description: product.meta_description || '',
         meta_keywords: product.meta_keywords || '',
@@ -262,10 +273,9 @@ const ProductModal = ({ product, onClose }) => {
         sizeVolumeVariants: (() => {
           const variants = product.sizeVolumeVariants || product.size_volume_variants || [];
           // Check if this is an eye hygiene product (by product_type, flag, or category)
-          const productCategoryName = (product.category?.name || '').toLowerCase().trim();
+          const productCategoryName = (product.category?.name || product.category_name || '').toLowerCase().trim();
           const isEyeHygieneProduct = product.product_type === 'eye_hygiene' || 
-                                       product.product_type === 'accessory' && (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
-                                       product._isEyeHygiene === true;
+                                       (productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
           
           if (!Array.isArray(variants) || variants.length === 0) {
             if (isEyeHygieneProduct) {
@@ -478,6 +488,23 @@ const ProductModal = ({ product, onClose }) => {
     }
   }, [formData.sub_category_id]);
 
+  // Auto-update product_type when category changes to eye hygiene
+  useEffect(() => {
+    if (formData.category_id && categories.length > 0) {
+      const currentCategory = categories.find(cat => cat.id === parseInt(formData.category_id));
+      if (currentCategory) {
+        const categoryName = (currentCategory.name || '').toLowerCase().trim();
+        const isEyeHygieneCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
+        
+        // If it's an eye hygiene category but product_type is not set correctly, update it
+        if (isEyeHygieneCategory && formData.product_type !== 'eye_hygiene') {
+          setFormData(prev => ({ ...prev, product_type: 'eye_hygiene' }));
+          console.log('🔍 Auto-updated product_type to "eye_hygiene" based on category');
+        }
+      }
+    }
+  }, [formData.category_id, categories]);
+
   const fetchProductOptions = async () => {
     try {
       // Fetch product options which includes categories, frame shapes, materials, etc.
@@ -604,12 +631,25 @@ const ProductModal = ({ product, onClose }) => {
     
     // If category changes, fetch subcategories and reset subcategory selections
     if (name === 'category_id') {
-      setFormData({ 
+      // Check if the selected category is eye hygiene and auto-set product_type
+      const selectedCategory = categories.find(cat => cat.id === parseInt(value));
+      const categoryName = (selectedCategory?.name || '').toLowerCase().trim();
+      const isEyeHygieneCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
+      
+      const updatedFormData = { 
         ...formData, 
         [name]: type === 'checkbox' ? checked : value,
         sub_category_id: '', // Reset subcategory when category changes
         parent_subcategory_id: '' // Reset nested subcategory
-      });
+      };
+      
+      // Auto-set product_type to 'eye_hygiene' if eye hygiene category is selected
+      if (isEyeHygieneCategory && formData.product_type !== 'eye_hygiene') {
+        updatedFormData.product_type = 'eye_hygiene';
+        console.log('🔍 Auto-set product_type to "eye_hygiene" for eye hygiene category');
+      }
+      
+      setFormData(updatedFormData);
       fetchSubCategories(value);
       setNestedSubCategories([]);
     } else if (name === 'sub_category_id') {
@@ -1577,14 +1617,11 @@ const ProductModal = ({ product, onClose }) => {
   const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
   const isContactLens = formData.product_type === 'contact_lens';
   
-  // Check if product is eye hygiene by category (since backend uses 'accessory' as product_type)
-  // Eye hygiene products use 'accessory' as product_type but are identified by category
+  // Check if product is eye hygiene by product_type or category
   const currentCategory = categories.find(cat => cat.id === formData.category_id);
-  const categoryName = (currentCategory?.name || product?.category?.name || '').toLowerCase().trim();
+  const categoryName = (currentCategory?.name || product?.category?.name || product?.category_name || '').toLowerCase().trim();
   const isEyeHygieneByCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
-  const isEyeHygiene = formData.product_type === 'eye_hygiene' || 
-                       (formData.product_type === 'accessory' && isEyeHygieneByCategory) ||
-                       product?._isEyeHygiene === true;
+  const isEyeHygiene = formData.product_type === 'eye_hygiene' || isEyeHygieneByCategory;
   
   const tabs = [
     { id: 'general', label: 'General' }, // Always shown - contains all basic product fields

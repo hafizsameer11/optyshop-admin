@@ -230,41 +230,117 @@ const ProductImage = ({ product, refreshKey }) => {
 
 const Products = () => {
   const { t } = useI18n();
+  
+  // State persistence key
+  const STORAGE_KEY = 'products_page_state';
+  
+  // Helper function to load state from localStorage
+  const loadStateFromStorage = () => {
+    try {
+      const savedState = localStorage.getItem(STORAGE_KEY);
+      if (savedState) {
+        const parsed = JSON.parse(savedState);
+        return {
+          searchTerm: parsed.searchTerm || '',
+          categoryFilter: parsed.categoryFilter || '',
+          subCategoryFilter: parsed.subCategoryFilter || '',
+          selectedSection: parsed.selectedSection || 'all',
+          page: parsed.page || 1,
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to load state from localStorage:', error);
+    }
+    return {
+      searchTerm: '',
+      categoryFilter: '',
+      subCategoryFilter: '',
+      selectedSection: 'all',
+      page: 1,
+    };
+  };
+  
+  // Helper function to save state to localStorage
+  const saveStateToStorage = (state) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        searchTerm: state.searchTerm,
+        categoryFilter: state.categoryFilter,
+        subCategoryFilter: state.subCategoryFilter,
+        selectedSection: state.selectedSection,
+        page: state.page,
+      }));
+    } catch (error) {
+      console.warn('Failed to save state to localStorage:', error);
+    }
+  };
+  
+  // Load initial state from localStorage
+  const initialState = loadStateFromStorage();
+  
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [subCategoryFilter, setSubCategoryFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialState.searchTerm);
+  const [categoryFilter, setCategoryFilter] = useState(initialState.categoryFilter);
+  const [subCategoryFilter, setSubCategoryFilter] = useState(initialState.subCategoryFilter);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialState.page);
   const [totalPages, setTotalPages] = useState(1);
   const [subCategoriesMap, setSubCategoriesMap] = useState({});
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
-  const [selectedSection, setSelectedSection] = useState('all'); // 'all', 'sunglasses', 'eyeglasses', 'contact-lenses', 'eye-hygiene'
+  const [selectedSection, setSelectedSection] = useState(initialState.selectedSection); // 'all', 'sunglasses', 'eyeglasses', 'contact-lenses', 'eye-hygiene'
   const [sectionCategoryIds, setSectionCategoryIds] = useState([]); // All category IDs for the selected section
   const [sectionSubCategoryIds, setSectionSubCategoryIds] = useState([]); // All subcategory IDs (including nested) for the selected section
+
+  // Save state to localStorage whenever relevant state changes
+  useEffect(() => {
+    saveStateToStorage({
+      searchTerm,
+      categoryFilter,
+      subCategoryFilter,
+      selectedSection,
+      page,
+    });
+  }, [searchTerm, categoryFilter, subCategoryFilter, selectedSection, page]);
 
   useEffect(() => {
     fetchCategories();
     fetchSubCategories();
   }, []);
+  
+  // When categories are loaded and we have a restored categoryFilter, fetch subcategories
+  useEffect(() => {
+    if (categories.length > 0 && categoryFilter && isInitialMount) {
+      fetchSubCategoriesForCategory(categoryFilter);
+    }
+  }, [categories.length, categoryFilter, isInitialMount]);
 
   useEffect(() => {
     fetchProducts();
   }, [page, searchTerm, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds]);
 
+  // Track if this is the initial mount to prevent clearing restored subcategory filter
+  const [isInitialMount, setIsInitialMount] = useState(true);
+  
   // Fetch subcategories when category filter changes
   useEffect(() => {
     if (categoryFilter) {
       fetchSubCategoriesForCategory(categoryFilter);
     } else {
       setSubCategories([]);
-      setSubCategoryFilter('');
+      // Only reset subcategory filter if category filter is being cleared (not on initial mount)
+      if (!isInitialMount) {
+        setSubCategoryFilter('');
+      }
     }
-  }, [categoryFilter]);
+    // After first render, mark that initial mount is complete
+    if (isInitialMount) {
+      setIsInitialMount(false);
+    }
+  }, [categoryFilter, isInitialMount]);
 
   const fetchCategories = async () => {
     try {
@@ -566,38 +642,74 @@ const Products = () => {
     setModalOpen(true);
   };
 
-  // Determine which modal to use based on selected section
+  // Helper function to infer product_type from category name
+  const inferProductTypeFromCategory = (categoryName, categoryId) => {
+    if (!categoryName) {
+      // Try to find category by ID
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        categoryName = category.name || '';
+      }
+    }
+    
+    if (!categoryName) return null;
+    
+    const categoryLower = categoryName.toLowerCase().trim();
+    
+    // Map category names to product types
+    if (categoryLower.includes('contact') && categoryLower.includes('lens')) {
+      return 'contact_lens';
+    }
+    if (categoryLower.includes('eye') && categoryLower.includes('hygiene')) {
+      return 'eye_hygiene';
+    }
+    if (categoryLower.includes('sun') && (categoryLower.includes('glass') || categoryLower.includes('sunglass'))) {
+      return 'sunglasses';
+    }
+    if (categoryLower.includes('eye') && categoryLower.includes('glass')) {
+      return 'frame';
+    }
+    if (categoryLower.includes('opty') && categoryLower.includes('kids')) {
+      return 'frame'; // Opty Kids uses frame product type
+    }
+    
+    return null;
+  };
+
+  // Determine which modal to use based on product's actual product_type when editing,
+  // or based on selected section when creating a new product
   const getProductModal = () => {
-    if (selectedSection === 'contact-lenses') {
-      return (
-        <ContactLensProductModal
-          product={editingProduct}
-          onClose={handleModalClose}
-          selectedSection={selectedSection}
-        />
-      );
-    } else {
-      // For sunglasses, eyeglasses, opty-kids, eye-hygiene, and all - use standard ProductModal
-      // Set product_type based on selected section when creating new product
-      const productTypeMap = {
-        'sunglasses': 'sunglasses',
-        'eyeglasses': 'frame',
-        'opty-kids': 'frame', // Opty Kids uses same product type as eyeglasses
-        'eye-hygiene': 'eye_hygiene',
-        'all': null // Will use default or existing product type
-      };
-      
-      // When creating new product, set default product type based on section
-      // When editing, use existing product type
+    // When editing a product, determine modal based on the product's actual product_type
+    if (editingProduct) {
+      let productType = editingProduct.product_type;
       let productToPass = editingProduct;
-      if (!editingProduct && selectedSection !== 'all') {
-        // Creating new product - set default product type
-        productToPass = { product_type: productTypeMap[selectedSection] };
-      } else if (editingProduct && !editingProduct.product_type && selectedSection !== 'all') {
-        // Editing product without product_type - set based on section
-        productToPass = { ...editingProduct, product_type: productTypeMap[selectedSection] };
+      
+      // If product_type is missing, try to infer it from category
+      if (!productType) {
+        const categoryName = editingProduct.category?.name || editingProduct.category_name;
+        const categoryId = editingProduct.category_id || editingProduct.categoryId;
+        productType = inferProductTypeFromCategory(categoryName, categoryId);
+        
+        // If we inferred a product type, create a new product object with it
+        if (productType) {
+          productToPass = { ...editingProduct, product_type: productType };
+          console.log(`🔍 Inferred product_type "${productType}" from category "${categoryName}" for product ${editingProduct.id}`);
+        }
       }
       
+      // Use ContactLensProductModal for contact lens products
+      if (productType === 'contact_lens') {
+        return (
+          <ContactLensProductModal
+            product={productToPass}
+            onClose={handleModalClose}
+            selectedSection={selectedSection}
+          />
+        );
+      }
+      
+      // For all other product types (sunglasses, frame, eye_hygiene, etc.), use ProductModal
+      // ProductModal will automatically show the appropriate tabs based on product_type
       return (
         <ProductModal
           product={productToPass}
@@ -605,6 +717,37 @@ const Products = () => {
         />
       );
     }
+    
+    // When creating a new product, use selectedSection to determine default product type
+    const productTypeMap = {
+      'sunglasses': 'sunglasses',
+      'eyeglasses': 'frame',
+      'opty-kids': 'frame', // Opty Kids uses same product type as eyeglasses
+      'eye-hygiene': 'eye_hygiene',
+      'contact-lenses': 'contact_lens',
+      'all': null // Will use default product type
+    };
+    
+    const defaultProductType = productTypeMap[selectedSection];
+    
+    // If creating contact lens product, use ContactLensProductModal
+    if (selectedSection === 'contact-lenses') {
+      return (
+        <ContactLensProductModal
+          product={defaultProductType ? { product_type: defaultProductType } : null}
+          onClose={handleModalClose}
+          selectedSection={selectedSection}
+        />
+      );
+    }
+    
+    // For other product types, use ProductModal with default product type
+    return (
+      <ProductModal
+        product={defaultProductType ? { product_type: defaultProductType } : null}
+        onClose={handleModalClose}
+      />
+    );
   };
 
   const handleModalClose = () => {
@@ -983,6 +1126,12 @@ const Products = () => {
                     setSearchTerm('');
                     setSelectedSection('all');
                     setPage(1);
+                    // Clear saved state from localStorage
+                    try {
+                      localStorage.removeItem(STORAGE_KEY);
+                    } catch (error) {
+                      console.warn('Failed to clear state from localStorage:', error);
+                    }
                   }}
                   className="w-full px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
                 >

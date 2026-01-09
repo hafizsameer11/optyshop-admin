@@ -1002,6 +1002,27 @@ const ProductModal = ({ product, onClose }) => {
   };
 
 
+  // Helper function to validate and get product ID
+  const getValidProductId = () => {
+    const productId = product?.id ?? currentProduct?.id;
+    
+    // Check for all invalid cases
+    if (productId === undefined || productId === null || productId === '' || String(productId) === 'undefined' || String(productId) === 'null') {
+      return null; // No valid ID - should create new product
+    }
+    
+    // Parse to integer
+    const parsedId = typeof productId === 'number' ? productId : parseInt(String(productId), 10);
+    
+    // Validate it's a positive integer
+    if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
+      console.error('❌ Invalid product ID:', { productId, parsedId, type: typeof productId });
+      return null; // Invalid ID - should create new product
+    }
+    
+    return parsedId; // Valid ID
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -1518,20 +1539,14 @@ const ProductModal = ({ product, onClose }) => {
             });
           }
 
-          // Check if we have a valid product ID for update
-          const productId = product?.id ?? currentProduct?.id;
+          // Get valid product ID using helper function
+          const validProductId = getValidProductId();
           
-          // Strict validation: check for undefined, null, empty string, or string "undefined"
-          if (productId !== undefined && productId !== null && productId !== '' && productId !== 'undefined') {
-            const parsedId = typeof productId === 'number' ? productId : parseInt(productId, 10);
-            if (isNaN(parsedId) || parsedId <= 0 || !Number.isInteger(parsedId)) {
-              console.error('Invalid product ID:', productId, typeof productId);
-              throw new Error(`Invalid product ID for update: ${productId}`);
-            }
-            console.log(`🔄 Updating product with ID: ${parsedId}`);
-            response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(parsedId), submitData);
+          if (validProductId) {
+            console.log(`🔄 Updating product with ID: ${validProductId}`);
+            response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), submitData);
           } else {
-            console.log('➕ Creating new product (no ID found)', { productId, productIdType: typeof productId, hasProduct: !!product, hasCurrentProduct: !!currentProduct });
+            console.log('➕ Creating new product (no valid ID found)');
             response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
           }
         } catch (imageError) {
@@ -1630,20 +1645,14 @@ const ProductModal = ({ product, onClose }) => {
           }
         }
         
-        // Check if we have a valid product ID for update
-        const productId = product?.id ?? currentProduct?.id;
+        // Get valid product ID using helper function
+        const validProductId = getValidProductId();
         
-        // Strict validation: check for undefined, null, empty string, or string "undefined"
-        if (productId !== undefined && productId !== null && productId !== '' && productId !== 'undefined') {
-          const parsedId = typeof productId === 'number' ? productId : parseInt(productId, 10);
-          if (isNaN(parsedId) || parsedId <= 0 || !Number.isInteger(parsedId)) {
-            console.error('Invalid product ID:', productId, typeof productId);
-            throw new Error(`Invalid product ID for update: ${productId}`);
-          }
-          console.log(`🔄 Updating product with ID: ${parsedId}`);
-          response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(parsedId), dataToSend);
+        if (validProductId) {
+          console.log(`🔄 Updating product with ID: ${validProductId}`);
+          response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), dataToSend);
         } else {
-          console.log('➕ Creating new product (no ID found)', { productId, productIdType: typeof productId, hasProduct: !!product, hasCurrentProduct: !!currentProduct });
+          console.log('➕ Creating new product (no valid ID found)');
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
         }
       }

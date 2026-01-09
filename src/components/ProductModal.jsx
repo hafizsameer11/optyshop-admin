@@ -1161,6 +1161,10 @@ const ProductModal = ({ product, onClose }) => {
       // IMPORTANT: Always send variants for eye hygiene products when updating
       const isEyeHygieneProduct = formData.product_type === 'eye_hygiene';
       
+      // Track if variants were sent (for logging purposes)
+      let variantsWereSent = false;
+      let variantsSentCount = 0;
+      
       if (formData.sizeVolumeVariants && Array.isArray(formData.sizeVolumeVariants) && formData.sizeVolumeVariants.length > 0) {
         // Sort by sort_order (ascending), then by size_volume as secondary sort
         const sortedVariants = [...formData.sizeVolumeVariants].sort((a, b) => {
@@ -1256,7 +1260,9 @@ const ProductModal = ({ product, onClose }) => {
           return formattedVariant;
         });
         
-        console.log(`📦 Sending ${dataToSend.sizeVolumeVariants.length} size/volume variant(s) for ${product ? 'update' : 'create'}:`, dataToSend.sizeVolumeVariants);
+        variantsWereSent = true;
+        variantsSentCount = dataToSend.sizeVolumeVariants.length;
+        console.log(`📦 Sending ${variantsSentCount} size/volume variant(s) for ${product ? 'update' : 'create'}:`, dataToSend.sizeVolumeVariants);
         
         // Per Postman API spec: sizeVolumeVariants REPLACES all existing variants
         // We're sending the complete list of variants that should remain
@@ -1748,7 +1754,13 @@ const ProductModal = ({ product, onClose }) => {
         
         // Log if variants are missing but product type is eye_hygiene
         if (savedProduct.product_type === 'eye_hygiene' && (!Array.isArray(savedVariants) || savedVariants.length === 0)) {
-          console.warn('⚠️ Eye hygiene product saved but no variants found in response. This might be normal if no variants were sent.');
+          if (variantsWereSent) {
+            console.warn(`⚠️ Eye hygiene product saved - ${variantsSentCount} variant(s) were SENT but not found in response. Backend may not return variants in save response. This is normal - variants will be available when you edit the product again.`);
+          } else {
+            console.info('ℹ️ Eye hygiene product saved - No variants were sent. This is normal if you did not add any variants.');
+          }
+        } else if (savedProduct.product_type === 'eye_hygiene' && Array.isArray(savedVariants) && savedVariants.length > 0) {
+          console.log(`✅ Variants found in response: ${savedVariants.length} variant(s) - variants were saved successfully!`);
         }
       }
       
@@ -3929,7 +3941,7 @@ const ProductModal = ({ product, onClose }) => {
                           {/* Price */}
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Price <span className="text-red-500">*</span>
+                            Eye hygiene product saved but no variants found in response. This might be normal if no variants were sent                              Price <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="number"

@@ -632,6 +632,13 @@ const Products = () => {
   };
 
   const handleEdit = (product) => {
+    console.log('📝 Editing product:', {
+      id: product.id,
+      name: product.name,
+      product_type: product.product_type,
+      category_id: product.category_id,
+      category_name: product.category?.name || product.category_name
+    });
     setEditingProduct(product);
     setModalOpen(true);
   };
@@ -700,6 +707,7 @@ const Products = () => {
       
       // Use ContactLensProductModal for contact lens products
       if (productType === 'contact_lens') {
+        console.log('✅ Opening ContactLensProductModal for contact lens product');
         return (
           <ContactLensProductModal
             product={productToPass}
@@ -711,6 +719,7 @@ const Products = () => {
       
       // For all other product types (sunglasses, frame, eye_hygiene, etc.), use ProductModal
       // ProductModal will automatically show the appropriate tabs based on product_type
+      console.log(`✅ Opening ProductModal for product type: ${productType || 'default'}`);
       return (
         <ProductModal
           product={productToPass}
@@ -1019,13 +1028,16 @@ const Products = () => {
         </div>
         <div className="flex items-center gap-3">
           <LanguageSwitcher variant="compact" />
-          <button
-            onClick={handleAdd}
-            className="flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 font-semibold text-sm sm:text-base w-full sm:w-auto"
-          >
-            <FiPlus className="w-5 h-5" />
-            <span>{t('addProduct')}</span>
-          </button>
+          {/* Only show Add Product button when a specific section is selected (not "All Products") */}
+          {selectedSection !== 'all' && (
+            <button
+              onClick={handleAdd}
+              className="flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 font-semibold text-sm sm:text-base w-full sm:w-auto"
+            >
+              <FiPlus className="w-5 h-5" />
+              <span>{t('addProduct')}</span>
+            </button>
+          )}
         </div>
       </div>
 

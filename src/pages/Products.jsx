@@ -687,10 +687,26 @@ const Products = () => {
       return null;
     };
 
+    // Helper function to normalize product_type for comparison
+    const normalizeProductType = (productType) => {
+      if (!productType) return null;
+      // Convert to lowercase and replace spaces/underscores/dashes with underscore
+      return String(productType).toLowerCase().trim().replace(/[\s-]/g, '_');
+    };
+
+    // Helper function to check if product type matches a specific type (handles variations)
+    const isProductType = (productType, targetType) => {
+      const normalized = normalizeProductType(productType);
+      const normalizedTarget = normalizeProductType(targetType);
+      return normalized === normalizedTarget;
+    };
+
     // When editing a product, determine modal based on the product's actual product_type
     if (editingProduct) {
       let productType = editingProduct.product_type;
       let productToPass = editingProduct;
+      
+      console.log('🔍 Raw product_type from editingProduct:', productType);
       
       // If product_type is missing, try to infer it from category
       if (!productType) {
@@ -705,9 +721,24 @@ const Products = () => {
         }
       }
       
-      // Use ContactLensProductModal for contact lens products
-      if (productType === 'contact_lens') {
+      // Normalize product type for consistent comparison
+      const normalizedProductType = normalizeProductType(productType);
+      console.log('🔍 Normalized product_type:', normalizedProductType);
+      
+      // Use ContactLensProductModal for contact lens products (handle variations like "contact lera", "contact_lens", etc.)
+      const isContactLens = 
+        isProductType(productType, 'contact_lens') || 
+        normalizedProductType === 'contactlera' ||
+        normalizedProductType === 'contact_lera' ||
+        (normalizedProductType?.includes('contact') && normalizedProductType?.includes('lens')) ||
+        (normalizedProductType?.includes('contact') && normalizedProductType?.includes('lera'));
+      
+      if (isContactLens) {
         console.log('✅ Opening ContactLensProductModal for contact lens product');
+        // Ensure product_type is set correctly for the modal
+        if (normalizedProductType !== 'contact_lens') {
+          productToPass = { ...editingProduct, product_type: 'contact_lens' };
+        }
         return (
           <ContactLensProductModal
             product={productToPass}
@@ -719,7 +750,11 @@ const Products = () => {
       
       // For all other product types (sunglasses, frame, eye_hygiene, etc.), use ProductModal
       // ProductModal will automatically show the appropriate tabs based on product_type
-      console.log(`✅ Opening ProductModal for product type: ${productType || 'default'}`);
+      console.log(`✅ Opening ProductModal for product type: ${productType || 'default'} (normalized: ${normalizedProductType})`);
+      // Ensure product_type is normalized before passing to ProductModal
+      if (normalizedProductType && normalizedProductType !== productType) {
+        productToPass = { ...editingProduct, product_type: normalizedProductType };
+      }
       return (
         <ProductModal
           product={productToPass}

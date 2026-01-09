@@ -1518,9 +1518,18 @@ const ProductModal = ({ product, onClose }) => {
             });
           }
 
-          if (product) {
-            response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), submitData);
+          // Check if we have a valid product ID for update
+          const productId = product?.id || currentProduct?.id;
+          if (productId) {
+            const parsedId = parseInt(productId);
+            if (isNaN(parsedId) || parsedId <= 0) {
+              console.error('Invalid product ID:', productId);
+              throw new Error('Invalid product ID for update');
+            }
+            console.log(`🔄 Updating product with ID: ${parsedId}`);
+            response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(parsedId), submitData);
           } else {
+            console.log('➕ Creating new product (no ID found)');
             response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
           }
         } catch (imageError) {
@@ -1619,9 +1628,18 @@ const ProductModal = ({ product, onClose }) => {
           }
         }
         
-        if (product) {
-          response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), dataToSend);
+        // Check if we have a valid product ID for update
+        const productId = product?.id || currentProduct?.id;
+        if (productId) {
+          const parsedId = parseInt(productId);
+          if (isNaN(parsedId) || parsedId <= 0) {
+            console.error('Invalid product ID:', productId);
+            throw new Error('Invalid product ID for update');
+          }
+          console.log(`🔄 Updating product with ID: ${parsedId}`);
+          response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(parsedId), dataToSend);
         } else {
+          console.log('➕ Creating new product (no ID found)');
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
         }
       }

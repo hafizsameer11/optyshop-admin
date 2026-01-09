@@ -9,18 +9,85 @@ import { useI18n } from '../context/I18nContext';
 
 const Orders = () => {
   const { t } = useI18n();
+  
+  // State persistence key
+  const STORAGE_KEY = 'orders_page_state';
+  
+  // Helper function to load state from localStorage
+  const loadStateFromStorage = () => {
+    try {
+      const savedState = localStorage.getItem(STORAGE_KEY);
+      if (savedState) {
+        const parsed = JSON.parse(savedState);
+        return {
+          searchTerm: parsed.searchTerm || '',
+          statusFilter: parsed.statusFilter || '',
+          paymentStatusFilter: parsed.paymentStatusFilter || '',
+          paymentMethodFilter: parsed.paymentMethodFilter || '',
+          startDate: parsed.startDate || '',
+          endDate: parsed.endDate || '',
+          page: parsed.page || 1,
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to load state from localStorage:', error);
+    }
+    return {
+      searchTerm: '',
+      statusFilter: '',
+      paymentStatusFilter: '',
+      paymentMethodFilter: '',
+      startDate: '',
+      endDate: '',
+      page: 1,
+    };
+  };
+  
+  // Helper function to save state to localStorage
+  const saveStateToStorage = (state) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        searchTerm: state.searchTerm,
+        statusFilter: state.statusFilter,
+        paymentStatusFilter: state.paymentStatusFilter,
+        paymentMethodFilter: state.paymentMethodFilter,
+        startDate: state.startDate,
+        endDate: state.endDate,
+        page: state.page,
+      }));
+    } catch (error) {
+      console.warn('Failed to save state to localStorage:', error);
+    }
+  };
+  
+  // Load initial state from localStorage
+  const initialState = loadStateFromStorage();
+  
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialState.searchTerm);
+  const [statusFilter, setStatusFilter] = useState(initialState.statusFilter);
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState(initialState.paymentStatusFilter);
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState(initialState.paymentMethodFilter);
+  const [startDate, setStartDate] = useState(initialState.startDate);
+  const [endDate, setEndDate] = useState(initialState.endDate);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialState.page);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Save state to localStorage whenever relevant state changes
+  useEffect(() => {
+    saveStateToStorage({
+      searchTerm,
+      statusFilter,
+      paymentStatusFilter,
+      paymentMethodFilter,
+      startDate,
+      endDate,
+      page,
+    });
+  }, [searchTerm, statusFilter, paymentStatusFilter, paymentMethodFilter, startDate, endDate, page]);
 
   useEffect(() => {
     fetchOrders();
@@ -147,17 +214,23 @@ const Orders = () => {
         <div className="p-4 border-b flex gap-4">
           <div className="flex-1 relative">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder={t('searchOrders')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
+              <input
+                type="text"
+                placeholder={t('searchOrders')}
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1); // Reset to first page on search
+                }}
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1); // Reset to first page on filter change
+            }}
             className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option value="">{t('allStatus')}</option>
@@ -169,7 +242,10 @@ const Orders = () => {
           </select>
           <select
             value={paymentStatusFilter}
-            onChange={(e) => setPaymentStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setPaymentStatusFilter(e.target.value);
+              setPage(1); // Reset to first page on filter change
+            }}
             className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option value="">All Payment Status</option>
@@ -180,7 +256,10 @@ const Orders = () => {
           </select>
           <select
             value={paymentMethodFilter}
-            onChange={(e) => setPaymentMethodFilter(e.target.value)}
+            onChange={(e) => {
+              setPaymentMethodFilter(e.target.value);
+              setPage(1); // Reset to first page on filter change
+            }}
             className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option value="">All Payment Methods</option>
@@ -195,7 +274,10 @@ const Orders = () => {
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPage(1); // Reset to first page on filter change
+              }}
               className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
@@ -204,10 +286,38 @@ const Orders = () => {
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPage(1); // Reset to first page on filter change
+              }}
               className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
+          {/* Clear Filters Button */}
+          {(statusFilter || paymentStatusFilter || paymentMethodFilter || searchTerm || startDate || endDate) && (
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('');
+                  setPaymentStatusFilter('');
+                  setPaymentMethodFilter('');
+                  setStartDate('');
+                  setEndDate('');
+                  setPage(1);
+                  // Clear saved state from localStorage
+                  try {
+                    localStorage.removeItem(STORAGE_KEY);
+                  } catch (error) {
+                    console.warn('Failed to clear state from localStorage:', error);
+                  }
+                }}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto">

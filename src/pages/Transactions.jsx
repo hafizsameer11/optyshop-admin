@@ -5,6 +5,60 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 
 const Transactions = () => {
+  // State persistence key
+  const STORAGE_KEY = 'transactions_page_state';
+  
+  // Helper function to load state from localStorage
+  const loadStateFromStorage = () => {
+    try {
+      const savedState = localStorage.getItem(STORAGE_KEY);
+      if (savedState) {
+        const parsed = JSON.parse(savedState);
+        return {
+          page: parsed.page || 1,
+          filters: {
+            status: parsed.filters?.status || '',
+            type: parsed.filters?.type || '',
+            paymentMethod: parsed.filters?.paymentMethod || '',
+            userId: parsed.filters?.userId || '',
+            orderId: parsed.filters?.orderId || '',
+            startDate: parsed.filters?.startDate || '',
+            endDate: parsed.filters?.endDate || '',
+          },
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to load state from localStorage:', error);
+    }
+    return {
+      page: 1,
+      filters: {
+        status: '',
+        type: '',
+        paymentMethod: '',
+        userId: '',
+        orderId: '',
+        startDate: '',
+        endDate: '',
+      },
+    };
+  };
+  
+  // Helper function to save state to localStorage
+  const saveStateToStorage = (state) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        page: state.page,
+        filters: state.filters,
+      }));
+    } catch (error) {
+      console.warn('Failed to save state to localStorage:', error);
+    }
+  };
+  
+  // Load initial state from localStorage
+  const initialState = loadStateFromStorage();
+  
   const [transactions, setTransactions] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,18 +69,18 @@ const Transactions = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   
   // Filters
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialState.page);
   const [limit] = useState(20);
-  const [filters, setFilters] = useState({
-    status: '',
-    type: '',
-    paymentMethod: '',
-    userId: '',
-    orderId: '',
-    startDate: '',
-    endDate: '',
-  });
+  const [filters, setFilters] = useState(initialState.filters);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Save state to localStorage whenever relevant state changes
+  useEffect(() => {
+    saveStateToStorage({
+      page,
+      filters,
+    });
+  }, [page, filters]);
 
   useEffect(() => {
     fetchTransactions();
@@ -148,6 +202,12 @@ const Transactions = () => {
       endDate: '',
     });
     setPage(1);
+    // Clear saved state from localStorage
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.warn('Failed to clear state from localStorage:', error);
+    }
   };
 
   if (loading && transactions.length === 0) {

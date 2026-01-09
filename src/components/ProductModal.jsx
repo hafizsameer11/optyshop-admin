@@ -261,10 +261,11 @@ const ProductModal = ({ product, onClose }) => {
         // Normalize variants data - handle both camelCase and snake_case field names
         sizeVolumeVariants: (() => {
           const variants = product.sizeVolumeVariants || product.size_volume_variants || [];
-          // Check if this is an eye hygiene product (by product_type or category)
+          // Check if this is an eye hygiene product (by product_type, flag, or category)
           const productCategoryName = (product.category?.name || '').toLowerCase().trim();
           const isEyeHygieneProduct = product.product_type === 'eye_hygiene' || 
-                                       (productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
+                                       product.product_type === 'accessory' && (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
+                                       product._isEyeHygiene === true;
           
           if (!Array.isArray(variants) || variants.length === 0) {
             if (isEyeHygieneProduct) {
@@ -948,8 +949,17 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       // Send product_type if it's provided
+      // Note: Backend only accepts: frame, sunglasses, contact_lens, accessory
+      // Eye hygiene products must use 'accessory' as product_type
       if (formData.product_type) {
-        dataToSend.product_type = formData.product_type;
+        // If product_type is 'eye_hygiene', convert to 'accessory' for backend
+        // (eye hygiene products are identified by category, not product_type)
+        if (formData.product_type === 'eye_hygiene') {
+          dataToSend.product_type = 'accessory';
+          console.log('⚠️ Converting product_type from "eye_hygiene" to "accessory" for backend compatibility');
+        } else {
+          dataToSend.product_type = formData.product_type;
+        }
       }
       if (formData.meta_title && formData.meta_title.trim()) {
         dataToSend.meta_title = formData.meta_title.trim();
@@ -1567,11 +1577,14 @@ const ProductModal = ({ product, onClose }) => {
   const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
   const isContactLens = formData.product_type === 'contact_lens';
   
-  // Check if product is eye hygiene by product_type or category
+  // Check if product is eye hygiene by category (since backend uses 'accessory' as product_type)
+  // Eye hygiene products use 'accessory' as product_type but are identified by category
   const currentCategory = categories.find(cat => cat.id === formData.category_id);
   const categoryName = (currentCategory?.name || product?.category?.name || '').toLowerCase().trim();
   const isEyeHygieneByCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
-  const isEyeHygiene = formData.product_type === 'eye_hygiene' || isEyeHygieneByCategory;
+  const isEyeHygiene = formData.product_type === 'eye_hygiene' || 
+                       (formData.product_type === 'accessory' && isEyeHygieneByCategory) ||
+                       product?._isEyeHygiene === true;
   
   const tabs = [
     { id: 'general', label: 'General' }, // Always shown - contains all basic product fields
@@ -2687,8 +2700,7 @@ const ProductModal = ({ product, onClose }) => {
               <option value="frame">Frame (Eyeglasses)</option>
               <option value="sunglasses">Sunglasses</option>
               <option value="contact_lens">Contact Lens</option>
-              <option value="eye_hygiene">Eye Hygiene</option>
-              <option value="accessory">Accessory</option>
+              <option value="accessory">Accessory (Eye Hygiene products use this)</option>
               <option value="lens">Lens</option>
             </select>
           </div>

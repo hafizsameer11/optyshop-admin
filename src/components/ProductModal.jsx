@@ -1233,15 +1233,29 @@ const ProductModal = ({ product, onClose }) => {
             formattedVariant.expiry_date = null;
           }
 
-          // Include id if present (for updates)
-          if (variant.id) {
-            formattedVariant.id = parseInt(variant.id);
+          // Include id if present (for updates) - per Postman API spec
+          // For UPDATE: must include id to update existing variant, omit id to create new variant
+          // For CREATE: omit id (will be auto-generated)
+          if (variant.id && (variant.id !== null && variant.id !== undefined && variant.id !== '')) {
+            const variantId = typeof variant.id === 'number' ? variant.id : parseInt(variant.id, 10);
+            if (!isNaN(variantId) && variantId > 0) {
+              formattedVariant.id = variantId;
+            }
           }
+          // Note: If variant.id is missing/invalid, we omit it (for new variants)
 
           return formattedVariant;
         });
         
-        console.log(`📦 Sending ${dataToSend.sizeVolumeVariants.length} size/volume variant(s) for ${product ? 'update' : 'create'}`);
+        console.log(`📦 Sending ${dataToSend.sizeVolumeVariants.length} size/volume variant(s) for ${product ? 'update' : 'create'}:`, dataToSend.sizeVolumeVariants);
+        
+        // Per Postman API spec: sizeVolumeVariants REPLACES all existing variants
+        // We're sending the complete list of variants that should remain
+        // Variants not in this list will be DELETED by the backend
+        // For UPDATE: Variants with 'id' will be updated, variants without 'id' will be created
+        // Per Postman API spec: sizeVolumeVariants REPLACES all existing variants
+        // We're sending the complete list of variants that should remain
+        // Variants not in this list will be DELETED by the backend
       } else {
         // If no variants in form, always send empty array for eye hygiene products when updating
         // This ensures variants are updated even if the user removes all variants
@@ -1249,9 +1263,20 @@ const ProductModal = ({ product, onClose }) => {
           dataToSend.sizeVolumeVariants = [];
           if (product) {
             console.log('📦 Sending empty size/volume variants array for eye hygiene product update (will clear existing variants)');
+          } else {
+            console.log('📦 Sending empty size/volume variants array for new eye hygiene product');
           }
         }
         // For non-eye hygiene products, don't send variants field if empty (preserves existing variants)
+      }
+      
+      // Log final dataToSend to verify variants are included
+      if (isEyeHygieneProduct) {
+        console.log('📦 Final dataToSend for eye hygiene product:', {
+          hasVariants: !!dataToSend.sizeVolumeVariants,
+          variantsCount: Array.isArray(dataToSend.sizeVolumeVariants) ? dataToSend.sizeVolumeVariants.length : 0,
+          variants: dataToSend.sizeVolumeVariants
+        });
       }
 
       let response;
@@ -1293,6 +1318,25 @@ const ProductModal = ({ product, onClose }) => {
           Object.keys(dataToSend).forEach((key) => {
             const value = dataToSend[key];
             const isRequired = requiredFields.has(key);
+            
+            // Special handling for sizeVolumeVariants - per Postman API spec
+            // Must be sent as JSON string (text type) in FormData
+            // For UPDATE: Include 'id' field for existing variants, omit for new variants
+            // REPLACES all existing variants - send complete list of variants that should remain
+            if (key === 'sizeVolumeVariants') {
+              // Always send variants array (even if empty) for eye hygiene products
+              // Per API spec: type="text", value=JSON array string
+              if (Array.isArray(value)) {
+                const variantsJson = JSON.stringify(value);
+                submitData.append(key, variantsJson);
+                console.log(`📦 Appending sizeVolumeVariants to FormData (${value.length} variant(s)):`, variantsJson);
+              } else {
+                // Send empty array if not an array (per API spec: "[]" to clear all)
+                submitData.append(key, JSON.stringify([]));
+                console.log('📦 Appending empty sizeVolumeVariants array to FormData (clearing all variants)');
+              }
+              return; // Skip the normal processing for this field
+            }
             
             // For required fields, always send (even if empty, let backend validate)
             // For optional fields, skip null, undefined, and empty strings
@@ -1661,6 +1705,18 @@ const ProductModal = ({ product, onClose }) => {
       const responseData = response.data?.data || response.data;
       const savedProduct = responseData?.product || responseData;
       const successMessage = response.data?.message || (product ? 'Product updated successfully' : 'Product created successfully');
+      
+      // Log saved product data including variants for verification
+      if (savedProduct) {
+        const savedVariants = savedProduct.sizeVolumeVariants || savedProduct.size_volume_variants || [];
+        console.log('✅ Product saved successfully:', {
+          productId: savedProduct.id,
+          productName: savedProduct.name,
+          variantsCount: Array.isArray(savedVariants) ? savedVariants.length : 0,
+          hasVariants: Array.isArray(savedVariants) && savedVariants.length > 0,
+          variants: savedVariants
+        });
+      }
       
       // Update currentProduct with saved product data (especially important for new products to get the ID)
       if (savedProduct && savedProduct.id) {

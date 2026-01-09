@@ -631,7 +631,7 @@ const Products = () => {
     }
   };
 
-  const handleEdit = (product) => {
+  const handleEdit = async (product) => {
     console.log('📝 Editing product:', {
       id: product.id,
       name: product.name,
@@ -639,7 +639,38 @@ const Products = () => {
       category_id: product.category_id,
       category_name: product.category?.name || product.category_name
     });
-    setEditingProduct(product);
+    
+    // For eye hygiene products, fetch full product details to get variants
+    const categoryName = product.category?.name || product.category_name || '';
+    const isEyeHygieneCategory = categoryName.toLowerCase().includes('eye') && categoryName.toLowerCase().includes('hygiene');
+    const isEyeHygieneProduct = product.product_type === 'eye_hygiene' || 
+                                 product.product_type === 'accessory' && isEyeHygieneCategory ||
+                                 isEyeHygieneCategory;
+    
+    if (isEyeHygieneProduct || product.product_type === 'eye_hygiene') {
+      try {
+        // Fetch full product details to ensure we have variants data
+        console.log('📦 Fetching full product details for eye hygiene product to get variants...');
+        const response = await api.get(API_ROUTES.PRODUCTS.BY_ID(product.id));
+        const productData = response.data?.data?.product || response.data?.product || response.data;
+        
+        if (productData) {
+          console.log('✅ Full product details fetched, variants:', productData.sizeVolumeVariants || productData.size_volume_variants || 'none');
+          setEditingProduct(productData);
+        } else {
+          // Fallback to list product if detailed fetch fails
+          setEditingProduct(product);
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to fetch full product details, using list data:', error);
+        // Fallback to using product from list
+        setEditingProduct(product);
+      }
+    } else {
+      // For non-eye hygiene products, use product from list
+      setEditingProduct(product);
+    }
+    
     setModalOpen(true);
   };
 

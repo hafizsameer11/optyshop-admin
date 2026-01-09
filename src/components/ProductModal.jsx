@@ -274,43 +274,83 @@ const ProductModal = ({ product, onClose }) => {
         // Size/Volume Variants (for Eye Hygiene products)
         // Normalize variants data - handle both camelCase and snake_case field names
         sizeVolumeVariants: (() => {
-          const variants = product.sizeVolumeVariants || product.size_volume_variants || [];
-          // Check if this is an eye hygiene product (by product_type, flag, or category)
+          // Try multiple possible field names for variants
+          const variants = product.sizeVolumeVariants || 
+                          product.size_volume_variants || 
+                          product.sizeVolumeVariants || 
+                          product.SizeVolumeVariants ||
+                          product.variants ||
+                          [];
+          
+          // Check if this is an eye hygiene product (by product_type or category)
           const productCategoryName = (product.category?.name || product.category_name || '').toLowerCase().trim();
           const isEyeHygieneProduct = product.product_type === 'eye_hygiene' || 
+                                       product.product_type === 'accessory' && (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
                                        (productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
+          
+          console.log('🔍 Loading variants for product:', {
+            productId: product.id,
+            productType: product.product_type,
+            categoryName: productCategoryName,
+            isEyeHygiene: isEyeHygieneProduct,
+            variantsFieldExists: !!(product.sizeVolumeVariants || product.size_volume_variants),
+            variantsCount: Array.isArray(variants) ? variants.length : 'not an array',
+            rawVariants: variants
+          });
           
           if (!Array.isArray(variants) || variants.length === 0) {
             if (isEyeHygieneProduct) {
-              console.log('📦 Eye Hygiene product loaded - No size/volume variants found');
+              console.log('📦 Eye Hygiene product loaded - No size/volume variants found in product data');
             }
             return [];
           }
           
           // Normalize each variant to ensure all fields are properly mapped
-          const normalizedVariants = variants.map((variant, index) => ({
+          const normalizedVariants = variants.map((variant, index) => {
             // Handle both camelCase and snake_case field names
-            id: variant.id || variant.Id || null,
-            size_volume: variant.size_volume || variant.sizeVolume || '',
-            pack_type: variant.pack_type || variant.packType || '',
-            price: variant.price !== undefined && variant.price !== null ? variant.price : '',
-            compare_at_price: variant.compare_at_price !== undefined ? variant.compare_at_price : variant.compareAtPrice !== undefined ? variant.compareAtPrice : '',
-            cost_price: variant.cost_price !== undefined ? variant.cost_price : variant.costPrice !== undefined ? variant.costPrice : '',
-            stock_quantity: variant.stock_quantity !== undefined ? variant.stock_quantity : variant.stockQuantity !== undefined ? variant.stockQuantity : 0,
-            stock_status: variant.stock_status || variant.stockStatus || 'in_stock',
-            sku: variant.sku || variant.SKU || '',
-            // Handle expiry_date - preserve as-is (will be formatted in the input field)
-            // Accept various date formats: ISO string, date string, or null
-            expiry_date: (() => {
+            const normalized = {
+              id: variant.id || variant.Id || null,
+              size_volume: variant.size_volume || variant.sizeVolume || '',
+              pack_type: variant.pack_type || variant.packType || '',
+              price: variant.price !== undefined && variant.price !== null ? String(variant.price) : '',
+              compare_at_price: variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '' ? String(variant.compare_at_price) : '',
+              cost_price: variant.cost_price !== undefined && variant.cost_price !== null && variant.cost_price !== '' ? String(variant.cost_price) : '',
+              stock_quantity: variant.stock_quantity !== undefined && variant.stock_quantity !== null ? parseInt(variant.stock_quantity) : 0,
+              stock_status: variant.stock_status || variant.stockStatus || 'in_stock',
+              sku: variant.sku || variant.SKU || '',
+              is_active: variant.is_active !== undefined ? variant.is_active : variant.isActive !== undefined ? variant.isActive : true,
+              sort_order: variant.sort_order !== undefined ? parseInt(variant.sort_order) : variant.sortOrder !== undefined ? parseInt(variant.sortOrder) : index,
+            };
+            
+            // Handle expiry_date - convert to YYYY-MM-DD format for date input
+            if (variant.expiry_date || variant.expiryDate) {
               const dateValue = variant.expiry_date || variant.expiryDate;
-              if (!dateValue) return null;
-              // If it's already a valid date string, return as-is
-              // The date input will handle formatting with new Date().toISOString().split('T')[0]
-              return dateValue;
-            })(),
-            is_active: variant.is_active !== undefined ? variant.is_active : variant.isActive !== undefined ? variant.isActive : true,
-            sort_order: variant.sort_order !== undefined ? variant.sort_order : variant.sortOrder !== undefined ? variant.sortOrder : index,
-          }));
+              if (dateValue) {
+                try {
+                  // If it's already in YYYY-MM-DD format, use it
+                  if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    normalized.expiry_date = dateValue;
+                  } else {
+                    // Try to parse and convert to YYYY-MM-DD
+                    const date = new Date(dateValue);
+                    if (!isNaN(date.getTime())) {
+                      normalized.expiry_date = date.toISOString().split('T')[0];
+                    } else {
+                      normalized.expiry_date = '';
+                    }
+                  }
+                } catch (e) {
+                  normalized.expiry_date = '';
+                }
+              } else {
+                normalized.expiry_date = '';
+              }
+            } else {
+              normalized.expiry_date = '';
+            }
+            
+            return normalized;
+          });
           
           if (isEyeHygieneProduct) {
             console.log(`📦 Eye Hygiene product loaded - ${normalizedVariants.length} size/volume variant(s) loaded:`, normalizedVariants);

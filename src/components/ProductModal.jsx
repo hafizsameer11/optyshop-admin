@@ -989,17 +989,8 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       // Send product_type if it's provided
-      // Note: Backend only accepts: frame, sunglasses, contact_lens, accessory
-      // Eye hygiene products must use 'accessory' as product_type
       if (formData.product_type) {
-        // If product_type is 'eye_hygiene', convert to 'accessory' for backend
-        // (eye hygiene products are identified by category, not product_type)
-        if (formData.product_type === 'eye_hygiene') {
-          dataToSend.product_type = 'accessory';
-          console.log('⚠️ Converting product_type from "eye_hygiene" to "accessory" for backend compatibility');
-        } else {
-          dataToSend.product_type = formData.product_type;
-        }
+        dataToSend.product_type = formData.product_type;
       }
       if (formData.meta_title && formData.meta_title.trim()) {
         dataToSend.meta_title = formData.meta_title.trim();
@@ -1016,6 +1007,9 @@ const ProductModal = ({ product, onClose }) => {
       // Size/Volume Variants (for Eye Hygiene products)
       // Format variants for submission: convert expiry_date to ISO string and ensure proper types
       // Sort variants by sort_order before submission
+      // IMPORTANT: Always send variants for eye hygiene products when updating
+      const isEyeHygieneProduct = formData.product_type === 'eye_hygiene';
+      
       if (formData.sizeVolumeVariants && Array.isArray(formData.sizeVolumeVariants) && formData.sizeVolumeVariants.length > 0) {
         // Sort by sort_order (ascending), then by size_volume as secondary sort
         const sortedVariants = [...formData.sizeVolumeVariants].sort((a, b) => {
@@ -1095,10 +1089,18 @@ const ProductModal = ({ product, onClose }) => {
 
           return formattedVariant;
         });
+        
+        console.log(`📦 Sending ${dataToSend.sizeVolumeVariants.length} size/volume variant(s) for ${product ? 'update' : 'create'}`);
       } else {
-        // If no variants, send empty array (or null depending on API requirement)
-        // Per documentation: set to null to skip variant updates, but empty array to clear all
-        dataToSend.sizeVolumeVariants = [];
+        // If no variants in form, always send empty array for eye hygiene products when updating
+        // This ensures variants are updated even if the user removes all variants
+        if (isEyeHygieneProduct) {
+          dataToSend.sizeVolumeVariants = [];
+          if (product) {
+            console.log('📦 Sending empty size/volume variants array for eye hygiene product update (will clear existing variants)');
+          }
+        }
+        // For non-eye hygiene products, don't send variants field if empty (preserves existing variants)
       }
 
       let response;

@@ -151,6 +151,7 @@ const ProductModal = ({ product, onClose }) => {
   const [lensTypes, setLensTypes] = useState([]);
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
+  const [productTypeManuallySet, setProductTypeManuallySet] = useState(false); // Track if user manually set product_type
   
   // Lens Management tables state
   const [frameSizes, setFrameSizes] = useState([]);
@@ -227,6 +228,8 @@ const ProductModal = ({ product, onClose }) => {
 
   useEffect(() => {
     fetchProductOptions();
+    // Reset manual flag when product changes (loading existing product or creating new)
+    setProductTypeManuallySet(false);
     if (product) {
       setFormData({
         name: product.name || '',
@@ -263,10 +266,11 @@ const ProductModal = ({ product, onClose }) => {
           ).toLowerCase().trim();
           const isEyeHygieneCategory = productCategoryName.includes('eye') && productCategoryName.includes('hygiene');
           
-          // If category is eye hygiene but product_type is 'accessory' or missing, set to 'eye_hygiene' for UI
+          // If category is eye hygiene but product_type is 'accessory' (legacy) or missing, set to 'eye_hygiene'
+          // This handles backward compatibility with products that were stored as 'accessory' before
           if (isEyeHygieneCategory && (!productType || productType === 'accessory')) {
             productType = 'eye_hygiene';
-            console.log('🔍 Set product_type to "eye_hygiene" for UI (backend uses "accessory")', {
+            console.log('🔍 Set product_type to "eye_hygiene" (converted from legacy "accessory")', {
               originalProductType: product.product_type,
               categoryName: productCategoryName,
               finalProductType: productType
@@ -312,8 +316,9 @@ const ProductModal = ({ product, onClose }) => {
           // Check if this is an eye hygiene product (by product_type or category)
           const productCategoryName = (product.category?.name || product.category_name || '').toLowerCase().trim();
           const isEyeHygieneProduct = product.product_type === 'eye_hygiene' || 
-                                       product.product_type === 'accessory' && (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
-                                       (productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
+                                       (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
+                                       // Legacy: also check for 'accessory' with eye hygiene category (backward compatibility)
+                                       (product.product_type === 'accessory' && productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
           
           console.log('🔍 Loading variants for product:', {
             productId: product.id,
@@ -559,9 +564,13 @@ const ProductModal = ({ product, onClose }) => {
   }, [formData.sub_category_id]);
 
   // Auto-update product_type when category changes to eye hygiene
+  // Only auto-update if user hasn't manually set product_type OR when category changes
   // Also runs when categories load (in case product loaded before categories)
   useEffect(() => {
-    if (formData.category_id && categories.length > 0) {
+    // Don't auto-update if user manually set product_type (unless category just changed)
+    // Reset the manual flag when category changes (handled in handleChange)
+    
+    if (formData.category_id && categories.length > 0 && !productTypeManuallySet) {
       const currentCategory = categories.find(cat => 
         cat.id === parseInt(formData.category_id) || 
         cat.id === formData.category_id ||
@@ -576,15 +585,16 @@ const ProductModal = ({ product, onClose }) => {
           console.log('🔍 Auto-updating product_type to "eye_hygiene" based on category', {
             categoryId: formData.category_id,
             categoryName: currentCategory.name,
-            currentProductType: formData.product_type
+            currentProductType: formData.product_type,
+            manuallySet: productTypeManuallySet
           });
           setFormData(prev => ({ ...prev, product_type: 'eye_hygiene' }));
         }
       }
     }
     
-    // Also check the product prop if it exists (for initial load)
-    if (product && product.category_id && categories.length > 0) {
+    // Also check the product prop if it exists (for initial load - ignore manual flag for initial load)
+    if (product && product.category_id && categories.length > 0 && !productTypeManuallySet) {
       const productCategory = categories.find(cat => 
         cat.id === product.category_id || 
         cat.id === parseInt(product.category_id) ||
@@ -593,10 +603,10 @@ const ProductModal = ({ product, onClose }) => {
       if (productCategory) {
         const categoryName = (productCategory.name || '').toLowerCase().trim();
         const isEyeHygieneCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
-        const isAccessory = product.product_type === 'accessory' || formData.product_type === 'accessory';
         
-        // If product is accessory but category is eye hygiene, update product_type
-        if (isEyeHygieneCategory && isAccessory && formData.product_type !== 'eye_hygiene') {
+        // If product is 'accessory' (legacy) or has eye hygiene category, update product_type to 'eye_hygiene'
+        const isLegacyAccessory = product.product_type === 'accessory' || formData.product_type === 'accessory';
+        if (isEyeHygieneCategory && (isLegacyAccessory || formData.product_type !== 'eye_hygiene')) {
           console.log('🔍 Auto-updating product_type to "eye_hygiene" based on product category', {
             productId: product.id,
             productType: product.product_type,
@@ -607,7 +617,12 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
     }
-  }, [formData.category_id, categories, product, formData.product_type]);
+  }, [formData.category_id, categories, product]);
+  
+  // Reset manual flag when category changes (so auto-update can work again for new category)
+  useEffect(() => {
+    setProductTypeManuallySet(false);
+  }, [formData.category_id]);
 
   const fetchProductOptions = async () => {
     try {
@@ -748,7 +763,11 @@ const ProductModal = ({ product, onClose }) => {
       };
       
       // Auto-set product_type to 'eye_hygiene' if eye hygiene category is selected
-      if (isEyeHygieneCategory && formData.product_type !== 'eye_hygiene') {
+      // Only auto-set if user hasn't manually set a different product_type for this category
+      // Reset manual flag when category changes so auto-update can work for new category
+      setProductTypeManuallySet(false);
+      
+      if (isEyeHygieneCategory && updatedFormData.product_type !== 'eye_hygiene') {
         updatedFormData.product_type = 'eye_hygiene';
         console.log('🔍 Auto-set product_type to "eye_hygiene" for eye hygiene category');
       }
@@ -763,6 +782,13 @@ const ProductModal = ({ product, onClose }) => {
         ...formData, 
         [name]: type === 'checkbox' ? checked : value,
         parent_subcategory_id: '' // Reset nested subcategory when parent changes
+      });
+    } else if (name === 'product_type') {
+      // User manually changed product_type - respect their selection
+      setProductTypeManuallySet(true);
+      setFormData({ 
+        ...formData, 
+        [name]: type === 'checkbox' ? checked : value 
       });
     } else {
       setFormData({ 
@@ -1093,19 +1119,8 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       // Send product_type if it's provided
-      // Note: Backend currently only accepts: frame, sunglasses, contact_lens, accessory
-      // Eye hygiene products must use 'accessory' as product_type for backend
-      // but we track them as 'eye_hygiene' in the UI
       if (formData.product_type) {
-        // If product_type is 'eye_hygiene', convert to 'accessory' for backend
-        if (formData.product_type === 'eye_hygiene') {
-          dataToSend.product_type = 'accessory';
-          if (import.meta.env.DEV) {
-            console.log('⚠️ Converting product_type from "eye_hygiene" to "accessory" for backend compatibility');
-          }
-        } else {
-          dataToSend.product_type = formData.product_type;
-        }
+        dataToSend.product_type = formData.product_type;
       }
       if (formData.meta_title && formData.meta_title.trim()) {
         dataToSend.meta_title = formData.meta_title.trim();
@@ -1758,17 +1773,17 @@ const ProductModal = ({ product, onClose }) => {
   const productTypeFromProduct = product?.product_type || '';
   const formProductType = formData.product_type || '';
   
-  // If product_type is 'accessory', check if it's actually an eye hygiene product by category
-  // This handles the case where backend stores eye hygiene as 'accessory'
-  const isAccessoryProduct = productTypeFromProduct === 'accessory' || formProductType === 'accessory';
-  const isEyeHygieneFromAccessory = isAccessoryProduct && isEyeHygieneByCategory;
-  
+  // Check if product_type is 'eye_hygiene' or legacy 'accessory' with eye hygiene category
   const isEyeHygieneByProductType = productTypeFromProduct === 'eye_hygiene' || formProductType === 'eye_hygiene';
   
-  // Final determination: eye hygiene if explicitly set OR detected by category (even if product_type is 'accessory')
+  // Legacy: Also check for 'accessory' with eye hygiene category (for backward compatibility)
+  const isLegacyAccessory = productTypeFromProduct === 'accessory' || formProductType === 'accessory';
+  const isEyeHygieneFromLegacyAccessory = isLegacyAccessory && isEyeHygieneByCategory;
+  
+  // Final determination: eye hygiene if explicitly set OR detected by category (including legacy 'accessory')
   const isEyeHygiene = isEyeHygieneByProductType || 
                        isEyeHygieneByCategory || 
-                       isEyeHygieneFromAccessory;
+                       isEyeHygieneFromLegacyAccessory;
   
   // Debug logging for eye hygiene detection
   if (product && (categoryName.includes('eye') || categoryName.includes('hygiene') || formData.product_type === 'eye_hygiene' || productTypeFromProduct === 'accessory')) {
@@ -1778,10 +1793,10 @@ const ProductModal = ({ product, onClose }) => {
       productPropProductType: productTypeFromProduct,
       categoryName: categoryName,
       categoryId: formData.category_id || product.category_id,
-      isAccessoryProduct: isAccessoryProduct,
+      isLegacyAccessory: isLegacyAccessory,
       isEyeHygieneByCategory: isEyeHygieneByCategory,
       isEyeHygieneByProductType: isEyeHygieneByProductType,
-      isEyeHygieneFromAccessory: isEyeHygieneFromAccessory,
+      isEyeHygieneFromLegacyAccessory: isEyeHygieneFromLegacyAccessory,
       isEyeHygiene: isEyeHygiene,
       categoriesLoaded: categories.length > 0,
       currentCategoryId: currentCategory?.id
@@ -2902,7 +2917,7 @@ const ProductModal = ({ product, onClose }) => {
               <option value="frame">Frame (Eyeglasses)</option>
               <option value="sunglasses">Sunglasses</option>
               <option value="contact_lens">Contact Lens</option>
-              <option value="accessory">Accessory (Eye Hygiene products use this)</option>
+              <option value="eye_hygiene">Eye Hygiene</option>
               <option value="lens">Lens</option>
             </select>
           </div>

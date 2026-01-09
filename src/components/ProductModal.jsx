@@ -258,7 +258,53 @@ const ProductModal = ({ product, onClose }) => {
         is_active: product.is_active !== undefined ? product.is_active : true,
         is_featured: product.is_featured || false,
         // Size/Volume Variants (for Eye Hygiene products)
-        sizeVolumeVariants: product.sizeVolumeVariants || product.size_volume_variants || [],
+        // Normalize variants data - handle both camelCase and snake_case field names
+        sizeVolumeVariants: (() => {
+          const variants = product.sizeVolumeVariants || product.size_volume_variants || [];
+          // Check if this is an eye hygiene product (by product_type, flag, or category)
+          const productCategoryName = (product.category?.name || '').toLowerCase().trim();
+          const isEyeHygieneProduct = product.product_type === 'eye_hygiene' || 
+                                       product.product_type === 'accessory' && (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
+                                       product._isEyeHygiene === true;
+          
+          if (!Array.isArray(variants) || variants.length === 0) {
+            if (isEyeHygieneProduct) {
+              console.log('📦 Eye Hygiene product loaded - No size/volume variants found');
+            }
+            return [];
+          }
+          
+          // Normalize each variant to ensure all fields are properly mapped
+          const normalizedVariants = variants.map((variant, index) => ({
+            // Handle both camelCase and snake_case field names
+            id: variant.id || variant.Id || null,
+            size_volume: variant.size_volume || variant.sizeVolume || '',
+            pack_type: variant.pack_type || variant.packType || '',
+            price: variant.price !== undefined && variant.price !== null ? variant.price : '',
+            compare_at_price: variant.compare_at_price !== undefined ? variant.compare_at_price : variant.compareAtPrice !== undefined ? variant.compareAtPrice : '',
+            cost_price: variant.cost_price !== undefined ? variant.cost_price : variant.costPrice !== undefined ? variant.costPrice : '',
+            stock_quantity: variant.stock_quantity !== undefined ? variant.stock_quantity : variant.stockQuantity !== undefined ? variant.stockQuantity : 0,
+            stock_status: variant.stock_status || variant.stockStatus || 'in_stock',
+            sku: variant.sku || variant.SKU || '',
+            // Handle expiry_date - preserve as-is (will be formatted in the input field)
+            // Accept various date formats: ISO string, date string, or null
+            expiry_date: (() => {
+              const dateValue = variant.expiry_date || variant.expiryDate;
+              if (!dateValue) return null;
+              // If it's already a valid date string, return as-is
+              // The date input will handle formatting with new Date().toISOString().split('T')[0]
+              return dateValue;
+            })(),
+            is_active: variant.is_active !== undefined ? variant.is_active : variant.isActive !== undefined ? variant.isActive : true,
+            sort_order: variant.sort_order !== undefined ? variant.sort_order : variant.sortOrder !== undefined ? variant.sortOrder : index,
+          }));
+          
+          if (isEyeHygieneProduct) {
+            console.log(`📦 Eye Hygiene product loaded - ${normalizedVariants.length} size/volume variant(s) loaded:`, normalizedVariants);
+          }
+          
+          return normalizedVariants;
+        })(),
       });
       // Fetch subcategories if category is set
       if (product.category_id) {
@@ -903,8 +949,17 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       // Send product_type if it's provided
+      // Note: Backend only accepts: frame, sunglasses, contact_lens, accessory
+      // Eye hygiene products must use 'accessory' as product_type
       if (formData.product_type) {
-        dataToSend.product_type = formData.product_type;
+        // If product_type is 'eye_hygiene', convert to 'accessory' for backend
+        // (eye hygiene products are identified by category, not product_type)
+        if (formData.product_type === 'eye_hygiene') {
+          dataToSend.product_type = 'accessory';
+          console.log('⚠️ Converting product_type from "eye_hygiene" to "accessory" for backend compatibility');
+        } else {
+          dataToSend.product_type = formData.product_type;
+        }
       }
       if (formData.meta_title && formData.meta_title.trim()) {
         dataToSend.meta_title = formData.meta_title.trim();
@@ -1518,12 +1573,21 @@ const ProductModal = ({ product, onClose }) => {
   // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids
   // Show Spherical and Astigmatism Configurations for contact lens products
   // Show Size/Volume Variants for eye hygiene products
+  // IMPORTANT: All sections/tabs are present when editing - tabs are conditionally shown based on product_type
   const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
   const isContactLens = formData.product_type === 'contact_lens';
-  const isEyeHygiene = formData.product_type === 'eye_hygiene';
+  
+  // Check if product is eye hygiene by category (since backend uses 'accessory' as product_type)
+  // Eye hygiene products use 'accessory' as product_type but are identified by category
+  const currentCategory = categories.find(cat => cat.id === formData.category_id);
+  const categoryName = (currentCategory?.name || product?.category?.name || '').toLowerCase().trim();
+  const isEyeHygieneByCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
+  const isEyeHygiene = formData.product_type === 'eye_hygiene' || 
+                       (formData.product_type === 'accessory' && isEyeHygieneByCategory) ||
+                       product?._isEyeHygiene === true;
   
   const tabs = [
-    { id: 'general', label: 'General' },
+    { id: 'general', label: 'General' }, // Always shown - contains all basic product fields
     ...(isFrameOrSunglasses ? [
       { id: 'lens-management', label: 'Lens Management' },
     ] : []),
@@ -1532,11 +1596,16 @@ const ProductModal = ({ product, onClose }) => {
       { id: 'astigmatism', label: 'Astigmatism Configurations' },
     ] : []),
     ...(isEyeHygiene ? [
-      { id: 'size-volume-variants', label: 'Size/Volume Variants' },
+      { id: 'size-volume-variants', label: 'Size/Volume Variants' }, // Shown for Eye Hygiene products
     ] : []),
-    { id: 'images', label: 'Images' },
-    { id: 'seo', label: 'SEO' },
+    { id: 'images', label: 'Images' }, // Always shown - all products can have images
+    { id: 'seo', label: 'SEO' }, // Always shown - all products can have SEO settings
   ];
+  
+  // Log tabs for eye hygiene products to help with debugging
+  if (isEyeHygiene && product) {
+    console.log(`📋 Eye Hygiene product edit - Available tabs:`, tabs.map(t => t.label).join(', '));
+  }
 
   // Fetch lens management data when tab changes
   useEffect(() => {
@@ -2631,9 +2700,8 @@ const ProductModal = ({ product, onClose }) => {
               <option value="frame">Frame (Eyeglasses)</option>
               <option value="sunglasses">Sunglasses</option>
               <option value="contact_lens">Contact Lens</option>
-              <option value="eye_hygiene">Eye Hygiene</option>
+              <option value="accessory">Accessory (Eye Hygiene products use this)</option>
               <option value="lens">Lens</option>
-              <option value="accessory">Accessory</option>
             </select>
           </div>
 
@@ -2672,7 +2740,7 @@ const ProductModal = ({ product, onClose }) => {
 
 
                 {/* Frame/Lens related fields - Only show for frames, sunglasses, opty-kids */}
-                {formData.product_type !== 'eye_hygiene' && (
+                {!isEyeHygiene && (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-200 pt-6">
             <div>
@@ -3862,7 +3930,7 @@ const ProductModal = ({ product, onClose }) => {
           </div>
 
           {/* 3D Model Upload - Per Postman Collection - Hide for Eye Hygiene */}
-          {formData.product_type !== 'eye_hygiene' && (
+          {!isEyeHygiene && (
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               {t('model3D')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
@@ -3933,7 +4001,7 @@ const ProductModal = ({ product, onClose }) => {
           )}
 
           {/* Images with Color Codes - Single Upload System - Hide for Eye Hygiene */}
-          {formData.product_type !== 'eye_hygiene' && (
+          {!isEyeHygiene && (
           <div className="border-t border-gray-200 pt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               {t('imagesWithColorCodes')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>

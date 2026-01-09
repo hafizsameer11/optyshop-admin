@@ -488,7 +488,7 @@ const Products = () => {
           },
           'eye-hygiene': {
             endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYE_HYGIENE,
-            productType: 'eye_hygiene'
+            productType: 'accessory' // Backend uses 'accessory' for eye hygiene products
           },
         };
         
@@ -668,11 +668,14 @@ const Products = () => {
       const categoryLower = resolvedCategoryName.toLowerCase().trim();
       
       // Map category names to product types
+      // Note: Backend only accepts: frame, sunglasses, contact_lens, accessory
       if (categoryLower.includes('contact') && categoryLower.includes('lens')) {
         return 'contact_lens';
       }
       if (categoryLower.includes('eye') && categoryLower.includes('hygiene')) {
-        return 'eye_hygiene';
+        // Eye hygiene products use 'accessory' as product_type for backend
+        // but we track it internally as 'eye_hygiene' for UI purposes
+        return 'accessory';
       }
       if (categoryLower.includes('sun') && (categoryLower.includes('glass') || categoryLower.includes('sunglass'))) {
         return 'sunglasses';
@@ -715,7 +718,11 @@ const Products = () => {
       const categoryId = editingProduct.category_id || editingProduct.categoryId;
       const inferredType = inferProductTypeFromCategory(categoryName, categoryId);
       
-      console.log('🔍 Category info:', { categoryName, categoryId, inferredType });
+      // Check if this is an eye hygiene product by category (category contains "eye hygiene")
+      const categoryLower = (categoryName || '').toLowerCase().trim();
+      const isEyeHygieneCategory = categoryLower.includes('eye') && categoryLower.includes('hygiene');
+      
+      console.log('🔍 Category info:', { categoryName, categoryId, inferredType, isEyeHygieneCategory });
       
       // Use inferred type if product_type is missing or doesn't match category
       if (inferredType) {
@@ -756,7 +763,27 @@ const Products = () => {
         );
       }
       
-      // For all other product types (sunglasses, frame, eye_hygiene, etc.), use ProductModal
+      // For eye hygiene products (identified by category), use ProductModal with 'accessory' product_type
+      // but pass category info so it shows the Size/Volume Variants tab
+      if (isEyeHygieneCategory) {
+        console.log('✅ Opening ProductModal for Eye Hygiene product (using accessory product_type)');
+        // Use 'accessory' as product_type for backend, but include a flag for UI
+        productToPass = { 
+          ...editingProduct, 
+          product_type: 'accessory',
+          _isEyeHygiene: true, // Internal flag for UI purposes
+          category_id: categoryId,
+          category: editingProduct.category || { name: categoryName, id: categoryId }
+        };
+        return (
+          <ProductModal
+            product={productToPass}
+            onClose={handleModalClose}
+          />
+        );
+      }
+      
+      // For all other product types (sunglasses, frame, etc.), use ProductModal
       // ProductModal will automatically show the appropriate tabs based on product_type
       console.log(`✅ Opening ProductModal for product type: ${productType || 'default'} (normalized: ${normalizedProductType})`);
       // Ensure product_type is set correctly before passing to ProductModal
@@ -776,7 +803,7 @@ const Products = () => {
       'sunglasses': 'sunglasses',
       'eyeglasses': 'frame',
       'opty-kids': 'frame', // Opty Kids uses same product type as eyeglasses
-      'eye-hygiene': 'eye_hygiene',
+      'eye-hygiene': 'accessory', // Backend uses 'accessory' for eye hygiene products
       'contact-lenses': 'contact_lens',
       'all': null // Will use default product type
     };

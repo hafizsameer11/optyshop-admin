@@ -642,43 +642,45 @@ const Products = () => {
     setModalOpen(true);
   };
 
-  // Helper function to infer product_type from category name
-  const inferProductTypeFromCategory = (categoryName, categoryId) => {
-    if (!categoryName) {
-      // Try to find category by ID
-      const category = categories.find(cat => cat.id === categoryId);
-      if (category) {
-        categoryName = category.name || '';
-      }
-    }
-    
-    if (!categoryName) return null;
-    
-    const categoryLower = categoryName.toLowerCase().trim();
-    
-    // Map category names to product types
-    if (categoryLower.includes('contact') && categoryLower.includes('lens')) {
-      return 'contact_lens';
-    }
-    if (categoryLower.includes('eye') && categoryLower.includes('hygiene')) {
-      return 'eye_hygiene';
-    }
-    if (categoryLower.includes('sun') && (categoryLower.includes('glass') || categoryLower.includes('sunglass'))) {
-      return 'sunglasses';
-    }
-    if (categoryLower.includes('eye') && categoryLower.includes('glass')) {
-      return 'frame';
-    }
-    if (categoryLower.includes('opty') && categoryLower.includes('kids')) {
-      return 'frame'; // Opty Kids uses frame product type
-    }
-    
-    return null;
-  };
-
   // Determine which modal to use based on product's actual product_type when editing,
   // or based on selected section when creating a new product
   const getProductModal = () => {
+    // Helper function to infer product_type from category name
+    const inferProductTypeFromCategory = (categoryName, categoryId) => {
+      let resolvedCategoryName = categoryName;
+      
+      if (!resolvedCategoryName && categoryId) {
+        // Try to find category by ID
+        const category = categories.find(cat => cat.id === categoryId);
+        if (category) {
+          resolvedCategoryName = category.name || '';
+        }
+      }
+      
+      if (!resolvedCategoryName) return null;
+      
+      const categoryLower = resolvedCategoryName.toLowerCase().trim();
+      
+      // Map category names to product types
+      if (categoryLower.includes('contact') && categoryLower.includes('lens')) {
+        return 'contact_lens';
+      }
+      if (categoryLower.includes('eye') && categoryLower.includes('hygiene')) {
+        return 'eye_hygiene';
+      }
+      if (categoryLower.includes('sun') && (categoryLower.includes('glass') || categoryLower.includes('sunglass'))) {
+        return 'sunglasses';
+      }
+      if (categoryLower.includes('eye') && categoryLower.includes('glass')) {
+        return 'frame';
+      }
+      if (categoryLower.includes('opty') && categoryLower.includes('kids')) {
+        return 'frame'; // Opty Kids uses frame product type
+      }
+      
+      return null;
+    };
+
     // When editing a product, determine modal based on the product's actual product_type
     if (editingProduct) {
       let productType = editingProduct.product_type;

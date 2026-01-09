@@ -707,23 +707,32 @@ const Products = () => {
       let productToPass = editingProduct;
       
       console.log('🔍 Raw product_type from editingProduct:', productType);
+      console.log('🔍 Full editingProduct:', editingProduct);
       
-      // If product_type is missing, try to infer it from category
-      if (!productType) {
-        const categoryName = editingProduct.category?.name || editingProduct.category_name;
-        const categoryId = editingProduct.category_id || editingProduct.categoryId;
-        productType = inferProductTypeFromCategory(categoryName, categoryId);
+      // Always check category to ensure we have the correct product type
+      // Category is more reliable than product_type field which might be missing or incorrect
+      const categoryName = editingProduct.category?.name || editingProduct.category_name;
+      const categoryId = editingProduct.category_id || editingProduct.categoryId;
+      const inferredType = inferProductTypeFromCategory(categoryName, categoryId);
+      
+      console.log('🔍 Category info:', { categoryName, categoryId, inferredType });
+      
+      // Use inferred type if product_type is missing or doesn't match category
+      if (inferredType) {
+        const normalizedInferred = normalizeProductType(inferredType);
+        const normalizedCurrent = normalizeProductType(productType);
         
-        // If we inferred a product type, create a new product object with it
-        if (productType) {
-          productToPass = { ...editingProduct, product_type: productType };
-          console.log(`🔍 Inferred product_type "${productType}" from category "${categoryName}" for product ${editingProduct.id}`);
+        // If no product_type or if it doesn't match category, use inferred type
+        if (!productType || (normalizedInferred !== normalizedCurrent && normalizedInferred)) {
+          productType = inferredType;
+          productToPass = { ...editingProduct, product_type: inferredType };
+          console.log(`🔍 Using inferred product_type "${inferredType}" from category "${categoryName}" for product ${editingProduct.id}`);
         }
       }
       
       // Normalize product type for consistent comparison
       const normalizedProductType = normalizeProductType(productType);
-      console.log('🔍 Normalized product_type:', normalizedProductType);
+      console.log('🔍 Final normalized product_type:', normalizedProductType);
       
       // Use ContactLensProductModal for contact lens products (handle variations like "contact lera", "contact_lens", etc.)
       const isContactLens = 
@@ -731,14 +740,13 @@ const Products = () => {
         normalizedProductType === 'contactlera' ||
         normalizedProductType === 'contact_lera' ||
         (normalizedProductType?.includes('contact') && normalizedProductType?.includes('lens')) ||
-        (normalizedProductType?.includes('contact') && normalizedProductType?.includes('lera'));
+        (normalizedProductType?.includes('contact') && normalizedProductType?.includes('lera')) ||
+        (inferredType === 'contact_lens');
       
       if (isContactLens) {
         console.log('✅ Opening ContactLensProductModal for contact lens product');
         // Ensure product_type is set correctly for the modal
-        if (normalizedProductType !== 'contact_lens') {
-          productToPass = { ...editingProduct, product_type: 'contact_lens' };
-        }
+        productToPass = { ...editingProduct, product_type: 'contact_lens' };
         return (
           <ContactLensProductModal
             product={productToPass}
@@ -751,9 +759,9 @@ const Products = () => {
       // For all other product types (sunglasses, frame, eye_hygiene, etc.), use ProductModal
       // ProductModal will automatically show the appropriate tabs based on product_type
       console.log(`✅ Opening ProductModal for product type: ${productType || 'default'} (normalized: ${normalizedProductType})`);
-      // Ensure product_type is normalized before passing to ProductModal
-      if (normalizedProductType && normalizedProductType !== productType) {
-        productToPass = { ...editingProduct, product_type: normalizedProductType };
+      // Ensure product_type is set correctly before passing to ProductModal
+      if (!productToPass.product_type || productToPass.product_type !== productType) {
+        productToPass = { ...editingProduct, product_type: productType || normalizedProductType || 'frame' };
       }
       return (
         <ProductModal

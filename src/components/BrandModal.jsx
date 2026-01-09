@@ -22,17 +22,25 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
 
   useEffect(() => {
     if (brand) {
+      // Handle both snake_case and camelCase field names
       setFormData({
         name: brand.name || '',
         slug: brand.slug || '',
         description: brand.description || '',
-        website_url: brand.website_url || '',
-        sort_order: brand.sort_order || 0,
-        is_active: brand.is_active !== undefined ? brand.is_active : true,
+        website_url: brand.website_url || brand.websiteUrl || '',
+        sort_order: brand.sort_order !== null && brand.sort_order !== undefined
+          ? brand.sort_order
+          : (brand.sortOrder !== null && brand.sortOrder !== undefined
+            ? brand.sortOrder
+            : 0),
+        is_active: brand.is_active !== undefined 
+          ? brand.is_active 
+          : (brand.isActive !== undefined ? brand.isActive : true),
       });
       
-      if (brand.logo_url) {
-        setLogoPreview(brand.logo_url);
+      const logoUrl = brand.logo_url || brand.logoUrl;
+      if (logoUrl) {
+        setLogoPreview(logoUrl);
       } else {
         setLogoPreview(null);
       }

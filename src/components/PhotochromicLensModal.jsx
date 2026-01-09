@@ -20,13 +20,24 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
 
   useEffect(() => {
     if (lens) {
+      // Handle both snake_case and camelCase field names
       setFormData({
         name: lens.name || '',
         slug: lens.slug || '',
-        base_price: lens.base_price || '',
+        base_price: lens.base_price !== null && lens.base_price !== undefined
+          ? lens.base_price
+          : (lens.basePrice !== null && lens.basePrice !== undefined
+            ? lens.basePrice
+            : ''),
         description: lens.description || '',
-        is_active: lens.is_active !== undefined ? lens.is_active : true,
-        sort_order: lens.sort_order || 0,
+        is_active: lens.is_active !== undefined 
+          ? lens.is_active 
+          : (lens.isActive !== undefined ? lens.isActive : true),
+        sort_order: lens.sort_order !== null && lens.sort_order !== undefined
+          ? lens.sort_order
+          : (lens.sortOrder !== null && lens.sortOrder !== undefined
+            ? lens.sortOrder
+            : 0),
       });
     } else {
       setFormData({

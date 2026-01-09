@@ -19,14 +19,25 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
 
   useEffect(() => {
     if (lensType) {
+      // Handle both snake_case and camelCase field names
       setFormData({
         name: lensType.name || '',
         slug: lensType.slug || '',
         description: lensType.description || '',
-        prescription_type: lensType.prescription_type || 'single_vision',
-        base_price: lensType.base_price || '',
-        is_active: lensType.is_active !== undefined ? lensType.is_active : true,
-        sort_order: lensType.sort_order || 0,
+        prescription_type: lensType.prescription_type || lensType.prescriptionType || 'single_vision',
+        base_price: lensType.base_price !== null && lensType.base_price !== undefined
+          ? lensType.base_price
+          : (lensType.basePrice !== null && lensType.basePrice !== undefined
+            ? lensType.basePrice
+            : ''),
+        is_active: lensType.is_active !== undefined 
+          ? lensType.is_active 
+          : (lensType.isActive !== undefined ? lensType.isActive : true),
+        sort_order: lensType.sort_order !== null && lensType.sort_order !== undefined
+          ? lensType.sort_order
+          : (lensType.sortOrder !== null && lensType.sortOrder !== undefined
+            ? lensType.sortOrder
+            : 0),
       });
     } else {
       setFormData({

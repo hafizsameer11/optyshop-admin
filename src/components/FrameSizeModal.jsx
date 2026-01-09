@@ -21,14 +21,39 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
   useEffect(() => {
     if (frameSize) {
+      // Handle both snake_case and camelCase field names
       setFormData({
-        product_id: frameSize.product_id || '',
-        lens_width: frameSize.lens_width || '',
-        bridge_width: frameSize.bridge_width || '',
-        temple_length: frameSize.temple_length || '',
-        frame_width: frameSize.frame_width || '',
-        frame_height: frameSize.frame_height || '',
-        size_label: frameSize.size_label || '',
+        product_id: frameSize.product_id !== null && frameSize.product_id !== undefined
+          ? frameSize.product_id
+          : (frameSize.productId !== null && frameSize.productId !== undefined
+            ? frameSize.productId
+            : ''),
+        lens_width: frameSize.lens_width !== null && frameSize.lens_width !== undefined
+          ? frameSize.lens_width
+          : (frameSize.lensWidth !== null && frameSize.lensWidth !== undefined
+            ? frameSize.lensWidth
+            : ''),
+        bridge_width: frameSize.bridge_width !== null && frameSize.bridge_width !== undefined
+          ? frameSize.bridge_width
+          : (frameSize.bridgeWidth !== null && frameSize.bridgeWidth !== undefined
+            ? frameSize.bridgeWidth
+            : ''),
+        temple_length: frameSize.temple_length !== null && frameSize.temple_length !== undefined
+          ? frameSize.temple_length
+          : (frameSize.templeLength !== null && frameSize.templeLength !== undefined
+            ? frameSize.templeLength
+            : ''),
+        frame_width: frameSize.frame_width !== null && frameSize.frame_width !== undefined
+          ? frameSize.frame_width
+          : (frameSize.frameWidth !== null && frameSize.frameWidth !== undefined
+            ? frameSize.frameWidth
+            : ''),
+        frame_height: frameSize.frame_height !== null && frameSize.frame_height !== undefined
+          ? frameSize.frame_height
+          : (frameSize.frameHeight !== null && frameSize.frameHeight !== undefined
+            ? frameSize.frameHeight
+            : ''),
+        size_label: frameSize.size_label || frameSize.sizeLabel || '',
       });
     } else {
       setFormData({

@@ -22,15 +22,24 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
 
   useEffect(() => {
     if (lensTreatment) {
+      // Handle both snake_case and camelCase field names
       setFormData({
         name: lensTreatment.name || '',
         slug: lensTreatment.slug || '',
         type: lensTreatment.type || 'scratch_proof',
         description: lensTreatment.description || '',
-        price: lensTreatment.price || '',
+        price: lensTreatment.price !== null && lensTreatment.price !== undefined
+          ? lensTreatment.price
+          : '',
         icon: lensTreatment.icon || '',
-        is_active: lensTreatment.is_active !== undefined ? lensTreatment.is_active : true,
-        sort_order: lensTreatment.sort_order !== null && lensTreatment.sort_order !== undefined ? lensTreatment.sort_order : 0,
+        is_active: lensTreatment.is_active !== undefined 
+          ? lensTreatment.is_active 
+          : (lensTreatment.isActive !== undefined ? lensTreatment.isActive : true),
+        sort_order: lensTreatment.sort_order !== null && lensTreatment.sort_order !== undefined
+          ? lensTreatment.sort_order
+          : (lensTreatment.sortOrder !== null && lensTreatment.sortOrder !== undefined
+            ? lensTreatment.sortOrder
+            : 0),
       });
     } else {
       setFormData({

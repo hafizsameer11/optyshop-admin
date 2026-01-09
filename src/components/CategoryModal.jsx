@@ -20,12 +20,19 @@ const CategoryModal = ({ category, onClose }) => {
 
   useEffect(() => {
     if (category) {
+      // Handle both snake_case and camelCase field names
       setFormData({
         name: category.name || '',
         slug: category.slug || '',
         description: category.description || '',
-        is_active: category.is_active !== undefined ? category.is_active : true,
-        sort_order: category.sort_order ?? 0,
+        is_active: category.is_active !== undefined 
+          ? category.is_active 
+          : (category.isActive !== undefined ? category.isActive : true),
+        sort_order: category.sort_order !== null && category.sort_order !== undefined
+          ? category.sort_order
+          : (category.sortOrder !== null && category.sortOrder !== undefined
+            ? category.sortOrder
+            : 0),
       });
     } else {
       setFormData({

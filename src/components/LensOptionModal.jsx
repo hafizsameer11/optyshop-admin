@@ -21,14 +21,25 @@ const LensOptionModal = ({ lensOption, onClose }) => {
 
   useEffect(() => {
     if (lensOption) {
+      // Handle both snake_case and camelCase field names
       setFormData({
         name: lensOption.name || '',
         slug: lensOption.slug || '',
         type: lensOption.type || 'classic',
         description: lensOption.description || '',
-        base_price: lensOption.base_price || '',
-        is_active: lensOption.is_active !== undefined ? lensOption.is_active : true,
-        sort_order: lensOption.sort_order || 0,
+        base_price: lensOption.base_price !== null && lensOption.base_price !== undefined
+          ? lensOption.base_price
+          : (lensOption.basePrice !== null && lensOption.basePrice !== undefined
+            ? lensOption.basePrice
+            : ''),
+        is_active: lensOption.is_active !== undefined 
+          ? lensOption.is_active 
+          : (lensOption.isActive !== undefined ? lensOption.isActive : true),
+        sort_order: lensOption.sort_order !== null && lensOption.sort_order !== undefined
+          ? lensOption.sort_order
+          : (lensOption.sortOrder !== null && lensOption.sortOrder !== undefined
+            ? lensOption.sortOrder
+            : 0),
       });
     } else {
       setFormData({

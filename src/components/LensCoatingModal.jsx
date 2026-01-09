@@ -20,13 +20,20 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
 
   useEffect(() => {
     if (lensCoating) {
+      // Handle both snake_case and camelCase field names
       setFormData({
         name: lensCoating.name || '',
         slug: lensCoating.slug || '',
         type: lensCoating.type || '',
-        price_adjustment: lensCoating.price_adjustment || '',
+        price_adjustment: lensCoating.price_adjustment !== null && lensCoating.price_adjustment !== undefined
+          ? lensCoating.price_adjustment
+          : (lensCoating.priceAdjustment !== null && lensCoating.priceAdjustment !== undefined
+            ? lensCoating.priceAdjustment
+            : ''),
         description: lensCoating.description || '',
-        is_active: lensCoating.is_active !== undefined ? lensCoating.is_active : true,
+        is_active: lensCoating.is_active !== undefined 
+          ? lensCoating.is_active 
+          : (lensCoating.isActive !== undefined ? lensCoating.isActive : true),
       });
     } else {
       setFormData({

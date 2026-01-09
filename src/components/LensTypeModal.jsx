@@ -21,14 +21,25 @@ const LensTypeModal = ({ lensType, onClose }) => {
 
   useEffect(() => {
     if (lensType) {
+      // Handle both snake_case and camelCase field names
       setFormData({
         name: lensType.name || '',
         slug: lensType.slug || '',
         index: lensType.index || '',
-        thickness_factor: lensType.thickness_factor || '',
-        price_adjustment: lensType.price_adjustment || '',
+        thickness_factor: lensType.thickness_factor !== null && lensType.thickness_factor !== undefined
+          ? lensType.thickness_factor
+          : (lensType.thicknessFactor !== null && lensType.thicknessFactor !== undefined
+            ? lensType.thicknessFactor
+            : ''),
+        price_adjustment: lensType.price_adjustment !== null && lensType.price_adjustment !== undefined
+          ? lensType.price_adjustment
+          : (lensType.priceAdjustment !== null && lensType.priceAdjustment !== undefined
+            ? lensType.priceAdjustment
+            : ''),
         description: lensType.description || '',
-        is_active: lensType.is_active !== undefined ? lensType.is_active : true,
+        is_active: lensType.is_active !== undefined 
+          ? lensType.is_active 
+          : (lensType.isActive !== undefined ? lensType.isActive : true),
       });
     } else {
       setFormData({

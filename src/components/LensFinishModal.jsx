@@ -29,14 +29,29 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
 
   useEffect(() => {
     if (lensFinish) {
+      // Handle both snake_case and camelCase field names
       setFormData({
-        lens_option_id: lensFinish.lens_option_id || lensFinish.lensOptionId || '',
+        lens_option_id: lensFinish.lens_option_id !== null && lensFinish.lens_option_id !== undefined
+          ? lensFinish.lens_option_id
+          : (lensFinish.lensOptionId !== null && lensFinish.lensOptionId !== undefined
+            ? lensFinish.lensOptionId
+            : ''),
         name: lensFinish.name || '',
         slug: lensFinish.slug || '',
         description: lensFinish.description || '',
-        price_adjustment: lensFinish.price_adjustment || '',
-        is_active: lensFinish.is_active !== undefined ? lensFinish.is_active : true,
-        sort_order: lensFinish.sort_order !== null && lensFinish.sort_order !== undefined ? lensFinish.sort_order : 0,
+        price_adjustment: lensFinish.price_adjustment !== null && lensFinish.price_adjustment !== undefined
+          ? lensFinish.price_adjustment
+          : (lensFinish.priceAdjustment !== null && lensFinish.priceAdjustment !== undefined
+            ? lensFinish.priceAdjustment
+            : ''),
+        is_active: lensFinish.is_active !== undefined 
+          ? lensFinish.is_active 
+          : (lensFinish.isActive !== undefined ? lensFinish.isActive : true),
+        sort_order: lensFinish.sort_order !== null && lensFinish.sort_order !== undefined
+          ? lensFinish.sort_order
+          : (lensFinish.sortOrder !== null && lensFinish.sortOrder !== undefined
+            ? lensFinish.sortOrder
+            : 0),
       });
     } else {
       setFormData({

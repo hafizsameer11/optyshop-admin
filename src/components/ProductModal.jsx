@@ -252,13 +252,16 @@ const ProductModal = ({ product, onClose }) => {
         stock_status: product.stock_status || 'in_stock',
         compare_at_price: product.compare_at_price || '',
         product_type: (() => {
-          // If product_type is missing, try to infer from category
+          // If product_type is missing or 'accessory', try to infer from category for eye hygiene
           let productType = product.product_type;
-          if (!productType && product.category_id) {
-            const productCategoryName = (product.category?.name || '').toLowerCase().trim();
-            if (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) {
+          if (product.category_id) {
+            const productCategoryName = (product.category?.name || product.category_name || '').toLowerCase().trim();
+            const isEyeHygieneCategory = productCategoryName.includes('eye') && productCategoryName.includes('hygiene');
+            
+            // If category is eye hygiene but product_type is 'accessory' or missing, set to 'eye_hygiene' for UI
+            if (isEyeHygieneCategory && (!productType || productType === 'accessory')) {
               productType = 'eye_hygiene';
-              console.log('🔍 Inferred eye_hygiene product_type from category for product initialization');
+              console.log('🔍 Set product_type to "eye_hygiene" for UI (backend uses "accessory")');
             }
           }
           return productType || 'frame';
@@ -989,8 +992,19 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       // Send product_type if it's provided
+      // Note: Backend currently only accepts: frame, sunglasses, contact_lens, accessory
+      // Eye hygiene products must use 'accessory' as product_type for backend
+      // but we track them as 'eye_hygiene' in the UI
       if (formData.product_type) {
-        dataToSend.product_type = formData.product_type;
+        // If product_type is 'eye_hygiene', convert to 'accessory' for backend
+        if (formData.product_type === 'eye_hygiene') {
+          dataToSend.product_type = 'accessory';
+          if (import.meta.env.DEV) {
+            console.log('⚠️ Converting product_type from "eye_hygiene" to "accessory" for backend compatibility');
+          }
+        } else {
+          dataToSend.product_type = formData.product_type;
+        }
       }
       if (formData.meta_title && formData.meta_title.trim()) {
         dataToSend.meta_title = formData.meta_title.trim();

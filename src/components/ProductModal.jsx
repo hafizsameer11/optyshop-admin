@@ -273,7 +273,7 @@ const ProductModal = ({ product, onClose }) => {
     // Reset manual flag when product changes (loading existing product or creating new)
     setProductTypeManuallySet(false);
     
-    // Fetch full product details when editing to ensure we have all fields (variants, SEO, etc.)
+    // Fetch full product details when editing to ensure we have all fields (SEO, etc.)
     // Use admin endpoint GET /api/admin/products/:id to get complete product data
     const fetchFullProductDetails = async () => {
       console.log('🔍 fetchFullProductDetails called - product:', product);
@@ -290,7 +290,7 @@ const ProductModal = ({ product, onClose }) => {
           console.log('🔍 Making API call now...');
           
           // Fetch full product details using admin endpoint (GET /api/admin/products/:id)
-          // This ensures we get all fields including variants, SEO, and complete image data
+          // This ensures we get all fields including SEO and complete image data
           // Per Postman collection: GET /api/admin/products/:id returns complete product with all fields
           const fullProductResponse = await api.get(endpoint);
           
@@ -312,21 +312,26 @@ const ProductModal = ({ product, onClose }) => {
                                  fullProductResponse.data;
           
           if (fullProductData && fullProductData.id) {
+            // Remove variant-related fields from response
+            const {
+              variants,
+              sizeVolumeVariants,
+              size_volume_variants,
+              size_volume,
+              pack_type,
+              ...cleanProductData
+            } = fullProductData;
+            
             console.log('✅ Fetched full product details with all fields:', {
-              productId: fullProductData.id,
-              productName: fullProductData.name,
-              hasVariants: !!(fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants),
-              variantsCount: Array.isArray(fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants) 
-                ? (fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants).length 
-                : 0,
-              variantsField: fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants,
-              allKeys: Object.keys(fullProductData),
-              hasSEOTitle: !!fullProductData.meta_title,
-              hasSEODescription: !!fullProductData.meta_description,
-              hasSEOKeywords: !!fullProductData.meta_keywords
+              productId: cleanProductData.id,
+              productName: cleanProductData.name,
+              allKeys: Object.keys(cleanProductData),
+              hasSEOTitle: !!cleanProductData.meta_title,
+              hasSEODescription: !!cleanProductData.meta_description,
+              hasSEOKeywords: !!cleanProductData.meta_keywords
             });
-            // Use the full product data for form initialization
-            return fullProductData;
+            // Use the cleaned product data for form initialization (without variant fields)
+            return cleanProductData;
           } else {
             console.warn('⚠️ API response did not contain valid product data:', {
               fullProductData,
@@ -1611,12 +1616,22 @@ const ProductModal = ({ product, onClose }) => {
       
       // Handle nested response structure: { success, message, data: { product: {...} } }
       const responseData = response.data?.data || response.data;
-      const savedProduct = responseData?.product || responseData;
+      let savedProduct = responseData?.product || responseData;
       const successMessage = response.data?.message || (product ? 'Product updated successfully' : 'Product created successfully');
       
-      // Update currentProduct with saved product data (especially important for new products to get the ID)
+      // Remove variant-related fields from saved product response
       if (savedProduct && savedProduct.id) {
-        setCurrentProduct(savedProduct);
+        const {
+          variants,
+          sizeVolumeVariants,
+          size_volume_variants,
+          size_volume,
+          pack_type,
+          ...cleanSavedProduct
+        } = savedProduct;
+        
+        // Update currentProduct with cleaned product data (without variant fields)
+        setCurrentProduct(cleanSavedProduct);
       }
       
       toast.success(successMessage);

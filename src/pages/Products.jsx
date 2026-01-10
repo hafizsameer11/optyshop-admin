@@ -427,13 +427,20 @@ const Products = () => {
         params.append('search', trimmedSearch);
       }
       
-      // Filter products by categories (not product_type) when a section is selected
+      // IMPORTANT: Filter products by categories ONLY (NOT by product_type)
       // All sections use category-based filtering through the general products endpoint
       // Per Postman collection: Use /api/admin/products with category_id parameter
+      // This ensures products are filtered by their category assignment, regardless of product_type field
+      
+      // Remove any product_type parameter if it exists (shouldn't happen, but as a safeguard)
+      if (params.has('product_type')) {
+        params.delete('product_type');
+      }
+      
       if (selectedSection !== 'all') {
         // If section categories are found, filter strictly by those categories
         if (sectionCategoryIds.length > 0) {
-          // Add all category IDs for the section to filter by categories
+          // Add all category IDs for the section to filter by categories ONLY
           sectionCategoryIds.forEach(catId => {
             params.append('category_id', catId);
           });
@@ -445,10 +452,10 @@ const Products = () => {
             });
           }
           
-          console.log(`🔍 Filtering products by categories for section "${selectedSection}":`, {
+          console.log(`🔍 Filtering products by categories ONLY (not product_type) for section "${selectedSection}":`, {
             categoryIds: sectionCategoryIds,
             subCategoryIds: sectionSubCategoryIds,
-            params: params.toString()
+            endpoint: `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`
           });
         } else {
           // If no categories found for this section, show empty results
@@ -467,9 +474,15 @@ const Products = () => {
         }
       }
       
-      // Always use the general products endpoint with category-based filtering
+      // Always use the general products endpoint with category-based filtering ONLY
       // Per Postman collection: GET /api/admin/products?category_id=X
+      // NO product_type parameter should be included
       const endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
+      
+      // Final verification: ensure no product_type in URL
+      if (endpoint.includes('product_type')) {
+        console.error('❌ ERROR: product_type parameter detected in endpoint! This should not happen.', endpoint);
+      }
       
       const response = await api.get(endpoint);
       
@@ -480,22 +493,25 @@ const Products = () => {
       
       // Log products count for debugging
       const productsArray = Array.isArray(productsData) ? productsData : [];
-      console.log(`✅ Fetched ${productsArray.length} products for section: ${selectedSection}`, {
+      console.log(`✅ Fetched ${productsArray.length} products for section: ${selectedSection} (filtered by category ONLY)`, {
         section: selectedSection,
         count: productsArray.length,
         categoryIds: selectedSection !== 'all' ? sectionCategoryIds : 'all categories',
         subCategoryIds: selectedSection !== 'all' ? sectionSubCategoryIds.length : 0,
+        filteringMethod: 'by category_id only (NOT by product_type)',
         sampleProduct: productsArray.length > 0 ? {
           id: productsArray[0].id,
           name: productsArray[0].name,
           category_id: productsArray[0].category_id,
+          category_name: productsArray[0].category?.name || 'N/A',
+          // Note: product_type shown for info only, not used for filtering
           product_type: productsArray[0].product_type
         } : null
       });
       
       // Log a summary of category filtering
       if (selectedSection !== 'all' && sectionCategoryIds.length > 0) {
-        console.log(`📋 Filtering by categories:`, sectionCategoryIds.map(id => {
+        console.log(`📋 Filtering by categories ONLY (product_type is NOT used for filtering):`, sectionCategoryIds.map(id => {
           const cat = categories.find(c => c.id === id);
           return cat ? `${cat.name} (ID: ${id})` : `ID: ${id}`;
         }));

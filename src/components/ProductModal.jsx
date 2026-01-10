@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
@@ -21,9 +21,6 @@ import PrescriptionLensTypeModal from './PrescriptionLensTypeModal';
 import PrescriptionFormDropdownValueModal from './PrescriptionFormDropdownValueModal';
 import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
-
-// Lazy load SizeVolumeVariantModal to avoid initialization order issues
-const SizeVolumeVariantModal = lazy(() => import('./SizeVolumeVariantModal'));
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -177,6 +174,20 @@ const ProductModal = ({ product, onClose }) => {
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [editingVariant, setEditingVariant] = useState(null);
   const [variantModalOpen, setVariantModalOpen] = useState(false);
+  const [SizeVolumeVariantModalComponent, setSizeVolumeVariantModalComponent] = useState(null);
+  
+  // Dynamically load SizeVolumeVariantModal component when needed
+  useEffect(() => {
+    if (variantModalOpen && !SizeVolumeVariantModalComponent) {
+      import('./SizeVolumeVariantModal').then(module => {
+        setSizeVolumeVariantModalComponent(() => module.default);
+      }).catch(error => {
+        console.error('Failed to load SizeVolumeVariantModal:', error);
+        toast.error('Failed to load variant modal');
+        setVariantModalOpen(false);
+      });
+    }
+  }, [variantModalOpen, SizeVolumeVariantModalComponent]);
   const [prescriptionDropdownValues, setPrescriptionDropdownValues] = useState([]);
   
   const [loadingLensManagement, setLoadingLensManagement] = useState({});
@@ -1273,9 +1284,41 @@ const ProductModal = ({ product, onClose }) => {
     }
   };
 
+  // Calculate isEyeHygiene early for use in useEffect
+  // Use useMemo to avoid recalculating unnecessarily
+  const isEyeHygieneForEffect = useMemo(() => {
+    // Check if product is eye hygiene by product_type or category
+    const currentCategoryForCheck = categories.find(cat => 
+      cat.id === formData.category_id || 
+      cat.id === parseInt(formData.category_id) ||
+      String(cat.id) === String(formData.category_id)
+    );
+    const categoryNameForCheck = (
+      currentCategoryForCheck?.name || 
+      product?.category?.name || 
+      product?.category_name ||
+      (product?.category_id && categories.find(c => 
+        c.id === product.category_id || 
+        c.id === parseInt(product.category_id) ||
+        String(c.id) === String(product.category_id)
+      )?.name) ||
+      ''
+    ).toLowerCase().trim();
+    const isEyeHygieneByCategoryCheck = categoryNameForCheck.includes('eye') && categoryNameForCheck.includes('hygiene');
+    const productTypeFromProductCheck = product?.product_type || '';
+    const formProductTypeCheck = formData.product_type || '';
+    const isEyeHygieneByProductTypeCheck = productTypeFromProductCheck === 'eye_hygiene' || formProductTypeCheck === 'eye_hygiene';
+    const isLegacyAccessoryCheck = productTypeFromProductCheck === 'accessory' || formProductTypeCheck === 'accessory';
+    const isEyeHygieneFromLegacyAccessoryCheck = isLegacyAccessoryCheck && isEyeHygieneByCategoryCheck;
+    
+    return isEyeHygieneByProductTypeCheck || 
+           isEyeHygieneByCategoryCheck || 
+           isEyeHygieneFromLegacyAccessoryCheck;
+  }, [categories, formData.category_id, formData.product_type, product?.category?.name, product?.category_name, product?.category_id, product?.product_type]);
+
   // Fetch variants when product is loaded (for eye hygiene products)
   useEffect(() => {
-    if (product && product.id && isEyeHygiene) {
+    if (product && product.id && isEyeHygieneForEffect) {
       console.log('📦 Fetching size/volume variants for eye hygiene product:', product.id);
       fetchSizeVolumeVariants(product.id).catch(err => {
         console.warn('⚠️ Could not fetch variants on product load:', err);
@@ -1284,7 +1327,7 @@ const ProductModal = ({ product, onClose }) => {
       // Reset variants for new products
       setSizeVolumeVariants([]);
     }
-  }, [product?.id, isEyeHygiene]);
+  }, [product?.id, isEyeHygieneForEffect]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1957,13 +2000,7 @@ const ProductModal = ({ product, onClose }) => {
     }
   };
 
-  // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids
-  // Show Spherical and Astigmatism Configurations for contact lens products
-  // IMPORTANT: All sections/tabs are present when editing - tabs are conditionally shown based on product_type
-  const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
-  const isContactLens = formData.product_type === 'contact_lens';
-  
-  // Check if product is eye hygiene by product_type or category
+  // Check if product is eye hygiene by product_type or category FIRST
   // Use multiple sources for category name to ensure we detect eye hygiene products even before categories load
   const currentCategory = categories.find(cat => 
     cat.id === formData.category_id || 
@@ -1998,6 +2035,13 @@ const ProductModal = ({ product, onClose }) => {
   const isEyeHygiene = isEyeHygieneByProductType || 
                        isEyeHygieneByCategory || 
                        isEyeHygieneFromLegacyAccessory;
+
+  // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids (but NOT eye hygiene)
+  // Show Spherical and Astigmatism Configurations for contact lens products
+  // IMPORTANT: All sections/tabs are present when editing - tabs are conditionally shown based on product_type
+  const productTypeCheck = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
+  const isFrameOrSunglasses = productTypeCheck && !isEyeHygiene; // Exclude eye hygiene products
+  const isContactLens = formData.product_type === 'contact_lens' && !isEyeHygiene; // Also exclude eye hygiene from contact lens tabs
   
   // Debug logging for eye hygiene detection
   if (product && (categoryName.includes('eye') || categoryName.includes('hygiene') || formData.product_type === 'eye_hygiene' || productTypeFromProduct === 'accessory')) {
@@ -3896,20 +3940,20 @@ const ProductModal = ({ product, onClose }) => {
                     <h3 className="text-lg font-semibold text-gray-900">Size/Volume Variants</h3>
                     <p className="text-sm text-gray-500 mt-1">
                       Manage multiple volume options (e.g., 5ml, 10ml, 30ml) with individual prices, stock, and SKUs
-                    </p>
-                  </div>
+                  </p>
+                </div>
                   {getValidProductId() && (
-                    <button
-                      type="button"
-                      onClick={() => {
+                  <button
+                    type="button"
+                    onClick={() => {
                         setEditingVariant(null);
                         setVariantModalOpen(true);
                       }}
                       className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
                     >
                       <FiPlus className="w-4 h-4" />
-                      Add Variant
-                    </button>
+                    Add Variant
+                  </button>
                   )}
                 </div>
 
@@ -3927,9 +3971,9 @@ const ProductModal = ({ product, onClose }) => {
                 ) : sizeVolumeVariants.length === 0 ? (
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
                     <p className="text-gray-600 mb-4">No variants added yet.</p>
-                    <button
-                      type="button"
-                      onClick={() => {
+                          <button
+                            type="button"
+                            onClick={() => {
                         setEditingVariant(null);
                         setVariantModalOpen(true);
                       }}
@@ -3937,8 +3981,8 @@ const ProductModal = ({ product, onClose }) => {
                     >
                       <FiPlus className="w-4 h-4" />
                       Add First Variant
-                    </button>
-                  </div>
+                          </button>
+                        </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
@@ -3973,7 +4017,7 @@ const ProductModal = ({ product, onClose }) => {
                                   'text-yellow-600'
                                 }`}>
                                   {String(variant.stock_status).replace(/_/g, ' ')}
-                                </div>
+                          </div>
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600">{variant.sku || '-'}</td>
@@ -4008,7 +4052,7 @@ const ProductModal = ({ product, onClose }) => {
                                 >
                                   <FiTrash2 className="w-4 h-4" />
                                 </button>
-                              </div>
+                          </div>
                             </td>
                           </tr>
                         ))}
@@ -4683,23 +4727,29 @@ const ProductModal = ({ product, onClose }) => {
         )}
         
         {/* Size/Volume Variant Modal */}
-        {variantModalOpen && getValidProductId() && (
-          <Suspense fallback={<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]"><div className="bg-white rounded-2xl p-8"><div className="spinner"></div></div></div>}>
-            <SizeVolumeVariantModal
-              variant={editingVariant}
-              productId={getValidProductId()}
-              onClose={async (saved = false) => {
-                setVariantModalOpen(false);
-                setEditingVariant(null);
-                if (saved) {
-                  const productId = getValidProductId();
-                  if (productId) {
-                    await fetchSizeVolumeVariants(productId);
-                  }
+        {variantModalOpen && getValidProductId() && SizeVolumeVariantModalComponent && (
+          <SizeVolumeVariantModalComponent
+            variant={editingVariant}
+            productId={getValidProductId()}
+            onClose={async (saved = false) => {
+              setVariantModalOpen(false);
+              setEditingVariant(null);
+              setSizeVolumeVariantModalComponent(null); // Reset component when closed
+              if (saved) {
+                const productId = getValidProductId();
+                if (productId) {
+                  await fetchSizeVolumeVariants(productId);
                 }
-              }}
-            />
-          </Suspense>
+              }
+            }}
+          />
+        )}
+        {variantModalOpen && !SizeVolumeVariantModalComponent && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
+            <div className="bg-white rounded-2xl p-8">
+              <div className="spinner"></div>
+            </div>
+          </div>
         )}
       </div>
     </div>

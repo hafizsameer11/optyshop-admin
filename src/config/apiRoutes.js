@@ -398,6 +398,15 @@ export const API_ROUTES = {
         CONTACT_LENSES: `/admin/products/section/contact-lenses`, // ADMIN - Filters by product_type='contact_lens'
         EYE_HYGIENE: `/admin/products/section/eye-hygiene`,      // ADMIN - Filters by product_type='eye_hygiene'
       },
+      // Size/Volume Variants Management (for Eye Hygiene products)
+      SIZE_VOLUME_VARIANTS: {
+        LIST: (productId) => `/admin/products/${productId}/size-volume-variants`, // GET all variants
+        BY_ID: (productId, variantId) => `/admin/products/${productId}/size-volume-variants/${variantId}`, // GET single variant
+        CREATE: (productId) => `/admin/products/${productId}/size-volume-variants`, // POST create variant
+        UPDATE: (productId, variantId) => `/admin/products/${productId}/size-volume-variants/${variantId}`, // PUT update variant
+        DELETE: (productId, variantId) => `/admin/products/${productId}/size-volume-variants/${variantId}`, // DELETE variant
+        BULK_UPDATE: (productId) => `/admin/products/${productId}/size-volume-variants/bulk`, // PUT bulk update variants
+      },
     },
 
     // Orders Management (Admin view)

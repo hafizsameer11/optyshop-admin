@@ -1047,8 +1047,10 @@ const Products = () => {
     const sectionSpecificColumns = {
       'contact-lenses': [
         { key: 'lens_type', label: 'Lens Type', responsive: 'hidden md:table-cell' },
+        { key: 'contact_lens_type', label: 'Contact Lens Type', responsive: 'hidden lg:table-cell' },
         { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell' },
         { key: 'material', label: 'Material', responsive: 'hidden lg:table-cell' },
+        { key: 'water_content', label: 'Water Content', responsive: 'hidden xl:table-cell' },
         { key: 'replacement_frequency', label: 'Replacement', responsive: 'hidden xl:table-cell' },
       ],
       'eye-hygiene': [
@@ -1207,6 +1209,17 @@ const Products = () => {
           </td>
         );
       
+      case 'contact_lens_type':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.contact_lens_type ? (
+              <span className="inline-flex px-2 py-1 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                {String(product.contact_lens_type).replace('_', ' ')}
+              </span>
+            ) : '-'}
+          </td>
+        );
+      
       case 'brand':
         return (
           <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
@@ -1221,6 +1234,13 @@ const Products = () => {
           </td>
         );
       
+      case 'water_content':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.water_content ? `${product.water_content}%` : '-'}
+          </td>
+        );
+      
       case 'replacement_frequency':
         return (
           <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
@@ -1232,14 +1252,39 @@ const Products = () => {
       case 'size_volume':
         return (
           <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
-            {product.size_volume || '-'}
+            {(() => {
+              // Check for variants array (new API integration)
+              const variants = product.sizeVolumeVariants || product.size_volume_variants || product.variants || [];
+              if (Array.isArray(variants) && variants.length > 0) {
+                // Show variant sizes summary
+                const sizes = variants.map(v => v.size_volume).filter(Boolean).join(', ');
+                return (
+                  <div>
+                    <div className="font-medium">{variants.length} variant{variants.length !== 1 ? 's' : ''}</div>
+                    <div className="text-xs text-gray-400 mt-1">{sizes || '-'}</div>
+                  </div>
+                );
+              }
+              // Fallback to old field if no variants
+              return product.size_volume || '-';
+            })()}
           </td>
         );
       
       case 'pack_type':
         return (
           <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
-            {product.pack_type || '-'}
+            {(() => {
+              // Check for variants array (new API integration)
+              const variants = product.sizeVolumeVariants || product.size_volume_variants || product.variants || [];
+              if (Array.isArray(variants) && variants.length > 0) {
+                // Show pack types summary
+                const packTypes = [...new Set(variants.map(v => v.pack_type).filter(Boolean))].join(', ');
+                return packTypes || '-';
+              }
+              // Fallback to old field if no variants
+              return product.pack_type || '-';
+            })()}
           </td>
         );
       
@@ -1539,7 +1584,7 @@ const Products = () => {
                     className={`table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs ${column.responsive}`}
                   >
                     {column.label}
-                  </th>
+                </th>
                 ))}
               </tr>
             </thead>

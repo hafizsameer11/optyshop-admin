@@ -21,6 +21,7 @@ import PrescriptionLensTypeModal from './PrescriptionLensTypeModal';
 import PrescriptionFormDropdownValueModal from './PrescriptionFormDropdownValueModal';
 import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
+import SizeVolumeVariantModal from './SizeVolumeVariantModal';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -168,6 +169,12 @@ const ProductModal = ({ product, onClose }) => {
   const [thicknessOptions, setThicknessOptions] = useState([]);
   const [prescriptionLensTypes, setPrescriptionLensTypes] = useState([]);
   const [lensVariants, setLensVariants] = useState([]);
+  
+  // Size/Volume Variants state for Eye Hygiene products
+  const [sizeVolumeVariants, setSizeVolumeVariants] = useState([]);
+  const [loadingVariants, setLoadingVariants] = useState(false);
+  const [editingVariant, setEditingVariant] = useState(null);
+  const [variantModalOpen, setVariantModalOpen] = useState(false);
   const [prescriptionDropdownValues, setPrescriptionDropdownValues] = useState([]);
   
   const [loadingLensManagement, setLoadingLensManagement] = useState({});
@@ -312,11 +319,31 @@ const ProductModal = ({ product, onClose }) => {
                                  fullProductResponse.data;
           
           if (fullProductData && fullProductData.id) {
-            // Remove variant-related fields from response
+            // Extract variants from product response (new API integration)
+            const variants = fullProductData.sizeVolumeVariants || 
+                           fullProductData.size_volume_variants || 
+                           fullProductData.variants || 
+                           [];
+            
+            // Store variants in state for separate management via dedicated endpoints
+            if (Array.isArray(variants) && variants.length > 0) {
+              console.log('📦 Found size/volume variants in product response:', variants.length);
+              setSizeVolumeVariants(variants);
+            } else {
+              // If no variants in product response, try to fetch separately
+              // This ensures we always have the latest variants data
+              if (fullProductData.id) {
+                fetchSizeVolumeVariants(fullProductData.id).catch(err => {
+                  console.warn('⚠️ Could not fetch variants separately:', err);
+                });
+              }
+            }
+            
+            // Remove variant-related fields from product data (variants managed separately via dedicated endpoints)
             const {
-              variants,
-              sizeVolumeVariants,
-              size_volume_variants,
+              variants: _variants,
+              sizeVolumeVariants: _sizeVolumeVariants,
+              size_volume_variants: _size_volume_variants,
               size_volume,
               pack_type,
               ...cleanProductData
@@ -328,9 +355,10 @@ const ProductModal = ({ product, onClose }) => {
               allKeys: Object.keys(cleanProductData),
               hasSEOTitle: !!cleanProductData.meta_title,
               hasSEODescription: !!cleanProductData.meta_description,
-              hasSEOKeywords: !!cleanProductData.meta_keywords
+              hasSEOKeywords: !!cleanProductData.meta_keywords,
+              variantsCount: variants.length
             });
-            // Use the cleaned product data for form initialization (without variant fields)
+            // Use the cleaned product data for form initialization (variants managed separately)
             return cleanProductData;
           } else {
             console.warn('⚠️ API response did not contain valid product data:', {
@@ -1077,6 +1105,185 @@ const ProductModal = ({ product, onClose }) => {
     return parsedId; // Valid ID
   };
 
+  // ============================================================================
+  // SIZE/VOLUME VARIANTS MANAGEMENT FUNCTIONS (New API Integration)
+  // ============================================================================
+  
+  // Fetch all size/volume variants for a product
+  // Per Postman: GET /api/admin/products/:productId/size-volume-variants
+  const fetchSizeVolumeVariants = async (productId) => {
+    if (!productId) {
+      console.warn('⚠️ Cannot fetch variants: productId is missing');
+      return;
+    }
+    
+    try {
+      setLoadingVariants(true);
+      const response = await api.get(API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.LIST(productId));
+      const responseData = response.data?.data || response.data || {};
+      const variants = responseData.variants || responseData || [];
+      
+      const variantsArray = Array.isArray(variants) ? variants : [];
+      console.log(`✅ Fetched ${variantsArray.length} size/volume variants for product ${productId}`);
+      setSizeVolumeVariants(variantsArray);
+      return variantsArray;
+    } catch (error) {
+      console.error('❌ Failed to fetch size/volume variants:', error);
+      if (error.response?.status === 404) {
+        // Product might not have variants yet - this is okay
+        console.log('📦 No variants found for product (404) - this is normal for new products');
+        setSizeVolumeVariants([]);
+      } else {
+        toast.error('Failed to load variants');
+      }
+      setSizeVolumeVariants([]);
+      return [];
+    } finally {
+      setLoadingVariants(false);
+    }
+  };
+
+  // Create a new size/volume variant
+  // Per Postman: POST /api/admin/products/:productId/size-volume-variants
+  const createSizeVolumeVariant = async (variantData) => {
+    const productId = getValidProductId();
+    if (!productId) {
+      toast.error('Cannot create variant: Product must be saved first');
+      return;
+    }
+    
+    try {
+      setLoadingVariants(true);
+      const response = await api.post(
+        API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.CREATE(productId),
+        variantData
+      );
+      const responseData = response.data?.data || response.data || {};
+      const newVariant = responseData.variant || responseData;
+      
+      // Refresh variants list
+      await fetchSizeVolumeVariants(productId);
+      toast.success('Variant created successfully');
+      return newVariant;
+    } catch (error) {
+      console.error('❌ Failed to create variant:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to create variant';
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setLoadingVariants(false);
+    }
+  };
+
+  // Update an existing size/volume variant
+  // Per Postman: PUT /api/admin/products/:productId/size-volume-variants/:variantId
+  const updateSizeVolumeVariant = async (variantId, variantData) => {
+    const productId = getValidProductId();
+    if (!productId) {
+      toast.error('Cannot update variant: Product ID is missing');
+      return;
+    }
+    
+    try {
+      setLoadingVariants(true);
+      const response = await api.put(
+        API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.UPDATE(productId, variantId),
+        variantData
+      );
+      const responseData = response.data?.data || response.data || {};
+      const updatedVariant = responseData.variant || responseData;
+      
+      // Refresh variants list
+      await fetchSizeVolumeVariants(productId);
+      toast.success('Variant updated successfully');
+      return updatedVariant;
+    } catch (error) {
+      console.error('❌ Failed to update variant:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update variant';
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setLoadingVariants(false);
+    }
+  };
+
+  // Delete a size/volume variant
+  // Per Postman: DELETE /api/admin/products/:productId/size-volume-variants/:variantId
+  const deleteSizeVolumeVariant = async (variantId) => {
+    const productId = getValidProductId();
+    if (!productId) {
+      toast.error('Cannot delete variant: Product ID is missing');
+      return;
+    }
+    
+    if (!window.confirm('Are you sure you want to delete this variant?')) {
+      return;
+    }
+    
+    try {
+      setLoadingVariants(true);
+      await api.delete(
+        API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.DELETE(productId, variantId)
+      );
+      
+      // Refresh variants list
+      await fetchSizeVolumeVariants(productId);
+      toast.success('Variant deleted successfully');
+    } catch (error) {
+      console.error('❌ Failed to delete variant:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to delete variant';
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setLoadingVariants(false);
+    }
+  };
+
+  // Bulk update size/volume variants
+  // Per Postman: PUT /api/admin/products/:productId/size-volume-variants/bulk
+  // ⚠️ IMPORTANT: This REPLACES all variants - variants with id are updated, without id are created, not in array are deleted
+  const bulkUpdateSizeVolumeVariants = async (variantsArray) => {
+    const productId = getValidProductId();
+    if (!productId) {
+      toast.error('Cannot update variants: Product must be saved first');
+      return;
+    }
+    
+    try {
+      setLoadingVariants(true);
+      const response = await api.put(
+        API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.BULK_UPDATE(productId),
+        { variants: variantsArray }
+      );
+      const responseData = response.data?.data || response.data || {};
+      const updatedVariants = responseData.variants || variantsArray || [];
+      
+      setSizeVolumeVariants(Array.isArray(updatedVariants) ? updatedVariants : []);
+      toast.success('Variants updated successfully');
+      return updatedVariants;
+    } catch (error) {
+      console.error('❌ Failed to bulk update variants:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update variants';
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setLoadingVariants(false);
+    }
+  };
+
+  // Fetch variants when product is loaded (for eye hygiene products)
+  useEffect(() => {
+    if (product && product.id && isEyeHygiene) {
+      console.log('📦 Fetching size/volume variants for eye hygiene product:', product.id);
+      fetchSizeVolumeVariants(product.id).catch(err => {
+        console.warn('⚠️ Could not fetch variants on product load:', err);
+      });
+    } else if (!product || !product.id) {
+      // Reset variants for new products
+      setSizeVolumeVariants([]);
+    }
+  }, [product?.id, isEyeHygiene]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -1632,6 +1839,13 @@ const ProductModal = ({ product, onClose }) => {
         
         // Update currentProduct with cleaned product data (without variant fields)
         setCurrentProduct(cleanSavedProduct);
+        
+        // If this is an eye hygiene product, fetch variants separately after save
+        if (isEyeHygiene && savedProduct.id) {
+          fetchSizeVolumeVariants(savedProduct.id).catch(err => {
+            console.warn('⚠️ Could not refresh variants after product save:', err);
+          });
+        }
       }
       
       toast.success(successMessage);
@@ -1809,6 +2023,9 @@ const ProductModal = ({ product, onClose }) => {
     ...(isContactLens ? [
       { id: 'spherical', label: 'Spherical Configurations' },
       { id: 'astigmatism', label: 'Astigmatism Configurations' },
+    ] : []),
+    ...(isEyeHygiene ? [
+      { id: 'variants', label: 'Size/Volume Variants' },
     ] : []),
     { id: 'images', label: 'Images' }, // Always shown - all products can have images
     { id: 'seo', label: 'SEO' }, // Always shown - all products can have SEO settings
@@ -3669,6 +3886,137 @@ const ProductModal = ({ product, onClose }) => {
               </div>
             )}
 
+            {/* Size/Volume Variants Tab - Eye Hygiene Products */}
+            {activeTab === 'variants' && isEyeHygiene && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Size/Volume Variants</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Manage multiple volume options (e.g., 5ml, 10ml, 30ml) with individual prices, stock, and SKUs
+                    </p>
+                  </div>
+                  {getValidProductId() && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingVariant(null);
+                        setVariantModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
+                    >
+                      <FiPlus className="w-4 h-4" />
+                      Add Variant
+                    </button>
+                  )}
+                </div>
+
+                {!getValidProductId() ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Note:</strong> Please save the product first before adding size/volume variants.
+                    </p>
+                  </div>
+                ) : loadingVariants ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="spinner"></div>
+                    <span className="ml-3 text-gray-600">Loading variants...</span>
+                  </div>
+                ) : sizeVolumeVariants.length === 0 ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                    <p className="text-gray-600 mb-4">No variants added yet.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingVariant(null);
+                        setVariantModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
+                    >
+                      <FiPlus className="w-4 h-4" />
+                      Add First Variant
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Size/Volume</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Pack Type</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Price</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Compare At Price</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Stock</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">SKU</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Expiry Date</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {sizeVolumeVariants.map((variant) => (
+                          <tr key={variant.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900 font-medium">{variant.size_volume || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{variant.pack_type || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900 font-semibold">${variant.price ? parseFloat(variant.price).toFixed(2) : '0.00'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {variant.compare_at_price ? `$${parseFloat(variant.compare_at_price).toFixed(2)}` : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              <div className="font-medium">{variant.stock_quantity ?? 0}</div>
+                              {variant.stock_status && (
+                                <div className={`text-xs mt-1 ${
+                                  variant.stock_status === 'in_stock' ? 'text-green-600' : 
+                                  variant.stock_status === 'out_of_stock' ? 'text-red-600' : 
+                                  'text-yellow-600'
+                                }`}>
+                                  {String(variant.stock_status).replace(/_/g, ' ')}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{variant.sku || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {variant.expiry_date ? new Date(variant.expiry_date).toLocaleDateString() : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {variant.is_active !== false ? (
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 border border-green-200">Active</span>
+                              ) : (
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200">Inactive</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingVariant(variant);
+                                    setVariantModalOpen(true);
+                                  }}
+                                  className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                  title="Edit"
+                                >
+                                  <FiEdit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteSizeVolumeVariant(variant.id)}
+                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                  title="Delete"
+                                >
+                                  <FiTrash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Images Tab */}
             {activeTab === 'images' && (
               <>
@@ -4327,6 +4675,24 @@ const ProductModal = ({ product, onClose }) => {
                 setTimeout(() => {
                   fetchAstigmatismConfigs();
                 }, 100);
+              }
+            }}
+          />
+        )}
+        
+        {/* Size/Volume Variant Modal */}
+        {variantModalOpen && (
+          <SizeVolumeVariantModal
+            variant={editingVariant}
+            productId={getValidProductId()}
+            onClose={async (saved = false) => {
+              setVariantModalOpen(false);
+              setEditingVariant(null);
+              if (saved) {
+                const productId = getValidProductId();
+                if (productId) {
+                  await fetchSizeVolumeVariants(productId);
+                }
               }
             }}
           />

@@ -447,20 +447,18 @@ const ProductModal = ({ product, onClose }) => {
           is_active: productToUse.is_active !== undefined ? productToUse.is_active : true,
           is_featured: productToUse.is_featured || false,
           // Size/Volume Variants (for Eye Hygiene products)
-          // Normalize variants data - handle both camelCase and snake_case field names
-          // Per Postman API spec: sizeVolumeVariants is ALWAYS present in product responses
-          // It will be an empty array [] if no variants exist, or an array of active variants
+          // Normalize variants data - Backend guarantees: sizeVolumeVariants is ALWAYS present
+          // Backend includes sizeVolumeVariants in both GET Single Product and GET All Products
+          // Backend filters variants by is_active: true and returns empty array [] if none exist
           // Variants are sorted by sort_order, size_volume, and pack_type
-          // Only active variants (is_active: true) are returned
+          // Only active variants (is_active: true) are returned by backend
           sizeVolumeVariants: (() => {
-            // Try multiple possible field names for variants (per API spec, should always be present)
-            // Backend currently returns "variants" field, but API spec says "sizeVolumeVariants"
-            // Check variants first (what backend returns), then sizeVolumeVariants (what spec says)
-            const variants = productToUse.variants !== undefined && productToUse.variants !== null ? productToUse.variants :
-                            productToUse.sizeVolumeVariants !== undefined ? productToUse.sizeVolumeVariants :
+            // Backend guarantees sizeVolumeVariants field is always present in product responses
+            // Check sizeVolumeVariants first (backend standard), then variants (legacy/alternative)
+            const variants = productToUse.sizeVolumeVariants !== undefined ? productToUse.sizeVolumeVariants :
+                            productToUse.variants !== undefined && productToUse.variants !== null ? productToUse.variants :
                             productToUse.size_volume_variants !== undefined ? productToUse.size_volume_variants :
-                            productToUse.SizeVolumeVariants !== undefined ? productToUse.SizeVolumeVariants :
-                            []; // Per spec: always present, default to empty array if somehow missing
+                            []; // Backend guarantees this should always be present, but fallback to empty array
             
             // Check if this is an eye hygiene product (by product_type or category)
             const productCategoryName = (productToUse.category?.name || productToUse.category_name || '').toLowerCase().trim();
@@ -469,33 +467,33 @@ const ProductModal = ({ product, onClose }) => {
                                          // Legacy: also check for 'accessory' with eye hygiene category (backward compatibility)
                                          (productToUse.product_type === 'accessory' && productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
             
-            // Per API spec: variants are always present (empty array if none)
+            // Backend guarantees: variants field is always an array (empty if none exist)
             const variantsArray = Array.isArray(variants) ? variants : [];
             
             if (isEyeHygieneProduct && import.meta.env.DEV) {
-              console.log('📦 Loading variants for eye hygiene product (per API spec - always present):', {
+              console.log('📦 Loading variants for eye hygiene product (backend guarantees field always present):', {
                 productId: productToUse.id,
                 variantsCount: variantsArray.length,
                 isEmptyArray: variantsArray.length === 0,
                 variants: variantsArray,
-                note: 'Per Postman spec: sizeVolumeVariants is always included in product responses'
+                note: 'Backend guarantees: sizeVolumeVariants is always included (empty array if no variants, only active variants returned)'
               });
             }
             
-            // Return empty array if not an array or empty (per spec, should always be array)
+            // Backend guarantees variants is always an array, but validate just in case
             if (!Array.isArray(variants)) {
-              console.warn('⚠️ Variants field is not an array (should always be array per API spec):', variants);
+              console.warn('⚠️ Variants field is not an array (backend should guarantee this):', variants);
               return [];
             }
             
-            // Return empty array if no variants (this is valid per spec)
+            // Return empty array if no variants (this is valid - backend returns empty array when no variants exist)
             if (variants.length === 0) {
               return [];
             }
           
             // Normalize each variant to ensure all fields are properly mapped
-            // Per API spec: variants are already sorted by sort_order, size_volume, and pack_type
-            // Only active variants (is_active: true) are included
+            // Backend guarantees: variants are filtered by is_active: true, sorted by sort_order, size_volume, and pack_type
+            // Backend only returns active variants, so all variants here are active
             const normalizedVariants = variants.map((variant, index) => {
               // Handle both camelCase and snake_case field names
               const normalized = {
@@ -1314,8 +1312,9 @@ const ProductModal = ({ product, onClose }) => {
       // Format variants for submission: convert expiry_date to ISO string and ensure proper types
       // Sort variants by sort_order before submission
       // IMPORTANT: Always send variants for eye hygiene products when updating
-      // Per Postman API spec: Response will ALWAYS include sizeVolumeVariants field
-      // It will be an empty array [] if no variants exist, or an array of active variants if they exist
+      // Backend guarantees: Response will ALWAYS include sizeVolumeVariants field
+      // Backend filters by is_active: true and returns empty array [] if no variants exist
+      // Backend includes the field in both GET Single Product and GET All Products responses
       const isEyeHygieneProduct = formData.product_type === 'eye_hygiene';
       
       // Track if variants were sent (for logging purposes)
@@ -1861,13 +1860,13 @@ const ProductModal = ({ product, onClose }) => {
         }
         
         // Log what's being sent for eye hygiene products (JSON body path)
-        // Per Postman API spec: Response will always include sizeVolumeVariants (empty array if none)
+        // Backend guarantees: Response will always include sizeVolumeVariants (filtered by is_active: true, empty array if none)
         if (isEyeHygieneProduct && import.meta.env.DEV) {
           const variantsCount = Array.isArray(dataToSend.sizeVolumeVariants) ? dataToSend.sizeVolumeVariants.length : 0;
           console.log(`📤 JSON Body Request - Eye Hygiene Product (${variantsCount} variant(s) to save):`, {
             variantsCount: variantsCount,
             variants: dataToSend.sizeVolumeVariants,
-            note: 'Per Postman spec: Response will always include sizeVolumeVariants field (empty array if none)'
+            note: 'Backend guarantees: Response will always include sizeVolumeVariants field (filtered by is_active: true, empty array if none)'
           });
         }
         
@@ -1884,33 +1883,32 @@ const ProductModal = ({ product, onClose }) => {
       }
       
       // Handle nested response structure: { success, message, data: { product: {...} } }
-      // Per Postman API spec: sizeVolumeVariants is ALWAYS included in product responses
+      // Backend guarantees: sizeVolumeVariants is ALWAYS included in product responses
+      // Backend filters variants by is_active: true and includes the field in both GET Single Product and GET All Products
       // It will be an empty array [] if no variants exist, or an array of active variants if they exist
       // Variants are sorted by sort_order, size_volume, and pack_type
-      // Only active variants (is_active: true) are returned
+      // Only active variants (is_active: true) are returned by backend
       const responseData = response.data?.data || response.data;
       const savedProduct = responseData?.product || responseData;
       const successMessage = response.data?.message || (product ? 'Product updated successfully' : 'Product created successfully');
       
-      // Per Postman API spec: sizeVolumeVariants is always present in product responses
-      // Handle both camelCase and snake_case field names for backward compatibility
-      // Backend may return as "variants" or "sizeVolumeVariants" - normalize to sizeVolumeVariants
+      // Backend guarantees: sizeVolumeVariants is ALWAYS present in product responses
+      // Backend filters variants by is_active: true and returns empty array [] if none exist
+      // Backend includes the field in both GET Single Product and GET All Products responses
       if (savedProduct && savedProduct.id) {
-        // Extract variants - always guaranteed to be present per API spec
-        // Check variants first (backend currently returns this), then sizeVolumeVariants
-        const savedVariants = savedProduct.variants !== undefined && savedProduct.variants !== null ? savedProduct.variants :
-                             savedProduct.sizeVolumeVariants !== undefined ? savedProduct.sizeVolumeVariants :
+        // Extract variants - backend guarantees sizeVolumeVariants is always present
+        // Check sizeVolumeVariants first (backend standard), then variants (legacy/alternative field name)
+        const savedVariants = savedProduct.sizeVolumeVariants !== undefined ? savedProduct.sizeVolumeVariants :
+                             savedProduct.variants !== undefined && savedProduct.variants !== null ? savedProduct.variants :
                              savedProduct.size_volume_variants !== undefined ? savedProduct.size_volume_variants :
-                             savedProduct.SizeVolumeVariants !== undefined ? savedProduct.SizeVolumeVariants :
-                             []; // Default to empty array (per spec, should always be present)
+                             []; // Backend guarantees this should always be present, but fallback to empty array
         
-        // Normalize to sizeVolumeVariants for consistency (use the field the backend actually uses)
-        // Always set sizeVolumeVariants for form state consistency
+        // Normalize to sizeVolumeVariants for form state consistency
+        // Backend guarantees the field is always an array (empty if no variants)
         savedProduct.sizeVolumeVariants = Array.isArray(savedVariants) ? savedVariants : [];
-        // Also keep variants field for backward compatibility if backend uses it
-        if (!savedProduct.variants) {
-          savedProduct.variants = savedProduct.sizeVolumeVariants;
-        }
+        
+        // Ensure variants field is also set for backward compatibility
+        savedProduct.variants = savedProduct.sizeVolumeVariants;
         
         // Log success message with variant count for eye hygiene products
         if (isEyeHygieneProduct) {
@@ -1918,26 +1916,25 @@ const ProductModal = ({ product, onClose }) => {
           
           // Log detailed info in development mode
           if (import.meta.env.DEV) {
-            console.log('📦 Variants in API Response:', {
+            console.log('📦 Variants in API Response (backend guarantees field always present):', {
               variantsField: savedProduct.variants,
               sizeVolumeVariantsField: savedProduct.sizeVolumeVariants,
               variantsCount: variantsCount,
               variants: savedVariants,
               variantsWereSent: variantsWereSent,
               variantsSentCount: variantsSentCount,
-              savedProductKeys: Object.keys(savedProduct),
-              note: 'Backend returns variants as "variants" field, not "sizeVolumeVariants"'
+              note: 'Backend guarantees: sizeVolumeVariants always present, filtered by is_active: true, empty array if none'
             });
           }
           
           if (variantsCount > 0) {
-            console.log(`✅ Eye hygiene product saved successfully with ${variantsCount} variant(s):`, savedVariants);
+            console.log(`✅ Eye hygiene product saved successfully with ${variantsCount} active variant(s):`, savedVariants);
           } else {
             if (variantsWereSent && variantsSentCount > 0) {
-              console.warn(`⚠️ Eye hygiene product saved but ${variantsSentCount} variant(s) sent are not in response. Variants may not have been saved by backend.`);
+              console.warn(`⚠️ Eye hygiene product saved but ${variantsSentCount} variant(s) sent are not in response. Variants may not have been saved by backend or were filtered out (inactive variants).`);
               console.log('📋 Variants that were sent:', variantsSentData);
             } else {
-              console.log(`✅ Eye hygiene product saved successfully (no variants - empty array as expected)`);
+              console.log(`✅ Eye hygiene product saved successfully (no variants - backend returns empty array as expected)`);
             }
           }
         }

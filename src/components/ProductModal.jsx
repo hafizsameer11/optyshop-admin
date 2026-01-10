@@ -2070,7 +2070,8 @@ const ProductModal = ({ product, onClose }) => {
       { id: 'spherical', label: 'Spherical Configurations' },
       { id: 'astigmatism', label: 'Astigmatism Configurations' },
     ] : []),
-    ...(isEyeHygiene ? [
+    // Only show Size/Volume Variants tab for saved eye hygiene products (product must have an ID)
+    ...(isEyeHygiene && getValidProductId() ? [
       { id: 'variants', label: 'Size/Volume Variants' },
     ] : []),
     { id: 'images', label: 'Images' }, // Always shown - all products can have images

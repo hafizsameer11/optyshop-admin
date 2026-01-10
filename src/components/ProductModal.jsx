@@ -74,6 +74,42 @@ const getColorNameFromHex = (hexCode) => {
   return hexMap[normalized] || hexCode;
 };
 
+// Helper functions to map between internal variant names and backend API field names
+// Internal: variants, size | Backend: sizeVolumeVariants, size_volume
+const mapVariantFromBackend = (backendVariant) => {
+  if (!backendVariant) return null;
+  return {
+    ...backendVariant,
+    size: backendVariant.size_volume || backendVariant.size || '',
+    // Keep original for backward compatibility but prefer internal name
+    size_volume: backendVariant.size_volume || backendVariant.size || '',
+  };
+};
+
+const mapVariantToBackend = (internalVariant) => {
+  if (!internalVariant) return null;
+  const backendVariant = { ...internalVariant };
+  // Map internal 'size' to backend 'size_volume'
+  if (internalVariant.size !== undefined) {
+    backendVariant.size_volume = internalVariant.size;
+    delete backendVariant.size;
+  } else if (internalVariant.size_volume !== undefined) {
+    // Fallback if already using backend name
+    backendVariant.size_volume = internalVariant.size_volume;
+  }
+  return backendVariant;
+};
+
+const mapVariantsFromBackend = (backendVariants) => {
+  if (!Array.isArray(backendVariants)) return [];
+  return backendVariants.map(mapVariantFromBackend);
+};
+
+const mapVariantsToBackend = (internalVariants) => {
+  if (!Array.isArray(internalVariants)) return [];
+  return internalVariants.map(mapVariantToBackend);
+};
+
 const ProductModal = ({ product, onClose }) => {
   const { t } = useI18n();
   
@@ -139,8 +175,8 @@ const ProductModal = ({ product, onClose }) => {
     meta_keywords: '',
     is_active: true,
     is_featured: false,
-    // Size/Volume Variants (for Eye Hygiene products)
-    sizeVolumeVariants: [],
+    // Variants (for Eye Hygiene products)
+    variants: [],
   });
   const [categories, setCategories] = useState([]);
   const categoriesRef = useRef([]);
@@ -446,16 +482,16 @@ const ProductModal = ({ product, onClose }) => {
           meta_keywords: productToUse.meta_keywords || '',
           is_active: productToUse.is_active !== undefined ? productToUse.is_active : true,
           is_featured: productToUse.is_featured || false,
-          // Size/Volume Variants (for Eye Hygiene products)
+          // Variants (for Eye Hygiene products)
           // Normalize variants data - Backend guarantees: sizeVolumeVariants is ALWAYS present
           // Backend includes sizeVolumeVariants in both GET Single Product and GET All Products
           // Backend filters variants by is_active: true and returns empty array [] if none exist
           // Variants are sorted by sort_order, size_volume, and pack_type
           // Only active variants (is_active: true) are returned by backend
-          sizeVolumeVariants: (() => {
+          variants: (() => {
             // Backend guarantees sizeVolumeVariants field is always present in product responses
             // Check sizeVolumeVariants first (backend standard), then variants (legacy/alternative)
-            const variants = productToUse.sizeVolumeVariants !== undefined ? productToUse.sizeVolumeVariants :
+            const backendVariants = productToUse.sizeVolumeVariants !== undefined ? productToUse.sizeVolumeVariants :
                             productToUse.variants !== undefined && productToUse.variants !== null ? productToUse.variants :
                             productToUse.size_volume_variants !== undefined ? productToUse.size_volume_variants :
                             []; // Backend guarantees this should always be present, but fallback to empty array
@@ -468,7 +504,7 @@ const ProductModal = ({ product, onClose }) => {
                                          (productToUse.product_type === 'accessory' && productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
             
             // Backend guarantees: variants field is always an array (empty if none exist)
-            const variantsArray = Array.isArray(variants) ? variants : [];
+            const variantsArray = Array.isArray(backendVariants) ? backendVariants : [];
             
             if (isEyeHygieneProduct && import.meta.env.DEV) {
               console.log('📦 Loading variants for eye hygiene product (backend guarantees field always present):', {
@@ -481,24 +517,22 @@ const ProductModal = ({ product, onClose }) => {
             }
             
             // Backend guarantees variants is always an array, but validate just in case
-            if (!Array.isArray(variants)) {
-              console.warn('⚠️ Variants field is not an array (backend should guarantee this):', variants);
+            if (!Array.isArray(backendVariants)) {
+              console.warn('⚠️ Variants field is not an array (backend should guarantee this):', backendVariants);
               return [];
             }
             
             // Return empty array if no variants (this is valid - backend returns empty array when no variants exist)
-            if (variants.length === 0) {
+            if (backendVariants.length === 0) {
               return [];
             }
           
-            // Normalize each variant to ensure all fields are properly mapped
-            // Backend guarantees: variants are filtered by is_active: true, sorted by sort_order, size_volume, and pack_type
-            // Backend only returns active variants, so all variants here are active
-            const normalizedVariants = variants.map((variant, index) => {
-              // Handle both camelCase and snake_case field names
+            // Map variants from backend format (size_volume) to internal format (size)
+            const normalizedVariants = mapVariantsFromBackend(backendVariants).map((variant, index) => {
+              // Handle both camelCase and snake_case field names and map to internal format
               const normalized = {
                 id: variant.id || variant.Id || null,
-                size_volume: variant.size_volume || variant.sizeVolume || '',
+                size: variant.size || variant.size_volume || variant.sizeVolume || '',
                 pack_type: variant.pack_type || variant.packType || '',
                 price: variant.price !== undefined && variant.price !== null ? String(variant.price) : '',
                 compare_at_price: variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '' ? String(variant.compare_at_price) : '',
@@ -681,8 +715,8 @@ const ProductModal = ({ product, onClose }) => {
         meta_keywords: '',
         is_active: true,
         is_featured: false,
-        // Size/Volume Variants
-        sizeVolumeVariants: [],
+        // Variants
+        variants: [],
       });
       setSubCategories([]);
       setNestedSubCategories([]);
@@ -1308,7 +1342,7 @@ const ProductModal = ({ product, onClose }) => {
       if (formData.is_active !== undefined) dataToSend.is_active = formData.is_active;
       if (formData.is_featured !== undefined) dataToSend.is_featured = formData.is_featured;
       
-      // Size/Volume Variants (for Eye Hygiene products)
+      // Variants (for Eye Hygiene products)
       // Format variants for submission: convert expiry_date to ISO string and ensure proper types
       // Sort variants by sort_order before submission
       // IMPORTANT: Always send variants for eye hygiene products when updating
@@ -1322,39 +1356,41 @@ const ProductModal = ({ product, onClose }) => {
       let variantsSentCount = 0;
       let variantsSentData = null; // Store the variants data for logging
       
-      if (formData.sizeVolumeVariants && Array.isArray(formData.sizeVolumeVariants) && formData.sizeVolumeVariants.length > 0) {
-        // Sort by sort_order (ascending), then by size_volume as secondary sort
-        const sortedVariants = [...formData.sizeVolumeVariants].sort((a, b) => {
+      if (formData.variants && Array.isArray(formData.variants) && formData.variants.length > 0) {
+        // Sort by sort_order (ascending), then by size as secondary sort
+        const sortedVariants = [...formData.variants].sort((a, b) => {
           const orderA = a.sort_order !== undefined ? parseInt(a.sort_order) : 0;
           const orderB = b.sort_order !== undefined ? parseInt(b.sort_order) : 0;
           if (orderA !== orderB) {
             return orderA - orderB;
           }
-          // Secondary sort by size_volume
-          return (a.size_volume || '').localeCompare(b.size_volume || '');
+          // Secondary sort by size
+          return (a.size || '').localeCompare(b.size || '');
         });
 
-        // Per Postman API spec: Build variant objects with proper types
-        // Required fields: size_volume, price, stock_quantity
+        // Validate and map internal variants to backend format
+        // Required fields: size, price, stock_quantity
         // Optional fields: pack_type, compare_at_price, cost_price, sku, expiry_date, stock_status (default: "in_stock"), is_active (default: true), sort_order (default: 0)
-        dataToSend.sizeVolumeVariants = sortedVariants
+        const validatedVariants = sortedVariants
           .filter(variant => {
             // Validate required fields before formatting
-            const hasSizeVolume = variant.size_volume && String(variant.size_volume).trim();
+            const hasSize = variant.size && String(variant.size).trim();
             const hasPrice = variant.price !== undefined && variant.price !== null && !isNaN(parseFloat(variant.price));
             const hasStockQuantity = variant.stock_quantity !== undefined && variant.stock_quantity !== null;
             
-            if (!hasSizeVolume || !hasPrice || !hasStockQuantity) {
+            if (!hasSize || !hasPrice || !hasStockQuantity) {
               console.warn('⚠️ Skipping invalid variant (missing required fields):', variant);
               return false;
             }
             return true;
-          })
-          .map(variant => {
+          });
+        
+        // Map to backend format (size -> size_volume, format dates, ensure proper types)
+        const backendVariants = validatedVariants.map(variant => {
           // Build variant object per Postman API spec format
           const formattedVariant = {
-            // Required fields
-            size_volume: variant.size_volume ? String(variant.size_volume).trim() : '',
+            // Required fields - map size to size_volume for backend
+            size_volume: variant.size ? String(variant.size).trim() : '',
             price: variant.price ? parseFloat(variant.price) : 0,
             stock_quantity: variant.stock_quantity !== undefined && variant.stock_quantity !== null ? parseInt(variant.stock_quantity) : 0,
           };
@@ -1430,10 +1466,13 @@ const ProductModal = ({ product, onClose }) => {
           return formattedVariant;
         });
         
+        // Store in backend format for API (sizeVolumeVariants)
+        dataToSend.sizeVolumeVariants = backendVariants;
+        
         variantsWereSent = true;
-        variantsSentCount = dataToSend.sizeVolumeVariants.length;
-        variantsSentData = dataToSend.sizeVolumeVariants; // Store for later logging
-        console.log(`📦 Sending ${variantsSentCount} size/volume variant(s) for ${product ? 'update' : 'create'}:`, dataToSend.sizeVolumeVariants);
+        variantsSentCount = backendVariants.length;
+        variantsSentData = backendVariants; // Store for later logging
+        console.log(`📦 Sending ${variantsSentCount} variant(s) for ${product ? 'update' : 'create'}:`, backendVariants);
         
         // Per Postman API spec: sizeVolumeVariants REPLACES all existing variants
         // We're sending the complete list of variants that should remain
@@ -1445,9 +1484,9 @@ const ProductModal = ({ product, onClose }) => {
         if (isEyeHygieneProduct) {
           dataToSend.sizeVolumeVariants = [];
           if (product) {
-            console.log('📦 Sending empty size/volume variants array for eye hygiene product update (will clear existing variants)');
+            console.log('📦 Sending empty variants array for eye hygiene product update (will clear existing variants)');
           } else {
-            console.log('📦 Sending empty size/volume variants array for new eye hygiene product');
+            console.log('📦 Sending empty variants array for new eye hygiene product');
           }
         }
         // For non-eye hygiene products, don't send variants field if empty (preserves existing variants)
@@ -1952,29 +1991,29 @@ const ProductModal = ({ product, onClose }) => {
       if (savedProduct && savedProduct.id) {
         // Extract variants - backend guarantees sizeVolumeVariants is always present
         // Check sizeVolumeVariants first (backend standard), then variants (legacy/alternative field name)
-        const savedVariants = savedProduct.sizeVolumeVariants !== undefined ? savedProduct.sizeVolumeVariants :
+        const backendVariants = savedProduct.sizeVolumeVariants !== undefined ? savedProduct.sizeVolumeVariants :
                              savedProduct.variants !== undefined && savedProduct.variants !== null ? savedProduct.variants :
                              savedProduct.size_volume_variants !== undefined ? savedProduct.size_volume_variants :
                              []; // Backend guarantees this should always be present, but fallback to empty array
         
-        // Normalize to sizeVolumeVariants for form state consistency
+        // Map from backend format to internal format (size_volume -> size)
         // Backend guarantees the field is always an array (empty if no variants)
-        savedProduct.sizeVolumeVariants = Array.isArray(savedVariants) ? savedVariants : [];
+        const internalVariants = mapVariantsFromBackend(Array.isArray(backendVariants) ? backendVariants : []);
         
-        // Ensure variants field is also set for backward compatibility
-        savedProduct.variants = savedProduct.sizeVolumeVariants;
+        // Store in internal format for form state
+        savedProduct.variants = internalVariants;
         
         // Log success message with variant count for eye hygiene products
         if (isEyeHygieneProduct) {
-          const variantsCount = Array.isArray(savedVariants) ? savedVariants.length : 0;
+          const variantsCount = Array.isArray(internalVariants) ? internalVariants.length : 0;
           
           // Log detailed info in development mode
           if (import.meta.env.DEV) {
             console.log('📦 Variants in API Response (backend guarantees field always present):', {
               variantsField: savedProduct.variants,
-              sizeVolumeVariantsField: savedProduct.sizeVolumeVariants,
+              backendVariants: backendVariants,
               variantsCount: variantsCount,
-              variants: savedVariants,
+              variants: internalVariants,
               variantsWereSent: variantsWereSent,
               variantsSentCount: variantsSentCount,
               note: 'Backend guarantees: sizeVolumeVariants always present, filtered by is_active: true, empty array if none'
@@ -1982,7 +2021,7 @@ const ProductModal = ({ product, onClose }) => {
           }
           
           if (variantsCount > 0) {
-            console.log(`✅ Eye hygiene product saved successfully with ${variantsCount} active variant(s):`, savedVariants);
+            console.log(`✅ Eye hygiene product saved successfully with ${variantsCount} active variant(s):`, internalVariants);
           } else {
             if (variantsWereSent && variantsSentCount > 0) {
               console.warn(`⚠️ Eye hygiene product saved but ${variantsSentCount} variant(s) sent are not in response. Variants may not have been saved by backend or were filtered out (inactive variants).`);
@@ -1995,22 +2034,22 @@ const ProductModal = ({ product, onClose }) => {
                 try {
                   const verifyResponse = await api.get(API_ROUTES.ADMIN.PRODUCTS.BY_ID(savedProduct.id));
                   const verifyProduct = verifyResponse.data?.data?.product || verifyResponse.data?.product || verifyResponse.data;
-                  const verifyVariants = verifyProduct?.sizeVolumeVariants || verifyProduct?.variants || [];
+                  const verifyBackendVariants = verifyProduct?.sizeVolumeVariants || verifyProduct?.variants || [];
+                  const verifyInternalVariants = mapVariantsFromBackend(Array.isArray(verifyBackendVariants) ? verifyBackendVariants : []);
                   console.log('🔍 Product fetch result:', {
-                    hasVariants: Array.isArray(verifyVariants) && verifyVariants.length > 0,
-                    variantsCount: Array.isArray(verifyVariants) ? verifyVariants.length : 0,
-                    variants: verifyVariants,
+                    hasVariants: Array.isArray(verifyBackendVariants) && verifyBackendVariants.length > 0,
+                    variantsCount: Array.isArray(verifyBackendVariants) ? verifyBackendVariants.length : 0,
+                    variants: verifyBackendVariants,
                     allProductKeys: Object.keys(verifyProduct || {})
                   });
                   
-                  if (Array.isArray(verifyVariants) && verifyVariants.length > 0) {
-                    console.log(`✅ Variants found in fetched product: ${verifyVariants.length} variant(s) - variants were saved but not in update response`);
-                    // Update savedProduct with fetched variants
-                    savedProduct.sizeVolumeVariants = verifyVariants;
-                    savedProduct.variants = verifyVariants;
+                  if (Array.isArray(verifyBackendVariants) && verifyBackendVariants.length > 0) {
+                    console.log(`✅ Variants found in fetched product: ${verifyBackendVariants.length} variant(s) - variants were saved but not in update response`);
+                    // Update savedProduct with fetched variants (internal format)
+                    savedProduct.variants = verifyInternalVariants;
                   } else {
                     console.warn('⚠️ Variants not found in fetched product either - variants were likely not saved by backend');
-                    console.warn('⚠️ Possible reasons: validation error, duplicate size_volume+pack_type, or backend issue');
+                    console.warn('⚠️ Possible reasons: validation error, duplicate variant values, or backend issue');
                   }
                 } catch (verifyError) {
                   console.warn('⚠️ Could not verify variants by fetching product:', verifyError);
@@ -2166,7 +2205,7 @@ const ProductModal = ({ product, onClose }) => {
 
   // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids
   // Show Spherical and Astigmatism Configurations for contact lens products
-  // Show Size/Volume Variants for eye hygiene products
+  // Show Variants for eye hygiene products
   // IMPORTANT: All sections/tabs are present when editing - tabs are conditionally shown based on product_type
   const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
   const isContactLens = formData.product_type === 'contact_lens';
@@ -2235,7 +2274,7 @@ const ProductModal = ({ product, onClose }) => {
       { id: 'astigmatism', label: 'Astigmatism Configurations' },
     ] : []),
     ...(isEyeHygiene ? [
-      { id: 'size-volume-variants', label: 'Size/Volume Variants' }, // Shown for Eye Hygiene products
+      { id: 'size-volume-variants', label: 'Variants' }, // Shown for Eye Hygiene products
     ] : []),
     { id: 'images', label: 'Images' }, // Always shown - all products can have images
     { id: 'seo', label: 'SEO' }, // Always shown - all products can have SEO settings
@@ -4096,15 +4135,15 @@ const ProductModal = ({ product, onClose }) => {
               </div>
             )}
 
-            {/* Size/Volume Variants Tab */}
+            {/* Variants Tab */}
             {activeTab === 'size-volume-variants' && (
               <div className="space-y-6">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    Size/Volume Variants
+                    Variants
                   </h3>
                   <p className="text-sm text-gray-600">
-                    Add multiple size/volume options for this Eye Hygiene product. Each variant can have its own price, stock quantity, and other properties.
+                    Add multiple variant options for this product. Each variant can have its own price, stock quantity, and other properties.
                   </p>
                 </div>
 
@@ -4114,7 +4153,7 @@ const ProductModal = ({ product, onClose }) => {
                     type="button"
                     onClick={() => {
                       const newVariant = {
-                        size_volume: '',
+                        size: '',
                         pack_type: '',
                         price: '',
                         compare_at_price: '',
@@ -4124,11 +4163,11 @@ const ProductModal = ({ product, onClose }) => {
                         sku: '',
                         expiry_date: '',
                         is_active: true,
-                        sort_order: formData.sizeVolumeVariants.length,
+                        sort_order: formData.variants.length,
                       };
                       setFormData({
                         ...formData,
-                        sizeVolumeVariants: [...formData.sizeVolumeVariants, newVariant],
+                        variants: [...formData.variants, newVariant],
                       });
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
@@ -4139,13 +4178,13 @@ const ProductModal = ({ product, onClose }) => {
                 </div>
 
                 {/* Variants List */}
-                {formData.sizeVolumeVariants.length === 0 ? (
+                {formData.variants.length === 0 ? (
                   <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
                     <p className="text-gray-500">No variants added yet. Click "Add Variant" to create one.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {formData.sizeVolumeVariants.map((variant, index) => (
+                    {formData.variants.map((variant, index) => (
                       <div
                         key={index}
                         className="border border-gray-200 rounded-lg p-6 bg-gray-50/50 hover:bg-gray-50 transition-colors"
@@ -4160,7 +4199,7 @@ const ProductModal = ({ product, onClose }) => {
                           <button
                             type="button"
                             onClick={() => {
-                              const updatedVariants = formData.sizeVolumeVariants.filter((_, i) => i !== index);
+                              const updatedVariants = formData.variants.filter((_, i) => i !== index);
                               // Update sort_order for remaining variants
                               const reorderedVariants = updatedVariants.map((v, i) => ({
                                 ...v,
@@ -4168,7 +4207,7 @@ const ProductModal = ({ product, onClose }) => {
                               }));
                               setFormData({
                                 ...formData,
-                                sizeVolumeVariants: reorderedVariants,
+                                variants: reorderedVariants,
                               });
                             }}
                             className="text-red-600 hover:text-red-800 transition-colors"
@@ -4178,27 +4217,27 @@ const ProductModal = ({ product, onClose }) => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {/* Size/Volume */}
+                          {/* Size */}
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Size/Volume <span className="text-red-500">*</span>
+                              Size <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="text"
-                              value={variant.size_volume || ''}
+                              value={variant.size || ''}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
-                                  size_volume: e.target.value,
+                                  size: e.target.value,
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
-                              placeholder="e.g., 5ml, 10ml, 30ml"
+                              placeholder="e.g., Small, Medium, Large"
                               required
                             />
                           </div>
@@ -4212,14 +4251,14 @@ const ProductModal = ({ product, onClose }) => {
                               type="text"
                               value={variant.pack_type || ''}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
                                   pack_type: e.target.value,
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
@@ -4238,14 +4277,14 @@ const ProductModal = ({ product, onClose }) => {
                               min="0"
                               value={variant.price || ''}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
                                   price: e.target.value ? parseFloat(e.target.value) : '',
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
@@ -4265,14 +4304,14 @@ const ProductModal = ({ product, onClose }) => {
                               min="0"
                               value={variant.compare_at_price || ''}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
                                   compare_at_price: e.target.value ? parseFloat(e.target.value) : null,
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
@@ -4291,14 +4330,14 @@ const ProductModal = ({ product, onClose }) => {
                               min="0"
                               value={variant.cost_price || ''}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
                                   cost_price: e.target.value ? parseFloat(e.target.value) : null,
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
@@ -4316,14 +4355,14 @@ const ProductModal = ({ product, onClose }) => {
                               min="0"
                               value={variant.stock_quantity ?? 0}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
                                   stock_quantity: parseInt(e.target.value) || 0,
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
@@ -4339,14 +4378,14 @@ const ProductModal = ({ product, onClose }) => {
                             <select
                               value={variant.stock_status || 'in_stock'}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
                                   stock_status: e.target.value,
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
@@ -4367,14 +4406,14 @@ const ProductModal = ({ product, onClose }) => {
                               type="text"
                               value={variant.sku || ''}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
                                   sku: e.target.value,
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
@@ -4391,15 +4430,15 @@ const ProductModal = ({ product, onClose }) => {
                               type="date"
                               value={variant.expiry_date ? new Date(variant.expiry_date).toISOString().split('T')[0] : ''}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  expiry_date: e.target.value ? new Date(e.target.value).toISOString() : null,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  sizeVolumeVariants: updatedVariants,
-                                });
+                                  const updatedVariants = [...formData.variants];
+                                  updatedVariants[index] = {
+                                    ...updatedVariants[index],
+                                    expiry_date: e.target.value ? new Date(e.target.value).toISOString() : null,
+                                  };
+                                  setFormData({
+                                    ...formData,
+                                    variants: updatedVariants,
+                                  });
                               }}
                               className="input-modern"
                             />
@@ -4415,14 +4454,14 @@ const ProductModal = ({ product, onClose }) => {
                               min="0"
                               value={variant.sort_order ?? index}
                               onChange={(e) => {
-                                const updatedVariants = [...formData.sizeVolumeVariants];
+                                const updatedVariants = [...formData.variants];
                                 updatedVariants[index] = {
                                   ...updatedVariants[index],
                                   sort_order: parseInt(e.target.value) || 0,
                                 };
                                 setFormData({
                                   ...formData,
-                                  sizeVolumeVariants: updatedVariants,
+                                  variants: updatedVariants,
                                 });
                               }}
                               className="input-modern"
@@ -4436,14 +4475,14 @@ const ProductModal = ({ product, onClose }) => {
                                 type="checkbox"
                                 checked={variant.is_active !== false}
                                 onChange={(e) => {
-                                  const updatedVariants = [...formData.sizeVolumeVariants];
+                                  const updatedVariants = [...formData.variants];
                                   updatedVariants[index] = {
                                     ...updatedVariants[index],
                                     is_active: e.target.checked,
                                   };
                                   setFormData({
                                     ...formData,
-                                    sizeVolumeVariants: updatedVariants,
+                                    variants: updatedVariants,
                                   });
                                 }}
                                 className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"

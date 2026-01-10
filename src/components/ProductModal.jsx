@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
@@ -21,7 +21,9 @@ import PrescriptionLensTypeModal from './PrescriptionLensTypeModal';
 import PrescriptionFormDropdownValueModal from './PrescriptionFormDropdownValueModal';
 import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
-import SizeVolumeVariantModal from './SizeVolumeVariantModal';
+
+// Lazy load SizeVolumeVariantModal to avoid initialization order issues
+const SizeVolumeVariantModal = lazy(() => import('./SizeVolumeVariantModal'));
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -4681,21 +4683,23 @@ const ProductModal = ({ product, onClose }) => {
         )}
         
         {/* Size/Volume Variant Modal */}
-        {variantModalOpen && (
-          <SizeVolumeVariantModal
-            variant={editingVariant}
-            productId={getValidProductId()}
-            onClose={async (saved = false) => {
-              setVariantModalOpen(false);
-              setEditingVariant(null);
-              if (saved) {
-                const productId = getValidProductId();
-                if (productId) {
-                  await fetchSizeVolumeVariants(productId);
+        {variantModalOpen && getValidProductId() && (
+          <Suspense fallback={<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]"><div className="bg-white rounded-2xl p-8"><div className="spinner"></div></div></div>}>
+            <SizeVolumeVariantModal
+              variant={editingVariant}
+              productId={getValidProductId()}
+              onClose={async (saved = false) => {
+                setVariantModalOpen(false);
+                setEditingVariant(null);
+                if (saved) {
+                  const productId = getValidProductId();
+                  if (productId) {
+                    await fetchSizeVolumeVariants(productId);
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          </Suspense>
         )}
       </div>
     </div>

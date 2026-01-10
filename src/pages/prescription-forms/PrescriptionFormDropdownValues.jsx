@@ -393,10 +393,13 @@ const PrescriptionFormDropdownValues = () => {
         <PrescriptionFormDropdownValueModal
           key={selectedValue?.id || 'new'}
           value={selectedValue}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedValue(null);
-            fetchValues();
+            // Refresh table after successful save/update
+            if (shouldRefresh) {
+              fetchValues();
+            }
           }}
         />
       )}

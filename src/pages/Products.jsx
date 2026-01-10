@@ -428,72 +428,87 @@ const Products = () => {
       }
       
       // ========================================================================
-      // CRITICAL: Filter products by categories ONLY (NOT by product_type or product_id)
+      // COMPREHENSIVE FILTERING: Product Type, Category, Subcategory, Sub-Subcategory
       // ========================================================================
-      // All sections use category-based filtering through the general products endpoint
-      // Per Postman collection: Use /api/admin/products with category_id parameter
-      // This ensures products are filtered by their category assignment, regardless of product_type field
-      //
-      // RULES:
-      // 1. ONLY use category_id and sub_category_id for filtering
-      // 2. NEVER use product_type or product_id for filtering
-      // 3. All products related to a category should appear when that category button is clicked
+      // Products are filtered by:
+      // 1. Product Type (e.g., 'eye_hygiene', 'contact_lens', 'frame', 'sunglasses')
+      // 2. Category ID (category_id)
+      // 3. Subcategory ID (sub_category_id) - including nested sub-subcategories
+      // 
+      // This ensures ALL related products appear in their relevant sections:
+      // - Products matching the product_type for that section
+      // - Products in the category for that section
+      // - Products in subcategories under that category
+      // - Products in nested sub-subcategories
       // ========================================================================
       
-      // Safeguard 1: Remove any product_type parameter if it exists (shouldn't happen, but as a safeguard)
-      if (params.has('product_type')) {
-        console.warn('⚠️ product_type parameter was detected and removed - filtering should use category_id only');
-        params.delete('product_type');
-      }
+      // Map sections to their corresponding product types
+      const sectionToProductTypeMap = {
+        'sunglasses': ['sunglasses'],
+        'eyeglasses': ['frame'],
+        'opty-kids': ['frame'], // Opty Kids uses frame product type
+        'eye-hygiene': ['eye_hygiene', 'accessory'], // Eye hygiene can be both types
+        'contact-lenses': ['contact_lens'],
+        'all': null // No product type filter for "all"
+      };
       
-      // Safeguard 2: Remove any product_id parameter if it exists (shouldn't happen)
+      // Safeguard: Remove any product_id parameter if it exists (shouldn't happen)
       if (params.has('product_id')) {
-        console.warn('⚠️ product_id parameter was detected and removed - filtering should use category_id only');
+        console.warn('⚠️ product_id parameter was detected and removed - should not filter by product_id');
         params.delete('product_id');
       }
       
       if (selectedSection !== 'all') {
-        // If section categories are found, filter strictly by those categories
+        // Get product types for this section
+        const sectionProductTypes = sectionToProductTypeMap[selectedSection] || [];
+        
+        // Add product_type filter if section has mapped product types
+        if (sectionProductTypes && sectionProductTypes.length > 0) {
+          sectionProductTypes.forEach(productType => {
+            params.append('product_type', productType);
+          });
+        }
+        
+        // Filter by category_id if section categories are found
         if (sectionCategoryIds.length > 0) {
-          // IMPORTANT: Filter by category_id (NOT product_id or product_type)
-          // The backend expects category_id parameter(s) to filter products by their category assignment
-          // Multiple category_id values can be sent to match products in any of those categories
-          
           // Add all category IDs for the section - each category_id is added separately
           // Backend will return products that have ANY of these category_ids
           sectionCategoryIds.forEach(catId => {
             params.append('category_id', catId);
           });
-          
-          // Add all subcategory IDs (including nested) for the section
-          // Products in these subcategories will also be included
-          if (sectionSubCategoryIds.length > 0) {
-            sectionSubCategoryIds.forEach(subCatId => {
-              params.append('sub_category_id', subCatId);
-            });
-          }
-          
-          // Log the category-based filtering (NOT product_type based)
-          const categoryNames = sectionCategoryIds.map(id => {
-            const cat = categories.find(c => c.id === id);
-            return cat ? `${cat.name} (ID: ${id})` : `Unknown (ID: ${id})`;
+        }
+        
+        // Add all subcategory IDs (including nested sub-subcategories) for the section
+        // Products in these subcategories will also be included
+        if (sectionSubCategoryIds.length > 0) {
+          sectionSubCategoryIds.forEach(subCatId => {
+            params.append('sub_category_id', subCatId);
           });
-          
-          console.log(`🔍 Filtering products by CATEGORY IDs (NOT product_type or product_id) for section "${selectedSection}":`, {
-            section: selectedSection,
-            categoryIds: sectionCategoryIds,
-            categoryNames: categoryNames,
-            subCategoryIds: sectionSubCategoryIds.length > 0 ? sectionSubCategoryIds : 'none',
-            endpoint: `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`,
-            note: 'Products are filtered by their category_id field, matching any of the category IDs above'
-          });
-        } else {
-          // If no categories found for this section, show empty results
-          // This ensures products are only shown when categories are properly configured
-          console.warn(`⚠️ No categories found for section "${selectedSection}". Showing empty results.`, {
+        }
+        
+        // Log the comprehensive filtering
+        const categoryNames = sectionCategoryIds.map(id => {
+          const cat = categories.find(c => c.id === id);
+          return cat ? `${cat.name} (ID: ${id})` : `Unknown (ID: ${id})`;
+        });
+        
+        console.log(`🔍 Filtering products for section "${selectedSection}" by:`, {
+          section: selectedSection,
+          productTypes: sectionProductTypes.length > 0 ? sectionProductTypes : 'none',
+          categoryIds: sectionCategoryIds.length > 0 ? sectionCategoryIds : 'none',
+          categoryNames: categoryNames.length > 0 ? categoryNames : 'none',
+          subCategoryIds: sectionSubCategoryIds.length > 0 ? sectionSubCategoryIds : 'none',
+          subCategoryCount: sectionSubCategoryIds.length,
+          endpoint: `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`,
+          note: 'Products matching ANY of: product_type, category_id, or sub_category_id will be shown'
+        });
+        
+        // If no filters are set (no product type, no category, no subcategory), warn
+        if (sectionProductTypes.length === 0 && sectionCategoryIds.length === 0 && sectionSubCategoryIds.length === 0) {
+          console.warn(`⚠️ No filters found for section "${selectedSection}". Showing empty results.`, {
             section: selectedSection,
             availableCategories: categories.map(c => ({ id: c.id, name: c.name, slug: c.slug })),
-            suggestion: 'Check if categories with matching names/slugs exist in the database'
+            suggestion: 'Check if product types, categories, or subcategories are configured for this section'
           });
         }
       } else if (selectedSection === 'all') {
@@ -508,25 +523,19 @@ const Products = () => {
         }
       }
       
-      // Always use the general products endpoint with category-based filtering ONLY
-      // Per Postman collection: GET /api/admin/products?category_id=X
-      // NO product_type or product_id parameters should be included
+      // Always use the general products endpoint with comprehensive filtering
+      // Per Postman collection: GET /api/admin/products?category_id=X&product_type=Y&sub_category_id=Z
+      // Parameters: product_type, category_id, sub_category_id are all allowed
+      // Only product_id should NOT be included
       const endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
       
-      // Final verification: ensure no product_type or product_id in URL
-      if (endpoint.includes('product_type') || endpoint.includes('product_id')) {
-        console.error('❌ ERROR: product_type or product_id parameter detected in endpoint! This should not happen.', {
+      // Final verification: ensure no product_id in URL (product_id should not be used for filtering)
+      if (endpoint.includes('product_id')) {
+        console.error('❌ ERROR: product_id parameter detected in endpoint! This should not be used for filtering.', {
           endpoint,
           params: params.toString(),
-          message: 'Filtering must use category_id and sub_category_id ONLY'
+          message: 'product_id should not be used for filtering - use product_type, category_id, and sub_category_id instead'
         });
-        // Remove them one more time as a safety measure
-        const urlObj = new URL(endpoint);
-        urlObj.searchParams.delete('product_type');
-        urlObj.searchParams.delete('product_id');
-        const cleanEndpoint = urlObj.toString();
-        console.warn('🔧 Cleaned endpoint:', cleanEndpoint);
-        // Note: We can't easily modify the endpoint here, but the error is logged
       }
       
       const response = await api.get(endpoint);
@@ -540,70 +549,105 @@ const Products = () => {
       const productsArray = Array.isArray(productsData) ? productsData : [];
       
       // ========================================================================
-      // VERIFICATION: Ensure all returned products match the category filter
+      // VERIFICATION: Ensure all returned products match the filter criteria
       // ========================================================================
-      // This validation confirms that the backend is filtering by category_id correctly
-      // and that products shown belong to the selected category section
-      if (selectedSection !== 'all' && productsArray.length > 0 && sectionCategoryIds.length > 0) {
-        // Check products against the category filter
+      // This validation confirms that the backend is filtering correctly by:
+      // - product_type
+      // - category_id
+      // - sub_category_id (including nested sub-subcategories)
+      // Products shown should belong to the selected section based on any of these criteria
+      if (selectedSection !== 'all' && productsArray.length > 0) {
+        const sectionProductTypes = sectionToProductTypeMap[selectedSection] || [];
+        
+        // Check products against all filter criteria
         const mismatchedProducts = productsArray.filter(product => {
+          const productType = product.product_type;
           const productCategoryId = product.category_id || product.category?.id;
           const productSubCategoryId = product.sub_category_id || product.subCategoryId;
           
-          // Product should match if:
-          // 1. Its category_id is in sectionCategoryIds, OR
-          // 2. Its sub_category_id is in sectionSubCategoryIds (even if category doesn't match exactly)
-          const categoryMatches = sectionCategoryIds.includes(productCategoryId);
+          // Product should match if ANY of these are true:
+          // 1. Its product_type matches section product types, OR
+          // 2. Its category_id is in sectionCategoryIds, OR
+          // 3. Its sub_category_id is in sectionSubCategoryIds (including nested sub-subcategories)
+          const productTypeMatches = sectionProductTypes.length > 0 && 
+                                     productType && 
+                                     sectionProductTypes.includes(productType);
+          const categoryMatches = sectionCategoryIds.length > 0 && 
+                                 sectionCategoryIds.includes(productCategoryId);
           const subCategoryMatches = sectionSubCategoryIds.length > 0 && 
                                      productSubCategoryId && 
                                      sectionSubCategoryIds.includes(productSubCategoryId);
           
-          return !categoryMatches && !subCategoryMatches;
+          // Product matches if ANY criteria match
+          return !productTypeMatches && !categoryMatches && !subCategoryMatches;
         });
         
         if (mismatchedProducts.length > 0) {
-          console.warn(`⚠️ Found ${mismatchedProducts.length} products that don't match the expected category/subcategory IDs:`, {
+          console.warn(`⚠️ Found ${mismatchedProducts.length} products that don't match the filter criteria for section "${selectedSection}":`, {
             section: selectedSection,
-            expectedCategoryIds: sectionCategoryIds,
+            expectedProductTypes: sectionProductTypes.length > 0 ? sectionProductTypes : 'none',
+            expectedCategoryIds: sectionCategoryIds.length > 0 ? sectionCategoryIds : 'none',
             expectedSubCategoryIds: sectionSubCategoryIds.length > 0 ? sectionSubCategoryIds : 'none',
             mismatchedProducts: mismatchedProducts.map(p => ({
               id: p.id,
               name: p.name,
-              category_id: p.category_id || p.category?.id,
+              product_type: p.product_type || 'N/A',
+              category_id: p.category_id || p.category?.id || 'N/A',
               category_name: p.category?.name || 'N/A',
               sub_category_id: p.sub_category_id || 'N/A',
-              product_type: p.product_type || 'N/A',
-              note: 'This product does not match the category filter - backend may need investigation'
+              note: 'This product does not match any filter criteria - backend may need investigation'
             }))
           });
         } else {
-          // All products match the category filter - perfect!
-          console.log(`✅ All ${productsArray.length} returned products match the category filter for section "${selectedSection}"`);
+          // All products match at least one filter criteria - perfect!
+          const matchSummary = {
+            byProductType: sectionProductTypes.length > 0 ? productsArray.filter(p => sectionProductTypes.includes(p.product_type)).length : 0,
+            byCategory: sectionCategoryIds.length > 0 ? productsArray.filter(p => sectionCategoryIds.includes(p.category_id || p.category?.id)).length : 0,
+            bySubCategory: sectionSubCategoryIds.length > 0 ? productsArray.filter(p => sectionSubCategoryIds.includes(p.sub_category_id || p.subCategoryId)).length : 0
+          };
+          console.log(`✅ All ${productsArray.length} returned products match the filter criteria for section "${selectedSection}":`, matchSummary);
         }
       }
+      
+      const sectionProductTypes = selectedSection !== 'all' ? (sectionToProductTypeMap[selectedSection] || []) : [];
       
       console.log(`✅ Fetched ${productsArray.length} products for section: ${selectedSection}`, {
         section: selectedSection,
         count: productsArray.length,
-        filteringMethod: 'By category_id (NOT by product_id or product_type)',
-        categoryIds: selectedSection !== 'all' ? sectionCategoryIds : 'all categories',
+        filteringMethod: 'By product_type, category_id, and sub_category_id (including nested sub-subcategories)',
+        productTypes: selectedSection !== 'all' ? (sectionProductTypes.length > 0 ? sectionProductTypes : 'none') : 'all',
+        categoryIds: selectedSection !== 'all' ? (sectionCategoryIds.length > 0 ? sectionCategoryIds : 'none') : 'all categories',
         subCategoryIds: selectedSection !== 'all' ? sectionSubCategoryIds.length : 0,
+        nestedSubCategories: selectedSection !== 'all' ? 'included' : 'N/A',
         sampleProduct: productsArray.length > 0 ? {
           id: productsArray[0].id,
           name: productsArray[0].name,
+          product_type: productsArray[0].product_type || 'N/A',
           category_id: productsArray[0].category_id,
           category_name: productsArray[0].category?.name || 'N/A',
-          // Note: product_type shown for info only, NOT used for filtering
-          product_type: productsArray[0].product_type
+          sub_category_id: productsArray[0].sub_category_id || 'N/A'
         } : null
       });
       
-      // Log a summary of category filtering
-      if (selectedSection !== 'all' && sectionCategoryIds.length > 0) {
-        console.log(`📋 Filtering by categories ONLY (product_type is NOT used for filtering):`, sectionCategoryIds.map(id => {
-          const cat = categories.find(c => c.id === id);
-          return cat ? `${cat.name} (ID: ${id})` : `ID: ${id}`;
-        }));
+      // Log a summary of all filtering criteria
+      if (selectedSection !== 'all') {
+        const filters = [];
+        if (sectionProductTypes.length > 0) {
+          filters.push(`product_type: ${sectionProductTypes.join(', ')}`);
+        }
+        if (sectionCategoryIds.length > 0) {
+          const catNames = sectionCategoryIds.map(id => {
+            const cat = categories.find(c => c.id === id);
+            return cat ? `${cat.name} (${id})` : `${id}`;
+          });
+          filters.push(`categories: ${catNames.join(', ')}`);
+        }
+        if (sectionSubCategoryIds.length > 0) {
+          filters.push(`subcategories: ${sectionSubCategoryIds.length} (including nested)`);
+        }
+        if (filters.length > 0) {
+          console.log(`📋 Filtering by: ${filters.join(' | ')}`);
+        }
       }
       
       // Extract pagination info
@@ -1537,20 +1581,25 @@ const Products = () => {
     setSubCategoryFilter('');
     
     // ========================================================================
-    // IMPORTANT: Category-based filtering (NOT product_type or product_id)
+    // COMPREHENSIVE FILTERING: Product Type, Category, Subcategory, Sub-Subcategory
     // ========================================================================
-    // When a category button is clicked, products are filtered by categories ONLY:
-    // 1. Section's category IDs (sectionCategoryIds) - finds matching categories like "sun glasses", "eye glasses", etc.
-    // 2. Section's subcategory IDs (sectionSubCategoryIds) - includes nested subcategories for those categories
-    // 3. Uses general products endpoint with category_id parameter for filtering
+    // When a category button is clicked, products are filtered by:
+    // 1. Product Type - matches section's product types (e.g., 'eye_hygiene', 'contact_lens', 'frame', 'sunglasses')
+    // 2. Category ID - finds matching categories like "sun glasses", "eye glasses", "eye hygiene", etc.
+    // 3. Subcategory ID - includes all subcategories for those categories
+    // 4. Sub-Subcategory ID - includes nested subcategories (sub-subcategories) for those subcategories
     // 
-    // This ensures ONLY products from the selected category section are displayed
-    // Products are shown based on their category_id field, NOT their product_type field
+    // Products matching ANY of these criteria will be displayed:
+    // - Products with matching product_type
+    // - Products in matching categories
+    // - Products in matching subcategories (including nested)
     // 
     // Example: When clicking "Eye Hygiene":
+    // - Filters by product_type: 'eye_hygiene', 'accessory'
     // - Finds category "eye hygiene" (ID: 30)
-    // - Filters: /api/admin/products?category_id=30
-    // - Shows ALL products with category_id=30, regardless of their product_type field
+    // - Includes all subcategories under "eye hygiene"
+    // - Includes nested sub-subcategories
+    // - Shows ALL products matching ANY of these criteria
     // ========================================================================
     
     if (section === 'all') {

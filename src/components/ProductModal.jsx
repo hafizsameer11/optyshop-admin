@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
@@ -143,6 +143,9 @@ const ProductModal = ({ product, onClose }) => {
     sizeVolumeVariants: [],
   });
   const [categories, setCategories] = useState([]);
+  const categoriesRef = useRef([]);
+  const fetchSubCategoriesRef = useRef(null);
+  const checkAndSetSubSubCategoryRef = useRef(null);
   const [subCategories, setSubCategories] = useState([]);
   const [nestedSubCategories, setNestedSubCategories] = useState([]);
   const [frameShapes, setFrameShapes] = useState([]);
@@ -225,6 +228,50 @@ const ProductModal = ({ product, onClose }) => {
   useEffect(() => {
     setCurrentProduct(product);
   }, [product]);
+
+  // Update refs when categories or functions change
+  useEffect(() => {
+    categoriesRef.current = categories;
+    // Update function refs - these functions are stable but we update refs to ensure they're available
+    if (fetchSubCategories) fetchSubCategoriesRef.current = fetchSubCategories;
+    if (checkAndSetSubSubCategory) checkAndSetSubSubCategoryRef.current = checkAndSetSubSubCategory;
+  }, [categories]);
+
+  // Helper function to check if a subcategory is a sub-subcategory and set form correctly
+  const checkAndSetSubSubCategory = async (subCategoryId) => {
+    if (!subCategoryId) return;
+    
+    try {
+      // Fetch the subcategory to check if it has a parent (is a sub-subcategory)
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(subCategoryId));
+      const subCatData = response.data?.data?.subcategory || response.data?.data || response.data?.subcategory || response.data || {};
+      
+      // Check if this subcategory has a parent (is a sub-subcategory)
+      const parentId = subCatData.parent_id !== undefined ? subCatData.parent_id : 
+                       subCatData.parentId || 
+                       subCatData.parent_subcategory_id || 
+                       subCatData.parentSubcategoryId ||
+                       subCatData.parent?.id;
+      
+      if (parentId && parentId !== null && parentId !== '') {
+        // This is a sub-subcategory - set parent as sub_category_id and this as parent_subcategory_id
+        // The useEffect will automatically fetch nested subcategories when sub_category_id changes
+        console.log(`📊 Product is assigned to sub-subcategory ${subCategoryId}, parent is ${parentId}`);
+        setFormData(prev => ({
+          ...prev,
+          sub_category_id: parentId.toString(),
+          parent_subcategory_id: subCategoryId.toString()
+        }));
+        // Note: fetchNestedSubCategories will be called automatically by the useEffect when sub_category_id changes
+      } else {
+        // This is a top-level subcategory - the useEffect will fetch nested subcategories automatically
+        console.log(`📊 Product is assigned to top-level subcategory ${subCategoryId}`);
+      }
+    } catch (error) {
+      console.warn('Failed to check subcategory parent, assuming top-level:', error);
+      // If we can't check, assume it's top-level - the useEffect will handle fetching nested subcategories
+    }
+  };
 
   useEffect(() => {
     fetchProductOptions();
@@ -318,8 +365,11 @@ const ProductModal = ({ product, onClose }) => {
           }
           
           // Also check if we can infer from category_id if category name isn't available yet
-          if (!isEyeHygieneCategory && productToUse.category_id && categories.length > 0) {
-            const category = categories.find(cat => cat.id === productToUse.category_id || cat.id === parseInt(productToUse.category_id));
+          // Note: categories may not be loaded yet when editing, so we safely check for it
+          // Use ref to access latest categories without adding to dependency array
+          const currentCategories = categoriesRef.current || [];
+          if (!isEyeHygieneCategory && productToUse.category_id && Array.isArray(currentCategories) && currentCategories.length > 0) {
+            const category = currentCategories.find(cat => cat.id === productToUse.category_id || cat.id === parseInt(productToUse.category_id));
             if (category) {
               const catName = (category.name || '').toLowerCase().trim();
               if (catName.includes('eye') && catName.includes('hygiene')) {
@@ -433,12 +483,14 @@ const ProductModal = ({ product, onClose }) => {
       });
       // Fetch subcategories if category is set
       if (productToUse.category_id) {
-        fetchSubCategories(productToUse.category_id);
+        if (fetchSubCategoriesRef.current) {
+          fetchSubCategoriesRef.current(productToUse.category_id);
+        }
         // Check if the product's subcategory is a sub-subcategory (has a parent)
         const productSubCategoryId = productToUse.sub_category_id || productToUse.subcategory_id;
-        if (productSubCategoryId) {
+        if (productSubCategoryId && checkAndSetSubSubCategoryRef.current) {
           // Check if this subcategory is a sub-subcategory and set form accordingly
-          checkAndSetSubSubCategory(productSubCategoryId);
+          checkAndSetSubSubCategoryRef.current(productSubCategoryId);
         }
       }
       // Set existing images and previews if product has images array or image_url
@@ -518,9 +570,10 @@ const ProductModal = ({ product, onClose }) => {
     
     // Only fetch full product details if we have a product to edit
     if (product) {
-      loadProductData();
+      loadProductData().catch(err => {
+        console.error('Error loading product data:', err);
+      });
     } else {
-      // Reset form for new product
       // Reset form for new product
       setExistingImages([]);
       setExistingColorImages([]);
@@ -560,45 +613,10 @@ const ProductModal = ({ product, onClose }) => {
       setModel3DPreview(null);
       setImagesWithColors([]);
     }
-    // Note: categories is loaded asynchronously via fetchProductOptions, so we can't add it to deps
+    // Note: categories, fetchSubCategories, and checkAndSetSubSubCategory are stable or loaded asynchronously,
+    // so we can't add them to deps without causing infinite loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
-
-  // Helper function to check if a subcategory is a sub-subcategory and set form correctly
-  const checkAndSetSubSubCategory = async (subCategoryId) => {
-    if (!subCategoryId) return;
-    
-    try {
-      // Fetch the subcategory to check if it has a parent (is a sub-subcategory)
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(subCategoryId));
-      const subCatData = response.data?.data?.subcategory || response.data?.data || response.data?.subcategory || response.data || {};
-      
-      // Check if this subcategory has a parent (is a sub-subcategory)
-      const parentId = subCatData.parent_id !== undefined ? subCatData.parent_id : 
-                       subCatData.parentId || 
-                       subCatData.parent_subcategory_id || 
-                       subCatData.parentSubcategoryId ||
-                       subCatData.parent?.id;
-      
-      if (parentId && parentId !== null && parentId !== '') {
-        // This is a sub-subcategory - set parent as sub_category_id and this as parent_subcategory_id
-        // The useEffect will automatically fetch nested subcategories when sub_category_id changes
-        console.log(`📊 Product is assigned to sub-subcategory ${subCategoryId}, parent is ${parentId}`);
-        setFormData(prev => ({
-          ...prev,
-          sub_category_id: parentId.toString(),
-          parent_subcategory_id: subCategoryId.toString()
-        }));
-        // Note: fetchNestedSubCategories will be called automatically by the useEffect when sub_category_id changes
-      } else {
-        // This is a top-level subcategory - the useEffect will fetch nested subcategories automatically
-        console.log(`📊 Product is assigned to top-level subcategory ${subCategoryId}`);
-      }
-    } catch (error) {
-      console.warn('Failed to check subcategory parent, assuming top-level:', error);
-      // If we can't check, assume it's top-level - the useEffect will handle fetching nested subcategories
-    }
-  };
 
   // Fetch nested subcategories when subcategory is selected
   useEffect(() => {
@@ -678,7 +696,9 @@ const ProductModal = ({ product, onClose }) => {
       const response = await api.get(API_ROUTES.PRODUCTS.OPTIONS);
       const optionsData = response.data?.data || response.data || {};
       
-      setCategories(optionsData.categories || []);
+      const categoriesData = optionsData.categories || [];
+      setCategories(categoriesData);
+      categoriesRef.current = categoriesData;
       setFrameShapes(optionsData.frameShapes || []);
       
       // Merge API frame materials with additional material types
@@ -696,6 +716,7 @@ const ProductModal = ({ product, onClose }) => {
         const response = await api.get(API_ROUTES.CATEGORIES.LIST);
         const categoriesData = response.data?.data?.categories || response.data?.categories || response.data || [];
         setCategories(categoriesData);
+        categoriesRef.current = categoriesData;
       } catch (catError) {
         console.error('Failed to fetch categories', catError);
         setCategories([]);
@@ -4027,7 +4048,7 @@ const ProductModal = ({ product, onClose }) => {
                           {/* Price */}
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Eye hygiene product saved but no variants found in response. This might be normal if no variants were sent                              Price <span className="text-red-500">*</span>
+                              Price <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="number"

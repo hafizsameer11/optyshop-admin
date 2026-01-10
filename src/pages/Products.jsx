@@ -440,27 +440,46 @@ const Products = () => {
       if (selectedSection !== 'all') {
         // If section categories are found, filter strictly by those categories
         if (sectionCategoryIds.length > 0) {
-          // Add all category IDs for the section to filter by categories ONLY
+          // IMPORTANT: Filter by category_id (NOT product_id or product_type)
+          // The backend expects category_id parameter(s) to filter products by their category assignment
+          // Multiple category_id values can be sent to match products in any of those categories
+          
+          // Add all category IDs for the section - each category_id is added separately
+          // Backend will return products that have ANY of these category_ids
           sectionCategoryIds.forEach(catId => {
             params.append('category_id', catId);
           });
           
           // Add all subcategory IDs (including nested) for the section
+          // Products in these subcategories will also be included
           if (sectionSubCategoryIds.length > 0) {
             sectionSubCategoryIds.forEach(subCatId => {
               params.append('sub_category_id', subCatId);
             });
           }
           
-          console.log(`🔍 Filtering products by categories ONLY (not product_type) for section "${selectedSection}":`, {
+          // Log the category-based filtering (NOT product_type based)
+          const categoryNames = sectionCategoryIds.map(id => {
+            const cat = categories.find(c => c.id === id);
+            return cat ? `${cat.name} (ID: ${id})` : `Unknown (ID: ${id})`;
+          });
+          
+          console.log(`🔍 Filtering products by CATEGORY IDs (NOT product_type or product_id) for section "${selectedSection}":`, {
+            section: selectedSection,
             categoryIds: sectionCategoryIds,
-            subCategoryIds: sectionSubCategoryIds,
-            endpoint: `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`
+            categoryNames: categoryNames,
+            subCategoryIds: sectionSubCategoryIds.length > 0 ? sectionSubCategoryIds : 'none',
+            endpoint: `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`,
+            note: 'Products are filtered by their category_id field, matching any of the category IDs above'
           });
         } else {
           // If no categories found for this section, show empty results
           // This ensures products are only shown when categories are properly configured
-          console.warn(`⚠️ No categories found for section "${selectedSection}". No products will be shown.`);
+          console.warn(`⚠️ No categories found for section "${selectedSection}". Showing empty results.`, {
+            section: selectedSection,
+            availableCategories: categories.map(c => ({ id: c.id, name: c.name, slug: c.slug })),
+            suggestion: 'Check if categories with matching names/slugs exist in the database'
+          });
         }
       } else if (selectedSection === 'all') {
         // Manual category filter if selected (per Postman collection: category_id query param)
@@ -493,18 +512,39 @@ const Products = () => {
       
       // Log products count for debugging
       const productsArray = Array.isArray(productsData) ? productsData : [];
-      console.log(`✅ Fetched ${productsArray.length} products for section: ${selectedSection} (filtered by category ONLY)`, {
+      
+      // Verify that products match the category filter
+      if (selectedSection !== 'all' && productsArray.length > 0) {
+        const mismatchedProducts = productsArray.filter(product => {
+          const productCategoryId = product.category_id || product.category?.id;
+          return !sectionCategoryIds.includes(productCategoryId);
+        });
+        
+        if (mismatchedProducts.length > 0) {
+          console.warn(`⚠️ Found ${mismatchedProducts.length} products that don't match the expected category IDs:`, {
+            expectedCategoryIds: sectionCategoryIds,
+            mismatchedProducts: mismatchedProducts.map(p => ({
+              id: p.id,
+              name: p.name,
+              category_id: p.category_id || p.category?.id,
+              category_name: p.category?.name || 'N/A'
+            }))
+          });
+        }
+      }
+      
+      console.log(`✅ Fetched ${productsArray.length} products for section: ${selectedSection}`, {
         section: selectedSection,
         count: productsArray.length,
+        filteringMethod: 'By category_id (NOT by product_id or product_type)',
         categoryIds: selectedSection !== 'all' ? sectionCategoryIds : 'all categories',
         subCategoryIds: selectedSection !== 'all' ? sectionSubCategoryIds.length : 0,
-        filteringMethod: 'by category_id only (NOT by product_type)',
         sampleProduct: productsArray.length > 0 ? {
           id: productsArray[0].id,
           name: productsArray[0].name,
           category_id: productsArray[0].category_id,
           category_name: productsArray[0].category?.name || 'N/A',
-          // Note: product_type shown for info only, not used for filtering
+          // Note: product_type shown for info only, NOT used for filtering
           product_type: productsArray[0].product_type
         } : null
       });
@@ -858,14 +898,28 @@ const Products = () => {
 
   // Find categories matching the section
   // This function finds all categories that match a given section (e.g., "Sunglasses", "Eyeglasses")
-  // Products are then filtered by these category IDs to show only relevant products
+  // Products are then filtered by these category IDs (category_id field) - NOT by product_id or product_type
   // Categories in system: "opty kids", "sun glasses", "contact-lenses", "eye glasses", "eye hygiene"
   const findCategoriesForSection = (section) => {
     if (section === 'all') {
       return [];
     }
     
+    if (categories.length === 0) {
+      console.warn(`⚠️ No categories loaded yet. Cannot find categories for section "${section}".`);
+      return [];
+    }
+    
     const patterns = sectionToCategoryMap[section] || [];
+    
+    if (patterns.length === 0) {
+      console.warn(`⚠️ No mapping patterns found for section "${section}". Check sectionToCategoryMap.`);
+      return [];
+    }
+    
+    console.log(`🔍 Searching for categories matching section "${section}" with patterns:`, patterns);
+    console.log(`📋 Available categories:`, categories.map(cat => ({ id: cat.id, name: cat.name, slug: cat.slug })));
+    
     const matchingCategories = categories.filter(cat => {
       const catName = (cat.name || '').toLowerCase().trim();
       const catSlug = (cat.slug || '').toLowerCase().trim();
@@ -892,8 +946,8 @@ const Products = () => {
       if (section === 'eyeglasses') {
         const isOptyKids = catName === 'opty kids' || catName.includes('opty kids') || 
                           catSlug === 'opty-kids' || catSlug.includes('opty-kids') ||
-                          catName.includes('opty') && catName.includes('kids') ||
-                          catSlug.includes('opty') && catSlug.includes('kids');
+                          (catName.includes('opty') && catName.includes('kids')) ||
+                          (catSlug.includes('opty') && catSlug.includes('kids'));
         return (matchesName || matchesSlug) && !isOptyKids;
       }
       
@@ -911,12 +965,27 @@ const Products = () => {
       return matchesName || matchesSlug;
     });
     
-    console.log(`🔍 Found ${matchingCategories.length} categories for section "${section}":`, 
-      matchingCategories.map(cat => ({ id: cat.id, name: cat.name, slug: cat.slug }))
+    const categoryIds = matchingCategories.map(cat => cat.id);
+    
+    console.log(`✅ Found ${matchingCategories.length} matching categories for section "${section}":`, 
+      matchingCategories.map(cat => ({ 
+        id: cat.id, 
+        name: cat.name, 
+        slug: cat.slug,
+        note: 'Products with category_id matching these IDs will be shown'
+      }))
     );
     
-    // Return array of category IDs - these will be used to filter products
-    return matchingCategories.map(cat => cat.id);
+    if (matchingCategories.length === 0) {
+      console.warn(`⚠️ No categories found for section "${section}". Products will not be displayed.`, {
+        section: section,
+        searchedPatterns: patterns,
+        availableCategories: categories.map(c => ({ name: c.name, slug: c.slug }))
+      });
+    }
+    
+    // Return array of category IDs - these will be used to filter products by category_id
+    return categoryIds;
   };
 
   // Update section category and subcategory IDs when section or categories change

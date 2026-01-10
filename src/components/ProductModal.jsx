@@ -74,42 +74,6 @@ const getColorNameFromHex = (hexCode) => {
   return hexMap[normalized] || hexCode;
 };
 
-// Helper functions to map between internal variant names and backend API field names
-// Internal: variants, size | Backend: sizeVolumeVariants, size_volume
-const mapVariantFromBackend = (backendVariant) => {
-  if (!backendVariant) return null;
-  return {
-    ...backendVariant,
-    size: backendVariant.size_volume || backendVariant.size || '',
-    // Keep original for backward compatibility but prefer internal name
-    size_volume: backendVariant.size_volume || backendVariant.size || '',
-  };
-};
-
-const mapVariantToBackend = (internalVariant) => {
-  if (!internalVariant) return null;
-  const backendVariant = { ...internalVariant };
-  // Map internal 'size' to backend 'size_volume'
-  if (internalVariant.size !== undefined) {
-    backendVariant.size_volume = internalVariant.size;
-    delete backendVariant.size;
-  } else if (internalVariant.size_volume !== undefined) {
-    // Fallback if already using backend name
-    backendVariant.size_volume = internalVariant.size_volume;
-  }
-  return backendVariant;
-};
-
-const mapVariantsFromBackend = (backendVariants) => {
-  if (!Array.isArray(backendVariants)) return [];
-  return backendVariants.map(mapVariantFromBackend);
-};
-
-const mapVariantsToBackend = (internalVariants) => {
-  if (!Array.isArray(internalVariants)) return [];
-  return internalVariants.map(mapVariantToBackend);
-};
-
 const ProductModal = ({ product, onClose }) => {
   const { t } = useI18n();
   
@@ -175,8 +139,6 @@ const ProductModal = ({ product, onClose }) => {
     meta_keywords: '',
     is_active: true,
     is_featured: false,
-    // Variants (for Eye Hygiene products)
-    variants: [],
   });
   const [categories, setCategories] = useState([]);
   const categoriesRef = useRef([]);
@@ -482,104 +444,6 @@ const ProductModal = ({ product, onClose }) => {
           meta_keywords: productToUse.meta_keywords || '',
           is_active: productToUse.is_active !== undefined ? productToUse.is_active : true,
           is_featured: productToUse.is_featured || false,
-          // Variants (for Eye Hygiene products)
-          // Normalize variants data - Backend guarantees: sizeVolumeVariants is ALWAYS present
-          // Backend includes sizeVolumeVariants in both GET Single Product and GET All Products
-          // Backend filters variants by is_active: true and returns empty array [] if none exist
-          // Variants are sorted by sort_order, size_volume, and pack_type
-          // Only active variants (is_active: true) are returned by backend
-          variants: (() => {
-            // Backend guarantees sizeVolumeVariants field is always present in product responses
-            // Check sizeVolumeVariants first (backend standard), then variants (legacy/alternative)
-            const backendVariants = productToUse.sizeVolumeVariants !== undefined ? productToUse.sizeVolumeVariants :
-                            productToUse.variants !== undefined && productToUse.variants !== null ? productToUse.variants :
-                            productToUse.size_volume_variants !== undefined ? productToUse.size_volume_variants :
-                            []; // Backend guarantees this should always be present, but fallback to empty array
-            
-            // Check if this is an eye hygiene product (by product_type or category)
-            const productCategoryName = (productToUse.category?.name || productToUse.category_name || '').toLowerCase().trim();
-            const isEyeHygieneProduct = productToUse.product_type === 'eye_hygiene' || 
-                                         (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
-                                         // Legacy: also check for 'accessory' with eye hygiene category (backward compatibility)
-                                         (productToUse.product_type === 'accessory' && productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
-            
-            // Backend guarantees: variants field is always an array (empty if none exist)
-            const variantsArray = Array.isArray(backendVariants) ? backendVariants : [];
-            
-            if (isEyeHygieneProduct && import.meta.env.DEV) {
-              console.log('📦 Loading variants for eye hygiene product (backend guarantees field always present):', {
-                productId: productToUse.id,
-                variantsCount: variantsArray.length,
-                isEmptyArray: variantsArray.length === 0,
-                variants: variantsArray,
-                note: 'Backend guarantees: sizeVolumeVariants is always included (empty array if no variants, only active variants returned)'
-              });
-            }
-            
-            // Backend guarantees variants is always an array, but validate just in case
-            if (!Array.isArray(backendVariants)) {
-              console.warn('⚠️ Variants field is not an array (backend should guarantee this):', backendVariants);
-              return [];
-            }
-            
-            // Return empty array if no variants (this is valid - backend returns empty array when no variants exist)
-            if (backendVariants.length === 0) {
-              return [];
-            }
-          
-            // Map variants from backend format (size_volume) to internal format (size)
-            const normalizedVariants = mapVariantsFromBackend(backendVariants).map((variant, index) => {
-              // Handle both camelCase and snake_case field names and map to internal format
-              const normalized = {
-                id: variant.id || variant.Id || null,
-                size: variant.size || variant.size_volume || variant.sizeVolume || '',
-                pack_type: variant.pack_type || variant.packType || '',
-                price: variant.price !== undefined && variant.price !== null ? String(variant.price) : '',
-                compare_at_price: variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '' ? String(variant.compare_at_price) : '',
-                cost_price: variant.cost_price !== undefined && variant.cost_price !== null && variant.cost_price !== '' ? String(variant.cost_price) : '',
-                stock_quantity: variant.stock_quantity !== undefined && variant.stock_quantity !== null ? parseInt(variant.stock_quantity) : 0,
-                stock_status: variant.stock_status || variant.stockStatus || 'in_stock',
-                sku: variant.sku || variant.SKU || '',
-                is_active: variant.is_active !== undefined ? variant.is_active : variant.isActive !== undefined ? variant.isActive : true,
-                sort_order: variant.sort_order !== undefined ? parseInt(variant.sort_order) : variant.sortOrder !== undefined ? parseInt(variant.sortOrder) : index,
-              };
-              
-              // Handle expiry_date - convert to YYYY-MM-DD format for date input
-              if (variant.expiry_date || variant.expiryDate) {
-                const dateValue = variant.expiry_date || variant.expiryDate;
-                if (dateValue) {
-                  try {
-                    // If it's already in YYYY-MM-DD format, use it
-                    if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                      normalized.expiry_date = dateValue;
-                    } else {
-                      // Try to parse and convert to YYYY-MM-DD
-                      const date = new Date(dateValue);
-                      if (!isNaN(date.getTime())) {
-                        normalized.expiry_date = date.toISOString().split('T')[0];
-                      } else {
-                        normalized.expiry_date = '';
-                      }
-                    }
-                  } catch (e) {
-                    normalized.expiry_date = '';
-                  }
-                } else {
-                  normalized.expiry_date = '';
-                }
-              } else {
-                normalized.expiry_date = '';
-              }
-              
-              return normalized;
-            });
-            
-            if (isEyeHygieneProduct && normalizedVariants.length > 0) {
-              console.log(`📦 Eye Hygiene product loaded - ${normalizedVariants.length} active variant(s) loaded (per API spec):`, normalizedVariants);
-            }
-            
-            return normalizedVariants;
-          })(),
         });
         // Fetch subcategories if category is set
       if (productToUse.category_id) {
@@ -715,8 +579,6 @@ const ProductModal = ({ product, onClose }) => {
         meta_keywords: '',
         is_active: true,
         is_featured: false,
-        // Variants
-        variants: [],
       });
       setSubCategories([]);
       setNestedSubCategories([]);
@@ -1341,165 +1203,6 @@ const ProductModal = ({ product, onClose }) => {
       }
       if (formData.is_active !== undefined) dataToSend.is_active = formData.is_active;
       if (formData.is_featured !== undefined) dataToSend.is_featured = formData.is_featured;
-      
-      // Variants (for Eye Hygiene products)
-      // Format variants for submission: convert expiry_date to ISO string and ensure proper types
-      // Sort variants by sort_order before submission
-      // IMPORTANT: Always send variants for eye hygiene products when updating
-      // Backend guarantees: Response will ALWAYS include sizeVolumeVariants field
-      // Backend filters by is_active: true and returns empty array [] if no variants exist
-      // Backend includes the field in both GET Single Product and GET All Products responses
-      const isEyeHygieneProduct = formData.product_type === 'eye_hygiene';
-      
-      // Track if variants were sent (for logging purposes)
-      let variantsWereSent = false;
-      let variantsSentCount = 0;
-      let variantsSentData = null; // Store the variants data for logging
-      
-      if (formData.variants && Array.isArray(formData.variants) && formData.variants.length > 0) {
-        // Sort by sort_order (ascending), then by size as secondary sort
-        const sortedVariants = [...formData.variants].sort((a, b) => {
-          const orderA = a.sort_order !== undefined ? parseInt(a.sort_order) : 0;
-          const orderB = b.sort_order !== undefined ? parseInt(b.sort_order) : 0;
-          if (orderA !== orderB) {
-            return orderA - orderB;
-          }
-          // Secondary sort by size
-          return (a.size || '').localeCompare(b.size || '');
-        });
-
-        // Validate and map internal variants to backend format
-        // Required fields: size, price, stock_quantity
-        // Optional fields: pack_type, compare_at_price, cost_price, sku, expiry_date, stock_status (default: "in_stock"), is_active (default: true), sort_order (default: 0)
-        const validatedVariants = sortedVariants
-          .filter(variant => {
-            // Validate required fields before formatting
-            const hasSize = variant.size && String(variant.size).trim();
-            const hasPrice = variant.price !== undefined && variant.price !== null && !isNaN(parseFloat(variant.price));
-            const hasStockQuantity = variant.stock_quantity !== undefined && variant.stock_quantity !== null;
-            
-            if (!hasSize || !hasPrice || !hasStockQuantity) {
-              console.warn('⚠️ Skipping invalid variant (missing required fields):', variant);
-              return false;
-            }
-            return true;
-          });
-        
-        // Map to backend format (size -> size_volume, format dates, ensure proper types)
-        const backendVariants = validatedVariants.map(variant => {
-          // Build variant object per Postman API spec format
-          const formattedVariant = {
-            // Required fields - map size to size_volume for backend
-            size_volume: variant.size ? String(variant.size).trim() : '',
-            price: variant.price ? parseFloat(variant.price) : 0,
-            stock_quantity: variant.stock_quantity !== undefined && variant.stock_quantity !== null ? parseInt(variant.stock_quantity) : 0,
-          };
-
-          // Optional fields - only include if they have values (per Postman example format)
-          // Stock status (optional, default: "in_stock")
-          if (variant.stock_status && variant.stock_status.trim()) {
-            formattedVariant.stock_status = variant.stock_status.trim();
-          }
-
-          // Pack type (optional)
-          if (variant.pack_type && variant.pack_type.trim()) {
-            formattedVariant.pack_type = variant.pack_type.trim();
-          }
-
-          // SKU (optional)
-          if (variant.sku && variant.sku.trim()) {
-            formattedVariant.sku = variant.sku.trim();
-          }
-
-          // Compare at price (optional)
-          if (variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '' && !isNaN(parseFloat(variant.compare_at_price))) {
-            formattedVariant.compare_at_price = parseFloat(variant.compare_at_price);
-          }
-
-          // Cost price (optional)
-          if (variant.cost_price !== undefined && variant.cost_price !== null && variant.cost_price !== '' && !isNaN(parseFloat(variant.cost_price))) {
-            formattedVariant.cost_price = parseFloat(variant.cost_price);
-          }
-
-          // Expiry date (optional, ISO 8601 format)
-          if (variant.expiry_date) {
-            if (typeof variant.expiry_date === 'string') {
-              const dateStr = variant.expiry_date.trim();
-              if (dateStr) {
-                // If it's already in YYYY-MM-DD format, convert to ISO 8601
-                if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                  formattedVariant.expiry_date = `${dateStr}T00:00:00.000Z`;
-                } else {
-                  // Try to parse and convert to ISO 8601
-                  const expiryDate = new Date(variant.expiry_date);
-                  if (!isNaN(expiryDate.getTime())) {
-                    formattedVariant.expiry_date = expiryDate.toISOString();
-                  }
-                }
-              }
-            } else if (variant.expiry_date instanceof Date) {
-              formattedVariant.expiry_date = variant.expiry_date.toISOString();
-            }
-          }
-
-          // Is active (optional, default: true)
-          if (variant.is_active !== undefined && variant.is_active !== null) {
-            formattedVariant.is_active = Boolean(variant.is_active);
-          }
-
-          // Sort order (optional, default: 0)
-          if (variant.sort_order !== undefined && variant.sort_order !== null && !isNaN(parseInt(variant.sort_order))) {
-            formattedVariant.sort_order = parseInt(variant.sort_order);
-          }
-
-          // Include id if present (for updates) - per Postman API spec
-          // For UPDATE: must include id to update existing variant, omit id to create new variant
-          // For CREATE: omit id (will be auto-generated)
-          if (variant.id && (variant.id !== null && variant.id !== undefined && variant.id !== '')) {
-            const variantId = typeof variant.id === 'number' ? variant.id : parseInt(variant.id, 10);
-            if (!isNaN(variantId) && variantId > 0) {
-              formattedVariant.id = variantId;
-            }
-          }
-          // Note: If variant.id is missing/invalid, we omit it (for new variants)
-
-          return formattedVariant;
-        });
-        
-        // Store in backend format for API (sizeVolumeVariants)
-        dataToSend.sizeVolumeVariants = backendVariants;
-        
-        variantsWereSent = true;
-        variantsSentCount = backendVariants.length;
-        variantsSentData = backendVariants; // Store for later logging
-        console.log(`📦 Sending ${variantsSentCount} variant(s) for ${product ? 'update' : 'create'}:`, backendVariants);
-        
-        // Per Postman API spec: sizeVolumeVariants REPLACES all existing variants
-        // We're sending the complete list of variants that should remain
-        // Variants not in this list will be DELETED by the backend
-        // For UPDATE: Variants with 'id' will be updated, variants without 'id' will be created
-      } else {
-        // If no variants in form, always send empty array for eye hygiene products when updating
-        // This ensures variants are updated even if the user removes all variants
-        if (isEyeHygieneProduct) {
-          dataToSend.sizeVolumeVariants = [];
-          if (product) {
-            console.log('📦 Sending empty variants array for eye hygiene product update (will clear existing variants)');
-          } else {
-            console.log('📦 Sending empty variants array for new eye hygiene product');
-          }
-        }
-        // For non-eye hygiene products, don't send variants field if empty (preserves existing variants)
-      }
-      
-      // Log final dataToSend to verify variants are included
-      if (isEyeHygieneProduct) {
-        console.log('📦 Final dataToSend for eye hygiene product:', {
-          hasVariants: !!dataToSend.sizeVolumeVariants,
-          variantsCount: Array.isArray(dataToSend.sizeVolumeVariants) ? dataToSend.sizeVolumeVariants.length : 0,
-          variants: dataToSend.sizeVolumeVariants
-        });
-      }
 
       let response;
       
@@ -1541,25 +1244,6 @@ const ProductModal = ({ product, onClose }) => {
             const value = dataToSend[key];
             const isRequired = requiredFields.has(key);
             
-            // Special handling for sizeVolumeVariants - per Postman API spec
-            // Must be sent as JSON string (text type) in FormData
-            // For UPDATE: Include 'id' field for existing variants, omit for new variants
-            // REPLACES all existing variants - send complete list of variants that should remain
-            if (key === 'sizeVolumeVariants') {
-              // Always send variants array (even if empty) for eye hygiene products
-              // Per API spec: type="text", value=JSON array string
-              if (Array.isArray(value)) {
-                const variantsJson = JSON.stringify(value);
-                submitData.append(key, variantsJson);
-                console.log(`📦 Appending sizeVolumeVariants to FormData (${value.length} variant(s)):`, variantsJson);
-                console.log(`📦 Parsed variants being sent:`, JSON.parse(variantsJson));
-              } else {
-                // Send empty array if not an array (per API spec: "[]" to clear all)
-                submitData.append(key, JSON.stringify([]));
-                console.log('📦 Appending empty sizeVolumeVariants array to FormData (clearing all variants)');
-              }
-              return; // Skip the normal processing for this field
-            }
             
             // For required fields, always send (even if empty, let backend validate)
             // For optional fields, skip null, undefined, and empty strings
@@ -1812,29 +1496,9 @@ const ProductModal = ({ product, onClose }) => {
         if (validProductId) {
           console.log(`🔄 Updating product with ID: ${validProductId}`);
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), submitData);
-          // Log full response for debugging variant issues
-          if (isEyeHygieneProduct && import.meta.env.DEV) {
-            console.log('📥 Full PUT Response:', response.data);
-            console.log('📥 Response data.data:', response.data?.data);
-            console.log('📥 Response data.data.product:', response.data?.data?.product);
-            if (response.data?.data?.product) {
-              console.log('📥 Product variants fields:', {
-                variants: response.data.data.product.variants,
-                sizeVolumeVariants: response.data.data.product.sizeVolumeVariants,
-                size_volume_variants: response.data.data.product.size_volume_variants,
-                allKeys: Object.keys(response.data.data.product)
-              });
-            }
-          }
         } else {
           console.log('➕ Creating new product (no valid ID found)');
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
-          // Log full response for debugging variant issues
-          if (isEyeHygieneProduct && import.meta.env.DEV) {
-            console.log('📥 Full POST Response:', response.data);
-            console.log('📥 Response data.data:', response.data?.data);
-            console.log('📥 Response data.data.product:', response.data?.data?.product);
-          }
         }
         } catch (imageError) {
           // Log full error details
@@ -1932,16 +1596,6 @@ const ProductModal = ({ product, onClose }) => {
           }
         }
         
-        // Log what's being sent for eye hygiene products (JSON body path)
-        // Backend guarantees: Response will always include sizeVolumeVariants (filtered by is_active: true, empty array if none)
-        if (isEyeHygieneProduct && import.meta.env.DEV) {
-          const variantsCount = Array.isArray(dataToSend.sizeVolumeVariants) ? dataToSend.sizeVolumeVariants.length : 0;
-          console.log(`📤 JSON Body Request - Eye Hygiene Product (${variantsCount} variant(s) to save):`, {
-            variantsCount: variantsCount,
-            variants: dataToSend.sizeVolumeVariants,
-            note: 'Backend guarantees: Response will always include sizeVolumeVariants field (filtered by is_active: true, empty array if none)'
-          });
-        }
         
         // Get valid product ID using helper function
         const validProductId = getValidProductId();
@@ -1949,121 +1603,18 @@ const ProductModal = ({ product, onClose }) => {
         if (validProductId) {
           console.log(`🔄 Updating product with ID: ${validProductId}`);
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), dataToSend);
-          // Log full response for debugging variant issues
-          if (isEyeHygieneProduct && import.meta.env.DEV) {
-            console.log('📥 Full PUT Response (JSON):', response.data);
-            console.log('📥 Response data.data:', response.data?.data);
-            console.log('📥 Response data.data.product:', response.data?.data?.product);
-            if (response.data?.data?.product) {
-              console.log('📥 Product variants fields:', {
-                variants: response.data.data.product.variants,
-                sizeVolumeVariants: response.data.data.product.sizeVolumeVariants,
-                size_volume_variants: response.data.data.product.size_volume_variants,
-                allKeys: Object.keys(response.data.data.product)
-              });
-            }
-          }
         } else {
           console.log('➕ Creating new product (no valid ID found)');
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
-          // Log full response for debugging variant issues
-          if (isEyeHygieneProduct && import.meta.env.DEV) {
-            console.log('📥 Full POST Response (JSON):', response.data);
-            console.log('📥 Response data.data:', response.data?.data);
-            console.log('📥 Response data.data.product:', response.data?.data?.product);
-          }
         }
       }
       
       // Handle nested response structure: { success, message, data: { product: {...} } }
-      // Backend guarantees: sizeVolumeVariants is ALWAYS included in product responses
-      // Backend filters variants by is_active: true and includes the field in both GET Single Product and GET All Products
-      // It will be an empty array [] if no variants exist, or an array of active variants if they exist
-      // Variants are sorted by sort_order, size_volume, and pack_type
-      // Only active variants (is_active: true) are returned by backend
       const responseData = response.data?.data || response.data;
       const savedProduct = responseData?.product || responseData;
       const successMessage = response.data?.message || (product ? 'Product updated successfully' : 'Product created successfully');
       
-      // Backend guarantees: sizeVolumeVariants is ALWAYS present in product responses
-      // Backend filters variants by is_active: true and returns empty array [] if none exist
-      // Backend includes the field in both GET Single Product and GET All Products responses
-      if (savedProduct && savedProduct.id) {
-        // Extract variants - backend guarantees sizeVolumeVariants is always present
-        // Check sizeVolumeVariants first (backend standard), then variants (legacy/alternative field name)
-        const backendVariants = savedProduct.sizeVolumeVariants !== undefined ? savedProduct.sizeVolumeVariants :
-                             savedProduct.variants !== undefined && savedProduct.variants !== null ? savedProduct.variants :
-                             savedProduct.size_volume_variants !== undefined ? savedProduct.size_volume_variants :
-                             []; // Backend guarantees this should always be present, but fallback to empty array
-        
-        // Map from backend format to internal format (size_volume -> size)
-        // Backend guarantees the field is always an array (empty if no variants)
-        const internalVariants = mapVariantsFromBackend(Array.isArray(backendVariants) ? backendVariants : []);
-        
-        // Store in internal format for form state
-        savedProduct.variants = internalVariants;
-        
-        // Log success message with variant count for eye hygiene products
-        if (isEyeHygieneProduct) {
-          const variantsCount = Array.isArray(internalVariants) ? internalVariants.length : 0;
-          
-          // Log detailed info in development mode
-          if (import.meta.env.DEV) {
-            console.log('📦 Variants in API Response (backend guarantees field always present):', {
-              variantsField: savedProduct.variants,
-              backendVariants: backendVariants,
-              variantsCount: variantsCount,
-              variants: internalVariants,
-              variantsWereSent: variantsWereSent,
-              variantsSentCount: variantsSentCount,
-              note: 'Backend guarantees: sizeVolumeVariants always present, filtered by is_active: true, empty array if none'
-            });
-          }
-          
-          if (variantsCount > 0) {
-            console.log(`✅ Eye hygiene product saved successfully with ${variantsCount} active variant(s):`, internalVariants);
-          } else {
-            if (variantsWereSent && variantsSentCount > 0) {
-              console.warn(`⚠️ Eye hygiene product saved but ${variantsSentCount} variant(s) sent are not in response. Variants may not have been saved by backend or were filtered out (inactive variants).`);
-              console.log('📋 Variants that were sent:', variantsSentData);
-              console.log('📋 Response product data:', savedProduct);
-              
-              // Try fetching product again to check if variants were saved but not returned in update response
-              if (savedProduct.id) {
-                console.log('🔍 Fetching product again to verify if variants were saved...');
-                try {
-                  const verifyResponse = await api.get(API_ROUTES.ADMIN.PRODUCTS.BY_ID(savedProduct.id));
-                  const verifyProduct = verifyResponse.data?.data?.product || verifyResponse.data?.product || verifyResponse.data;
-                  const verifyBackendVariants = verifyProduct?.sizeVolumeVariants || verifyProduct?.variants || [];
-                  const verifyInternalVariants = mapVariantsFromBackend(Array.isArray(verifyBackendVariants) ? verifyBackendVariants : []);
-                  console.log('🔍 Product fetch result:', {
-                    hasVariants: Array.isArray(verifyBackendVariants) && verifyBackendVariants.length > 0,
-                    variantsCount: Array.isArray(verifyBackendVariants) ? verifyBackendVariants.length : 0,
-                    variants: verifyBackendVariants,
-                    allProductKeys: Object.keys(verifyProduct || {})
-                  });
-                  
-                  if (Array.isArray(verifyBackendVariants) && verifyBackendVariants.length > 0) {
-                    console.log(`✅ Variants found in fetched product: ${verifyBackendVariants.length} variant(s) - variants were saved but not in update response`);
-                    // Update savedProduct with fetched variants (internal format)
-                    savedProduct.variants = verifyInternalVariants;
-                  } else {
-                    console.warn('⚠️ Variants not found in fetched product either - variants were likely not saved by backend');
-                    console.warn('⚠️ Possible reasons: validation error, duplicate variant values, or backend issue');
-                  }
-                } catch (verifyError) {
-                  console.warn('⚠️ Could not verify variants by fetching product:', verifyError);
-                }
-              }
-            } else {
-              console.log(`✅ Eye hygiene product saved successfully (no variants - backend returns empty array as expected)`);
-            }
-          }
-        }
-      }
-      
       // Update currentProduct with saved product data (especially important for new products to get the ID)
-      // Also include variants if they were found in response or verification
       if (savedProduct && savedProduct.id) {
         setCurrentProduct(savedProduct);
       }
@@ -2152,21 +1703,6 @@ const ProductModal = ({ product, onClose }) => {
         // Check for validation errors (400, 422, etc.)
         const errorData = error.response?.data || {};
         
-        // Check for variant-specific errors
-        if (isEyeHygieneProduct && (error.response.status === 400 || error.response.status === 422)) {
-          const variantErrorMessage = errorData.message || errorData.error || '';
-          if (variantErrorMessage.includes('variant') || variantErrorMessage.includes('size_volume') || variantErrorMessage.includes('duplicate')) {
-            console.error('❌ Variant validation error:', {
-              status: error.response.status,
-              message: variantErrorMessage,
-              errorData: errorData,
-              variantsSent: variantsSentData
-            });
-            toast.error(`Variant validation error: ${variantErrorMessage}. Please check the variant data.`);
-            return; // Early return to prevent generic error message
-          }
-        }
-        
         if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
           // Show validation errors
           const validationErrors = errorData.errors.map(err => {
@@ -2175,19 +1711,6 @@ const ProductModal = ({ product, onClose }) => {
             return `${field}: ${message}`;
           }).join(', ');
           toast.error(`Validation failed: ${validationErrors}`);
-          
-          // Log variant-specific validation errors
-          if (isEyeHygieneProduct && variantsSentData) {
-            const variantErrors = errorData.errors.filter(err => 
-              err.path?.includes('variant') || 
-              err.field?.includes('variant') || 
-              err.path?.includes('sizeVolumeVariants')
-            );
-            if (variantErrors.length > 0) {
-              console.error('❌ Variant validation errors:', variantErrors);
-              console.error('❌ Variants that failed validation:', variantsSentData);
-            }
-          }
         } else {
           const errorMessage = errorData.message || 
                              errorData.error || 
@@ -2205,7 +1728,6 @@ const ProductModal = ({ product, onClose }) => {
 
   // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids
   // Show Spherical and Astigmatism Configurations for contact lens products
-  // Show Variants for eye hygiene products
   // IMPORTANT: All sections/tabs are present when editing - tabs are conditionally shown based on product_type
   const isFrameOrSunglasses = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
   const isContactLens = formData.product_type === 'contact_lens';
@@ -2272,9 +1794,6 @@ const ProductModal = ({ product, onClose }) => {
     ...(isContactLens ? [
       { id: 'spherical', label: 'Spherical Configurations' },
       { id: 'astigmatism', label: 'Astigmatism Configurations' },
-    ] : []),
-    ...(isEyeHygiene ? [
-      { id: 'size-volume-variants', label: 'Variants' }, // Shown for Eye Hygiene products
     ] : []),
     { id: 'images', label: 'Images' }, // Always shown - all products can have images
     { id: 'seo', label: 'SEO' }, // Always shown - all products can have SEO settings
@@ -4132,369 +3651,6 @@ const ProductModal = ({ product, onClose }) => {
                     />
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Variants Tab */}
-            {activeTab === 'size-volume-variants' && (
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-4">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    Variants
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Add multiple variant options for this product. Each variant can have its own price, stock quantity, and other properties.
-                  </p>
-                </div>
-
-                {/* Add Variant Button */}
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newVariant = {
-                        size: '',
-                        pack_type: '',
-                        price: '',
-                        compare_at_price: '',
-                        cost_price: '',
-                        stock_quantity: 0,
-                        stock_status: 'in_stock',
-                        sku: '',
-                        expiry_date: '',
-                        is_active: true,
-                        sort_order: formData.variants.length,
-                      };
-                      setFormData({
-                        ...formData,
-                        variants: [...formData.variants, newVariant],
-                      });
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                  >
-                    <FiPlus className="w-5 h-5" />
-                    Add Variant
-                  </button>
-                </div>
-
-                {/* Variants List */}
-                {formData.variants.length === 0 ? (
-                  <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                    <p className="text-gray-500">No variants added yet. Click "Add Variant" to create one.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {formData.variants.map((variant, index) => (
-                      <div
-                        key={index}
-                        className="border border-gray-200 rounded-lg p-6 bg-gray-50/50 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-md font-semibold text-gray-900">
-                            Variant #{index + 1}
-                            {variant.id && (
-                              <span className="ml-2 text-xs text-gray-500">(ID: {variant.id})</span>
-                            )}
-                          </h4>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updatedVariants = formData.variants.filter((_, i) => i !== index);
-                              // Update sort_order for remaining variants
-                              const reorderedVariants = updatedVariants.map((v, i) => ({
-                                ...v,
-                                sort_order: i,
-                              }));
-                              setFormData({
-                                ...formData,
-                                variants: reorderedVariants,
-                              });
-                            }}
-                            className="text-red-600 hover:text-red-800 transition-colors"
-                          >
-                            <FiTrash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {/* Size */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Size <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              value={variant.size || ''}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  size: e.target.value,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                              placeholder="e.g., Small, Medium, Large"
-                              required
-                            />
-                          </div>
-
-                          {/* Pack Type */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Pack Type
-                            </label>
-                            <input
-                              type="text"
-                              value={variant.pack_type || ''}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  pack_type: e.target.value,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                              placeholder="e.g., Single, Pack of 2"
-                            />
-                          </div>
-
-                          {/* Price */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Price <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={variant.price || ''}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  price: e.target.value ? parseFloat(e.target.value) : '',
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                              placeholder="0.00"
-                              required
-                            />
-                          </div>
-
-                          {/* Compare At Price */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Compare At Price
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={variant.compare_at_price || ''}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  compare_at_price: e.target.value ? parseFloat(e.target.value) : null,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                              placeholder="0.00"
-                            />
-                          </div>
-
-                          {/* Cost Price */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Cost Price
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={variant.cost_price || ''}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  cost_price: e.target.value ? parseFloat(e.target.value) : null,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                              placeholder="0.00"
-                            />
-                          </div>
-
-                          {/* Stock Quantity */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Stock Quantity <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={variant.stock_quantity ?? 0}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  stock_quantity: parseInt(e.target.value) || 0,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                              required
-                            />
-                          </div>
-
-                          {/* Stock Status */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Stock Status <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                              value={variant.stock_status || 'in_stock'}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  stock_status: e.target.value,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                              required
-                            >
-                              <option value="in_stock">In Stock</option>
-                              <option value="out_of_stock">Out of Stock</option>
-                              <option value="backorder">Backorder</option>
-                            </select>
-                          </div>
-
-                          {/* SKU */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              SKU
-                            </label>
-                            <input
-                              type="text"
-                              value={variant.sku || ''}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  sku: e.target.value,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                              placeholder="Variant SKU"
-                            />
-                          </div>
-
-                          {/* Expiry Date */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Expiry Date
-                            </label>
-                            <input
-                              type="date"
-                              value={variant.expiry_date ? new Date(variant.expiry_date).toISOString().split('T')[0] : ''}
-                              onChange={(e) => {
-                                  const updatedVariants = [...formData.variants];
-                                  updatedVariants[index] = {
-                                    ...updatedVariants[index],
-                                    expiry_date: e.target.value ? new Date(e.target.value).toISOString() : null,
-                                  };
-                                  setFormData({
-                                    ...formData,
-                                    variants: updatedVariants,
-                                  });
-                              }}
-                              className="input-modern"
-                            />
-                          </div>
-
-                          {/* Sort Order */}
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Sort Order
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={variant.sort_order ?? index}
-                              onChange={(e) => {
-                                const updatedVariants = [...formData.variants];
-                                updatedVariants[index] = {
-                                  ...updatedVariants[index],
-                                  sort_order: parseInt(e.target.value) || 0,
-                                };
-                                setFormData({
-                                  ...formData,
-                                  variants: updatedVariants,
-                                });
-                              }}
-                              className="input-modern"
-                            />
-                          </div>
-
-                          {/* Is Active */}
-                          <div className="flex items-center pt-6">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={variant.is_active !== false}
-                                onChange={(e) => {
-                                  const updatedVariants = [...formData.variants];
-                                  updatedVariants[index] = {
-                                    ...updatedVariants[index],
-                                    is_active: e.target.checked,
-                                  };
-                                  setFormData({
-                                    ...formData,
-                                    variants: updatedVariants,
-                                  });
-                                }}
-                                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                              />
-                              <span className="text-sm font-semibold text-gray-700">Active</span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
 

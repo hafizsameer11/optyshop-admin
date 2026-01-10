@@ -230,38 +230,78 @@ const ProductModal = ({ product, onClose }) => {
     fetchProductOptions();
     // Reset manual flag when product changes (loading existing product or creating new)
     setProductTypeManuallySet(false);
-    if (product) {
+    
+    // Fetch full product details when editing to ensure we have all fields (variants, SEO, etc.)
+    // Use admin endpoint GET /api/admin/products/:id to get complete product data
+    const fetchFullProductDetails = async () => {
+      if (product && product.id) {
+        try {
+          // Fetch full product details using admin endpoint (GET /api/admin/products/:id)
+          // This ensures we get all fields including variants, SEO, and complete image data
+          // Per Postman collection: GET /api/admin/products/:id returns complete product with all fields
+          const fullProductResponse = await api.get(API_ROUTES.ADMIN.PRODUCTS.BY_ID(product.id));
+          const fullProductData = fullProductResponse.data?.data?.product || 
+                                 fullProductResponse.data?.product || 
+                                 fullProductResponse.data?.data ||
+                                 fullProductResponse.data;
+          
+          if (fullProductData && fullProductData.id) {
+            console.log('✅ Fetched full product details with all fields:', {
+              hasVariants: !!(fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants),
+              variantsCount: Array.isArray(fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants) 
+                ? (fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants).length 
+                : 0,
+              hasSEOTitle: !!fullProductData.meta_title,
+              hasSEODescription: !!fullProductData.meta_description,
+              hasSEOKeywords: !!fullProductData.meta_keywords
+            });
+            // Use the full product data for form initialization
+            return fullProductData;
+          }
+        } catch (error) {
+          console.warn('⚠️ Failed to fetch full product details, using provided product data:', error);
+          // Continue with provided product data if fetch fails
+        }
+      }
+      return product;
+    };
+    
+    // Load product data - fetch full details if editing, use product directly for new
+    const loadProductData = async () => {
+      const productToUse = product ? await fetchFullProductDetails() : null;
+      
+      if (productToUse) {
       setFormData({
-        name: product.name || '',
-        slug: product.slug || '',
-        sku: product.sku || '',
-        price: product.price || '',
-        cost_price: product.cost_price || '',
-        description: product.description || '',
-        short_description: product.short_description || '',
-        category_id: product.category_id || '',
-        sub_category_id: product.sub_category_id || product.subcategory_id || '',
+        name: productToUse.name || '',
+        slug: productToUse.slug || '',
+        sku: productToUse.sku || '',
+        price: productToUse.price || '',
+        cost_price: productToUse.cost_price || '',
+        description: productToUse.description || '',
+        short_description: productToUse.short_description || '',
+        category_id: productToUse.category_id || '',
+        sub_category_id: productToUse.sub_category_id || productToUse.subcategory_id || '',
         parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
-        frame_shape: product.frame_shape || '',
-        frame_material: Array.isArray(product.frame_material) 
-          ? product.frame_material 
-          : product.frame_material 
-            ? [product.frame_material] 
+        frame_shape: productToUse.frame_shape || '',
+        frame_material: Array.isArray(productToUse.frame_material) 
+          ? productToUse.frame_material 
+          : productToUse.frame_material 
+            ? [productToUse.frame_material] 
             : [],
-        frame_color: product.frame_color || '',
-        gender: product.gender || '',
-        lens_type: product.lens_type || '',
-        stock_quantity: product.stock_quantity || product.stock || '',
-        stock_status: product.stock_status || 'in_stock',
-        compare_at_price: product.compare_at_price || '',
+        frame_color: productToUse.frame_color || '',
+        gender: productToUse.gender || '',
+        lens_type: productToUse.lens_type || '',
+        stock_quantity: productToUse.stock_quantity || productToUse.stock || '',
+        stock_status: productToUse.stock_status || 'in_stock',
+        compare_at_price: productToUse.compare_at_price || '',
         product_type: (() => {
           // If product_type is missing or 'accessory', try to infer from category for eye hygiene
-          let productType = product.product_type;
+          let productType = productToUse.product_type;
           
           // Check category name from multiple sources
           const productCategoryName = (
-            product.category?.name || 
-            product.category_name ||
+            productToUse.category?.name || 
+            productToUse.category_name ||
             ''
           ).toLowerCase().trim();
           const isEyeHygieneCategory = productCategoryName.includes('eye') && productCategoryName.includes('hygiene');
@@ -271,23 +311,23 @@ const ProductModal = ({ product, onClose }) => {
           if (isEyeHygieneCategory && (!productType || productType === 'accessory')) {
             productType = 'eye_hygiene';
             console.log('🔍 Set product_type to "eye_hygiene" (converted from legacy "accessory")', {
-              originalProductType: product.product_type,
+              originalProductType: productToUse.product_type,
               categoryName: productCategoryName,
               finalProductType: productType
             });
           }
           
           // Also check if we can infer from category_id if category name isn't available yet
-          if (!isEyeHygieneCategory && product.category_id && categories.length > 0) {
-            const category = categories.find(cat => cat.id === product.category_id || cat.id === parseInt(product.category_id));
+          if (!isEyeHygieneCategory && productToUse.category_id && categories.length > 0) {
+            const category = categories.find(cat => cat.id === productToUse.category_id || cat.id === parseInt(productToUse.category_id));
             if (category) {
               const catName = (category.name || '').toLowerCase().trim();
               if (catName.includes('eye') && catName.includes('hygiene')) {
                 if (!productType || productType === 'accessory') {
                   productType = 'eye_hygiene';
                   console.log('🔍 Set product_type to "eye_hygiene" based on category lookup', {
-                    originalProductType: product.product_type,
-                    categoryId: product.category_id,
+                    originalProductType: productToUse.product_type,
+                    categoryId: productToUse.category_id,
                     categoryName: catName
                   });
                 }
@@ -297,35 +337,35 @@ const ProductModal = ({ product, onClose }) => {
           
           return productType || 'frame';
         })(),
-        meta_title: product.meta_title || '',
-        meta_description: product.meta_description || '',
-        meta_keywords: product.meta_keywords || '',
-        is_active: product.is_active !== undefined ? product.is_active : true,
-        is_featured: product.is_featured || false,
+        meta_title: productToUse.meta_title || '',
+        meta_description: productToUse.meta_description || '',
+        meta_keywords: productToUse.meta_keywords || '',
+        is_active: productToUse.is_active !== undefined ? productToUse.is_active : true,
+        is_featured: productToUse.is_featured || false,
         // Size/Volume Variants (for Eye Hygiene products)
         // Normalize variants data - handle both camelCase and snake_case field names
         sizeVolumeVariants: (() => {
           // Try multiple possible field names for variants
-          const variants = product.sizeVolumeVariants || 
-                          product.size_volume_variants || 
-                          product.sizeVolumeVariants || 
-                          product.SizeVolumeVariants ||
-                          product.variants ||
+          const variants = productToUse.sizeVolumeVariants || 
+                          productToUse.size_volume_variants || 
+                          productToUse.sizeVolumeVariants || 
+                          productToUse.SizeVolumeVariants ||
+                          productToUse.variants ||
                           [];
           
           // Check if this is an eye hygiene product (by product_type or category)
-          const productCategoryName = (product.category?.name || product.category_name || '').toLowerCase().trim();
-          const isEyeHygieneProduct = product.product_type === 'eye_hygiene' || 
+          const productCategoryName = (productToUse.category?.name || productToUse.category_name || '').toLowerCase().trim();
+          const isEyeHygieneProduct = productToUse.product_type === 'eye_hygiene' || 
                                        (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
                                        // Legacy: also check for 'accessory' with eye hygiene category (backward compatibility)
-                                       (product.product_type === 'accessory' && productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
+                                       (productToUse.product_type === 'accessory' && productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
           
           console.log('🔍 Loading variants for product:', {
-            productId: product.id,
-            productType: product.product_type,
+            productId: productToUse.id,
+            productType: productToUse.product_type,
             categoryName: productCategoryName,
             isEyeHygiene: isEyeHygieneProduct,
-            variantsFieldExists: !!(product.sizeVolumeVariants || product.size_volume_variants),
+            variantsFieldExists: !!(productToUse.sizeVolumeVariants || productToUse.size_volume_variants),
             variantsCount: Array.isArray(variants) ? variants.length : 'not an array',
             rawVariants: variants
           });
@@ -392,10 +432,10 @@ const ProductModal = ({ product, onClose }) => {
         })(),
       });
       // Fetch subcategories if category is set
-      if (product.category_id) {
-        fetchSubCategories(product.category_id);
+      if (productToUse.category_id) {
+        fetchSubCategories(productToUse.category_id);
         // Check if the product's subcategory is a sub-subcategory (has a parent)
-        const productSubCategoryId = product.sub_category_id || product.subcategory_id;
+        const productSubCategoryId = productToUse.sub_category_id || productToUse.subcategory_id;
         if (productSubCategoryId) {
           // Check if this subcategory is a sub-subcategory and set form accordingly
           checkAndSetSubSubCategory(productSubCategoryId);
@@ -404,10 +444,10 @@ const ProductModal = ({ product, onClose }) => {
       // Set existing images and previews if product has images array or image_url
       // Track existing images separately for deletion support
       let existingImageUrls = [];
-      if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-        existingImageUrls = product.images.filter(img => img && typeof img === 'string');
-      } else if (product.image || product.image_url) {
-        existingImageUrls = [product.image || product.image_url].filter(Boolean);
+      if (productToUse.images && Array.isArray(productToUse.images) && productToUse.images.length > 0) {
+        existingImageUrls = productToUse.images.filter(img => img && typeof img === 'string');
+      } else if (productToUse.image || productToUse.image_url) {
+        existingImageUrls = [productToUse.image || productToUse.image_url].filter(Boolean);
       }
       setExistingImages(existingImageUrls);
       setImagePreviews(existingImageUrls); // Start with existing images
@@ -415,8 +455,8 @@ const ProductModal = ({ product, onClose }) => {
       setImageFiles([]);
       
       // Set 3D model preview if exists
-      if (product.model_3d || product.model3d || product.model3D) {
-        const modelUrl = product.model_3d || product.model3d || product.model3D;
+      if (productToUse.model_3d || productToUse.model3d || productToUse.model3D) {
+        const modelUrl = productToUse.model_3d || productToUse.model3d || productToUse.model3D;
         setModel3DPreview(modelUrl);
       } else {
         setModel3DPreview(null);
@@ -426,12 +466,12 @@ const ProductModal = ({ product, onClose }) => {
       // Set images with colors if exists (from product.color_images)
       // Convert color_images object to imagesWithColors array format
       // Also store the original structure for deletion tracking
-      if (product.color_images && typeof product.color_images === 'object') {
+      if (productToUse.color_images && typeof productToUse.color_images === 'object') {
         const imagesWithHexCodes = [];
         let imageIdCounter = 0;
         const existingColorImagesStructure = [];
         
-        Object.keys(product.color_images).forEach((key) => {
+        Object.keys(productToUse.color_images).forEach((key) => {
           // Check if key is a hex code or color name
           let hexCode = key;
           if (!isValidHexCode(key)) {
@@ -439,7 +479,7 @@ const ProductModal = ({ product, onClose }) => {
             hexCode = getHexFromColorName(key) || key;
           }
           
-          const colorData = product.color_images[key];
+          const colorData = productToUse.color_images[key];
           const imageUrls = Array.isArray(colorData?.images) ? colorData.images : 
                            Array.isArray(colorData) ? colorData : 
                            typeof colorData === 'string' ? [colorData] : [];
@@ -474,7 +514,13 @@ const ProductModal = ({ product, onClose }) => {
         setExistingColorImages([]);
         setImagesWithColors([]);
       }
+    };
+    
+    // Only fetch full product details if we have a product to edit
+    if (product) {
+      loadProductData();
     } else {
+      // Reset form for new product
       // Reset form for new product
       setExistingImages([]);
       setExistingColorImages([]);
@@ -514,6 +560,8 @@ const ProductModal = ({ product, onClose }) => {
       setModel3DPreview(null);
       setImagesWithColors([]);
     }
+    // Note: categories is loaded asynchronously via fetchProductOptions, so we can't add it to deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
 
   // Helper function to check if a subcategory is a sub-subcategory and set form correctly
@@ -1772,7 +1820,8 @@ const ProductModal = ({ product, onClose }) => {
             
             // Fetch full product details to verify variants were saved (as per API spec, they should be in the response)
             try {
-              const verifyResponse = await api.get(API_ROUTES.PRODUCTS.BY_ID(savedProduct.id));
+              // Use admin endpoint to verify saved product with all fields (variants, SEO, etc.)
+              const verifyResponse = await api.get(API_ROUTES.ADMIN.PRODUCTS.BY_ID(savedProduct.id));
               const verifyData = verifyResponse.data?.data?.product || verifyResponse.data?.product || verifyResponse.data;
               const verifyVariants = verifyData?.sizeVolumeVariants || 
                                    verifyData?.size_volume_variants || 

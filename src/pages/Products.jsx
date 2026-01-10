@@ -427,13 +427,13 @@ const Products = () => {
         params.append('search', trimmedSearch);
       }
       
-      // If a section is selected, use section category and subcategory IDs for filtering
-      // This ensures products are filtered by both product_type (via endpoint) and category (via params)
-      // IMPORTANT: Only show products that belong to the selected section's categories
+      // Filter products by categories (not product_type) when a section is selected
+      // All sections use category-based filtering through the general products endpoint
+      // Per Postman collection: Use /api/admin/products with category_id parameter
       if (selectedSection !== 'all') {
         // If section categories are found, filter strictly by those categories
         if (sectionCategoryIds.length > 0) {
-          // Add all category IDs for the section to ensure proper filtering
+          // Add all category IDs for the section to filter by categories
           sectionCategoryIds.forEach(catId => {
             params.append('category_id', catId);
           });
@@ -444,11 +444,16 @@ const Products = () => {
               params.append('sub_category_id', subCatId);
             });
           }
+          
+          console.log(`🔍 Filtering products by categories for section "${selectedSection}":`, {
+            categoryIds: sectionCategoryIds,
+            subCategoryIds: sectionSubCategoryIds,
+            params: params.toString()
+          });
         } else {
-          // If no categories found for this section, we still want to show products
-          // but the backend will filter by product_type only
-          // Note: This handles edge cases where categories might not be set up yet
-          console.warn(`⚠️ No categories found for section "${selectedSection}". Products will be filtered by product_type only.`);
+          // If no categories found for this section, show empty results
+          // This ensures products are only shown when categories are properly configured
+          console.warn(`⚠️ No categories found for section "${selectedSection}". No products will be shown.`);
         }
       } else if (selectedSection === 'all') {
         // Manual category filter if selected (per Postman collection: category_id query param)
@@ -462,72 +467,9 @@ const Products = () => {
         }
       }
       
-      // Determine which endpoint to use based on selected section
-      // Section endpoints automatically filter by product_type on the backend
-      let endpoint;
-      if (selectedSection === 'all') {
-        endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
-      } else {
-        // Map sections to their corresponding product types and endpoints
-        const sectionConfig = {
-          'sunglasses': {
-            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.SUNGLASSES,
-            productType: 'sunglasses'
-          },
-          'eyeglasses': {
-            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES,
-            productType: 'frame'
-          },
-          'opty-kids': {
-            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYEGLASSES,
-            productType: 'opty-kids' // Try opty-kids product type first, fallback to frame if needed
-          },
-          'contact-lenses': {
-            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.CONTACT_LENSES,
-            productType: 'contact_lens'
-          },
-          'eye-hygiene': {
-            endpoint: API_ROUTES.ADMIN.PRODUCTS.SECTION.EYE_HYGIENE,
-            productType: 'eye_hygiene'
-          },
-        };
-        
-        const config = sectionConfig[selectedSection];
-        if (config) {
-          // Always add product_type to params to ensure proper filtering
-          // This works with both section-specific endpoints and general endpoint
-          if (!params.has('product_type')) {
-            params.append('product_type', config.productType);
-          }
-          
-          // For Opty Kids, always use general endpoint with category filtering
-          // since it might share product_type with eyeglasses
-          if (selectedSection === 'opty-kids') {
-            // Use general products endpoint to ensure category filtering works
-            endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
-            console.log(`🔍 Fetching Opty Kids products with category filtering:`, {
-              endpoint,
-              categoryIds: sectionCategoryIds,
-              subCategoryIds: sectionSubCategoryIds,
-              productType: config.productType,
-              params: params.toString()
-            });
-          } else {
-            // For other sections, use section-specific endpoint (which filters by product_type)
-            // Category IDs are already in params, so they'll be included if available
-            endpoint = `${config.endpoint}?${params.toString()}`;
-            console.log(`🔍 Fetching products for section: ${selectedSection}`, {
-              endpoint,
-              productType: config.productType,
-              categoryIds: sectionCategoryIds.length > 0 ? sectionCategoryIds : 'none',
-              params: params.toString()
-            });
-          }
-        } else {
-          // Fallback to general products endpoint
-          endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
-        }
-      }
+      // Always use the general products endpoint with category-based filtering
+      // Per Postman collection: GET /api/admin/products?category_id=X
+      const endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
       
       const response = await api.get(endpoint);
       
@@ -1100,12 +1042,12 @@ const Products = () => {
     // Note: searchTerm is kept so users can still search within the selected section
     // fetchProducts will be called automatically via useEffect when selectedSection changes
     // 
-    // When a category button is clicked, products will be filtered by:
+    // When a category button is clicked, products are filtered by categories only (not product_type):
     // 1. Section's category IDs (sectionCategoryIds) - finds matching categories like "sun glasses", "eye glasses", etc.
     // 2. Section's subcategory IDs (sectionSubCategoryIds) - includes nested subcategories for those categories
-    // 3. Product type (via endpoint) - backend automatically filters by product_type ('sunglasses', 'frame', 'contact_lens', 'eye_hygiene')
+    // 3. Uses general products endpoint with category_id parameter for filtering
     // 
-    // This ensures ONLY products from the selected category section are displayed
+    // This ensures ONLY products from the selected category section are displayed (category-based filtering)
     
     if (section === 'all') {
       console.log(`✅ Showing ALL products (no category filter)`);

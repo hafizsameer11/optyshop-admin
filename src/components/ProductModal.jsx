@@ -454,10 +454,12 @@ const ProductModal = ({ product, onClose }) => {
           // Only active variants (is_active: true) are returned
           sizeVolumeVariants: (() => {
             // Try multiple possible field names for variants (per API spec, should always be present)
-            const variants = productToUse.sizeVolumeVariants !== undefined ? productToUse.sizeVolumeVariants :
+            // Backend currently returns "variants" field, but API spec says "sizeVolumeVariants"
+            // Check variants first (what backend returns), then sizeVolumeVariants (what spec says)
+            const variants = productToUse.variants !== undefined && productToUse.variants !== null ? productToUse.variants :
+                            productToUse.sizeVolumeVariants !== undefined ? productToUse.sizeVolumeVariants :
                             productToUse.size_volume_variants !== undefined ? productToUse.size_volume_variants :
                             productToUse.SizeVolumeVariants !== undefined ? productToUse.SizeVolumeVariants :
-                            productToUse.variants !== undefined ? productToUse.variants :
                             []; // Per spec: always present, default to empty array if somehow missing
             
             // Check if this is an eye hygiene product (by product_type or category)
@@ -1892,36 +1894,51 @@ const ProductModal = ({ product, onClose }) => {
       
       // Per Postman API spec: sizeVolumeVariants is always present in product responses
       // Handle both camelCase and snake_case field names for backward compatibility
+      // Backend may return as "variants" or "sizeVolumeVariants" - normalize to sizeVolumeVariants
       if (savedProduct && savedProduct.id) {
         // Extract variants - always guaranteed to be present per API spec
-        const savedVariants = savedProduct.sizeVolumeVariants !== undefined ? savedProduct.sizeVolumeVariants :
+        // Check variants first (backend currently returns this), then sizeVolumeVariants
+        const savedVariants = savedProduct.variants !== undefined && savedProduct.variants !== null ? savedProduct.variants :
+                             savedProduct.sizeVolumeVariants !== undefined ? savedProduct.sizeVolumeVariants :
                              savedProduct.size_volume_variants !== undefined ? savedProduct.size_volume_variants :
                              savedProduct.SizeVolumeVariants !== undefined ? savedProduct.SizeVolumeVariants :
-                             savedProduct.variants !== undefined ? savedProduct.variants :
                              []; // Default to empty array (per spec, should always be present)
         
-        // Normalize to sizeVolumeVariants for consistency
-        if (savedProduct.sizeVolumeVariants === undefined && savedVariants.length >= 0) {
-          savedProduct.sizeVolumeVariants = Array.isArray(savedVariants) ? savedVariants : [];
+        // Normalize to sizeVolumeVariants for consistency (use the field the backend actually uses)
+        // Always set sizeVolumeVariants for form state consistency
+        savedProduct.sizeVolumeVariants = Array.isArray(savedVariants) ? savedVariants : [];
+        // Also keep variants field for backward compatibility if backend uses it
+        if (!savedProduct.variants) {
+          savedProduct.variants = savedProduct.sizeVolumeVariants;
         }
         
         // Log success message with variant count for eye hygiene products
         if (isEyeHygieneProduct) {
           const variantsCount = Array.isArray(savedVariants) ? savedVariants.length : 0;
-          if (variantsCount > 0) {
-            console.log(`✅ Eye hygiene product saved successfully with ${variantsCount} variant(s):`, savedVariants);
-          } else {
-            console.log(`✅ Eye hygiene product saved successfully (no variants - empty array as expected)`);
-          }
           
           // Log detailed info in development mode
           if (import.meta.env.DEV) {
-            console.log('📦 Variants in response (per API spec - always present):', {
+            console.log('📦 Variants in API Response:', {
+              variantsField: savedProduct.variants,
+              sizeVolumeVariantsField: savedProduct.sizeVolumeVariants,
               variantsCount: variantsCount,
               variants: savedVariants,
-              isEmptyArray: Array.isArray(savedVariants) && savedVariants.length === 0,
-              note: 'Per Postman spec: sizeVolumeVariants is always included in product responses'
+              variantsWereSent: variantsWereSent,
+              variantsSentCount: variantsSentCount,
+              savedProductKeys: Object.keys(savedProduct),
+              note: 'Backend returns variants as "variants" field, not "sizeVolumeVariants"'
             });
+          }
+          
+          if (variantsCount > 0) {
+            console.log(`✅ Eye hygiene product saved successfully with ${variantsCount} variant(s):`, savedVariants);
+          } else {
+            if (variantsWereSent && variantsSentCount > 0) {
+              console.warn(`⚠️ Eye hygiene product saved but ${variantsSentCount} variant(s) sent are not in response. Variants may not have been saved by backend.`);
+              console.log('📋 Variants that were sent:', variantsSentData);
+            } else {
+              console.log(`✅ Eye hygiene product saved successfully (no variants - empty array as expected)`);
+            }
           }
         }
       }

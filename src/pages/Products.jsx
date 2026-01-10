@@ -1031,6 +1031,324 @@ const Products = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSection, categories.length]); // Only depend on selectedSection and categories.length
 
+  // Helper function to get column configuration based on selected section
+  const getTableColumns = () => {
+    const baseColumns = [
+      { key: 'id', label: 'ID', responsive: '' },
+      { key: 'product', label: 'Product', responsive: '' },
+      { key: 'sku', label: 'SKU', responsive: 'hidden md:table-cell' },
+      { key: 'category', label: 'Category', responsive: 'hidden lg:table-cell' },
+      { key: 'subcategory', label: 'SubCategory', responsive: 'hidden lg:table-cell' },
+      { key: 'price', label: 'Price', responsive: '' },
+      { key: 'stock', label: 'Stock', responsive: 'hidden sm:table-cell' },
+      { key: 'status', label: 'Status', responsive: '' },
+    ];
+    
+    const sectionSpecificColumns = {
+      'contact-lenses': [
+        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden md:table-cell' },
+        { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell' },
+        { key: 'material', label: 'Material', responsive: 'hidden lg:table-cell' },
+        { key: 'replacement_frequency', label: 'Replacement', responsive: 'hidden xl:table-cell' },
+      ],
+      'eye-hygiene': [
+        { key: 'size_volume', label: 'Size/Volume', responsive: 'hidden md:table-cell' },
+        { key: 'pack_type', label: 'Pack Type', responsive: 'hidden lg:table-cell' },
+        { key: 'expiry_date', label: 'Expiry Date', responsive: 'hidden xl:table-cell' },
+      ],
+      'sunglasses': [
+        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell' },
+        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell' },
+        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell' },
+        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell' },
+      ],
+      'eyeglasses': [
+        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell' },
+        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell' },
+        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell' },
+        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell' },
+      ],
+      'opty-kids': [
+        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell' },
+        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell' },
+        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell' },
+        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell' },
+      ],
+      'all': [
+        { key: 'color', label: 'Color', responsive: 'hidden md:table-cell' },
+        { key: 'product_type', label: 'Product Type', responsive: 'hidden md:table-cell' },
+      ],
+    };
+    
+    return [
+      ...baseColumns,
+      ...(sectionSpecificColumns[selectedSection] || sectionSpecificColumns['all']),
+      { key: 'actions', label: 'Actions', responsive: '' }
+    ];
+  };
+
+  // Helper function to render table cell content based on column key
+  const renderTableCell = (product, column) => {
+    const columnKey = column.key;
+    const responsiveClass = column.responsive;
+    switch (columnKey) {
+      case 'id':
+        return <td className={`table-cell-responsive text-sm text-gray-500 font-medium ${responsiveClass}`}>{product.id}</td>;
+      
+      case 'product':
+        return (
+          <td className={`table-cell-responsive ${responsiveClass}`}>
+            <div className="flex items-center min-w-0">
+              <ProductImage product={product} refreshKey={imageRefreshKey} />
+              <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                <div className="text-sm sm:text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
+                  {product.name}
+                </div>
+                {product.slug && (
+                  <div className="text-xs text-gray-500 truncate mt-0.5">{product.slug}</div>
+                )}
+                <div className="md:hidden text-xs text-gray-400 mt-1">
+                  SKU: {product.sku ? String(product.sku) : '-'}
+                </div>
+              </div>
+            </div>
+          </td>
+        );
+      
+      case 'sku':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.sku ? String(product.sku) : '-'}
+          </td>
+        );
+      
+      case 'category':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.category_id ? String(product.category_id) : '-'}
+            {product.category?.name && (
+              <div className="text-xs text-gray-400 mt-1">{product.category.name}</div>
+            )}
+          </td>
+        );
+      
+      case 'subcategory':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {(() => {
+              const subCatId = product.sub_category_id || product.subcategory_id || product.subCategoryId;
+              if (!subCatId) return '-';
+              const subCatFromProduct = product.subcategory || product.sub_category || product.SubCategory || product.subCategory;
+              const subCatInfo = subCategoriesMap[subCatId];
+              let displayName = subCatFromProduct?.name || subCatInfo?.displayName || subCatInfo?.name || subCatId;
+              const isNested = subCatInfo?.isNested || (subCatFromProduct?.parent_id !== null && subCatFromProduct?.parent_id !== undefined);
+              return (
+                <>
+                  <div className={isNested ? 'text-indigo-600 font-medium' : ''}>{displayName}</div>
+                  {isNested && subCatInfo?.parentName && (
+                    <div className="text-xs text-gray-400 mt-1">Nested under: {subCatInfo.parentName}</div>
+                  )}
+                  <div className="text-xs text-gray-400 mt-0.5">ID: {String(subCatId)}</div>
+                </>
+              );
+            })()}
+          </td>
+        );
+      
+      case 'price':
+        return (
+          <td className={`table-cell-responsive text-sm sm:text-base font-semibold text-gray-900 ${responsiveClass}`}>
+            ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
+            {product.compare_at_price && (
+              <div className="text-xs text-gray-400 line-through mt-0.5">
+                ${parseFloat(product.compare_at_price).toFixed(2)}
+              </div>
+            )}
+          </td>
+        );
+      
+      case 'stock':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            <div className="font-semibold">{product.stock_quantity !== null && product.stock_quantity !== undefined ? Number(product.stock_quantity) : 0}</div>
+            {product.stock_status && (
+              <div className={`text-xs mt-1 ${
+                product.stock_status === 'in_stock' ? 'text-green-600' : 
+                product.stock_status === 'out_of_stock' ? 'text-red-600' : 
+                'text-yellow-600'
+              }`}>
+                {String(product.stock_status).replace(/_/g, ' ')}
+              </div>
+            )}
+          </td>
+        );
+      
+      case 'status':
+        return (
+          <td className={`table-cell-responsive ${responsiveClass}`}>
+            <div className="flex flex-col gap-1.5">
+              {product.is_active ? (
+                <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 border border-green-200">Active</span>
+              ) : (
+                <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200">Inactive</span>
+              )}
+              {product.is_featured && (
+                <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 border border-blue-200">Featured</span>
+              )}
+            </div>
+          </td>
+        );
+      
+      // Contact Lenses specific columns
+      case 'lens_type':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.lens_type || '-'}
+          </td>
+        );
+      
+      case 'brand':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.contact_lens_brand || '-'}
+          </td>
+        );
+      
+      case 'material':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.contact_lens_material || '-'}
+          </td>
+        );
+      
+      case 'replacement_frequency':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.replacement_frequency || '-'}
+          </td>
+        );
+      
+      // Eye Hygiene specific columns
+      case 'size_volume':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.size_volume || '-'}
+          </td>
+        );
+      
+      case 'pack_type':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.pack_type || '-'}
+          </td>
+        );
+      
+      case 'expiry_date':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.expiry_date ? new Date(product.expiry_date).toLocaleDateString() : '-'}
+          </td>
+        );
+      
+      // Frame/Sunglasses specific columns
+      case 'frame_shape':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.frame_shape ? String(product.frame_shape).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+          </td>
+        );
+      
+      case 'frame_material':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.frame_material ? String(product.frame_material).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+          </td>
+        );
+      
+      case 'frame_color':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.frame_color ? (
+              <div className="flex items-center gap-2">
+                <span className="capitalize font-medium">{product.frame_color}</span>
+                <div 
+                  className="w-5 h-5 rounded border border-gray-300 shadow-sm"
+                  style={{ backgroundColor: getColorHex(product.frame_color) || '#000000' }}
+                  title={product.frame_color}
+                />
+              </div>
+            ) : '-'}
+          </td>
+        );
+      
+      // All products columns
+      case 'color':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.frame_color ? (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="capitalize font-medium">{product.frame_color}</span>
+                  <div 
+                    className="w-5 h-5 rounded border border-gray-300 shadow-sm"
+                    style={{ backgroundColor: getColorHex(product.frame_color) || '#000000' }}
+                    title={product.frame_color}
+                  />
+                </div>
+                {product.color_images && typeof product.color_images === 'object' && Object.keys(product.color_images).length > 0 && (
+                  <div className="text-xs text-indigo-600 font-medium">
+                    {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="text-gray-400">-</span>
+            )}
+          </td>
+        );
+      
+      case 'product_type':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.product_type ? (
+              <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-50 text-purple-700 border border-purple-200 capitalize">
+                {String(product.product_type).replace('_', ' ')}
+              </span>
+            ) : (
+              <span className="text-gray-400">-</span>
+            )}
+          </td>
+        );
+      
+      case 'actions':
+        return (
+          <td className={`table-cell-responsive ${responsiveClass}`}>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <button
+                onClick={() => handleEdit(product)}
+                className="p-2 rounded-xl text-indigo-600 hover:text-white hover:bg-indigo-500 transition-all duration-200"
+                title="Edit"
+                aria-label="Edit product"
+              >
+                <FiEdit2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleDelete(product.id)}
+                className="p-2 rounded-xl text-red-600 hover:text-white hover:bg-red-500 transition-all duration-200"
+                title="Delete"
+                aria-label="Delete product"
+              >
+                <FiTrash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </td>
+        );
+      
+      default:
+        return <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>-</td>;
+    }
+  };
+
   // Early return must be AFTER all hooks
   if (loading) {
     return (
@@ -1215,48 +1533,20 @@ const Products = () => {
           <table className="w-full min-w-[800px]">
             <thead className="bg-white border-b border-gray-200">
               <tr>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
-                  ID
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
-                  Product
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden md:table-cell">
-                  SKU
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden lg:table-cell">
-                  Category
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden lg:table-cell">
-                  SubCategory
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden md:table-cell">
-                  Color
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
-                  Price
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden sm:table-cell">
-                  Stock
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
-                  Status
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden md:table-cell">
-                  Product Type
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs hidden xl:table-cell">
-                  Type
-                </th>
-                <th className="table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs">
-                  Actions
-                </th>
+                {getTableColumns().map((column) => (
+                  <th 
+                    key={column.key}
+                    className={`table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs ${column.responsive}`}
+                  >
+                    {column.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="12" className="table-cell-responsive text-center">
+                  <td colSpan={getTableColumns().length} className="table-cell-responsive text-center">
                     <div className="flex flex-col items-center justify-center py-12 sm:py-16">
                       <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                         <FiSearch className="w-8 h-8 text-gray-400" />
@@ -1274,227 +1564,11 @@ const Products = () => {
                     key={product.id} 
                     className="hover:bg-gray-50/50 transition-all duration-200 group border-b border-gray-100"
                   >
-                    <td className="table-cell-responsive text-sm text-gray-500 font-medium">
-                      {product.id}
-                    </td>
-                    <td className="table-cell-responsive">
-                      <div className="flex items-center min-w-0">
-                        <ProductImage product={product} refreshKey={imageRefreshKey} />
-                        <div className="ml-3 sm:ml-4 min-w-0 flex-1">
-                          <div className="text-sm sm:text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
-                            {product.name}
-                          </div>
-                          {product.slug && (
-                            <div className="text-xs text-gray-500 truncate mt-0.5">{product.slug}</div>
-                          )}
-                          {/* Show SKU on mobile */}
-                          <div className="md:hidden text-xs text-gray-400 mt-1">
-                            SKU: {product.sku ? String(product.sku) : '-'}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="table-cell-responsive text-sm text-gray-500 hidden md:table-cell">
-                      {product.sku ? String(product.sku) : '-'}
-                    </td>
-                    <td className="table-cell-responsive text-sm text-gray-500 hidden lg:table-cell">
-                      {product.category_id ? String(product.category_id) : '-'}
-                      {product.category?.name && (
-                        <div className="text-xs text-gray-400 mt-1">{product.category.name}</div>
-                      )}
-                    </td>
-                    <td className="table-cell-responsive text-sm text-gray-500 hidden lg:table-cell">
-                      {(() => {
-                        const subCatId = product.sub_category_id || product.subcategory_id || product.subCategoryId;
-                        if (!subCatId) return '-';
-                        
-                        // Try to get subcategory info from product object first
-                        const subCatFromProduct = product.subcategory || 
-                                                 product.sub_category || 
-                                                 product.SubCategory ||
-                                                 product.subCategory;
-                        
-                        // Then try lookup map
-                        const subCatInfo = subCategoriesMap[subCatId];
-                        
-                        // Build display: show nested hierarchy if available
-                        let displayName = subCatFromProduct?.name || 
-                                        subCatInfo?.displayName || 
-                                        subCatInfo?.name || 
-                                        subCatId;
-                        
-                        const isNested = subCatInfo?.isNested || 
-                                        subCatFromProduct?.parent_id !== null && subCatFromProduct?.parent_id !== undefined;
-                        
-                        return (
-                          <>
-                            <div className={isNested ? 'text-indigo-600 font-medium' : ''}>
-                              {displayName}
-                            </div>
-                            {isNested && subCatInfo?.parentName && (
-                              <div className="text-xs text-gray-400 mt-1">
-                                Nested under: {subCatInfo.parentName}
-                              </div>
-                            )}
-                            <div className="text-xs text-gray-400 mt-0.5">
-                              ID: {String(subCatId)}
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </td>
-                    <td className="table-cell-responsive text-sm text-gray-500 hidden md:table-cell">
-                      {product.frame_color ? (
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="capitalize font-medium">{product.frame_color}</span>
-                            <div 
-                              className="w-5 h-5 rounded border border-gray-300 shadow-sm"
-                              style={{ 
-                                backgroundColor: getColorHex(product.frame_color) || '#000000'
-                              }}
-                              title={product.frame_color}
-                            />
-                          </div>
-                          {/* Show if product has color-specific images with hex codes */}
-                          {product.color_images && typeof product.color_images === 'object' && Object.keys(product.color_images).length > 0 && (
-                            <div className="flex flex-col gap-1">
-                              <div className="text-xs text-indigo-600 font-medium">
-                                {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                {Object.keys(product.color_images).slice(0, 5).map((colorKey) => {
-                                  const hexCode = isValidHexCode(colorKey) ? colorKey : getColorHex(colorKey);
-                                  const colorName = isValidHexCode(colorKey) ? getColorNameFromHex(colorKey) : colorKey;
-                                  if (!hexCode) return null;
-                                  return (
-                                    <div
-                                      key={colorKey}
-                                      className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs"
-                                      title={`${colorName} (${hexCode})`}
-                                    >
-                                      <div 
-                                        className="w-3 h-3 rounded border border-gray-300"
-                                        style={{ backgroundColor: hexCode }}
-                                      />
-                                      <span className="text-gray-600">{hexCode}</span>
-                                    </div>
-                                  );
-                                })}
-                                {Object.keys(product.color_images).length > 5 && (
-                                  <span className="text-xs text-gray-500">+{Object.keys(product.color_images).length - 5} more</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-gray-400">-</span>
-                          {/* Show color images even if no frame_color */}
-                          {product.color_images && typeof product.color_images === 'object' && Object.keys(product.color_images).length > 0 && (
-                            <div className="flex flex-col gap-1">
-                              <div className="text-xs text-indigo-600 font-medium">
-                                {Object.keys(product.color_images).length} color variant{Object.keys(product.color_images).length !== 1 ? 's' : ''}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                {Object.keys(product.color_images).slice(0, 5).map((colorKey) => {
-                                  const hexCode = isValidHexCode(colorKey) ? colorKey : getColorHex(colorKey);
-                                  const colorName = isValidHexCode(colorKey) ? getColorNameFromHex(colorKey) : colorKey;
-                                  if (!hexCode) return null;
-                                  return (
-                                    <div
-                                      key={colorKey}
-                                      className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs"
-                                      title={`${colorName} (${hexCode})`}
-                                    >
-                                      <div 
-                                        className="w-3 h-3 rounded border border-gray-300"
-                                        style={{ backgroundColor: hexCode }}
-                                      />
-                                      <span className="text-gray-600">{hexCode}</span>
-                                    </div>
-                                  );
-                                })}
-                                {Object.keys(product.color_images).length > 5 && (
-                                  <span className="text-xs text-gray-500">+{Object.keys(product.color_images).length - 5} more</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="table-cell-responsive text-sm sm:text-base font-semibold text-gray-900">
-                      ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
-                      {product.compare_at_price && (
-                        <div className="text-xs text-gray-400 line-through mt-0.5">
-                          ${parseFloat(product.compare_at_price).toFixed(2)}
-                        </div>
-                      )}
-                    </td>
-                    <td className="table-cell-responsive text-sm text-gray-500 hidden sm:table-cell">
-                      <div className="font-semibold">{product.stock_quantity !== null && product.stock_quantity !== undefined ? Number(product.stock_quantity) : 0}</div>
-                      {product.stock_status && (
-                        <div className={`text-xs mt-1 ${
-                          product.stock_status === 'in_stock' ? 'text-green-600' : 
-                          product.stock_status === 'out_of_stock' ? 'text-red-600' : 
-                          'text-yellow-600'
-                        }`}>
-                          {String(product.stock_status).replace(/_/g, ' ')}
-                        </div>
-                      )}
-                    </td>
-                    <td className="table-cell-responsive">
-                      <div className="flex flex-col gap-1.5">
-                        {product.is_active ? (
-                          <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 border border-green-200">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200">
-                            Inactive
-                          </span>
-                        )}
-                        {product.is_featured && (
-                          <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
-                            Featured
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="table-cell-responsive text-sm text-gray-500 hidden md:table-cell">
-                      {product.product_type ? (
-                        <span className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-50 text-purple-700 border border-purple-200 capitalize">
-                          {String(product.product_type).replace('_', ' ')}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="table-cell-responsive text-sm text-gray-500 hidden xl:table-cell">
-                      {product.product_type ? String(product.product_type) : '-'}
-                    </td>
-                    <td className="table-cell-responsive">
-                      <div className="flex items-center space-x-2 sm:space-x-3">
-                        <button
-                          onClick={() => handleEdit(product)}
-                          className="p-2 rounded-xl text-indigo-600 hover:text-white hover:bg-indigo-500 transition-all duration-200"
-                          title="Edit"
-                          aria-label="Edit product"
-                        >
-                          <FiEdit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="p-2 rounded-xl text-red-600 hover:text-white hover:bg-red-500 transition-all duration-200"
-                          title="Delete"
-                          aria-label="Delete product"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                    {getTableColumns().map((column) => (
+                      <React.Fragment key={column.key}>
+                        {renderTableCell(product, column)}
+                      </React.Fragment>
+                    ))}
                   </tr>
                 ))
               )}

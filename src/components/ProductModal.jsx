@@ -1337,7 +1337,20 @@ const ProductModal = ({ product, onClose }) => {
         // Per Postman API spec: Build variant objects with proper types
         // Required fields: size_volume, price, stock_quantity
         // Optional fields: pack_type, compare_at_price, cost_price, sku, expiry_date, stock_status (default: "in_stock"), is_active (default: true), sort_order (default: 0)
-        dataToSend.sizeVolumeVariants = sortedVariants.map(variant => {
+        dataToSend.sizeVolumeVariants = sortedVariants
+          .filter(variant => {
+            // Validate required fields before formatting
+            const hasSizeVolume = variant.size_volume && String(variant.size_volume).trim();
+            const hasPrice = variant.price !== undefined && variant.price !== null && !isNaN(parseFloat(variant.price));
+            const hasStockQuantity = variant.stock_quantity !== undefined && variant.stock_quantity !== null;
+            
+            if (!hasSizeVolume || !hasPrice || !hasStockQuantity) {
+              console.warn('⚠️ Skipping invalid variant (missing required fields):', variant);
+              return false;
+            }
+            return true;
+          })
+          .map(variant => {
           // Build variant object per Postman API spec format
           const formattedVariant = {
             // Required fields
@@ -1500,6 +1513,7 @@ const ProductModal = ({ product, onClose }) => {
                 const variantsJson = JSON.stringify(value);
                 submitData.append(key, variantsJson);
                 console.log(`📦 Appending sizeVolumeVariants to FormData (${value.length} variant(s)):`, variantsJson);
+                console.log(`📦 Parsed variants being sent:`, JSON.parse(variantsJson));
               } else {
                 // Send empty array if not an array (per API spec: "[]" to clear all)
                 submitData.append(key, JSON.stringify([]));
@@ -1756,13 +1770,33 @@ const ProductModal = ({ product, onClose }) => {
           // Get valid product ID using helper function
           const validProductId = getValidProductId();
           
-          if (validProductId) {
-            console.log(`🔄 Updating product with ID: ${validProductId}`);
-            response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), submitData);
-          } else {
-            console.log('➕ Creating new product (no valid ID found)');
-            response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
+        if (validProductId) {
+          console.log(`🔄 Updating product with ID: ${validProductId}`);
+          response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), submitData);
+          // Log full response for debugging variant issues
+          if (isEyeHygieneProduct && import.meta.env.DEV) {
+            console.log('📥 Full PUT Response:', response.data);
+            console.log('📥 Response data.data:', response.data?.data);
+            console.log('📥 Response data.data.product:', response.data?.data?.product);
+            if (response.data?.data?.product) {
+              console.log('📥 Product variants fields:', {
+                variants: response.data.data.product.variants,
+                sizeVolumeVariants: response.data.data.product.sizeVolumeVariants,
+                size_volume_variants: response.data.data.product.size_volume_variants,
+                allKeys: Object.keys(response.data.data.product)
+              });
+            }
           }
+        } else {
+          console.log('➕ Creating new product (no valid ID found)');
+          response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
+          // Log full response for debugging variant issues
+          if (isEyeHygieneProduct && import.meta.env.DEV) {
+            console.log('📥 Full POST Response:', response.data);
+            console.log('📥 Response data.data:', response.data?.data);
+            console.log('📥 Response data.data.product:', response.data?.data?.product);
+          }
+        }
         } catch (imageError) {
           // Log full error details
           console.error('Image upload error details:', {
@@ -1876,9 +1910,29 @@ const ProductModal = ({ product, onClose }) => {
         if (validProductId) {
           console.log(`🔄 Updating product with ID: ${validProductId}`);
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), dataToSend);
+          // Log full response for debugging variant issues
+          if (isEyeHygieneProduct && import.meta.env.DEV) {
+            console.log('📥 Full PUT Response (JSON):', response.data);
+            console.log('📥 Response data.data:', response.data?.data);
+            console.log('📥 Response data.data.product:', response.data?.data?.product);
+            if (response.data?.data?.product) {
+              console.log('📥 Product variants fields:', {
+                variants: response.data.data.product.variants,
+                sizeVolumeVariants: response.data.data.product.sizeVolumeVariants,
+                size_volume_variants: response.data.data.product.size_volume_variants,
+                allKeys: Object.keys(response.data.data.product)
+              });
+            }
+          }
         } else {
           console.log('➕ Creating new product (no valid ID found)');
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
+          // Log full response for debugging variant issues
+          if (isEyeHygieneProduct && import.meta.env.DEV) {
+            console.log('📥 Full POST Response (JSON):', response.data);
+            console.log('📥 Response data.data:', response.data?.data);
+            console.log('📥 Response data.data.product:', response.data?.data?.product);
+          }
         }
       }
       
@@ -1933,6 +1987,35 @@ const ProductModal = ({ product, onClose }) => {
             if (variantsWereSent && variantsSentCount > 0) {
               console.warn(`⚠️ Eye hygiene product saved but ${variantsSentCount} variant(s) sent are not in response. Variants may not have been saved by backend or were filtered out (inactive variants).`);
               console.log('📋 Variants that were sent:', variantsSentData);
+              console.log('📋 Response product data:', savedProduct);
+              
+              // Try fetching product again to check if variants were saved but not returned in update response
+              if (savedProduct.id) {
+                console.log('🔍 Fetching product again to verify if variants were saved...');
+                try {
+                  const verifyResponse = await api.get(API_ROUTES.ADMIN.PRODUCTS.BY_ID(savedProduct.id));
+                  const verifyProduct = verifyResponse.data?.data?.product || verifyResponse.data?.product || verifyResponse.data;
+                  const verifyVariants = verifyProduct?.sizeVolumeVariants || verifyProduct?.variants || [];
+                  console.log('🔍 Product fetch result:', {
+                    hasVariants: Array.isArray(verifyVariants) && verifyVariants.length > 0,
+                    variantsCount: Array.isArray(verifyVariants) ? verifyVariants.length : 0,
+                    variants: verifyVariants,
+                    allProductKeys: Object.keys(verifyProduct || {})
+                  });
+                  
+                  if (Array.isArray(verifyVariants) && verifyVariants.length > 0) {
+                    console.log(`✅ Variants found in fetched product: ${verifyVariants.length} variant(s) - variants were saved but not in update response`);
+                    // Update savedProduct with fetched variants
+                    savedProduct.sizeVolumeVariants = verifyVariants;
+                    savedProduct.variants = verifyVariants;
+                  } else {
+                    console.warn('⚠️ Variants not found in fetched product either - variants were likely not saved by backend');
+                    console.warn('⚠️ Possible reasons: validation error, duplicate size_volume+pack_type, or backend issue');
+                  }
+                } catch (verifyError) {
+                  console.warn('⚠️ Could not verify variants by fetching product:', verifyError);
+                }
+              }
             } else {
               console.log(`✅ Eye hygiene product saved successfully (no variants - backend returns empty array as expected)`);
             }
@@ -2027,8 +2110,24 @@ const ProductModal = ({ product, onClose }) => {
           toast.error(`Server error: ${detailedMessage}. Check console for details.`);
         }
       } else {
-        // Check for validation errors
+        // Check for validation errors (400, 422, etc.)
         const errorData = error.response?.data || {};
+        
+        // Check for variant-specific errors
+        if (isEyeHygieneProduct && (error.response.status === 400 || error.response.status === 422)) {
+          const variantErrorMessage = errorData.message || errorData.error || '';
+          if (variantErrorMessage.includes('variant') || variantErrorMessage.includes('size_volume') || variantErrorMessage.includes('duplicate')) {
+            console.error('❌ Variant validation error:', {
+              status: error.response.status,
+              message: variantErrorMessage,
+              errorData: errorData,
+              variantsSent: variantsSentData
+            });
+            toast.error(`Variant validation error: ${variantErrorMessage}. Please check the variant data.`);
+            return; // Early return to prevent generic error message
+          }
+        }
+        
         if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
           // Show validation errors
           const validationErrors = errorData.errors.map(err => {
@@ -2037,6 +2136,19 @@ const ProductModal = ({ product, onClose }) => {
             return `${field}: ${message}`;
           }).join(', ');
           toast.error(`Validation failed: ${validationErrors}`);
+          
+          // Log variant-specific validation errors
+          if (isEyeHygieneProduct && variantsSentData) {
+            const variantErrors = errorData.errors.filter(err => 
+              err.path?.includes('variant') || 
+              err.field?.includes('variant') || 
+              err.path?.includes('sizeVolumeVariants')
+            );
+            if (variantErrors.length > 0) {
+              console.error('❌ Variant validation errors:', variantErrors);
+              console.error('❌ Variants that failed validation:', variantsSentData);
+            }
+          }
         } else {
           const errorMessage = errorData.message || 
                              errorData.error || 

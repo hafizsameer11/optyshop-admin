@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
@@ -229,14 +229,6 @@ const ProductModal = ({ product, onClose }) => {
     setCurrentProduct(product);
   }, [product]);
 
-  // Update refs when categories or functions change
-  useEffect(() => {
-    categoriesRef.current = categories;
-    // Update function refs - these functions are stable but we update refs to ensure they're available
-    if (fetchSubCategories) fetchSubCategoriesRef.current = fetchSubCategories;
-    if (checkAndSetSubSubCategory) checkAndSetSubSubCategoryRef.current = checkAndSetSubSubCategory;
-  }, [categories]);
-
   // Helper function to check if a subcategory is a sub-subcategory and set form correctly
   const checkAndSetSubSubCategory = async (subCategoryId) => {
     if (!subCategoryId) return;
@@ -274,6 +266,11 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   useEffect(() => {
+    console.log('🔄 ProductModal useEffect triggered');
+    console.log('🔄 product prop:', product);
+    console.log('🔄 product?.id:', product?.id);
+    console.log('🔄 product?.name:', product?.name);
+    
     fetchProductOptions();
     // Reset manual flag when product changes (loading existing product or creating new)
     setProductTypeManuallySet(false);
@@ -281,12 +278,36 @@ const ProductModal = ({ product, onClose }) => {
     // Fetch full product details when editing to ensure we have all fields (variants, SEO, etc.)
     // Use admin endpoint GET /api/admin/products/:id to get complete product data
     const fetchFullProductDetails = async () => {
+      console.log('🔍 fetchFullProductDetails called - product:', product);
+      console.log('🔍 product?.id:', product?.id);
+      console.log('🔍 product?.id type:', typeof product?.id);
+      
       if (product && product.id) {
         try {
+          const productId = product.id;
+          const endpoint = API_ROUTES.ADMIN.PRODUCTS.BY_ID(productId);
+          console.log('✅ Product ID found:', productId);
+          console.log('🔍 API Endpoint URL:', endpoint);
+          console.log('🔍 Full API_ROUTES.ADMIN.PRODUCTS:', API_ROUTES.ADMIN.PRODUCTS);
+          console.log('🔍 Making API call now...');
+          
           // Fetch full product details using admin endpoint (GET /api/admin/products/:id)
           // This ensures we get all fields including variants, SEO, and complete image data
           // Per Postman collection: GET /api/admin/products/:id returns complete product with all fields
-          const fullProductResponse = await api.get(API_ROUTES.ADMIN.PRODUCTS.BY_ID(product.id));
+          const fullProductResponse = await api.get(endpoint);
+          
+          console.log('✅ API call completed! Response received:', fullProductResponse);
+          
+          console.log('📦 Full API Response:', fullProductResponse);
+          console.log('📦 Response Data:', fullProductResponse.data);
+          console.log('📦 Response Structure:', {
+            hasData: !!fullProductResponse.data,
+            hasDataData: !!fullProductResponse.data?.data,
+            hasProduct: !!fullProductResponse.data?.data?.product,
+            responseKeys: Object.keys(fullProductResponse.data || {}),
+            dataKeys: Object.keys(fullProductResponse.data?.data || {}),
+          });
+          
           const fullProductData = fullProductResponse.data?.data?.product || 
                                  fullProductResponse.data?.product || 
                                  fullProductResponse.data?.data ||
@@ -294,194 +315,227 @@ const ProductModal = ({ product, onClose }) => {
           
           if (fullProductData && fullProductData.id) {
             console.log('✅ Fetched full product details with all fields:', {
+              productId: fullProductData.id,
+              productName: fullProductData.name,
               hasVariants: !!(fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants),
               variantsCount: Array.isArray(fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants) 
                 ? (fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants).length 
                 : 0,
+              variantsField: fullProductData.sizeVolumeVariants || fullProductData.size_volume_variants,
+              allKeys: Object.keys(fullProductData),
               hasSEOTitle: !!fullProductData.meta_title,
               hasSEODescription: !!fullProductData.meta_description,
               hasSEOKeywords: !!fullProductData.meta_keywords
             });
             // Use the full product data for form initialization
             return fullProductData;
+          } else {
+            console.warn('⚠️ API response did not contain valid product data:', {
+              fullProductData,
+              hasId: !!fullProductData?.id
+            });
           }
         } catch (error) {
-          console.warn('⚠️ Failed to fetch full product details, using provided product data:', error);
+          console.error('❌ Failed to fetch full product details:', error);
+          console.error('❌ Error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            url: error.config?.url,
+          });
           // Continue with provided product data if fetch fails
         }
+      } else {
+        console.warn('⚠️ Cannot fetch product details: product or product.id is missing', {
+          hasProduct: !!product,
+          productId: product?.id
+        });
       }
       return product;
     };
     
     // Load product data - fetch full details if editing, use product directly for new
     const loadProductData = async () => {
-      const productToUse = product ? await fetchFullProductDetails() : null;
+      console.log('🔄 loadProductData called - product:', product);
+      console.log('🔄 product?.id:', product?.id);
+      console.log('🔄 typeof product:', typeof product);
+      
+      // Only fetch if product has an ID
+      if (!product || !product.id) {
+        console.warn('⚠️ Cannot load product data: product or product.id is missing');
+        return;
+      }
+      
+      console.log('✅ Product ID found, calling fetchFullProductDetails...');
+      const productToUse = await fetchFullProductDetails();
+      console.log('🔄 productToUse after fetchFullProductDetails:', productToUse);
       
       if (productToUse) {
-      setFormData({
-        name: productToUse.name || '',
-        slug: productToUse.slug || '',
-        sku: productToUse.sku || '',
-        price: productToUse.price || '',
-        cost_price: productToUse.cost_price || '',
-        description: productToUse.description || '',
-        short_description: productToUse.short_description || '',
-        category_id: productToUse.category_id || '',
-        sub_category_id: productToUse.sub_category_id || productToUse.subcategory_id || '',
-        parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
-        frame_shape: productToUse.frame_shape || '',
-        frame_material: Array.isArray(productToUse.frame_material) 
-          ? productToUse.frame_material 
-          : productToUse.frame_material 
-            ? [productToUse.frame_material] 
-            : [],
-        frame_color: productToUse.frame_color || '',
-        gender: productToUse.gender || '',
-        lens_type: productToUse.lens_type || '',
-        stock_quantity: productToUse.stock_quantity || productToUse.stock || '',
-        stock_status: productToUse.stock_status || 'in_stock',
-        compare_at_price: productToUse.compare_at_price || '',
-        product_type: (() => {
-          // If product_type is missing or 'accessory', try to infer from category for eye hygiene
-          let productType = productToUse.product_type;
-          
-          // Check category name from multiple sources
-          const productCategoryName = (
-            productToUse.category?.name || 
-            productToUse.category_name ||
-            ''
-          ).toLowerCase().trim();
-          const isEyeHygieneCategory = productCategoryName.includes('eye') && productCategoryName.includes('hygiene');
-          
-          // If category is eye hygiene but product_type is 'accessory' (legacy) or missing, set to 'eye_hygiene'
-          // This handles backward compatibility with products that were stored as 'accessory' before
-          if (isEyeHygieneCategory && (!productType || productType === 'accessory')) {
-            productType = 'eye_hygiene';
-            console.log('🔍 Set product_type to "eye_hygiene" (converted from legacy "accessory")', {
-              originalProductType: productToUse.product_type,
-              categoryName: productCategoryName,
-              finalProductType: productType
-            });
-          }
-          
-          // Also check if we can infer from category_id if category name isn't available yet
-          // Note: categories may not be loaded yet when editing, so we safely check for it
-          // Use ref to access latest categories without adding to dependency array
-          const currentCategories = categoriesRef.current || [];
-          if (!isEyeHygieneCategory && productToUse.category_id && Array.isArray(currentCategories) && currentCategories.length > 0) {
-            const category = currentCategories.find(cat => cat.id === productToUse.category_id || cat.id === parseInt(productToUse.category_id));
-            if (category) {
-              const catName = (category.name || '').toLowerCase().trim();
-              if (catName.includes('eye') && catName.includes('hygiene')) {
-                if (!productType || productType === 'accessory') {
-                  productType = 'eye_hygiene';
-                  console.log('🔍 Set product_type to "eye_hygiene" based on category lookup', {
-                    originalProductType: productToUse.product_type,
-                    categoryId: productToUse.category_id,
-                    categoryName: catName
-                  });
+        setFormData({
+          name: productToUse.name || '',
+          slug: productToUse.slug || '',
+          sku: productToUse.sku || '',
+          price: productToUse.price || '',
+          cost_price: productToUse.cost_price || '',
+          description: productToUse.description || '',
+          short_description: productToUse.short_description || '',
+          category_id: productToUse.category_id || '',
+          sub_category_id: productToUse.sub_category_id || productToUse.subcategory_id || '',
+          parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
+          frame_shape: productToUse.frame_shape || '',
+          frame_material: Array.isArray(productToUse.frame_material) 
+            ? productToUse.frame_material 
+            : productToUse.frame_material 
+              ? [productToUse.frame_material] 
+              : [],
+          frame_color: productToUse.frame_color || '',
+          gender: productToUse.gender || '',
+          lens_type: productToUse.lens_type || '',
+          stock_quantity: productToUse.stock_quantity || productToUse.stock || '',
+          stock_status: productToUse.stock_status || 'in_stock',
+          compare_at_price: productToUse.compare_at_price || '',
+          product_type: (() => {
+            // If product_type is missing or 'accessory', try to infer from category for eye hygiene
+            let productType = productToUse.product_type;
+            
+            // Check category name from multiple sources
+            const productCategoryName = (
+              productToUse.category?.name || 
+              productToUse.category_name ||
+              ''
+            ).toLowerCase().trim();
+            const isEyeHygieneCategory = productCategoryName.includes('eye') && productCategoryName.includes('hygiene');
+            
+            // If category is eye hygiene but product_type is 'accessory' (legacy) or missing, set to 'eye_hygiene'
+            // This handles backward compatibility with products that were stored as 'accessory' before
+            if (isEyeHygieneCategory && (!productType || productType === 'accessory')) {
+              productType = 'eye_hygiene';
+              console.log('🔍 Set product_type to "eye_hygiene" (converted from legacy "accessory")', {
+                originalProductType: productToUse.product_type,
+                categoryName: productCategoryName,
+                finalProductType: productType
+              });
+            }
+            
+            // Also check if we can infer from category_id if category name isn't available yet
+            // Note: categories may not be loaded yet when editing, so we safely check for it
+            // Use ref to access latest categories without adding to dependency array
+            const currentCategories = categoriesRef.current || [];
+            if (!isEyeHygieneCategory && productToUse.category_id && Array.isArray(currentCategories) && currentCategories.length > 0) {
+              const category = currentCategories.find(cat => cat.id === productToUse.category_id || cat.id === parseInt(productToUse.category_id));
+              if (category) {
+                const catName = (category.name || '').toLowerCase().trim();
+                if (catName.includes('eye') && catName.includes('hygiene')) {
+                  if (!productType || productType === 'accessory') {
+                    productType = 'eye_hygiene';
+                    console.log('🔍 Set product_type to "eye_hygiene" based on category lookup', {
+                      originalProductType: productToUse.product_type,
+                      categoryId: productToUse.category_id,
+                      categoryName: catName
+                    });
+                  }
                 }
               }
             }
-          }
-          
-          return productType || 'frame';
-        })(),
-        meta_title: productToUse.meta_title || '',
-        meta_description: productToUse.meta_description || '',
-        meta_keywords: productToUse.meta_keywords || '',
-        is_active: productToUse.is_active !== undefined ? productToUse.is_active : true,
-        is_featured: productToUse.is_featured || false,
-        // Size/Volume Variants (for Eye Hygiene products)
-        // Normalize variants data - handle both camelCase and snake_case field names
-        sizeVolumeVariants: (() => {
-          // Try multiple possible field names for variants
-          const variants = productToUse.sizeVolumeVariants || 
-                          productToUse.size_volume_variants || 
-                          productToUse.sizeVolumeVariants || 
-                          productToUse.SizeVolumeVariants ||
-                          productToUse.variants ||
-                          [];
-          
-          // Check if this is an eye hygiene product (by product_type or category)
-          const productCategoryName = (productToUse.category?.name || productToUse.category_name || '').toLowerCase().trim();
-          const isEyeHygieneProduct = productToUse.product_type === 'eye_hygiene' || 
-                                       (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
-                                       // Legacy: also check for 'accessory' with eye hygiene category (backward compatibility)
-                                       (productToUse.product_type === 'accessory' && productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
-          
-          console.log('🔍 Loading variants for product:', {
-            productId: productToUse.id,
-            productType: productToUse.product_type,
-            categoryName: productCategoryName,
-            isEyeHygiene: isEyeHygieneProduct,
-            variantsFieldExists: !!(productToUse.sizeVolumeVariants || productToUse.size_volume_variants),
-            variantsCount: Array.isArray(variants) ? variants.length : 'not an array',
-            rawVariants: variants
-          });
-          
-          if (!Array.isArray(variants) || variants.length === 0) {
-            if (isEyeHygieneProduct) {
-              console.log('📦 Eye Hygiene product loaded - No size/volume variants found in product data');
-            }
-            return [];
-          }
-          
-          // Normalize each variant to ensure all fields are properly mapped
-          const normalizedVariants = variants.map((variant, index) => {
-            // Handle both camelCase and snake_case field names
-            const normalized = {
-              id: variant.id || variant.Id || null,
-              size_volume: variant.size_volume || variant.sizeVolume || '',
-              pack_type: variant.pack_type || variant.packType || '',
-              price: variant.price !== undefined && variant.price !== null ? String(variant.price) : '',
-              compare_at_price: variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '' ? String(variant.compare_at_price) : '',
-              cost_price: variant.cost_price !== undefined && variant.cost_price !== null && variant.cost_price !== '' ? String(variant.cost_price) : '',
-              stock_quantity: variant.stock_quantity !== undefined && variant.stock_quantity !== null ? parseInt(variant.stock_quantity) : 0,
-              stock_status: variant.stock_status || variant.stockStatus || 'in_stock',
-              sku: variant.sku || variant.SKU || '',
-              is_active: variant.is_active !== undefined ? variant.is_active : variant.isActive !== undefined ? variant.isActive : true,
-              sort_order: variant.sort_order !== undefined ? parseInt(variant.sort_order) : variant.sortOrder !== undefined ? parseInt(variant.sortOrder) : index,
-            };
             
-            // Handle expiry_date - convert to YYYY-MM-DD format for date input
-            if (variant.expiry_date || variant.expiryDate) {
-              const dateValue = variant.expiry_date || variant.expiryDate;
-              if (dateValue) {
-                try {
-                  // If it's already in YYYY-MM-DD format, use it
-                  if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    normalized.expiry_date = dateValue;
-                  } else {
-                    // Try to parse and convert to YYYY-MM-DD
-                    const date = new Date(dateValue);
-                    if (!isNaN(date.getTime())) {
-                      normalized.expiry_date = date.toISOString().split('T')[0];
+            return productType || 'frame';
+          })(),
+          meta_title: productToUse.meta_title || '',
+          meta_description: productToUse.meta_description || '',
+          meta_keywords: productToUse.meta_keywords || '',
+          is_active: productToUse.is_active !== undefined ? productToUse.is_active : true,
+          is_featured: productToUse.is_featured || false,
+          // Size/Volume Variants (for Eye Hygiene products)
+          // Normalize variants data - handle both camelCase and snake_case field names
+          sizeVolumeVariants: (() => {
+            // Try multiple possible field names for variants
+            const variants = productToUse.sizeVolumeVariants || 
+                            productToUse.size_volume_variants || 
+                            productToUse.sizeVolumeVariants || 
+                            productToUse.SizeVolumeVariants ||
+                            productToUse.variants ||
+                            [];
+            
+            // Check if this is an eye hygiene product (by product_type or category)
+            const productCategoryName = (productToUse.category?.name || productToUse.category_name || '').toLowerCase().trim();
+            const isEyeHygieneProduct = productToUse.product_type === 'eye_hygiene' || 
+                                         (productCategoryName.includes('eye') && productCategoryName.includes('hygiene')) ||
+                                         // Legacy: also check for 'accessory' with eye hygiene category (backward compatibility)
+                                         (productToUse.product_type === 'accessory' && productCategoryName.includes('eye') && productCategoryName.includes('hygiene'));
+            
+            console.log('🔍 Loading variants for product:', {
+              productId: productToUse.id,
+              productType: productToUse.product_type,
+              categoryName: productCategoryName,
+              isEyeHygiene: isEyeHygieneProduct,
+              variantsFieldExists: !!(productToUse.sizeVolumeVariants || productToUse.size_volume_variants),
+              variantsCount: Array.isArray(variants) ? variants.length : 'not an array',
+              rawVariants: variants
+            });
+            
+            if (!Array.isArray(variants) || variants.length === 0) {
+              if (isEyeHygieneProduct) {
+                console.log('📦 Eye Hygiene product loaded - No size/volume variants found in product data');
+              }
+              return [];
+            }
+          
+            // Normalize each variant to ensure all fields are properly mapped
+            const normalizedVariants = variants.map((variant, index) => {
+              // Handle both camelCase and snake_case field names
+              const normalized = {
+                id: variant.id || variant.Id || null,
+                size_volume: variant.size_volume || variant.sizeVolume || '',
+                pack_type: variant.pack_type || variant.packType || '',
+                price: variant.price !== undefined && variant.price !== null ? String(variant.price) : '',
+                compare_at_price: variant.compare_at_price !== undefined && variant.compare_at_price !== null && variant.compare_at_price !== '' ? String(variant.compare_at_price) : '',
+                cost_price: variant.cost_price !== undefined && variant.cost_price !== null && variant.cost_price !== '' ? String(variant.cost_price) : '',
+                stock_quantity: variant.stock_quantity !== undefined && variant.stock_quantity !== null ? parseInt(variant.stock_quantity) : 0,
+                stock_status: variant.stock_status || variant.stockStatus || 'in_stock',
+                sku: variant.sku || variant.SKU || '',
+                is_active: variant.is_active !== undefined ? variant.is_active : variant.isActive !== undefined ? variant.isActive : true,
+                sort_order: variant.sort_order !== undefined ? parseInt(variant.sort_order) : variant.sortOrder !== undefined ? parseInt(variant.sortOrder) : index,
+              };
+              
+              // Handle expiry_date - convert to YYYY-MM-DD format for date input
+              if (variant.expiry_date || variant.expiryDate) {
+                const dateValue = variant.expiry_date || variant.expiryDate;
+                if (dateValue) {
+                  try {
+                    // If it's already in YYYY-MM-DD format, use it
+                    if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                      normalized.expiry_date = dateValue;
                     } else {
-                      normalized.expiry_date = '';
+                      // Try to parse and convert to YYYY-MM-DD
+                      const date = new Date(dateValue);
+                      if (!isNaN(date.getTime())) {
+                        normalized.expiry_date = date.toISOString().split('T')[0];
+                      } else {
+                        normalized.expiry_date = '';
+                      }
                     }
+                  } catch (e) {
+                    normalized.expiry_date = '';
                   }
-                } catch (e) {
+                } else {
                   normalized.expiry_date = '';
                 }
               } else {
                 normalized.expiry_date = '';
               }
-            } else {
-              normalized.expiry_date = '';
+              
+              return normalized;
+            });
+            
+            if (isEyeHygieneProduct) {
+              console.log(`📦 Eye Hygiene product loaded - ${normalizedVariants.length} size/volume variant(s) loaded:`, normalizedVariants);
             }
             
-            return normalized;
-          });
-          
-          if (isEyeHygieneProduct) {
-            console.log(`📦 Eye Hygiene product loaded - ${normalizedVariants.length} size/volume variant(s) loaded:`, normalizedVariants);
-          }
-          
-          return normalizedVariants;
-        })(),
-      });
-      // Fetch subcategories if category is set
+            return normalizedVariants;
+          })(),
+        });
+        // Fetch subcategories if category is set
       if (productToUse.category_id) {
         if (fetchSubCategoriesRef.current) {
           fetchSubCategoriesRef.current(productToUse.category_id);
@@ -566,14 +620,27 @@ const ProductModal = ({ product, onClose }) => {
         setExistingColorImages([]);
         setImagesWithColors([]);
       }
+      }
     };
     
-    // Only fetch full product details if we have a product to edit
-    if (product) {
+    // Only fetch full product details if we have a product to edit WITH AN ID
+    if (product && product.id) {
+      console.log('📝 Product with ID found - Starting data load:', {
+        id: product.id,
+        name: product.name,
+        productType: product.product_type
+      });
       loadProductData().catch(err => {
-        console.error('Error loading product data:', err);
+        console.error('❌ Error loading product data:', err);
+        console.error('❌ Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+          url: err.config?.url
+        });
       });
     } else {
+      console.log('📝 No product provided - initializing empty form for new product');
       // Reset form for new product
       setExistingImages([]);
       setExistingColorImages([]);
@@ -613,9 +680,7 @@ const ProductModal = ({ product, onClose }) => {
       setModel3DPreview(null);
       setImagesWithColors([]);
     }
-    // Note: categories, fetchSubCategories, and checkAndSetSubSubCategory are stable or loaded asynchronously,
-    // so we can't add them to deps without causing infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
 
   // Fetch nested subcategories when subcategory is selected
@@ -728,6 +793,13 @@ const ProductModal = ({ product, onClose }) => {
       setLensTypes([]);
     }
   };
+
+  // Update function refs after functions are defined
+  useEffect(() => {
+    fetchSubCategoriesRef.current = fetchSubCategories;
+    checkAndSetSubSubCategoryRef.current = checkAndSetSubSubCategory;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once after functions are defined
 
   const fetchSubCategories = async (categoryId) => {
     if (!categoryId) {

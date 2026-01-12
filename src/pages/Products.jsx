@@ -321,7 +321,16 @@ const Products = () => {
   }, [categories.length, categoryFilter, isInitialMount]);
 
   useEffect(() => {
-    fetchProducts();
+    // Only fetch products if we have valid category/subcategory IDs for the section
+    // or if section is 'all' (which doesn't need category filtering)
+    if (selectedSection === 'all' || sectionCategoryIds.length > 0 || sectionSubCategoryIds.length > 0) {
+      fetchProducts();
+    } else if (selectedSection !== 'all' && categories.length > 0) {
+      // If we have categories loaded but no sectionCategoryIds yet, wait for them
+      // This prevents fetching with stale or empty category IDs
+      console.log(`⏳ Waiting for category IDs to be resolved for section "${selectedSection}" before fetching products...`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, searchTerm, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds]);
   
   // Fetch subcategories when category filter changes
@@ -459,6 +468,25 @@ const Products = () => {
       }
       
       if (selectedSection !== 'all') {
+        // Validate that sectionCategoryIds actually match the current section
+        // This prevents using stale category IDs from a previous section
+        const expectedCategoryIds = findCategoriesForSection(selectedSection);
+        const usingCorrectCategories = expectedCategoryIds.length === sectionCategoryIds.length &&
+                                      expectedCategoryIds.every(id => sectionCategoryIds.includes(id)) &&
+                                      sectionCategoryIds.every(id => expectedCategoryIds.includes(id));
+        
+        if (!usingCorrectCategories && categories.length > 0) {
+          console.warn(`⚠️ Category ID mismatch for section "${selectedSection}". Expected ${expectedCategoryIds}, but have ${sectionCategoryIds}. Skipping fetch to avoid stale data.`, {
+            selectedSection,
+            expectedCategoryIds,
+            actualCategoryIds: sectionCategoryIds,
+            note: 'This usually means the category IDs haven\'t been updated yet. Will retry when correct IDs are set.'
+          });
+          // Don't fetch with wrong category IDs - wait for correct ones
+          setLoading(false);
+          return;
+        }
+        
         // Filter STRICTLY by category_id and sub_category_id ONLY (NO product_type, NO product_id)
         if (sectionCategoryIds.length > 0) {
           // Add all category IDs for the section - each category_id is added separately
@@ -538,6 +566,18 @@ const Products = () => {
         });
       }
       
+      // Log the exact API request being made
+      console.log(`🌐 API Request: GET ${endpoint}`, {
+        selectedSection,
+        sectionCategoryIds,
+        sectionSubCategoryIds,
+        searchTerm: trimmedSearch || 'none',
+        categoryFilter: categoryFilter || 'none',
+        subCategoryFilter: subCategoryFilter || 'none',
+        page,
+        paramsString: params.toString()
+      });
+      
       const response = await api.get(endpoint);
       
       // Handle the nested data structure from the API
@@ -547,6 +587,24 @@ const Products = () => {
       
       // Log products count for debugging
       const productsArray = Array.isArray(productsData) ? productsData : [];
+      
+      // Log the API response
+      console.log(`📦 API Response: Received ${productsArray.length} products`, {
+        endpoint,
+        responseStructure: {
+          hasSuccess: 'success' in (response.data || {}),
+          hasMessage: 'message' in (response.data || {}),
+          hasData: 'data' in (response.data || {}),
+          hasProducts: 'products' in (responseData || {}),
+          hasPagination: 'pagination' in (responseData || {})
+        },
+        sampleProduct: productsArray.length > 0 ? {
+          id: productsArray[0].id,
+          name: productsArray[0].name,
+          category_id: productsArray[0].category_id,
+          sub_category_id: productsArray[0].sub_category_id
+        } : null
+      });
       
       // ========================================================================
       // VERIFICATION: Ensure all returned products match the category filter
@@ -621,9 +679,23 @@ const Products = () => {
         if (sectionCategoryIds.length > 0) {
           const catNames = sectionCategoryIds.map(id => {
             const cat = categories.find(c => c.id === id);
-            return cat ? `${cat.name} (${id})` : `${id}`;
+            return cat ? `${cat.name} (${id})` : `Unknown (${id})`;
           });
           filters.push(`categories: ${catNames.join(', ')}`);
+          
+          // Validation: Ensure category IDs match the selected section
+          const expectedCategoryIds = findCategoriesForSection(selectedSection);
+          const categoryMatch = expectedCategoryIds.length === sectionCategoryIds.length &&
+                               expectedCategoryIds.every(id => sectionCategoryIds.includes(id));
+          
+          if (!categoryMatch) {
+            console.error(`❌ MISMATCH: Section "${selectedSection}" expected categories ${expectedCategoryIds}, but using ${sectionCategoryIds}`, {
+              selectedSection,
+              expectedCategoryIds,
+              actualCategoryIds: sectionCategoryIds,
+              categoryNames: catNames
+            });
+          }
         }
         if (sectionSubCategoryIds.length > 0) {
           filters.push(`subcategories: ${sectionSubCategoryIds.length} (including nested)`);
@@ -1180,11 +1252,57 @@ const Products = () => {
         const allIds = [...subCategoryIds, ...nestedSubCategoryIds];
         const uniqueIds = [...new Set(allIds)];
         
+        // Validate that subcategories belong to the correct categories
+        // Filter out any subcategories that don't belong to the section's categories
+        // We'll check if each subcategory has a category_id that matches our categoryIds
+        const validSubCategoryIds = uniqueIds.filter(subCatId => {
+          // First check if it's in the directly fetched subcategories
+          const directSubCat = allSubCategories.find(sc => sc.id === subCatId);
+          if (directSubCat) {
+            // Check if this subcategory's category_id matches one of our categoryIds
+            const subCatCategoryId = directSubCat.category_id || directSubCat.categoryId || directSubCat.category?.id;
+            if (subCatCategoryId && categoryIds.includes(subCatCategoryId)) {
+              return true;
+            }
+          }
+          
+          // Check nested subcategories - if parent is valid, child is valid
+          const subCatInfo = subCategoriesMap[subCatId];
+          if (subCatInfo && subCatInfo.parentId) {
+            // Check if parent subcategory belongs to our categories
+            const parentSubCat = allSubCategories.find(sc => sc.id === subCatInfo.parentId);
+            if (parentSubCat) {
+              const parentCategoryId = parentSubCat.category_id || parentSubCat.categoryId || parentSubCat.category?.id;
+              if (parentCategoryId && categoryIds.includes(parentCategoryId)) {
+                return true;
+              }
+            }
+          }
+          
+          // If not in map and not directly fetched, include it (might be valid)
+          if (!subCatInfo && !directSubCat) {
+            return true;
+          }
+          
+          // Exclude if it doesn't match
+          return false;
+        });
+        
         if (isMounted) {
-          setSectionSubCategoryIds(uniqueIds);
-          console.log(`📋 Found ${uniqueIds.length} subcategories (including nested) for categories:`, {
-            categoryIds,
-            subCategoryIds: uniqueIds.length
+          setSectionSubCategoryIds(validSubCategoryIds);
+          const categoryNames = categoryIds.map(id => {
+            const cat = categories.find(c => c.id === id);
+            return cat ? `${cat.name} (${id})` : `Unknown (${id})`;
+          });
+          console.log(`📋 Found ${validSubCategoryIds.length} subcategories (including nested) for section "${selectedSection}":`, {
+            section: selectedSection,
+            categoryIds: categoryIds,
+            categoryNames: categoryNames,
+            subCategoryIds: validSubCategoryIds,
+            subCategoryCount: validSubCategoryIds.length,
+            originalSubCategoryCount: uniqueIds.length,
+            filteredOut: uniqueIds.length - validSubCategoryIds.length,
+            note: 'Only subcategories belonging to the section categories are included'
           });
         }
       } catch (error) {

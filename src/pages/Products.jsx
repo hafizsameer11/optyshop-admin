@@ -495,12 +495,12 @@ const Products = () => {
           note: 'Products are filtered by category_id and sub_category_id ONLY - all products in these categories/subcategories will be shown'
         });
         
-        // If no category/subcategory filters are set, warn
+        // If no category/subcategory filters are set, warn and suggest using section endpoint as fallback
         if (sectionCategoryIds.length === 0 && sectionSubCategoryIds.length === 0) {
-          console.warn(`⚠️ No category/subcategory filters found for section "${selectedSection}". Showing empty results.`, {
+          console.warn(`⚠️ No category/subcategory filters found for section "${selectedSection}". Will show empty results unless products are in database with matching categories.`, {
             section: selectedSection,
             availableCategories: categories.map(c => ({ id: c.id, name: c.name, slug: c.slug })),
-            suggestion: 'Check if categories or subcategories are configured for this section'
+            suggestion: 'Check if categories or subcategories are configured for this section. The category name should match one of the patterns defined in sectionToCategoryMap.'
           });
         }
       } else if (selectedSection === 'all') {
@@ -519,7 +519,7 @@ const Products = () => {
       // Per Postman collection: GET /api/admin/products?category_id=X&sub_category_id=Y
       // Parameters: ONLY category_id and sub_category_id are allowed
       // NO product_type or product_id parameters should be included
-      const endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
+      let endpoint = `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`;
       
       // Final verification: ensure no product_id or product_type in URL
       if (endpoint.includes('product_id')) {
@@ -963,21 +963,25 @@ const Products = () => {
   // Based on actual categories in the system:
   // - "opty kids" (exact match)
   // - "sun glasses" (exact match - two words)
-  // - "contact-lenses" (exact match - with hyphen)
+  // - "contact-lenses" or "contact lenses" (with hyphen or space, case variations)
   // - "eye glasses" (exact match - two words)
   // - "eye hygiene" (exact match)
   const sectionToCategoryMap = {
-    'sunglasses': ['sun glasses', 'sunglasses', 'sun-glasses', 'sunglass', 'sun glasses'],
-    'eyeglasses': ['eye glasses', 'eyeglasses', 'eye-glasses', 'eyeglass', 'eye glasses'],
-    'opty-kids': ['opty kids', 'opty-kids', 'optykids', 'opty kids'],
-    'contact-lenses': ['contact-lenses', 'contact lenses', 'contactlenses', 'contact-lenses'],
-    'eye-hygiene': ['eye hygiene', 'eye-hygiene', 'eyehygiene', 'eye hygiene'],
+    'sunglasses': ['sun glasses', 'sunglasses', 'sun-glasses', 'sunglass'],
+    'eyeglasses': ['eye glasses', 'eyeglasses', 'eye-glasses', 'eyeglass'],
+    'opty-kids': ['opty kids', 'opty-kids', 'optykids'],
+    'contact-lenses': [
+      'contact-lenses', 'contact lenses', 'contactlenses',
+      'contact lens', 'contact-lens', 'contactlens',
+      'contact lenses', 'Contact Lenses', 'CONTACT LENSES'
+    ],
+    'eye-hygiene': ['eye hygiene', 'eye-hygiene', 'eyehygiene'],
   };
 
   // Find categories matching the section
   // This function finds all categories that match a given section (e.g., "Sunglasses", "Eyeglasses")
   // Products are then filtered by these category IDs (category_id field) - NOT by product_id or product_type
-  // Categories in system: "opty kids", "sun glasses", "contact-lenses", "eye glasses", "eye hygiene"
+  // Categories in system: "opty kids", "sun glasses", "contact-lenses" / "contact lenses", "eye glasses", "eye hygiene"
   const findCategoriesForSection = (section) => {
     if (section === 'all') {
       return [];
@@ -1002,45 +1006,60 @@ const Products = () => {
       const catName = (cat.name || '').toLowerCase().trim();
       const catSlug = (cat.slug || '').toLowerCase().trim();
       
+      // Normalize patterns for comparison (remove hyphens, spaces, convert to lowercase)
+      const normalize = (str) => str.toLowerCase().trim().replace(/[\s-]/g, '');
+      
       // First, try exact matches (most specific)
-      const exactNameMatch = patterns.some(pattern => catName === pattern.toLowerCase());
-      const exactSlugMatch = patterns.some(pattern => catSlug === pattern.toLowerCase());
+      const exactNameMatch = patterns.some(pattern => {
+        const normalizedPattern = normalize(pattern);
+        const normalizedName = normalize(catName);
+        const normalizedSlug = normalize(catSlug);
+        return normalizedName === normalizedPattern || normalizedSlug === normalizedPattern;
+      });
       
       // Then, try partial matches (for variations)
+      // For contact-lenses, check if category contains both "contact" and "lens" (or "lera" for Italian)
+      if (section === 'contact-lenses') {
+        const hasContact = catName.includes('contact') || catSlug.includes('contact');
+        const hasLens = catName.includes('lens') || catName.includes('lera') || 
+                       catSlug.includes('lens') || catSlug.includes('lera');
+        
+        if (hasContact && hasLens) {
+          console.log(`✅ Found contact lens category by keyword matching:`, {
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug
+          });
+          return true;
+        }
+      }
+      
       const partialNameMatch = patterns.some(pattern => {
-        const patternLower = pattern.toLowerCase();
-        return catName === patternLower || catName.includes(patternLower) || patternLower.includes(catName);
-      });
-      const partialSlugMatch = patterns.some(pattern => {
-        const patternLower = pattern.toLowerCase();
-        return catSlug === patternLower || catSlug.includes(patternLower) || patternLower.includes(catSlug);
+        const patternLower = normalize(pattern);
+        const normalizedName = normalize(catName);
+        const normalizedSlug = normalize(catSlug);
+        return normalizedName.includes(patternLower) || patternLower.includes(normalizedName) ||
+               normalizedSlug.includes(patternLower) || patternLower.includes(normalizedSlug);
       });
       
       const matchesName = exactNameMatch || partialNameMatch;
-      const matchesSlug = exactSlugMatch || partialSlugMatch;
       
       // Special handling: Eyeglasses should exclude Opty Kids categories
       // "eye glasses" should NOT match "opty kids"
       if (section === 'eyeglasses') {
-        const isOptyKids = catName === 'opty kids' || catName.includes('opty kids') || 
-                          catSlug === 'opty-kids' || catSlug.includes('opty-kids') ||
-                          (catName.includes('opty') && catName.includes('kids')) ||
-                          (catSlug.includes('opty') && catSlug.includes('kids'));
-        return (matchesName || matchesSlug) && !isOptyKids;
+        const isOptyKids = catName.includes('opty') && catName.includes('kids');
+        return matchesName && !isOptyKids;
       }
       
       // Special handling: Opty Kids should only match "opty kids" categories
       // Must contain both "opty" and "kids"
       if (section === 'opty-kids') {
-        const isOptyKids = catName === 'opty kids' || catName.includes('opty kids') ||
-                          catSlug === 'opty-kids' || catSlug.includes('opty-kids') ||
-                          (catName.includes('opty') && catName.includes('kids')) ||
-                          (catSlug.includes('opty') && catSlug.includes('kids'));
+        const isOptyKids = catName.includes('opty') && catName.includes('kids');
         return isOptyKids;
       }
       
       // For other sections, return if name or slug matches
-      return matchesName || matchesSlug;
+      return matchesName;
     });
     
     const categoryIds = matchingCategories.map(cat => cat.id);
@@ -1055,10 +1074,16 @@ const Products = () => {
     );
     
     if (matchingCategories.length === 0) {
-      console.warn(`⚠️ No categories found for section "${section}". Products will not be displayed.`, {
+      console.error(`❌ No categories found for section "${section}". Products will not be displayed.`, {
         section: section,
         searchedPatterns: patterns,
-        availableCategories: categories.map(c => ({ name: c.name, slug: c.slug }))
+        availableCategories: categories.map(c => ({ 
+          id: c.id,
+          name: c.name, 
+          slug: c.slug,
+          normalizedName: (c.name || '').toLowerCase().trim().replace(/[\s-]/g, ''),
+          normalizedSlug: (c.slug || '').toLowerCase().trim().replace(/[\s-]/g, '')
+        }))
       });
     }
     

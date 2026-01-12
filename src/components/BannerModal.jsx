@@ -16,10 +16,17 @@ const BannerModal = ({ banner, onClose }) => {
     position: '',
     sort_order: 0,
     is_active: true,
+    page_type: 'home',
+    category_id: '',
+    sub_category_id: '',
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [nestedSubCategories, setNestedSubCategories] = useState([]);
+  const [parentSubCategoryId, setParentSubCategoryId] = useState('');
 
   // Helper function to normalize image URLs
   const normalizeImageUrl = (url) => {
@@ -50,6 +57,31 @@ const BannerModal = ({ banner, onClose }) => {
     }
   };
 
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Fetch subcategories when category_id changes
+  useEffect(() => {
+    if (formData.category_id && (formData.page_type === 'category' || formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory')) {
+      fetchSubCategories(formData.category_id);
+    } else {
+      setSubCategories([]);
+      setNestedSubCategories([]);
+    }
+  }, [formData.category_id, formData.page_type]);
+
+  // Fetch nested subcategories when parentSubCategoryId changes (for sub_subcategory page_type)
+  useEffect(() => {
+    if (parentSubCategoryId && formData.page_type === 'sub_subcategory' && formData.category_id) {
+      fetchNestedSubCategories(parentSubCategoryId);
+    } else if (formData.page_type !== 'sub_subcategory') {
+      setNestedSubCategories([]);
+      setParentSubCategoryId('');
+    }
+  }, [parentSubCategoryId, formData.page_type, formData.category_id]);
+
   useEffect(() => {
     if (banner) {
       setFormData({
@@ -59,10 +91,36 @@ const BannerModal = ({ banner, onClose }) => {
         position: banner.position || '',
         sort_order: banner.sort_order || 0,
         is_active: banner.is_active !== undefined ? banner.is_active : true,
+        page_type: banner.page_type || 'home',
+        category_id: banner.category_id ? banner.category_id.toString() : '',
+        sub_category_id: banner.sub_category_id ? banner.sub_category_id.toString() : '',
       });
       // Normalize image URL for preview
       const normalizedUrl = normalizeImageUrl(banner.image_url);
       setImagePreview(normalizedUrl);
+      
+      // Load category and subcategory data if available
+      if (banner.category_id) {
+        fetchSubCategories(banner.category_id).then(() => {
+          if (banner.sub_category_id && banner.page_type === 'sub_subcategory') {
+            // For sub_subcategory, we need to find the parent and load nested subcategories
+            setTimeout(async () => {
+              try {
+                // Fetch the subcategory to find its parent
+                const subCatResponse = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(banner.sub_category_id));
+                const subCat = subCatResponse.data?.data || subCatResponse.data;
+                if (subCat?.parent_id || subCat?.parentId) {
+                  const parentId = subCat.parent_id || subCat.parentId;
+                  setParentSubCategoryId(parentId.toString());
+                  fetchNestedSubCategories(parentId);
+                }
+              } catch (error) {
+                console.warn('Failed to fetch subcategory details for editing', error);
+              }
+            }, 500);
+          }
+        });
+      }
     } else {
       setFormData({
         title: '',
@@ -71,17 +129,115 @@ const BannerModal = ({ banner, onClose }) => {
         position: '',
         sort_order: 0,
         is_active: true,
+        page_type: 'home',
+        category_id: '',
+        sub_category_id: '',
       });
       setImagePreview(null);
+      setParentSubCategoryId('');
+      setSubCategories([]);
+      setNestedSubCategories([]);
     }
   }, [banner]);
 
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get(API_ROUTES.CATEGORIES.LIST);
+      const categoriesData = response.data?.data?.categories || response.data?.categories || response.data || [];
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+    } catch (error) {
+      console.error('Failed to fetch categories', error);
+      setCategories([]);
+    }
+  };
+
+  const fetchSubCategories = async (categoryId) => {
+    if (!categoryId) {
+      setSubCategories([]);
+      setNestedSubCategories([]);
+      return Promise.resolve();
+    }
+
+    try {
+      // Fetch top-level subcategories for the category
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+      const responseData = response.data?.data || response.data || {};
+      const subCatData = responseData.subcategories || responseData || [];
+      
+      // Filter to get only top-level subcategories (parent_id = null)
+      const topLevel = Array.isArray(subCatData) 
+        ? subCatData.filter(sub => {
+            const parentId = sub.parent_id !== undefined ? sub.parent_id : 
+                           sub.parentId || 
+                           sub.parent_subcategory_id || 
+                           sub.parentSubcategoryId;
+            return parentId === null || parentId === undefined || parentId === '';
+          })
+        : [];
+      
+      setSubCategories(topLevel);
+      return Promise.resolve();
+    } catch (error) {
+      console.warn('Failed to fetch subcategories', error);
+      setSubCategories([]);
+      return Promise.reject(error);
+    }
+  };
+
+  const fetchNestedSubCategories = async (subCategoryId) => {
+    if (!subCategoryId) {
+      setNestedSubCategories([]);
+      return;
+    }
+
+    try {
+      // Fetch nested subcategories (sub-subcategories) for the selected subcategory
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_PARENT(subCategoryId));
+      const responseData = response.data?.data || response.data || {};
+      const nestedData = responseData.subcategories || responseData || [];
+      setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);
+    } catch (error) {
+      console.warn('Failed to fetch nested subcategories', error);
+      setNestedSubCategories([]);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
+    const newFormData = {
       ...formData,
       [name]: type === 'checkbox' ? checked : type === 'number' ? parseInt(value, 10) : value,
-    });
+    };
+
+    // Reset dependent fields when page_type changes
+    if (name === 'page_type') {
+      if (value === 'home') {
+        newFormData.category_id = '';
+        newFormData.sub_category_id = '';
+        setSubCategories([]);
+        setNestedSubCategories([]);
+      } else if (value === 'category') {
+        newFormData.sub_category_id = '';
+        setNestedSubCategories([]);
+        // Keep category_id if already selected
+      }
+      // For subcategory and sub_subcategory, keep category_id and sub_category_id if selected
+    }
+
+    // Reset sub_category_id when category_id changes
+    if (name === 'category_id') {
+      newFormData.sub_category_id = '';
+      setNestedSubCategories([]);
+      setParentSubCategoryId('');
+    }
+
+    // Reset parent subcategory when page_type changes
+    if (name === 'page_type' && value !== 'sub_subcategory') {
+      setParentSubCategoryId('');
+      setNestedSubCategories([]);
+    }
+
+    setFormData(newFormData);
   };
 
   const handleImageChange = (e) => {
@@ -155,8 +311,27 @@ const BannerModal = ({ banner, onClose }) => {
 
       const submitData = new FormData();
       
+      // Validate form based on page_type
+      if (formData.page_type === 'category' || formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') {
+        if (!formData.category_id) {
+          toast.error('Category is required for this page type');
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') {
+        if (!formData.sub_category_id) {
+          toast.error('Subcategory is required for this page type');
+          setLoading(false);
+          return;
+        }
+      }
+
       // Add all form fields
       submitData.append('title', formData.title);
+      submitData.append('page_type', formData.page_type);
+      
       if (formData.link_url) {
         submitData.append('link_url', formData.link_url);
       }
@@ -165,6 +340,16 @@ const BannerModal = ({ banner, onClose }) => {
       }
       submitData.append('sort_order', formData.sort_order.toString());
       submitData.append('is_active', formData.is_active.toString());
+
+      // Add category_id if page_type is not home
+      if (formData.page_type !== 'home' && formData.category_id) {
+        submitData.append('category_id', formData.category_id);
+      }
+
+      // Add sub_category_id if page_type is subcategory or sub_subcategory
+      if ((formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') && formData.sub_category_id) {
+        submitData.append('sub_category_id', formData.sub_category_id);
+      }
 
       // Add image file if provided
       if (imageFile) {
@@ -345,6 +530,128 @@ const BannerModal = ({ banner, onClose }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Page Type *
+            </label>
+            <select
+              name="page_type"
+              value={formData.page_type}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="home">Home Page</option>
+              <option value="category">Category Page</option>
+              <option value="subcategory">Subcategory Page</option>
+              <option value="sub_subcategory">Sub-subcategory Page</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Select where this banner should be displayed
+            </p>
+          </div>
+
+          {(formData.page_type === 'category' || formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category * <span className="text-xs font-normal text-gray-500">(Required for this page type)</span>
+              </label>
+              <select
+                name="category_id"
+                value={formData.category_id}
+                onChange={handleChange}
+                required={formData.page_type !== 'home'}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {formData.page_type === 'subcategory' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Subcategory * <span className="text-xs font-normal text-gray-500">(Required for this page type)</span>
+              </label>
+              <select
+                name="sub_category_id"
+                value={formData.sub_category_id}
+                onChange={handleChange}
+                required
+                disabled={!formData.category_id}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {formData.category_id ? 'Select a subcategory' : 'Select a category first'}
+                </option>
+                {subCategories.map((subCat) => (
+                  <option key={subCat.id} value={subCat.id.toString()}>
+                    {subCat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {formData.page_type === 'sub_subcategory' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Parent Subcategory * <span className="text-xs font-normal text-gray-500">(Select parent first)</span>
+                </label>
+                <select
+                  name="parent_subcategory_id"
+                  value={parentSubCategoryId}
+                  onChange={(e) => {
+                    setParentSubCategoryId(e.target.value);
+                    setFormData({ ...formData, sub_category_id: '' }); // Reset sub-subcategory selection
+                    setNestedSubCategories([]);
+                  }}
+                  required
+                  disabled={!formData.category_id}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {formData.category_id ? 'Select a parent subcategory' : 'Select a category first'}
+                  </option>
+                  {subCategories.map((subCat) => (
+                    <option key={subCat.id} value={subCat.id.toString()}>
+                      {subCat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sub-subcategory * <span className="text-xs font-normal text-gray-500">(Required for this page type)</span>
+                </label>
+                <select
+                  name="sub_category_id"
+                  value={formData.sub_category_id}
+                  onChange={handleChange}
+                  required
+                  disabled={!parentSubCategoryId}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {parentSubCategoryId ? 'Select a sub-subcategory' : 'Select a parent subcategory first'}
+                  </option>
+                  {nestedSubCategories.map((nestedSubCat) => (
+                    <option key={nestedSubCat.id} value={nestedSubCat.id.toString()}>
+                      {nestedSubCat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('positionOptional')}
             </label>
             <input
@@ -353,7 +660,7 @@ const BannerModal = ({ banner, onClose }) => {
               value={formData.position}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="e.g., home, header, footer"
+              placeholder="e.g., header, footer, sidebar"
             />
           </div>
 

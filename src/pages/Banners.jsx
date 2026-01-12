@@ -86,20 +86,47 @@ const Banners = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBanner, setSelectedBanner] = useState(null);
+  const [filters, setFilters] = useState({
+    page_type: '',
+    category_id: '',
+    sub_category_id: '',
+  });
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
 
   useEffect(() => {
     fetchBanners();
+    fetchCategories();
   }, []);
+
+  useEffect(() => {
+    fetchBanners();
+  }, [filters]);
+
+  useEffect(() => {
+    if (filters.category_id) {
+      fetchSubCategories(filters.category_id);
+    } else {
+      setSubCategories([]);
+    }
+  }, [filters.category_id]);
 
   const fetchBanners = async () => {
     try {
       setLoading(true);
       // Use ADMIN route for listing banners with safety check
       const bannersRoute = API_ROUTES.ADMIN?.BANNERS?.LIST || API_ROUTES.BANNERS?.LIST || '/admin/banners';
-      console.log('Fetching banners from route:', bannersRoute);
-      console.log('API_ROUTES.ADMIN:', API_ROUTES.ADMIN);
-      console.log('API_ROUTES.ADMIN.BANNERS:', API_ROUTES.ADMIN?.BANNERS);
-      const response = await api.get(bannersRoute);
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (filters.page_type) queryParams.append('page_type', filters.page_type);
+      if (filters.category_id) queryParams.append('category_id', filters.category_id);
+      if (filters.sub_category_id) queryParams.append('sub_category_id', filters.sub_category_id);
+      
+      const url = queryParams.toString() ? `${bannersRoute}?${queryParams.toString()}` : bannersRoute;
+      console.log('Fetching banners from route:', url);
+      
+      const response = await api.get(url);
       console.log('Banners API Response:', response.data);
       
       // Handle response structure: { success, message, data: { banners: [...] } }
@@ -136,6 +163,53 @@ const Banners = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get(API_ROUTES.CATEGORIES.LIST);
+      const categoriesData = response.data?.data?.categories || response.data?.categories || response.data || [];
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+    } catch (error) {
+      console.error('Failed to fetch categories', error);
+      setCategories([]);
+    }
+  };
+
+  const fetchSubCategories = async (categoryId) => {
+    if (!categoryId) {
+      setSubCategories([]);
+      return;
+    }
+
+    try {
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+      const responseData = response.data?.data || response.data || {};
+      const subCatData = responseData.subcategories || responseData || [];
+      
+      // Get all subcategories (top-level and nested)
+      setSubCategories(Array.isArray(subCatData) ? subCatData : []);
+    } catch (error) {
+      console.warn('Failed to fetch subcategories', error);
+      setSubCategories([]);
+    }
+  };
+
+  const handleFilterChange = (name, value) => {
+    const newFilters = {
+      ...filters,
+      [name]: value,
+    };
+    
+    // Reset dependent filters
+    if (name === 'page_type') {
+      newFilters.category_id = '';
+      newFilters.sub_category_id = '';
+    } else if (name === 'category_id') {
+      newFilters.sub_category_id = '';
+    }
+    
+    setFilters(newFilters);
   };
 
   const handleAddBanner = () => {
@@ -185,6 +259,16 @@ const Banners = () => {
     );
   }
 
+  const getPageTypeLabel = (pageType) => {
+    const labels = {
+      home: 'Home',
+      category: 'Category',
+      subcategory: 'Subcategory',
+      sub_subcategory: 'Sub-subcategory',
+    };
+    return labels[pageType] || pageType;
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -198,6 +282,78 @@ const Banners = () => {
         </button>
       </div>
 
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Page Type
+            </label>
+            <select
+              value={filters.page_type}
+              onChange={(e) => handleFilterChange('page_type', e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="">All Types</option>
+              <option value="home">Home</option>
+              <option value="category">Category</option>
+              <option value="subcategory">Subcategory</option>
+              <option value="sub_subcategory">Sub-subcategory</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <select
+              value={filters.category_id}
+              onChange={(e) => handleFilterChange('category_id', e.target.value)}
+              disabled={filters.page_type === 'home'}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Subcategory
+            </label>
+            <select
+              value={filters.sub_category_id}
+              onChange={(e) => handleFilterChange('sub_category_id', e.target.value)}
+              disabled={!filters.category_id || filters.page_type === 'home' || filters.page_type === 'category'}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">All Subcategories</option>
+              {subCategories.map((subCat) => (
+                <option key={subCat.id} value={subCat.id.toString()}>
+                  {subCat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setFilters({ page_type: '', category_id: '', sub_category_id: '' });
+                setSubCategories([]);
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -208,6 +364,15 @@ const Banners = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Title
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Page Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Subcategory
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Link URL
@@ -232,7 +397,7 @@ const Banners = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {banners.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="11" className="px-6 py-4 text-center text-sm text-gray-500">
                     No banners found
                   </td>
                 </tr>
@@ -244,6 +409,17 @@ const Banners = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {banner.title || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {getPageTypeLabel(banner.page_type || 'home')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {banner.category?.name || (banner.category_id ? `ID: ${banner.category_id}` : 'N/A')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {banner.subCategory?.name || (banner.sub_category_id ? `ID: ${banner.sub_category_id}` : 'N/A')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {banner.link_url ? (

@@ -488,6 +488,8 @@ const Products = () => {
         }
         
         // Filter STRICTLY by category_id and sub_category_id ONLY (NO product_type, NO product_id)
+        // IMPORTANT: Use category_id alone first. Only add sub_category_id if we have products
+        // in subcategories. Many products might be in the category but not assigned to a subcategory.
         if (sectionCategoryIds.length > 0) {
           // Add all category IDs for the section - each category_id is added separately
           // Backend will return products that have ANY of these category_ids
@@ -497,14 +499,13 @@ const Products = () => {
           });
         }
         
-        // Add all subcategory IDs (including nested sub-subcategories) for the section
-        // Products in these subcategories will also be included
-        // This includes nested subcategories (sub-subcategories) recursively
-        if (sectionSubCategoryIds.length > 0) {
-          sectionSubCategoryIds.forEach(subCatId => {
-            params.append('sub_category_id', subCatId);
-          });
-        }
+        // DO NOT add subcategory filters when filtering by section
+        // Reason: Products might be in the category but not assigned to a subcategory
+        // If we add sub_category_id filters, products without subcategories get excluded
+        // The backend API treats category_id AND sub_category_id as AND logic
+        // We want to show ALL products in the category, regardless of subcategory assignment
+        // 
+        // Note: Manual subcategory filtering (via dropdown) is still available when section is 'all'
         
         // Log the category-only filtering
         const categoryNames = sectionCategoryIds.map(id => {
@@ -512,15 +513,13 @@ const Products = () => {
           return cat ? `${cat.name} (ID: ${id})` : `Unknown (ID: ${id})`;
         });
         
-        console.log(`🔍 Filtering products for section "${selectedSection}" by CATEGORIES ONLY (NO product_type, NO product_id):`, {
+        console.log(`🔍 Filtering products for section "${selectedSection}" by CATEGORY ONLY (no subcategory filters):`, {
           section: selectedSection,
           categoryIds: sectionCategoryIds.length > 0 ? sectionCategoryIds : 'none',
           categoryNames: categoryNames.length > 0 ? categoryNames : 'none',
-          subCategoryIds: sectionSubCategoryIds.length > 0 ? sectionSubCategoryIds : 'none',
-          subCategoryCount: sectionSubCategoryIds.length,
-          nestedSubCategories: 'included',
-          endpoint: `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`,
-          note: 'Products are filtered by category_id and sub_category_id ONLY - all products in these categories/subcategories will be shown'
+          availableSubCategories: sectionSubCategoryIds.length,
+          note: `Using category_id only to include ALL products in the category (even those without subcategories). ${sectionSubCategoryIds.length} subcategories are available but not used as filters to prevent excluding products without subcategory assignments.`,
+          endpoint: `${API_ROUTES.ADMIN.PRODUCTS.LIST}?${params.toString()}`
         });
         
         // If no category/subcategory filters are set, warn and suggest using section endpoint as fallback

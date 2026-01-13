@@ -91,23 +91,27 @@ const BannerModal = ({ banner, onClose }) => {
         position: banner.position || '',
         sort_order: banner.sort_order || 0,
         is_active: banner.is_active !== undefined ? banner.is_active : true,
-        page_type: banner.page_type || 'home',
-        category_id: banner.category_id ? banner.category_id.toString() : '',
-        sub_category_id: banner.sub_category_id ? banner.sub_category_id.toString() : '',
+        page_type: banner.page_type || banner.pageType || 'home',
+        category_id: (banner.category_id || banner.categoryId) ? (banner.category_id || banner.categoryId).toString() : '',
+        sub_category_id: (banner.sub_category_id || banner.subCategoryId || banner.subcategory_id) ? (banner.sub_category_id || banner.subCategoryId || banner.subcategory_id).toString() : '',
       });
       // Normalize image URL for preview
       const normalizedUrl = normalizeImageUrl(banner.image_url);
       setImagePreview(normalizedUrl);
       
       // Load category and subcategory data if available
-      if (banner.category_id) {
-        fetchSubCategories(banner.category_id).then(() => {
-          if (banner.sub_category_id && banner.page_type === 'sub_subcategory') {
+      const categoryId = banner.category_id || banner.categoryId;
+      const subCategoryId = banner.sub_category_id || banner.subCategoryId || banner.subcategory_id;
+      const pageType = banner.page_type || banner.pageType || 'home';
+      
+      if (categoryId) {
+        fetchSubCategories(categoryId).then(() => {
+          if (subCategoryId && pageType === 'sub_subcategory') {
             // For sub_subcategory, we need to find the parent and load nested subcategories
             setTimeout(async () => {
               try {
                 // Fetch the subcategory to find its parent
-                const subCatResponse = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(banner.sub_category_id));
+                const subCatResponse = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(subCategoryId));
                 const subCat = subCatResponse.data?.data || subCatResponse.data;
                 if (subCat?.parent_id || subCat?.parentId) {
                   const parentId = subCat.parent_id || subCat.parentId;
@@ -341,14 +345,19 @@ const BannerModal = ({ banner, onClose }) => {
       submitData.append('sort_order', formData.sort_order.toString());
       submitData.append('is_active', formData.is_active.toString());
 
-      // Add category_id if page_type is not home
-      if (formData.page_type !== 'home' && formData.category_id) {
-        submitData.append('category_id', formData.category_id);
-      }
-
-      // Add sub_category_id if page_type is subcategory or sub_subcategory
-      if ((formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') && formData.sub_category_id) {
-        submitData.append('sub_category_id', formData.sub_category_id);
+      // Add category_id and sub_category_id based on page_type
+      // For home page: don't send category_id or sub_category_id (backend will set to null)
+      // For category page: send category_id only
+      // For subcategory/sub_subcategory: send both category_id and sub_category_id
+      if (formData.page_type !== 'home') {
+        if (formData.category_id) {
+          submitData.append('category_id', formData.category_id);
+        }
+        
+        // For subcategory and sub_subcategory, also send sub_category_id
+        if ((formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') && formData.sub_category_id) {
+          submitData.append('sub_category_id', formData.sub_category_id);
+        }
       }
 
       // Add image file if provided

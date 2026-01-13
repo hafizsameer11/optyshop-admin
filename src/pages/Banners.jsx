@@ -424,14 +424,14 @@ const Banners = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {getPageTypeLabel(banner.page_type || 'home')}
+                        {getPageTypeLabel(banner.page_type || banner.pageType || 'home')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {banner.category?.name || (banner.category_id ? `ID: ${banner.category_id}` : 'N/A')}
+                      {banner.category?.name || banner.Category?.name || (banner.category_id || banner.categoryId ? `ID: ${banner.category_id || banner.categoryId}` : 'N/A')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {banner.subCategory?.name || (banner.sub_category_id ? `ID: ${banner.sub_category_id}` : 'N/A')}
+                      {banner.subCategory?.name || banner.SubCategory?.name || banner.subcategory?.name || (banner.sub_category_id || banner.subCategoryId ? `ID: ${banner.sub_category_id || banner.subCategoryId}` : 'N/A')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {banner.link_url ? (

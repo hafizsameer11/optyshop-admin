@@ -157,7 +157,19 @@ const Banners = () => {
         } else if (error.response.status === 401) {
           toast.error('Authentication failed. Please log in again.');
         } else {
-          toast.error(`Failed to load banners: ${error.response?.data?.message || error.message}`);
+          const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+          
+          // Check for database migration error
+          if (errorMessage.includes('page_type') || errorMessage.includes('does not exist')) {
+            toast.error(
+              'Database migration required: The banners table is missing the page_type column. Please run the migration on the backend server.',
+              { duration: 8000 }
+            );
+            console.error('Migration Error:', errorMessage);
+            console.error('Action Required: Run "npx prisma migrate deploy" in your backend directory');
+          } else {
+            toast.error(`Failed to load banners: ${errorMessage}`);
+          }
         }
       }
     } finally {

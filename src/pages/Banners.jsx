@@ -160,13 +160,16 @@ const Banners = () => {
           const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
           
           // Check for database migration error
-          if (errorMessage.includes('page_type') || errorMessage.includes('does not exist')) {
+          if (errorMessage.includes('page_type') || errorMessage.includes('does not exist') || errorMessage.includes('column')) {
             toast.error(
-              'Database migration required: The banners table is missing the page_type column. Please run the migration on the backend server.',
-              { duration: 8000 }
+              'Server Error: Prisma Client needs to be regenerated on the server. Please run "npx prisma generate" and restart the backend server.',
+              { duration: 10000 }
             );
-            console.error('Migration Error:', errorMessage);
-            console.error('Action Required: Run "npx prisma migrate deploy" in your backend directory');
+            console.error('Server Prisma Client Error:', errorMessage);
+            console.error('Action Required on Server:');
+            console.error('1. Run: npx prisma generate');
+            console.error('2. Restart the backend server');
+            console.error('3. If using Docker, rebuild the container');
           } else {
             toast.error(`Failed to load banners: ${errorMessage}`);
           }

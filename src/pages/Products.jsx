@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
@@ -8,6 +8,23 @@ import ContactLensProductModal from '../components/ContactLensProductModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+
+// Debounce hook to delay API calls
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -297,6 +314,9 @@ const Products = () => {
   // Track if this is the initial mount to prevent clearing restored subcategory filter
   const [isInitialMount, setIsInitialMount] = useState(true);
 
+  // Debounce search term to prevent API calls on every character input
+  const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms delay
+
   // Save state to localStorage whenever relevant state changes
   useEffect(() => {
     saveStateToStorage({
@@ -331,7 +351,7 @@ const Products = () => {
       console.log(`⏳ Waiting for category IDs to be resolved for section "${selectedSection}" before fetching products...`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, searchTerm, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds]);
+  }, [page, debouncedSearchTerm, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds]);
   
   // Fetch subcategories when category filter changes
   useEffect(() => {
@@ -349,6 +369,13 @@ const Products = () => {
       setIsInitialMount(false);
     }
   }, [categoryFilter, isInitialMount]);
+
+  // Reset page to 1 when debounced search term changes (but not on initial mount)
+  useEffect(() => {
+    if (!isInitialMount) {
+      setPage(1);
+    }
+  }, [debouncedSearchTerm, isInitialMount]);
 
   const fetchCategories = async () => {
     try {
@@ -431,7 +458,7 @@ const Products = () => {
       });
       
       // Trim search term and only send if not empty
-      const trimmedSearch = searchTerm?.trim();
+      const trimmedSearch = debouncedSearchTerm?.trim();
       if (trimmedSearch) {
         params.append('search', trimmedSearch);
       }
@@ -574,7 +601,8 @@ const Products = () => {
         categoryFilter: categoryFilter || 'none',
         subCategoryFilter: subCategoryFilter || 'none',
         page,
-        paramsString: params.toString()
+        paramsString: params.toString(),
+        note: 'Using debounced search term to prevent API calls on every character input'
       });
       
       const response = await api.get(endpoint);
@@ -1803,7 +1831,7 @@ const Products = () => {
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  setPage(1); // Reset to first page on search
+                  // Note: Page reset is now handled by the debounced search effect below
                 }}
                 className="input-modern pl-10 sm:pl-12 w-full"
               />

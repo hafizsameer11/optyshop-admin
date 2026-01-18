@@ -382,7 +382,6 @@ const translations = {
     brandDescriptionPlaceholder: 'Brand description...',
     brandLogo: 'Brand Logo',
     brandLogoHint: 'Upload brand logo (JPG, PNG, GIF, WEBP - Max 10MB)',
-    websiteUrl: 'Website URL',
     websiteUrlHint: 'Optional: Link to brand\'s official website',
     activeBrand: 'Active Brand',
     activeBrandHint: 'Only active brands will be displayed on the website',

@@ -313,9 +313,7 @@ const Products = () => {
   const [sectionSubCategoryIds, setSectionSubCategoryIds] = useState([]); // All subcategory IDs (including nested) for the selected section
   // Track if this is the initial mount to prevent clearing restored subcategory filter
   const [isInitialMount, setIsInitialMount] = useState(true);
-
-  // Debounce search term to prevent API calls on every character input
-  const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms delay
+  const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger search on Enter
 
   // Save state to localStorage whenever relevant state changes
   useEffect(() => {
@@ -351,7 +349,7 @@ const Products = () => {
       console.log(`⏳ Waiting for category IDs to be resolved for section "${selectedSection}" before fetching products...`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, debouncedSearchTerm, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds]);
+  }, [page, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds, searchTrigger]);
   
   // Fetch subcategories when category filter changes
   useEffect(() => {
@@ -370,12 +368,8 @@ const Products = () => {
     }
   }, [categoryFilter, isInitialMount]);
 
-  // Reset page to 1 when debounced search term changes (but not on initial mount)
-  useEffect(() => {
-    if (!isInitialMount) {
-      setPage(1);
-    }
-  }, [debouncedSearchTerm, isInitialMount]);
+  // Note: searchTerm changes are handled by the Enter key press in the input
+  // No automatic page reset on searchTerm change to prevent unwanted API calls
 
   const fetchCategories = async () => {
     try {
@@ -458,7 +452,7 @@ const Products = () => {
       });
       
       // Trim search term and only send if not empty
-      const trimmedSearch = debouncedSearchTerm?.trim();
+      const trimmedSearch = searchTerm?.trim();
       if (trimmedSearch) {
         params.append('search', trimmedSearch);
       }
@@ -602,7 +596,7 @@ const Products = () => {
         subCategoryFilter: subCategoryFilter || 'none',
         page,
         paramsString: params.toString(),
-        note: 'Using debounced search term to prevent API calls on every character input'
+        note: 'Using search term that triggers on Enter key press only'
       });
       
       const response = await api.get(endpoint);
@@ -1831,7 +1825,14 @@ const Products = () => {
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  // Note: Page reset is now handled by the debounced search effect below
+                  // Only update the input value, don't trigger search
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    // Trigger search only on Enter key press
+                    setPage(1); // Reset to first page
+                    setSearchTrigger(prev => prev + 1); // Trigger search
+                  }
                 }}
                 className="input-modern pl-10 sm:pl-12 w-full"
               />

@@ -18,6 +18,13 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
     size_label: '',
   });
   const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+
+  useEffect(() => {
+    // Fetch products when component mounts
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (frameSize) {
@@ -67,6 +74,22 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
       });
     }
   }, [frameSize]);
+
+  const fetchProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const response = await api.get(API_ROUTES.ADMIN.PRODUCTS.LIST);
+      // Handle response structure: { success, message, data: { products: [...] } }
+      const productsData = response.data?.data?.products || response.data?.products || response.data || [];
+      setProducts(Array.isArray(productsData) ? productsData : []);
+    } catch (error) {
+      console.error('Products fetch error:', error);
+      toast.error('Failed to fetch products');
+      setProducts([]);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -142,16 +165,26 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('productId')} <span className="text-red-500">*</span>
+              {t('selectProduct')} <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number"
+            <select
               name="product_id"
               value={formData.product_id}
               onChange={handleChange}
               className="input-modern"
               required
-            />
+              disabled={productsLoading}
+            >
+              <option value="">{productsLoading ? 'Loading products...' : 'Select a product'}</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name} {product.product_code ? `(${product.product_code})` : ''}
+                </option>
+              ))}
+            </select>
+            {products.length === 0 && !productsLoading && (
+              <p className="text-xs text-gray-500 mt-1">No products available</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

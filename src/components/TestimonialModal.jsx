@@ -55,9 +55,9 @@ const TestimonialModal = ({ testimonial, onClose, onSuccess }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const fieldValue = type === 'checkbox' ? checked : (type === 'number' ? parseInt(value) || 0 : value);
-    setFormData({ 
-      ...formData, 
-      [name]: fieldValue 
+    setFormData({
+      ...formData,
+      [name]: fieldValue
     });
   };
 
@@ -71,7 +71,7 @@ const TestimonialModal = ({ testimonial, onClose, onSuccess }) => {
         e.target.value = '';
         return;
       }
-      
+
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
@@ -79,7 +79,7 @@ const TestimonialModal = ({ testimonial, onClose, onSuccess }) => {
         e.target.value = '';
         return;
       }
-      
+
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -150,7 +150,7 @@ const TestimonialModal = ({ testimonial, onClose, onSuccess }) => {
           response = await api.post(API_ROUTES.CMS.TESTIMONIALS.CREATE, dataToSend);
         }
       }
-      
+
       const successMessage = response.data?.message || (testimonial ? 'Testimonial updated successfully' : 'Testimonial created successfully');
       toast.success(successMessage);
       // Reset image file after successful save
@@ -185,8 +185,8 @@ const TestimonialModal = ({ testimonial, onClose, onSuccess }) => {
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
               aria-label="Close"
             >
@@ -279,11 +279,10 @@ const TestimonialModal = ({ testimonial, onClose, onSuccess }) => {
                   className="focus:outline-none transition-transform hover:scale-110"
                 >
                   <FiStar
-                    className={`w-8 h-8 transition-colors ${
-                      star <= formData.rating
+                    className={`w-8 h-8 transition-colors ${star <= formData.rating
                         ? 'text-yellow-400 fill-current'
                         : 'text-gray-300'
-                    }`}
+                      }`}
                   />
                 </button>
               ))}

@@ -31,20 +31,20 @@ const BannerModal = ({ banner, onClose }) => {
   // Helper function to normalize image URLs
   const normalizeImageUrl = (url) => {
     if (!url || typeof url !== 'string') return null;
-    
+
     const trimmedUrl = url.trim();
     if (!trimmedUrl) return null;
-    
+
     // Skip test/example URLs
     const testDomains = ['example.com', 'localhost', '127.0.0.1', 'test.com', 'placeholder.com'];
     try {
       const urlObj = new URL(trimmedUrl);
       const hostname = urlObj.hostname.toLowerCase();
-      
+
       if (testDomains.some(domain => hostname.includes(domain))) {
         return null;
       }
-      
+
       return trimmedUrl;
     } catch (e) {
       // Relative path
@@ -98,12 +98,12 @@ const BannerModal = ({ banner, onClose }) => {
       // Normalize image URL for preview
       const normalizedUrl = normalizeImageUrl(banner.image_url);
       setImagePreview(normalizedUrl);
-      
+
       // Load category and subcategory data if available
       const categoryId = banner.category_id || banner.categoryId;
       const subCategoryId = banner.sub_category_id || banner.subCategoryId || banner.subcategory_id;
       const pageType = banner.page_type || banner.pageType || 'home';
-      
+
       if (categoryId) {
         fetchSubCategories(categoryId).then(() => {
           if (subCategoryId && pageType === 'sub_subcategory') {
@@ -167,18 +167,18 @@ const BannerModal = ({ banner, onClose }) => {
       const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
-      
+
       // Filter to get only top-level subcategories (parent_id = null)
-      const topLevel = Array.isArray(subCatData) 
+      const topLevel = Array.isArray(subCatData)
         ? subCatData.filter(sub => {
-            const parentId = sub.parent_id !== undefined ? sub.parent_id : 
-                           sub.parentId || 
-                           sub.parent_subcategory_id || 
-                           sub.parentSubcategoryId;
-            return parentId === null || parentId === undefined || parentId === '';
-          })
+          const parentId = sub.parent_id !== undefined ? sub.parent_id :
+            sub.parentId ||
+            sub.parent_subcategory_id ||
+            sub.parentSubcategoryId;
+          return parentId === null || parentId === undefined || parentId === '';
+        })
         : [];
-      
+
       setSubCategories(topLevel);
       return Promise.resolve();
     } catch (error) {
@@ -254,7 +254,7 @@ const BannerModal = ({ banner, onClose }) => {
         e.target.value = ''; // Clear the input
         return;
       }
-      
+
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       if (file.size > maxSize) {
@@ -262,7 +262,7 @@ const BannerModal = ({ banner, onClose }) => {
         e.target.value = ''; // Clear the input
         return;
       }
-      
+
       // Image dimensions validation removed
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -292,7 +292,7 @@ const BannerModal = ({ banner, onClose }) => {
       }
 
       const submitData = new FormData();
-      
+
       // Validate form based on page_type
       if (formData.page_type === 'category' || formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') {
         if (!formData.category_id) {
@@ -313,7 +313,7 @@ const BannerModal = ({ banner, onClose }) => {
       // Add all form fields
       submitData.append('title', formData.title);
       submitData.append('page_type', formData.page_type);
-      
+
       if (formData.link_url) {
         submitData.append('link_url', formData.link_url);
       }
@@ -331,7 +331,7 @@ const BannerModal = ({ banner, onClose }) => {
         if (formData.category_id) {
           submitData.append('category_id', formData.category_id);
         }
-        
+
         // For subcategory and sub_subcategory, also send sub_category_id
         if ((formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') && formData.sub_category_id) {
           submitData.append('sub_category_id', formData.sub_category_id);
@@ -379,7 +379,7 @@ const BannerModal = ({ banner, onClose }) => {
         method: error.config?.method,
         baseURL: error.config?.baseURL,
       });
-      
+
       if (!error.response) {
         toast.error('Backend unavailable - Make sure the backend server is running on http://localhost:5000');
       } else if (error.response.status === 404) {
@@ -390,10 +390,10 @@ const BannerModal = ({ banner, onClose }) => {
       } else if (error.response.status === 400 || error.response.status === 422) {
         // Validation errors - show detailed message
         const errorData = error.response?.data || {};
-        const errorMessage = errorData.message || 
-                           errorData.errors?.[0]?.msg || 
-                           errorData.errors?.[0]?.message ||
-                           (Array.isArray(errorData.errors) ? errorData.errors.join(', ') : 'Validation failed');
+        const errorMessage = errorData.message ||
+          errorData.errors?.[0]?.msg ||
+          errorData.errors?.[0]?.message ||
+          (Array.isArray(errorData.errors) ? errorData.errors.join(', ') : 'Validation failed');
         toast.error(errorMessage);
       } else if (error.response.status === 413) {
         toast.error('File too large. Please select a smaller image file.');
@@ -402,18 +402,18 @@ const BannerModal = ({ banner, onClose }) => {
       } else {
         // Try to extract error message from various possible response structures
         const errorData = error.response?.data || {};
-        let errorMessage = errorData.message || 
-                          errorData.error || 
-                          errorData.errors?.[0]?.msg ||
-                          errorData.errors?.[0]?.message ||
-                          'Failed to save banner';
-        
+        let errorMessage = errorData.message ||
+          errorData.error ||
+          errorData.errors?.[0]?.msg ||
+          errorData.errors?.[0]?.message ||
+          'Failed to save banner';
+
         // Check if it's a file upload error
         const errorString = JSON.stringify(errorData).toLowerCase();
         if (errorString.includes('upload') || errorString.includes('file') || errorString.includes('image')) {
           errorMessage = errorData.message || 'File upload failed. Please try again or contact administrator.';
         }
-        
+
         toast.error(errorMessage);
       }
     } finally {
@@ -422,8 +422,8 @@ const BannerModal = ({ banner, onClose }) => {
   };
 
   const modalContent = (
-    <div 
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" 
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
       style={{ zIndex: 9999 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -431,8 +431,8 @@ const BannerModal = ({ banner, onClose }) => {
         }
       }}
     >
-      <div 
-        className="bg-white/95 backdrop-blur-xl rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200/50 relative" 
+      <div
+        className="bg-white/95 backdrop-blur-xl rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200/50 relative"
         style={{ zIndex: 10000 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -442,8 +442,8 @@ const BannerModal = ({ banner, onClose }) => {
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
             >
               <FiX className="w-6 h-6" />

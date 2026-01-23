@@ -51,7 +51,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
       } else if (lensColor.lens_finish_id || lensColor.lensFinishId) {
         parentType = 'lens_finish';
       }
-      
+
       setFormData({
         parent_type: parentType,
         lens_option_id: lensColor.lens_option_id || lensColor.lensOptionId || '',
@@ -107,7 +107,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
     try {
       const response = await api.get(`${API_ROUTES.ADMIN.LENS_FINISHES.LIST}?page=1&limit=1000`);
       let lensFinishesData = [];
-      
+
       if (response.data) {
         if (response.data.data) {
           const dataObj = response.data.data;
@@ -136,7 +136,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
           }
         }
       }
-      
+
       if (Array.isArray(lensFinishesData)) {
         setLensFinishes(lensFinishesData);
       }
@@ -150,7 +150,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
     try {
       const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.LIST}?page=1&limit=1000`);
       let prescriptionLensTypesData = [];
-      
+
       if (response.data) {
         if (response.data.data) {
           const dataObj = response.data.data;
@@ -175,7 +175,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
           }
         }
       }
-      
+
       if (Array.isArray(prescriptionLensTypesData)) {
         setPrescriptionLensTypes(prescriptionLensTypesData);
       }
@@ -191,7 +191,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
       // Fetch with high limit to get all records
       const response = await api.get(`${API_ROUTES.ADMIN.LENS_OPTIONS.LIST}?page=1&limit=1000`);
       console.log('Lens options API Response (Modal):', JSON.stringify(response.data, null, 2));
-      
+
       // Handle various response structures from the API
       // Possible formats:
       // 1. { success: true, data: { lensOptions: [...], pagination: {...} } }
@@ -201,16 +201,16 @@ const LensColorModal = ({ lensColor, onClose }) => {
       // 5. { data: [...], pagination: {...} }
       // 6. [...] (direct array)
       let lensOptionsData = [];
-      
+
       if (response.data) {
         // Check for nested data structure
         if (response.data.data) {
           const dataObj = response.data.data;
-          
+
           // If data is directly an array
           if (Array.isArray(dataObj)) {
             lensOptionsData = dataObj;
-          } 
+          }
           // Check for various property names in nested data
           else if (dataObj.lensOptions && Array.isArray(dataObj.lensOptions)) {
             lensOptionsData = dataObj.lensOptions;
@@ -221,11 +221,11 @@ const LensColorModal = ({ lensColor, onClose }) => {
           } else if (dataObj.results && Array.isArray(dataObj.results)) {
             lensOptionsData = dataObj.results;
           }
-        } 
+        }
         // Check if response.data is directly an array
         else if (Array.isArray(response.data)) {
           lensOptionsData = response.data;
-        } 
+        }
         // Check for various property names at root level
         else {
           if (response.data.lensOptions && Array.isArray(response.data.lensOptions)) {
@@ -239,10 +239,10 @@ const LensColorModal = ({ lensColor, onClose }) => {
           }
         }
       }
-      
+
       console.log('Parsed lens options (Modal):', lensOptionsData);
       console.log('Parsed lens options count:', lensOptionsData.length);
-      
+
       if (Array.isArray(lensOptionsData)) {
         setLensOptions(lensOptionsData);
         if (lensOptionsData.length === 0) {
@@ -277,11 +277,11 @@ const LensColorModal = ({ lensColor, onClose }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (value === '' ? '' : parseFloat(value) || '') : value;
-    
+
     // When parent type changes, clear the other parent IDs
     if (name === 'parent_type') {
-      setFormData({ 
-        ...formData, 
+      setFormData({
+        ...formData,
         parent_type: fieldValue,
         lens_option_id: '',
         lens_finish_id: '',
@@ -302,7 +302,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
         e.target.value = '';
         return;
       }
-      
+
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
@@ -310,7 +310,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
         e.target.value = '';
         return;
       }
-      
+
       if (colorIndex !== null) {
         // Update specific color's image
         const updatedColors = [...colors];
@@ -360,7 +360,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate that at least one parent is selected
     let parentId = null;
     if (formData.parent_type === 'lens_option' && formData.lens_option_id) {
@@ -370,7 +370,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
     } else if (formData.parent_type === 'prescription_lens_type' && formData.prescription_lens_type_id) {
       parentId = formData.prescription_lens_type_id;
     }
-    
+
     if (!parentId) {
       toast.error(`Please select a ${formData.parent_type === 'lens_option' ? 'lens option' : formData.parent_type === 'lens_finish' ? 'lens finish' : 'prescription lens type'}`);
       return;
@@ -384,13 +384,13 @@ const LensColorModal = ({ lensColor, onClose }) => {
       // At least one field should be filled
       return name !== '' || colorCode !== '' || hexCode !== '';
     });
-    
+
     if (validColors.length === 0) {
       toast.error('Please add at least one color');
       setLoading(false);
       return;
     }
-    
+
     // Validate hex codes
     const invalidHexCodes = validColors.filter(color => {
       const hex = color.hex_code || '';
@@ -400,14 +400,14 @@ const LensColorModal = ({ lensColor, onClose }) => {
       toast.error('Please enter valid hex codes (format: #RRGGBB, e.g., #483232)');
       return;
     }
-    
+
     setLoading(true);
 
     try {
       // If editing single color, use legacy approach
       if (lensColor) {
         const formDataToSend = new FormData();
-        
+
         // Add the appropriate parent ID based on parent_type
         if (formData.parent_type === 'lens_option') {
           formDataToSend.append('lens_option_id', parseInt(formData.lens_option_id, 10));
@@ -422,11 +422,11 @@ const LensColorModal = ({ lensColor, onClose }) => {
           formDataToSend.append('lens_finish_id', '');
           formDataToSend.append('prescription_lens_type_id', parseInt(formData.prescription_lens_type_id, 10));
         }
-        
+
         // Use defaults if empty
         let name = (validColors[0].name || '').toString().trim();
         let colorCode = (validColors[0].color_code || '').toString().trim();
-        
+
         // Apply defaults if empty
         if (!name || name.length === 0) {
           name = 'Color';
@@ -434,14 +434,14 @@ const LensColorModal = ({ lensColor, onClose }) => {
         if (!colorCode || colorCode.length === 0) {
           colorCode = 'COLOR';
         }
-        
+
         formDataToSend.append('name', name);
         formDataToSend.append('color_code', colorCode);
         formDataToSend.append('hex_code', validColors[0].hex_code || '#000000');
         formDataToSend.append('price_adjustment', parseFloat(validColors[0].price_adjustment) || 0);
         formDataToSend.append('is_active', formData.is_active);
         formDataToSend.append('sort_order', parseInt(formData.sort_order, 10) || 0);
-        
+
         if (validColors[0].imageFile) {
           formDataToSend.append('image', validColors[0].imageFile);
         } else if (formData.image_url) {
@@ -451,7 +451,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
         const response = await api.put(API_ROUTES.ADMIN.LENS_COLORS.UPDATE(lensColor.id), formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        
+
         if (response.data?.success) {
           toast.success(response.data.message || 'Lens color updated successfully');
         } else {
@@ -469,7 +469,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
             // Extract values - use defaults if empty or whitespace
             let name = (color.name || '').toString().trim();
             let colorCode = (color.color_code || '').toString().trim();
-            
+
             // Apply defaults if empty - ensure we always have valid values
             if (!name || name.length === 0) {
               name = `Color ${i + 1}`;
@@ -477,11 +477,11 @@ const LensColorModal = ({ lensColor, onClose }) => {
             if (!colorCode || colorCode.length === 0) {
               colorCode = `COLOR_${i + 1}`;
             }
-            
+
             // Trim final values
             name = name.trim();
             colorCode = colorCode.trim();
-            
+
             // Ensure we have valid non-empty strings
             if (!name || name.length === 0) {
               name = `Color ${i + 1}`;
@@ -489,12 +489,12 @@ const LensColorModal = ({ lensColor, onClose }) => {
             if (!colorCode || colorCode.length === 0) {
               colorCode = `COLOR_${i + 1}`;
             }
-            
+
             // Determine parent IDs based on parent_type
             let lensOptionId = null;
             let lensFinishId = null;
             let prescriptionLensTypeId = null;
-            
+
             if (formData.parent_type === 'lens_option') {
               lensOptionId = parseInt(formData.lens_option_id, 10);
               if (!lensOptionId || isNaN(lensOptionId)) {
@@ -511,7 +511,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
                 throw new Error(`Invalid prescription_lens_type_id: ${formData.prescription_lens_type_id}`);
               }
             }
-            
+
             // Prepare data object
             const dataToSend = {
               lens_option_id: lensOptionId,
@@ -524,7 +524,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
               is_active: formData.is_active !== false,
               sort_order: parseInt(formData.sort_order, 10) || 0
             };
-            
+
             // If there's an image file, use FormData, otherwise use JSON
             let response;
             if (color.imageFile) {
@@ -539,20 +539,20 @@ const LensColorModal = ({ lensColor, onClose }) => {
               formDataToSend.append('is_active', String(formData.is_active !== false));
               formDataToSend.append('sort_order', String(parseInt(formData.sort_order, 10) || 0));
               formDataToSend.append('image', color.imageFile);
-              
+
               // Log FormData contents
               const formDataObj = {};
               for (const [key, value] of formDataToSend.entries()) {
                 formDataObj[key] = value instanceof File ? `[File: ${value.name}]` : value;
               }
               console.log(`Creating color ${i + 1} with image (FormData):`, formDataObj);
-              
+
               response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, formDataToSend, {
                 headers: { 'Content-Type': 'multipart/form-data' }
               });
             } else {
               console.log(`Creating color ${i + 1} without image (JSON):`, JSON.stringify(dataToSend, null, 2));
-              
+
               response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, dataToSend, {
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -570,7 +570,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
               headers: error.config?.headers,
               data: error.config?.data
             });
-            
+
             // Extract detailed error message
             let errorMessage = `Failed to create color ${i + 1}`;
             if (error.response?.data) {
@@ -595,7 +595,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
                 errorMessage = JSON.stringify(error.response.data);
               }
             }
-            
+
             console.error('Final error message:', errorMessage);
             toast.error(errorMessage);
             errorCount++;
@@ -636,8 +636,8 @@ const LensColorModal = ({ lensColor, onClose }) => {
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
-            <button 
-              onClick={() => onClose(false)} 
+            <button
+              onClick={() => onClose(false)}
               className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
               aria-label="Close"
             >
@@ -681,10 +681,10 @@ const LensColorModal = ({ lensColor, onClose }) => {
                 disabled={loadingOptions || lensOptions.length === 0}
               >
                 <option value="">
-                  {loadingOptions 
-                    ? 'Loading options...' 
-                    : lensOptions.length === 0 
-                      ? 'No lens options available' 
+                  {loadingOptions
+                    ? 'Loading options...'
+                    : lensOptions.length === 0
+                      ? 'No lens options available'
                       : 'Select lens option'}
                 </option>
                 {lensOptions.map((option) => (
@@ -718,8 +718,8 @@ const LensColorModal = ({ lensColor, onClose }) => {
                 disabled={lensFinishes.length === 0}
               >
                 <option value="">
-                  {lensFinishes.length === 0 
-                    ? 'No lens finishes available' 
+                  {lensFinishes.length === 0
+                    ? 'No lens finishes available'
                     : 'Select lens finish'}
                 </option>
                 {lensFinishes.map((finish) => (
@@ -750,8 +750,8 @@ const LensColorModal = ({ lensColor, onClose }) => {
                 disabled={prescriptionLensTypes.length === 0}
               >
                 <option value="">
-                  {prescriptionLensTypes.length === 0 
-                    ? 'No prescription lens types available' 
+                  {prescriptionLensTypes.length === 0
+                    ? 'No prescription lens types available'
                     : 'Select prescription lens type'}
                 </option>
                 {prescriptionLensTypes.map((type) => (
@@ -858,21 +858,21 @@ const LensColorModal = ({ lensColor, onClose }) => {
                       value={color.hex_code}
                       onChange={(e) => {
                         let value = e.target.value;
-                        
+
                         // Remove any existing # to start fresh
                         value = value.replace(/#/g, '');
-                        
+
                         // Only allow hex characters (0-9, A-F, a-f)
                         value = value.replace(/[^0-9A-Fa-f]/g, '');
-                        
+
                         // Limit to 6 hex digits
                         if (value.length > 6) {
                           value = value.substring(0, 6);
                         }
-                        
+
                         // Always add # prefix
                         value = value.length > 0 ? '#' + value : '#';
-                        
+
                         handleColorChange(index, 'hex_code', value);
                       }}
                       onBlur={(e) => {

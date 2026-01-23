@@ -70,34 +70,34 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 left_cylinder: Array.isArray(config.left_cylinder) ? config.left_cylinder.map(String) : [],
                 left_axis: Array.isArray(config.left_axis) ? config.left_axis.map(String) : [],
             });
-            
+
             // Load unit_prices and unit_images if they exist
             if (config.unit_prices && typeof config.unit_prices === 'object') {
                 // Convert all values to numbers
                 const prices = {};
                 Object.keys(config.unit_prices).forEach(key => {
-                    prices[String(key)] = typeof config.unit_prices[key] === 'number' 
-                        ? config.unit_prices[key] 
+                    prices[String(key)] = typeof config.unit_prices[key] === 'number'
+                        ? config.unit_prices[key]
                         : parseFloat(config.unit_prices[key]) || 0;
                 });
                 setUnitPrices(prices);
             } else {
                 setUnitPrices({});
             }
-            
+
             if (config.unit_images && typeof config.unit_images === 'object') {
                 // Ensure all values are arrays
                 const images = {};
                 Object.keys(config.unit_images).forEach(key => {
-                    images[String(key)] = Array.isArray(config.unit_images[key]) 
-                        ? config.unit_images[key] 
+                    images[String(key)] = Array.isArray(config.unit_images[key])
+                        ? config.unit_images[key]
                         : [];
                 });
                 setUnitImages(images);
             } else {
                 setUnitImages({});
             }
-            
+
             setUseBackendCopy(false); // Reset when editing existing config
             setUnitImageFiles({}); // Reset image files
             setUnitImagePreviews({}); // Reset image previews
@@ -135,20 +135,20 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             // Filter to only include sub-subcategories (those with parent_id)
             // Also ensure we have parent information for display
             const subSubCategories = subCategoriesData.filter(subCat => {
-                const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
-                                subCat.parentId || 
-                                subCat.parent_subcategory_id || 
-                                subCat.parentSubcategoryId;
+                const parentId = subCat.parent_id !== undefined ? subCat.parent_id :
+                    subCat.parentId ||
+                    subCat.parent_subcategory_id ||
+                    subCat.parentSubcategoryId;
                 return parentId !== null && parentId !== undefined && parentId !== '';
             });
 
             // Create a map of parent IDs to names for quick lookup
             const parentMap = {};
             subSubCategories.forEach(subCat => {
-                const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
-                                subCat.parentId || 
-                                subCat.parent_subcategory_id || 
-                                subCat.parentSubcategoryId;
+                const parentId = subCat.parent_id !== undefined ? subCat.parent_id :
+                    subCat.parentId ||
+                    subCat.parent_subcategory_id ||
+                    subCat.parentSubcategoryId;
                 if (parentId && subCat.parent?.name) {
                     parentMap[parentId] = subCat.parent.name;
                 }
@@ -158,12 +158,12 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             if (Object.keys(parentMap).length === 0 && subSubCategories.length > 0) {
                 try {
                     const parentIds = [...new Set(subSubCategories.map(subCat => {
-                        return subCat.parent_id !== undefined ? subCat.parent_id : 
-                               subCat.parentId || 
-                               subCat.parent_subcategory_id || 
-                               subCat.parentSubcategoryId;
+                        return subCat.parent_id !== undefined ? subCat.parent_id :
+                            subCat.parentId ||
+                            subCat.parent_subcategory_id ||
+                            subCat.parentSubcategoryId;
                     }).filter(id => id))];
-                    
+
                     // Fetch parent subcategories
                     const parentResponse = await api.get(`${API_ROUTES.ADMIN.SUBCATEGORIES.TOP_LEVEL}?page=1&limit=1000`);
                     let parentData = [];
@@ -177,7 +177,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                             parentData = dataObj.topLevelSubcategories;
                         }
                     }
-                    
+
                     parentData.forEach(parent => {
                         if (parentIds.includes(parent.id)) {
                             parentMap[parent.id] = parent.name;
@@ -192,10 +192,10 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             setSubCategories(subSubCategories.map(subCat => ({
                 ...subCat,
                 _parentName: (() => {
-                    const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
-                                    subCat.parentId || 
-                                    subCat.parent_subcategory_id || 
-                                    subCat.parentSubcategoryId;
+                    const parentId = subCat.parent_id !== undefined ? subCat.parent_id :
+                        subCat.parentId ||
+                        subCat.parent_subcategory_id ||
+                        subCat.parentSubcategoryId;
                     return subCat.parent?.name || parentMap[parentId] || null;
                 })()
             })));
@@ -211,10 +211,10 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                         fallbackData = dataObj.nestedSubcategories;
                     } else if (dataObj.subcategories && Array.isArray(dataObj.subcategories)) {
                         fallbackData = dataObj.subcategories.filter(subCat => {
-                            const parentId = subCat.parent_id !== undefined ? subCat.parent_id : 
-                                            subCat.parentId || 
-                                            subCat.parent_subcategory_id || 
-                                            subCat.parentSubcategoryId;
+                            const parentId = subCat.parent_id !== undefined ? subCat.parent_id :
+                                subCat.parentId ||
+                                subCat.parent_subcategory_id ||
+                                subCat.parentSubcategoryId;
                             return parentId !== null && parentId !== undefined && parentId !== '';
                         });
                     }
@@ -237,7 +237,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             setLoadingProducts(true);
             // Find the selected subcategory to get category_id
             const selectedSubCat = subCategories.find(sc => sc.id === subCategoryId || sc.id === parseInt(subCategoryId));
-            
+
             if (!selectedSubCat) {
                 setProducts([]);
                 return;
@@ -245,13 +245,13 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
 
             // Get category_id from subcategory
             const categoryId = selectedSubCat.category_id || selectedSubCat.categoryId || selectedSubCat.category?.id;
-            
+
             // Check if this is a sub-subcategory (has parent_id)
-            const parentId = selectedSubCat.parent_id !== undefined ? selectedSubCat.parent_id : 
-                            selectedSubCat.parentId || 
-                            selectedSubCat.parent_subcategory_id || 
-                            selectedSubCat.parentSubcategoryId;
-            
+            const parentId = selectedSubCat.parent_id !== undefined ? selectedSubCat.parent_id :
+                selectedSubCat.parentId ||
+                selectedSubCat.parent_subcategory_id ||
+                selectedSubCat.parentSubcategoryId;
+
             // Build query parameters
             const params = new URLSearchParams();
             if (categoryId) params.append('category_id', categoryId);
@@ -264,7 +264,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             }
 
             const response = await api.get(`${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.PRODUCTS}?${params.toString()}`);
-            
+
             let productsData = [];
             if (response.data?.data?.products) {
                 productsData = response.data.data.products;
@@ -294,14 +294,14 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
         const { name, value, type, checked } = e.target;
         // Keep price as number, but others can be strings if needed
         const fieldValue = type === 'checkbox' ? checked : type === 'number' ? (value === '' ? '' : parseFloat(value)) : value;
-        
+
         const newFormData = { ...formData, [name]: fieldValue };
-        
+
         // If sub_category_id changes, reset product_id (products will be fetched by useEffect)
         if (name === 'sub_category_id') {
             newFormData.product_id = ''; // Reset product when category changes
         }
-        
+
         setFormData(newFormData);
     };
 
@@ -378,7 +378,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             } else if (submitData.product_id) {
                 submitData.product_id = parseInt(submitData.product_id);
             }
-            
+
             console.log('📤 Submitting astigmatism config with product_id:', submitData.product_id);
 
             // Add backend copy flag if user clicked copy button
@@ -390,8 +390,8 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             // Convert unit_prices values to numbers and filter out empty/zero values
             const validUnitPrices = {};
             Object.keys(unitPrices).forEach(unit => {
-                const price = typeof unitPrices[unit] === 'number' 
-                    ? unitPrices[unit] 
+                const price = typeof unitPrices[unit] === 'number'
+                    ? unitPrices[unit]
                     : parseFloat(unitPrices[unit]);
                 if (price && price > 0) {
                     validUnitPrices[unit] = price;
@@ -402,7 +402,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             }
 
             // Check if we have any files to upload
-            const hasUnitImageFiles = Object.keys(unitImageFiles).some(unit => 
+            const hasUnitImageFiles = Object.keys(unitImageFiles).some(unit =>
                 unitImageFiles[unit] && unitImageFiles[unit].length > 0
             );
 
@@ -440,7 +440,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 // Add existing unit_images URLs as JSON (for units without new files)
                 const validUnitImages = {};
                 Object.keys(unitImages).forEach(unit => {
-                    const images = Array.isArray(unitImages[unit]) 
+                    const images = Array.isArray(unitImages[unit])
                         ? unitImages[unit].filter(img => img && img.trim() !== '')
                         : [];
                     if (images.length > 0) {
@@ -487,7 +487,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 // No files, use JSON (existing URLs only)
                 const validUnitImages = {};
                 Object.keys(unitImages).forEach(unit => {
-                    const images = Array.isArray(unitImages[unit]) 
+                    const images = Array.isArray(unitImages[unit])
                         ? unitImages[unit].filter(img => img && img.trim() !== '')
                         : [];
                     if (images.length > 0) {
@@ -642,11 +642,11 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                             >
                                 <option value="">Select Sub Sub Category</option>
                                 {subCategories.map((subCat) => {
-                                    const parentName = subCat._parentName || 
-                                                      subCat.parent?.name || 
-                                                      'Unknown Parent';
-                                    const displayName = parentName && parentName !== 'Unknown Parent' 
-                                        ? `${parentName} > ${subCat.name}` 
+                                    const parentName = subCat._parentName ||
+                                        subCat.parent?.name ||
+                                        'Unknown Parent';
+                                    const displayName = parentName && parentName !== 'Unknown Parent'
+                                        ? `${parentName} > ${subCat.name}`
                                         : subCat.name;
                                     return (
                                         <option key={subCat.id} value={subCat.id}>
@@ -751,7 +751,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                         <h3 className="text-lg font-bold text-gray-900 mb-4">Available Units (Pack Sizes)</h3>
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                             <p className="text-sm text-yellow-800">
-                                <strong>📦 Important:</strong> Units represent pack sizes (e.g., 10, 20, 30 lenses per pack) and are <strong>independent</strong> from qty fields. 
+                                <strong>📦 Important:</strong> Units represent pack sizes (e.g., 10, 20, 30 lenses per pack) and are <strong>independent</strong> from qty fields.
                                 Qty is used for right/left eye quantity selection in the form, while units control pack size, pricing, and images.
                             </p>
                         </div>
@@ -776,7 +776,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                                     </ol>
                                     <div className="mt-3 pt-3 border-t border-blue-200">
                                         <p className="text-xs text-gray-600">
-                                            <strong>Fallback:</strong> If a unit doesn't have a specific price, the base price will be used. 
+                                            <strong>Fallback:</strong> If a unit doesn't have a specific price, the base price will be used.
                                             If no unit-specific images are set, product or config images will be used.
                                         </p>
                                     </div>
@@ -787,7 +787,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                         {/* Get unique units from available_units */}
                         {(() => {
                             const units = [...new Set(formData.available_units.filter(unit => unit && unit.trim() !== ''))];
-                            
+
                             if (units.length === 0) {
                                 return (
                                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -919,7 +919,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                                                                     ))}
                                                                 </div>
                                                             )}
-                                                            
+
                                                             {/* Display file previews */}
                                                             {unitImagePreviews[unitKey] && unitImagePreviews[unitKey].length > 0 && (
                                                                 <div className="flex flex-wrap gap-2 mb-2">
@@ -1013,7 +1013,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                                             </div>
                                         );
                                     })}
-                                    
+
                                     {/* Website Flow Info */}
                                     <div className="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
                                         <div className="flex items-start gap-3">
@@ -1040,19 +1040,19 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                                         </div>
                                         <div className="bg-gray-800 rounded p-3 overflow-x-auto">
                                             <pre className="text-xs font-mono">
-{JSON.stringify({
-  available_units: formData.available_units.filter(v => v !== '').map(v => parseInt(v) || v),
-  unit_prices: Object.keys(unitPrices).reduce((acc, key) => {
-      const price = typeof unitPrices[key] === 'number' ? unitPrices[key] : parseFloat(unitPrices[key]);
-      if (price && price > 0) acc[key] = price;
-      return acc;
-  }, {}),
-  unit_images: Object.keys(unitImages).reduce((acc, key) => {
-      const images = Array.isArray(unitImages[key]) ? unitImages[key].filter(img => img && img.trim() !== '') : [];
-      if (images.length > 0) acc[key] = images;
-      return acc;
-  }, {})
-}, null, 2)}
+                                                {JSON.stringify({
+                                                    available_units: formData.available_units.filter(v => v !== '').map(v => parseInt(v) || v),
+                                                    unit_prices: Object.keys(unitPrices).reduce((acc, key) => {
+                                                        const price = typeof unitPrices[key] === 'number' ? unitPrices[key] : parseFloat(unitPrices[key]);
+                                                        if (price && price > 0) acc[key] = price;
+                                                        return acc;
+                                                    }, {}),
+                                                    unit_images: Object.keys(unitImages).reduce((acc, key) => {
+                                                        const images = Array.isArray(unitImages[key]) ? unitImages[key].filter(img => img && img.trim() !== '') : [];
+                                                        if (images.length > 0) acc[key] = images;
+                                                        return acc;
+                                                    }, {})
+                                                }, null, 2)}
                                             </pre>
                                         </div>
                                         <p className="text-xs text-gray-400 mt-2">

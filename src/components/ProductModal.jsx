@@ -76,7 +76,7 @@ const getColorNameFromHex = (hexCode) => {
 
 const ProductModal = ({ product, onClose }) => {
   const { t } = useI18n();
-  
+
   // Helper function to handle lens management modal close with refresh
   // saved: true if form was saved successfully, false/undefined if cancelled/closed
   const handleLensManagementClose = (modalType) => {
@@ -97,11 +97,11 @@ const ProductModal = ({ product, onClose }) => {
         'prescriptionLensType': [setPrescriptionLensTypeModalOpen, setSelectedPrescriptionLensType],
         'prescriptionDropdown': [setPrescriptionDropdownModalOpen, setSelectedPrescriptionDropdown],
       };
-      
+
       const [setModalOpen, setSelected] = modalStateSetters[modalType] || [null, null];
       if (setModalOpen) setModalOpen(false);
       if (setSelected) setSelected(null);
-      
+
       // Always refresh data when modal closes (whether saved or cancelled)
       // This ensures the table is up-to-date with the latest data and stays on the same page
       if (saved) {
@@ -153,7 +153,7 @@ const ProductModal = ({ product, onClose }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
   const [productTypeManuallySet, setProductTypeManuallySet] = useState(false); // Track if user manually set product_type
-  
+
   // Lens Management tables state
   const [frameSizes, setFrameSizes] = useState([]);
   const [lensTypesList, setLensTypesList] = useState([]);
@@ -168,14 +168,14 @@ const ProductModal = ({ product, onClose }) => {
   const [thicknessOptions, setThicknessOptions] = useState([]);
   const [prescriptionLensTypes, setPrescriptionLensTypes] = useState([]);
   const [lensVariants, setLensVariants] = useState([]);
-  
+
   // Size/Volume Variants state for Eye Hygiene products
   const [sizeVolumeVariants, setSizeVolumeVariants] = useState([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [editingVariant, setEditingVariant] = useState(null);
   const [variantModalOpen, setVariantModalOpen] = useState(false);
   const [SizeVolumeVariantModalComponent, setSizeVolumeVariantModalComponent] = useState(null);
-  
+
   // Dynamically load SizeVolumeVariantModal component when needed
   useEffect(() => {
     if (variantModalOpen && !SizeVolumeVariantModalComponent) {
@@ -189,9 +189,9 @@ const ProductModal = ({ product, onClose }) => {
     }
   }, [variantModalOpen, SizeVolumeVariantModalComponent]);
   const [prescriptionDropdownValues, setPrescriptionDropdownValues] = useState([]);
-  
+
   const [loadingLensManagement, setLoadingLensManagement] = useState({});
-  
+
   // Modal states for lens management
   const [frameSizeModalOpen, setFrameSizeModalOpen] = useState(false);
   const [lensTypeModalOpen, setLensTypeModalOpen] = useState(false);
@@ -206,7 +206,7 @@ const ProductModal = ({ product, onClose }) => {
   const [thicknessOptionModalOpen, setThicknessOptionModalOpen] = useState(false);
   const [prescriptionLensTypeModalOpen, setPrescriptionLensTypeModalOpen] = useState(false);
   const [prescriptionDropdownModalOpen, setPrescriptionDropdownModalOpen] = useState(false);
-  
+
   const [selectedFrameSize, setSelectedFrameSize] = useState(null);
   const [selectedLensType, setSelectedLensType] = useState(null);
   const [selectedLensOption, setSelectedLensOption] = useState(null);
@@ -220,7 +220,7 @@ const ProductModal = ({ product, onClose }) => {
   const [selectedThicknessOption, setSelectedThicknessOption] = useState(null);
   const [selectedPrescriptionLensType, setSelectedPrescriptionLensType] = useState(null);
   const [selectedPrescriptionDropdown, setSelectedPrescriptionDropdown] = useState(null);
-  
+
   // Contact Lens Configuration state
   const [sphericalConfigs, setSphericalConfigs] = useState([]);
   const [astigmatismConfigs, setAstigmatismConfigs] = useState([]);
@@ -230,10 +230,10 @@ const ProductModal = ({ product, onClose }) => {
   const [astigmatismModalOpen, setAstigmatismModalOpen] = useState(false);
   const [selectedSphericalConfig, setSelectedSphericalConfig] = useState(null);
   const [selectedAstigmatismConfig, setSelectedAstigmatismConfig] = useState(null);
-  
+
   // Local state for current product (updated after save to allow config creation)
   const [currentProduct, setCurrentProduct] = useState(product);
-  
+
   const [imageFiles, setImageFiles] = useState([]); // Newly uploaded general images (File objects)
   const [imagePreviews, setImagePreviews] = useState([]); // All general image previews (URLs + new file previews)
   const [existingImages, setExistingImages] = useState([]); // Existing image URLs from product (for deletion tracking)
@@ -250,19 +250,19 @@ const ProductModal = ({ product, onClose }) => {
   // Helper function to check if a subcategory is a sub-subcategory and set form correctly
   const checkAndSetSubSubCategory = async (subCategoryId) => {
     if (!subCategoryId) return;
-    
+
     try {
       // Fetch the subcategory to check if it has a parent (is a sub-subcategory)
       const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(subCategoryId));
       const subCatData = response.data?.data?.subcategory || response.data?.data || response.data?.subcategory || response.data || {};
-      
+
       // Check if this subcategory has a parent (is a sub-subcategory)
-      const parentId = subCatData.parent_id !== undefined ? subCatData.parent_id : 
-                       subCatData.parentId || 
-                       subCatData.parent_subcategory_id || 
-                       subCatData.parentSubcategoryId ||
-                       subCatData.parent?.id;
-      
+      const parentId = subCatData.parent_id !== undefined ? subCatData.parent_id :
+        subCatData.parentId ||
+        subCatData.parent_subcategory_id ||
+        subCatData.parentSubcategoryId ||
+        subCatData.parent?.id;
+
       if (parentId && parentId !== null && parentId !== '') {
         // This is a sub-subcategory - set parent as sub_category_id and this as parent_subcategory_id
         // The useEffect will automatically fetch nested subcategories when sub_category_id changes
@@ -288,18 +288,18 @@ const ProductModal = ({ product, onClose }) => {
     console.log('🔄 product prop:', product);
     console.log('🔄 product?.id:', product?.id);
     console.log('🔄 product?.name:', product?.name);
-    
+
     fetchProductOptions();
     // Reset manual flag when product changes (loading existing product or creating new)
     setProductTypeManuallySet(false);
-    
+
     // Fetch full product details when editing to ensure we have all fields (SEO, etc.)
     // Use admin endpoint GET /api/admin/products/:id to get complete product data
     const fetchFullProductDetails = async () => {
       console.log('🔍 fetchFullProductDetails called - product:', product);
       console.log('🔍 product?.id:', product?.id);
       console.log('🔍 product?.id type:', typeof product?.id);
-      
+
       if (product && product.id) {
         try {
           const productId = product.id;
@@ -308,14 +308,14 @@ const ProductModal = ({ product, onClose }) => {
           console.log('🔍 API Endpoint URL:', endpoint);
           console.log('🔍 Full API_ROUTES.ADMIN.PRODUCTS:', API_ROUTES.ADMIN.PRODUCTS);
           console.log('🔍 Making API call now...');
-          
+
           // Fetch full product details using admin endpoint (GET /api/admin/products/:id)
           // This ensures we get all fields including SEO and complete image data
           // Per Postman collection: GET /api/admin/products/:id returns complete product with all fields
           const fullProductResponse = await api.get(endpoint);
-          
+
           console.log('✅ API call completed! Response received:', fullProductResponse);
-          
+
           console.log('📦 Full API Response:', fullProductResponse);
           console.log('📦 Response Data:', fullProductResponse.data);
           console.log('📦 Response Structure:', {
@@ -325,19 +325,19 @@ const ProductModal = ({ product, onClose }) => {
             responseKeys: Object.keys(fullProductResponse.data || {}),
             dataKeys: Object.keys(fullProductResponse.data?.data || {}),
           });
-          
-          const fullProductData = fullProductResponse.data?.data?.product || 
-                                 fullProductResponse.data?.product || 
-                                 fullProductResponse.data?.data ||
-                                 fullProductResponse.data;
-          
+
+          const fullProductData = fullProductResponse.data?.data?.product ||
+            fullProductResponse.data?.product ||
+            fullProductResponse.data?.data ||
+            fullProductResponse.data;
+
           if (fullProductData && fullProductData.id) {
             // Extract variants from product response (new API integration)
-            const variants = fullProductData.sizeVolumeVariants || 
-                           fullProductData.size_volume_variants || 
-                           fullProductData.variants || 
-                           [];
-            
+            const variants = fullProductData.sizeVolumeVariants ||
+              fullProductData.size_volume_variants ||
+              fullProductData.variants ||
+              [];
+
             // Store variants in state for separate management via dedicated endpoints
             if (Array.isArray(variants) && variants.length > 0) {
               console.log('📦 Found size/volume variants in product response:', variants.length);
@@ -351,7 +351,7 @@ const ProductModal = ({ product, onClose }) => {
                 });
               }
             }
-            
+
             // Remove variant-related fields from product data (variants managed separately via dedicated endpoints)
             const {
               variants: _variants,
@@ -361,7 +361,7 @@ const ProductModal = ({ product, onClose }) => {
               pack_type,
               ...cleanProductData
             } = fullProductData;
-            
+
             console.log('✅ Fetched full product details with all fields:', {
               productId: cleanProductData.id,
               productName: cleanProductData.name,
@@ -398,23 +398,23 @@ const ProductModal = ({ product, onClose }) => {
       }
       return product;
     };
-    
+
     // Load product data - fetch full details if editing, use product directly for new
     const loadProductData = async () => {
       console.log('🔄 loadProductData called - product:', product);
       console.log('🔄 product?.id:', product?.id);
       console.log('🔄 typeof product:', typeof product);
-      
+
       // Only fetch if product has an ID
       if (!product || !product.id) {
         console.warn('⚠️ Cannot load product data: product or product.id is missing');
         return;
       }
-      
+
       console.log('✅ Product ID found, calling fetchFullProductDetails...');
       const productToUse = await fetchFullProductDetails();
       console.log('🔄 productToUse after fetchFullProductDetails:', productToUse);
-      
+
       if (productToUse) {
         setFormData({
           name: productToUse.name || '',
@@ -428,10 +428,10 @@ const ProductModal = ({ product, onClose }) => {
           sub_category_id: productToUse.sub_category_id || productToUse.subcategory_id || '',
           parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
           frame_shape: productToUse.frame_shape || '',
-          frame_material: Array.isArray(productToUse.frame_material) 
-            ? productToUse.frame_material 
-            : productToUse.frame_material 
-              ? [productToUse.frame_material] 
+          frame_material: Array.isArray(productToUse.frame_material)
+            ? productToUse.frame_material
+            : productToUse.frame_material
+              ? [productToUse.frame_material]
               : [],
           frame_color: productToUse.frame_color || '',
           gender: productToUse.gender || '',
@@ -442,15 +442,15 @@ const ProductModal = ({ product, onClose }) => {
           product_type: (() => {
             // If product_type is missing or 'accessory', try to infer from category for eye hygiene
             let productType = productToUse.product_type;
-            
+
             // Check category name from multiple sources
             const productCategoryName = (
-              productToUse.category?.name || 
+              productToUse.category?.name ||
               productToUse.category_name ||
               ''
             ).toLowerCase().trim();
             const isEyeHygieneCategory = productCategoryName.includes('eye') && productCategoryName.includes('hygiene');
-            
+
             // If category is eye hygiene but product_type is 'accessory' (legacy) or missing, set to 'eye_hygiene'
             // This handles backward compatibility with products that were stored as 'accessory' before
             if (isEyeHygieneCategory && (!productType || productType === 'accessory')) {
@@ -461,7 +461,7 @@ const ProductModal = ({ product, onClose }) => {
                 finalProductType: productType
               });
             }
-            
+
             // Also check if we can infer from category_id if category name isn't available yet
             // Note: categories may not be loaded yet when editing, so we safely check for it
             // Use ref to access latest categories without adding to dependency array
@@ -482,7 +482,7 @@ const ProductModal = ({ product, onClose }) => {
                 }
               }
             }
-            
+
             return productType || 'frame';
           })(),
           meta_title: productToUse.meta_title || '',
@@ -492,93 +492,93 @@ const ProductModal = ({ product, onClose }) => {
           is_featured: productToUse.is_featured || false,
         });
         // Fetch subcategories if category is set
-      if (productToUse.category_id) {
-        if (fetchSubCategoriesRef.current) {
-          fetchSubCategoriesRef.current(productToUse.category_id);
-        }
-        // Check if the product's subcategory is a sub-subcategory (has a parent)
-        const productSubCategoryId = productToUse.sub_category_id || productToUse.subcategory_id;
-        if (productSubCategoryId && checkAndSetSubSubCategoryRef.current) {
-          // Check if this subcategory is a sub-subcategory and set form accordingly
-          checkAndSetSubSubCategoryRef.current(productSubCategoryId);
-        }
-      }
-      // Set existing images and previews if product has images array or image_url
-      // Track existing images separately for deletion support
-      let existingImageUrls = [];
-      if (productToUse.images && Array.isArray(productToUse.images) && productToUse.images.length > 0) {
-        existingImageUrls = productToUse.images.filter(img => img && typeof img === 'string');
-      } else if (productToUse.image || productToUse.image_url) {
-        existingImageUrls = [productToUse.image || productToUse.image_url].filter(Boolean);
-      }
-      setExistingImages(existingImageUrls);
-      setImagePreviews(existingImageUrls); // Start with existing images
-      // Reset imageFiles when editing - user must explicitly select new images to update them
-      setImageFiles([]);
-      
-      // Set 3D model preview if exists
-      if (productToUse.model_3d || productToUse.model3d || productToUse.model3D) {
-        const modelUrl = productToUse.model_3d || productToUse.model3d || productToUse.model3D;
-        setModel3DPreview(modelUrl);
-      } else {
-        setModel3DPreview(null);
-      }
-      setModel3DFile(null);
-      
-      // Set images with colors if exists (from product.color_images)
-      // Convert color_images object to imagesWithColors array format
-      // Also store the original structure for deletion tracking
-      if (productToUse.color_images && typeof productToUse.color_images === 'object') {
-        const imagesWithHexCodes = [];
-        let imageIdCounter = 0;
-        const existingColorImagesStructure = [];
-        
-        Object.keys(productToUse.color_images).forEach((key) => {
-          // Check if key is a hex code or color name
-          let hexCode = key;
-          if (!isValidHexCode(key)) {
-            // Old format: color name - convert to hex code
-            hexCode = getHexFromColorName(key) || key;
+        if (productToUse.category_id) {
+          if (fetchSubCategoriesRef.current) {
+            fetchSubCategoriesRef.current(productToUse.category_id);
           }
-          
-          const colorData = productToUse.color_images[key];
-          const imageUrls = Array.isArray(colorData?.images) ? colorData.images : 
-                           Array.isArray(colorData) ? colorData : 
-                           typeof colorData === 'string' ? [colorData] : [];
-          
-          // Store original structure for deletion tracking
-          if (imageUrls.length > 0) {
-            existingColorImagesStructure.push({
-              hexCode: hexCode.toUpperCase(),
-              name: colorData?.name || getColorNameFromHex(hexCode),
-              price: colorData?.price || null,
-              images: imageUrls.filter(url => url && typeof url === 'string')
-            });
+          // Check if the product's subcategory is a sub-subcategory (has a parent)
+          const productSubCategoryId = productToUse.sub_category_id || productToUse.subcategory_id;
+          if (productSubCategoryId && checkAndSetSubSubCategoryRef.current) {
+            // Check if this subcategory is a sub-subcategory and set form accordingly
+            checkAndSetSubSubCategoryRef.current(productSubCategoryId);
           }
-          
-          // Create entries for each image URL
-          imageUrls.forEach((imageUrl) => {
-            if (imageUrl && typeof imageUrl === 'string') {
-              imagesWithHexCodes.push({
-                id: `existing-${imageIdCounter++}`,
-                file: null, // Existing image, no file
-                preview: imageUrl,
+        }
+        // Set existing images and previews if product has images array or image_url
+        // Track existing images separately for deletion support
+        let existingImageUrls = [];
+        if (productToUse.images && Array.isArray(productToUse.images) && productToUse.images.length > 0) {
+          existingImageUrls = productToUse.images.filter(img => img && typeof img === 'string');
+        } else if (productToUse.image || productToUse.image_url) {
+          existingImageUrls = [productToUse.image || productToUse.image_url].filter(Boolean);
+        }
+        setExistingImages(existingImageUrls);
+        setImagePreviews(existingImageUrls); // Start with existing images
+        // Reset imageFiles when editing - user must explicitly select new images to update them
+        setImageFiles([]);
+
+        // Set 3D model preview if exists
+        if (productToUse.model_3d || productToUse.model3d || productToUse.model3D) {
+          const modelUrl = productToUse.model_3d || productToUse.model3d || productToUse.model3D;
+          setModel3DPreview(modelUrl);
+        } else {
+          setModel3DPreview(null);
+        }
+        setModel3DFile(null);
+
+        // Set images with colors if exists (from product.color_images)
+        // Convert color_images object to imagesWithColors array format
+        // Also store the original structure for deletion tracking
+        if (productToUse.color_images && typeof productToUse.color_images === 'object') {
+          const imagesWithHexCodes = [];
+          let imageIdCounter = 0;
+          const existingColorImagesStructure = [];
+
+          Object.keys(productToUse.color_images).forEach((key) => {
+            // Check if key is a hex code or color name
+            let hexCode = key;
+            if (!isValidHexCode(key)) {
+              // Old format: color name - convert to hex code
+              hexCode = getHexFromColorName(key) || key;
+            }
+
+            const colorData = productToUse.color_images[key];
+            const imageUrls = Array.isArray(colorData?.images) ? colorData.images :
+              Array.isArray(colorData) ? colorData :
+                typeof colorData === 'string' ? [colorData] : [];
+
+            // Store original structure for deletion tracking
+            if (imageUrls.length > 0) {
+              existingColorImagesStructure.push({
                 hexCode: hexCode.toUpperCase(),
-                isExisting: true
+                name: colorData?.name || getColorNameFromHex(hexCode),
+                price: colorData?.price || null,
+                images: imageUrls.filter(url => url && typeof url === 'string')
               });
             }
+
+            // Create entries for each image URL
+            imageUrls.forEach((imageUrl) => {
+              if (imageUrl && typeof imageUrl === 'string') {
+                imagesWithHexCodes.push({
+                  id: `existing-${imageIdCounter++}`,
+                  file: null, // Existing image, no file
+                  preview: imageUrl,
+                  hexCode: hexCode.toUpperCase(),
+                  isExisting: true
+                });
+              }
+            });
           });
-        });
-        
-        setExistingColorImages(existingColorImagesStructure);
-        setImagesWithColors(imagesWithHexCodes);
-      } else {
-        setExistingColorImages([]);
-        setImagesWithColors([]);
-      }
+
+          setExistingColorImages(existingColorImagesStructure);
+          setImagesWithColors(imagesWithHexCodes);
+        } else {
+          setExistingColorImages([]);
+          setImagesWithColors([]);
+        }
       }
     };
-    
+
     // Only fetch full product details if we have a product to edit WITH AN ID
     if (product && product.id) {
       console.log('📝 Product with ID found - Starting data load:', {
@@ -634,7 +634,7 @@ const ProductModal = ({ product, onClose }) => {
       setModel3DPreview(null);
       setImagesWithColors([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
 
   // Fetch nested subcategories when subcategory is selected
@@ -654,17 +654,17 @@ const ProductModal = ({ product, onClose }) => {
   useEffect(() => {
     // Don't auto-update if user manually set product_type (unless category just changed)
     // Reset the manual flag when category changes (handled in handleChange)
-    
+
     if (formData.category_id && categories.length > 0 && !productTypeManuallySet) {
-      const currentCategory = categories.find(cat => 
-        cat.id === parseInt(formData.category_id) || 
+      const currentCategory = categories.find(cat =>
+        cat.id === parseInt(formData.category_id) ||
         cat.id === formData.category_id ||
         String(cat.id) === String(formData.category_id)
       );
       if (currentCategory) {
         const categoryName = (currentCategory.name || '').toLowerCase().trim();
         const isEyeHygieneCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
-        
+
         // If it's an eye hygiene category but product_type is not set correctly, update it
         if (isEyeHygieneCategory && formData.product_type !== 'eye_hygiene') {
           console.log('🔍 Auto-updating product_type to "eye_hygiene" based on category', {
@@ -677,18 +677,18 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
     }
-    
+
     // Also check the product prop if it exists (for initial load - ignore manual flag for initial load)
     if (product && product.category_id && categories.length > 0 && !productTypeManuallySet) {
-      const productCategory = categories.find(cat => 
-        cat.id === product.category_id || 
+      const productCategory = categories.find(cat =>
+        cat.id === product.category_id ||
         cat.id === parseInt(product.category_id) ||
         String(cat.id) === String(product.category_id)
       );
       if (productCategory) {
         const categoryName = (productCategory.name || '').toLowerCase().trim();
         const isEyeHygieneCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
-        
+
         // If product is 'accessory' (legacy) or has eye hygiene category, update product_type to 'eye_hygiene'
         const isLegacyAccessory = product.product_type === 'accessory' || formData.product_type === 'accessory';
         if (isEyeHygieneCategory && (isLegacyAccessory || formData.product_type !== 'eye_hygiene')) {
@@ -703,7 +703,7 @@ const ProductModal = ({ product, onClose }) => {
       }
     }
   }, [formData.category_id, categories, product]);
-  
+
   // Reset manual flag when category changes (so auto-update can work again for new category)
   useEffect(() => {
     setProductTypeManuallySet(false);
@@ -714,18 +714,18 @@ const ProductModal = ({ product, onClose }) => {
       // Fetch product options which includes categories, frame shapes, materials, etc.
       const response = await api.get(API_ROUTES.PRODUCTS.OPTIONS);
       const optionsData = response.data?.data || response.data || {};
-      
+
       const categoriesData = optionsData.categories || [];
       setCategories(categoriesData);
       categoriesRef.current = categoriesData;
       setFrameShapes(optionsData.frameShapes || []);
-      
+
       // Merge API frame materials with additional material types
       const apiMaterials = optionsData.frameMaterials || [];
       const additionalMaterials = ['plastic', 'glass', 'polycarbonate', 'trivex', 'high_index'];
       const allMaterials = [...new Set([...apiMaterials, ...additionalMaterials])];
       setFrameMaterials(allMaterials);
-      
+
       setGenders(optionsData.genders || []);
       setLensTypes(optionsData.lensTypeEnums || []);
     } catch (error) {
@@ -768,19 +768,19 @@ const ProductModal = ({ product, onClose }) => {
       const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
-      
+
       // Filter to get only top-level subcategories (parent_id = null)
       // Per Postman: top-level subcategories have parent_id = null
-      const topLevel = Array.isArray(subCatData) 
+      const topLevel = Array.isArray(subCatData)
         ? subCatData.filter(sub => {
-            const parentId = sub.parent_id !== undefined ? sub.parent_id : 
-                           sub.parentId || 
-                           sub.parent_subcategory_id || 
-                           sub.parentSubcategoryId;
-            return parentId === null || parentId === undefined || parentId === '';
-          })
+          const parentId = sub.parent_id !== undefined ? sub.parent_id :
+            sub.parentId ||
+            sub.parent_subcategory_id ||
+            sub.parentSubcategoryId;
+          return parentId === null || parentId === undefined || parentId === '';
+        })
         : [];
-      
+
       console.log(`📊 Fetched ${topLevel.length} top-level subcategories for category ${categoryId}`);
       setSubCategories(topLevel);
     } catch (error) {
@@ -791,16 +791,16 @@ const ProductModal = ({ product, onClose }) => {
         const responseData = response.data?.data || response.data || {};
         const subCatData = responseData.subcategories || responseData || [];
         // Filter to get only top-level subcategories (parent_id = null)
-        const filtered = Array.isArray(subCatData) 
+        const filtered = Array.isArray(subCatData)
           ? subCatData.filter(sub => {
-              const categoryMatch = sub.category_id === parseInt(categoryId);
-              const parentId = sub.parent_id !== undefined ? sub.parent_id : 
-                             sub.parentId || 
-                             sub.parent_subcategory_id || 
-                             sub.parentSubcategoryId;
-              const isTopLevel = parentId === null || parentId === undefined || parentId === '';
-              return categoryMatch && isTopLevel;
-            })
+            const categoryMatch = sub.category_id === parseInt(categoryId);
+            const parentId = sub.parent_id !== undefined ? sub.parent_id :
+              sub.parentId ||
+              sub.parent_subcategory_id ||
+              sub.parentSubcategoryId;
+            const isTopLevel = parentId === null || parentId === undefined || parentId === '';
+            return categoryMatch && isTopLevel;
+          })
           : [];
         setSubCategories(filtered);
       } catch (altError) {
@@ -822,7 +822,7 @@ const ProductModal = ({ product, onClose }) => {
       const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_PARENT(subCategoryId));
       const responseData = response.data?.data || response.data || {};
       const nestedData = responseData.subcategories || responseData || [];
-      
+
       console.log(`📊 Fetched ${nestedData.length} nested subcategories for parent ${subCategoryId}`);
       setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);
     } catch (error) {
@@ -835,60 +835,60 @@ const ProductModal = ({ product, onClose }) => {
         setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);
       } catch (altError) {
         console.warn('Alternative nested subcategories fetch also failed', altError);
-      setNestedSubCategories([]);
+        setNestedSubCategories([]);
       }
     }
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     // If category changes, fetch subcategories and reset subcategory selections
     if (name === 'category_id') {
       // Check if the selected category is eye hygiene and auto-set product_type
       const selectedCategory = categories.find(cat => cat.id === parseInt(value));
       const categoryName = (selectedCategory?.name || '').toLowerCase().trim();
       const isEyeHygieneCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
-      
-      const updatedFormData = { 
-        ...formData, 
+
+      const updatedFormData = {
+        ...formData,
         [name]: type === 'checkbox' ? checked : value,
         sub_category_id: '', // Reset subcategory when category changes
         parent_subcategory_id: '' // Reset nested subcategory
       };
-      
+
       // Auto-set product_type to 'eye_hygiene' if eye hygiene category is selected
       // Only auto-set if user hasn't manually set a different product_type for this category
       // Reset manual flag when category changes so auto-update can work for new category
       setProductTypeManuallySet(false);
-      
+
       if (isEyeHygieneCategory && updatedFormData.product_type !== 'eye_hygiene') {
         updatedFormData.product_type = 'eye_hygiene';
         console.log('🔍 Auto-set product_type to "eye_hygiene" for eye hygiene category');
       }
-      
+
       setFormData(updatedFormData);
       fetchSubCategories(value);
       setNestedSubCategories([]);
     } else if (name === 'sub_category_id') {
       // When subcategory changes, reset nested subcategory
       // The useEffect will automatically fetch nested subcategories when sub_category_id changes
-      setFormData({ 
-        ...formData, 
+      setFormData({
+        ...formData,
         [name]: type === 'checkbox' ? checked : value,
         parent_subcategory_id: '' // Reset nested subcategory when parent changes
       });
     } else if (name === 'product_type') {
       // User manually changed product_type - respect their selection
       setProductTypeManuallySet(true);
-      setFormData({ 
-        ...formData, 
-        [name]: type === 'checkbox' ? checked : value 
+      setFormData({
+        ...formData,
+        [name]: type === 'checkbox' ? checked : value
       });
     } else {
-      setFormData({ 
-        ...formData, 
-        [name]: type === 'checkbox' ? checked : value 
+      setFormData({
+        ...formData,
+        [name]: type === 'checkbox' ? checked : value
       });
     }
   };
@@ -940,7 +940,7 @@ const ProductModal = ({ product, onClose }) => {
           hexCode: '', // No hex code assigned yet - user will assign
           isExisting: false
         }));
-        
+
         setImagesWithColors([...imagesWithColors, ...newImages]);
         toast.success(`${validFiles.length} image(s) added. Assign hex color codes to each image.`);
       });
@@ -995,7 +995,7 @@ const ProductModal = ({ product, onClose }) => {
 
   const removeImage = (index) => {
     const previewToRemove = imagePreviews[index];
-    
+
     // Check if it's an existing image (URL string) or a new file preview (blob URL)
     if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('blob:') && !previewToRemove.startsWith('data:')) {
       // It's an existing image URL - remove from existingImages
@@ -1003,7 +1003,7 @@ const ProductModal = ({ product, onClose }) => {
     } else {
       // It's a new file preview - find and remove from imageFiles
       // Count how many existing images come before this index
-      const existingCount = imagePreviews.slice(0, index).filter(preview => 
+      const existingCount = imagePreviews.slice(0, index).filter(preview =>
         typeof preview === 'string' && !preview.startsWith('blob:') && !preview.startsWith('data:')
       ).length;
       // The file index in imageFiles array
@@ -1014,7 +1014,7 @@ const ProductModal = ({ product, onClose }) => {
         setImageFiles(newFiles);
       }
     }
-    
+
     // Remove from previews
     const newPreviews = [...imagePreviews];
     newPreviews.splice(index, 1);
@@ -1052,8 +1052,8 @@ const ProductModal = ({ product, onClose }) => {
       toast.error('Invalid hex code format. Must be #RRGGBB');
       return;
     }
-    
-    setImagesWithColors(imagesWithColors.map(img => 
+
+    setImagesWithColors(imagesWithColors.map(img =>
       img.id === id ? { ...img, hexCode: hexCode ? hexCode.toUpperCase().trim() : '' } : img
     ));
   };
@@ -1065,7 +1065,7 @@ const ProductModal = ({ product, onClose }) => {
     // Validate file type (3D model formats)
     const validExtensions = ['.glb', '.gltf', '.obj', '.fbx', '.dae'];
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-    
+
     if (!validExtensions.includes(fileExtension)) {
       toast.error(`Invalid 3D model format. Supported: ${validExtensions.join(', ')}`);
       e.target.value = '';
@@ -1100,28 +1100,28 @@ const ProductModal = ({ product, onClose }) => {
   // Helper function to validate and get product ID
   const getValidProductId = () => {
     const productId = product?.id ?? currentProduct?.id;
-    
+
     // Check for all invalid cases
     if (productId === undefined || productId === null || productId === '' || String(productId) === 'undefined' || String(productId) === 'null') {
       return null; // No valid ID - should create new product
     }
-    
+
     // Parse to integer
     const parsedId = typeof productId === 'number' ? productId : parseInt(String(productId), 10);
-    
+
     // Validate it's a positive integer
     if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
       console.error('❌ Invalid product ID:', { productId, parsedId, type: typeof productId });
       return null; // Invalid ID - should create new product
     }
-    
+
     return parsedId; // Valid ID
   };
 
   // ============================================================================
   // SIZE/VOLUME VARIANTS MANAGEMENT FUNCTIONS (New API Integration)
   // ============================================================================
-  
+
   // Fetch all size/volume variants for a product
   // Per Postman: GET /api/admin/products/:productId/size-volume-variants
   const fetchSizeVolumeVariants = async (productId) => {
@@ -1129,13 +1129,13 @@ const ProductModal = ({ product, onClose }) => {
       console.warn('⚠️ Cannot fetch variants: productId is missing');
       return;
     }
-    
+
     try {
       setLoadingVariants(true);
       const response = await api.get(API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.LIST(productId));
       const responseData = response.data?.data || response.data || {};
       const variants = responseData.variants || responseData || [];
-      
+
       const variantsArray = Array.isArray(variants) ? variants : [];
       console.log(`✅ Fetched ${variantsArray.length} size/volume variants for product ${productId}`);
       setSizeVolumeVariants(variantsArray);
@@ -1164,7 +1164,7 @@ const ProductModal = ({ product, onClose }) => {
       toast.error('Cannot create variant: Product must be saved first');
       return;
     }
-    
+
     try {
       setLoadingVariants(true);
       const response = await api.post(
@@ -1173,7 +1173,7 @@ const ProductModal = ({ product, onClose }) => {
       );
       const responseData = response.data?.data || response.data || {};
       const newVariant = responseData.variant || responseData;
-      
+
       // Refresh variants list
       await fetchSizeVolumeVariants(productId);
       toast.success('Variant created successfully');
@@ -1196,7 +1196,7 @@ const ProductModal = ({ product, onClose }) => {
       toast.error('Cannot update variant: Product ID is missing');
       return;
     }
-    
+
     try {
       setLoadingVariants(true);
       const response = await api.put(
@@ -1205,7 +1205,7 @@ const ProductModal = ({ product, onClose }) => {
       );
       const responseData = response.data?.data || response.data || {};
       const updatedVariant = responseData.variant || responseData;
-      
+
       // Refresh variants list
       await fetchSizeVolumeVariants(productId);
       toast.success('Variant updated successfully');
@@ -1228,17 +1228,17 @@ const ProductModal = ({ product, onClose }) => {
       toast.error('Cannot delete variant: Product ID is missing');
       return;
     }
-    
+
     if (!window.confirm('Are you sure you want to delete this variant?')) {
       return;
     }
-    
+
     try {
       setLoadingVariants(true);
       await api.delete(
         API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.DELETE(productId, variantId)
       );
-      
+
       // Refresh variants list
       await fetchSizeVolumeVariants(productId);
       toast.success('Variant deleted successfully');
@@ -1261,7 +1261,7 @@ const ProductModal = ({ product, onClose }) => {
       toast.error('Cannot update variants: Product must be saved first');
       return;
     }
-    
+
     try {
       setLoadingVariants(true);
       const response = await api.put(
@@ -1270,7 +1270,7 @@ const ProductModal = ({ product, onClose }) => {
       );
       const responseData = response.data?.data || response.data || {};
       const updatedVariants = responseData.variants || variantsArray || [];
-      
+
       setSizeVolumeVariants(Array.isArray(updatedVariants) ? updatedVariants : []);
       toast.success('Variants updated successfully');
       return updatedVariants;
@@ -1288,17 +1288,17 @@ const ProductModal = ({ product, onClose }) => {
   // Use useMemo to avoid recalculating unnecessarily
   const isEyeHygieneForEffect = useMemo(() => {
     // Check if product is eye hygiene by product_type or category
-    const currentCategoryForCheck = categories.find(cat => 
-      cat.id === formData.category_id || 
+    const currentCategoryForCheck = categories.find(cat =>
+      cat.id === formData.category_id ||
       cat.id === parseInt(formData.category_id) ||
       String(cat.id) === String(formData.category_id)
     );
     const categoryNameForCheck = (
-      currentCategoryForCheck?.name || 
-      product?.category?.name || 
+      currentCategoryForCheck?.name ||
+      product?.category?.name ||
       product?.category_name ||
-      (product?.category_id && categories.find(c => 
-        c.id === product.category_id || 
+      (product?.category_id && categories.find(c =>
+        c.id === product.category_id ||
         c.id === parseInt(product.category_id) ||
         String(c.id) === String(product.category_id)
       )?.name) ||
@@ -1310,10 +1310,10 @@ const ProductModal = ({ product, onClose }) => {
     const isEyeHygieneByProductTypeCheck = productTypeFromProductCheck === 'eye_hygiene' || formProductTypeCheck === 'eye_hygiene';
     const isLegacyAccessoryCheck = productTypeFromProductCheck === 'accessory' || formProductTypeCheck === 'accessory';
     const isEyeHygieneFromLegacyAccessoryCheck = isLegacyAccessoryCheck && isEyeHygieneByCategoryCheck;
-    
-    return isEyeHygieneByProductTypeCheck || 
-           isEyeHygieneByCategoryCheck || 
-           isEyeHygieneFromLegacyAccessoryCheck;
+
+    return isEyeHygieneByProductTypeCheck ||
+      isEyeHygieneByCategoryCheck ||
+      isEyeHygieneFromLegacyAccessoryCheck;
   }, [categories, formData.category_id, formData.product_type, product?.category?.name, product?.category_name, product?.category_id, product?.product_type]);
 
   // Fetch variants when product is loaded (for eye hygiene products)
@@ -1462,7 +1462,7 @@ const ProductModal = ({ product, onClose }) => {
       if (formData.is_featured !== undefined) dataToSend.is_featured = formData.is_featured;
 
       let response;
-      
+
       // ====================================================================
       // IMAGE UPDATE FLOW - Handles all 4 scenarios per backend specification:
       // ====================================================================
@@ -1482,32 +1482,32 @@ const ProductModal = ({ product, onClose }) => {
       //   - Send: images: "[\"url1\"]" (text field) + upload new files via images (file field)
       //   - Result: Backend keeps specified URLs, adds new uploaded files, deletes rest
       // ====================================================================
-      
+
       // Check if we need to use FormData (images, 3D model, or images with colors)
       const hasImageFiles = imageFiles && imageFiles.length > 0 && imageFiles.every(file => file instanceof File);
       const has3DModel = model3DFile && model3DFile instanceof File;
       const hasImagesWithColors = imagesWithColors.some(img => img.file instanceof File);
-      
+
       // If we have any files (images, 3D model, or images with colors), use FormData
       if (hasImageFiles || has3DModel || hasImagesWithColors) {
         try {
           const submitData = new FormData();
-          
+
           // Add all fields to FormData with proper type conversion
           // Required fields: name, sku, price, category_id
           const requiredFields = new Set(['name', 'sku', 'price', 'category_id']);
-          
+
           Object.keys(dataToSend).forEach((key) => {
             const value = dataToSend[key];
             const isRequired = requiredFields.has(key);
-            
-            
+
+
             // For required fields, always send (even if empty, let backend validate)
             // For optional fields, skip null, undefined, and empty strings
             if (!isRequired && (value === null || value === undefined || value === '')) {
               return; // Skip this optional field
             }
-            
+
             // Special handling for frame_material - per Postman API spec
             // Can be single string or array for multiple materials
             if (key === 'frame_material') {
@@ -1523,7 +1523,7 @@ const ProductModal = ({ product, onClose }) => {
               }
               return; // Skip the normal processing for this field
             }
-            
+
             // Convert types properly for FormData
             if (typeof value === 'boolean') {
               // Booleans: send as "true" or "false" strings
@@ -1549,7 +1549,7 @@ const ProductModal = ({ product, onClose }) => {
           if (model3DFile) {
             submitData.append('model_3d', model3DFile);
           }
-          
+
           // Method 1: Parallel Arrays (Recommended - Per Postman Collection)
           // According to Postman: "Each hex code maps to the image at the same index"
           // Example from Postman: 
@@ -1557,15 +1557,15 @@ const ProductModal = ({ product, onClose }) => {
           //   - Provide `image_colors`: `["#000000", "#000000", "#FFD700", "#FFD700", "#8B4513"]`
           //   - Result: images[0] → #000000, images[1] → #000000, images[2] → #FFD700, etc.
           // Strategy: Build parallel arrays where image_colors[i] maps to images[i] by exact index
-          
+
           // Separate images: those with hex codes and those without (general images)
-          const imagesWithHexCodes = imagesWithColors.filter(img => 
+          const imagesWithHexCodes = imagesWithColors.filter(img =>
             img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode)
           );
-          const imagesWithoutHexCodes = imagesWithColors.filter(img => 
+          const imagesWithoutHexCodes = imagesWithColors.filter(img =>
             img.file instanceof File && (!img.hexCode || !isValidHexCode(img.hexCode))
           );
-          
+
           // Strategy per Postman: 
           // - All images go in 'images' field
           // - image_colors array maps to images by index
@@ -1573,28 +1573,28 @@ const ProductModal = ({ product, onClose }) => {
           // 
           // We'll put images with hex codes first, then general images
           // This way image_colors indices match the first N images
-          
+
           const imageFilesArray = [];
           const imageColorsArray = [];
-          
+
           // First, add images with hex codes (these will have corresponding entries in image_colors)
           imagesWithHexCodes.forEach((img) => {
             imageFilesArray.push(img.file);
             imageColorsArray.push(img.hexCode);
           });
-          
+
           // Then add general images (from imageFiles) - no color codes
           imageFiles.forEach((file) => {
             imageFilesArray.push(file);
             // Don't add to imageColorsArray - these are general images
           });
-          
+
           // Then add images without hex codes from imagesWithColors - no color codes
           imagesWithoutHexCodes.forEach((img) => {
             imageFilesArray.push(img.file);
             // Don't add to imageColorsArray - these are general images
           });
-          
+
           // For UPDATE: Send complete list of images that should remain (existing URLs)
           // Per backend flow: Send images as JSON array string to specify which images to KEEP
           // Backend will compare existing vs new list and delete removed images from storage
@@ -1602,13 +1602,13 @@ const ProductModal = ({ product, onClose }) => {
           if (product) {
             // Build the complete list of existing image URLs that should be kept
             // (only URLs from existingImages that are still in imagePreviews)
-            const imagesToKeep = imagePreviews.filter(preview => 
-              typeof preview === 'string' && 
-              !preview.startsWith('blob:') && 
+            const imagesToKeep = imagePreviews.filter(preview =>
+              typeof preview === 'string' &&
+              !preview.startsWith('blob:') &&
               !preview.startsWith('data:') &&
               existingImages.includes(preview)
             );
-            
+
             // Send as JSON array string (text field) FIRST (for image deletion support)
             // Backend flow:
             // 1. Reads req.body.images (JSON array string) - this is the list to KEEP
@@ -1620,7 +1620,7 @@ const ProductModal = ({ product, onClose }) => {
             // If empty array "[]", all existing images will be deleted
             const imagesJson = JSON.stringify(imagesToKeep);
             submitData.append('images', imagesJson);
-            
+
             if (import.meta.env.DEV) {
               console.log('📤 Image Update Flow - FormData:');
               console.log('  - Images to KEEP (JSON string):', imagesJson);
@@ -1629,14 +1629,14 @@ const ProductModal = ({ product, onClose }) => {
               console.log('  - Backend will: Delete images NOT in keep list, Upload new files, Update database');
             }
           }
-          
+
           // Append new image files (file field) - these will be added to the keep list by backend
           // Backend flow: After processing the JSON array (keep list), it uploads new files via multer
           // New files are saved to uploads/products/ folder and added to the final image list
           imageFilesArray.forEach((file) => {
             submitData.append('images', file);
           });
-          
+
           // Append image_colors as JSON array string
           // This array contains hex codes for the first N images (where N = imageColorsArray.length)
           // The backend will match: images[0] → image_colors[0], images[1] → image_colors[1], etc.
@@ -1645,12 +1645,12 @@ const ProductModal = ({ product, onClose }) => {
           if (imageColorsArray.length > 0 && imageColorsArray.every(hex => hex && isValidHexCode(hex))) {
             const imageColorsJson = JSON.stringify(imageColorsArray);
             submitData.append('image_colors', imageColorsJson);
-            
+
             if (import.meta.env.DEV) {
               console.log('Sending image_colors:', imageColorsJson);
             }
           }
-          
+
           // For UPDATE: Send complete color_images structure for deletion support
           // ALWAYS send this field when updating (even if empty) to support deletion
           // Per backend: When color_images is sent, it REPLACES all existing color images
@@ -1658,20 +1658,20 @@ const ProductModal = ({ product, onClose }) => {
           if (product) {
             // Build the complete color_images structure with images that should remain
             const colorImagesToKeep = [];
-            
+
             // Group existing images by hex code (only URLs, not blob previews)
             // These are images that are still in the UI (not removed by user)
             const existingImagesByColor = {};
             imagesWithColors.forEach(img => {
-              if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) && 
-                  img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
+              if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
+                img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
                 if (!existingImagesByColor[img.hexCode]) {
                   existingImagesByColor[img.hexCode] = [];
                 }
                 existingImagesByColor[img.hexCode].push(img.preview);
               }
             });
-            
+
             // Build color_images structure from existing color images that should be kept
             // Only include colors that still have images in the UI
             existingColorImages.forEach(colorImg => {
@@ -1687,7 +1687,7 @@ const ProductModal = ({ product, onClose }) => {
               // If keptImages.length === 0, this color was completely removed - don't include it
               // This ensures the color is deleted from storage and database
             });
-            
+
             // Also include colors that have new files but no existing images to keep
             // These are new colors being added
             imagesWithColors.forEach(img => {
@@ -1704,7 +1704,7 @@ const ProductModal = ({ product, onClose }) => {
                 }
               }
             });
-            
+
             // ALWAYS send color_images field when updating (even if empty array)
             // Backend behavior:
             // - Empty array "[]" = Delete ALL color images from storage, set DB to null
@@ -1712,7 +1712,7 @@ const ProductModal = ({ product, onClose }) => {
             // - Images NOT in this list will be DELETED from storage and database
             const colorImagesJson = JSON.stringify(colorImagesToKeep);
             submitData.append('color_images', colorImagesJson);
-            
+
             if (import.meta.env.DEV) {
               console.log('📤 Color Images Deletion Flow:');
               console.log('  - Color images to KEEP (JSON string):', colorImagesJson);
@@ -1723,10 +1723,10 @@ const ProductModal = ({ product, onClose }) => {
               }
             }
           }
-          
+
           // Note: Removed 'replace_images' field as it's not in the Postman collection
           // and may cause Multer "Unexpected field" errors
-          
+
           // Log FormData contents in development mode for debugging
           if (import.meta.env.DEV) {
             const formDataObj = {};
@@ -1749,14 +1749,14 @@ const ProductModal = ({ product, onClose }) => {
 
           // Get valid product ID using helper function
           const validProductId = getValidProductId();
-          
-        if (validProductId) {
-          console.log(`🔄 Updating product with ID: ${validProductId}`);
-          response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), submitData);
-        } else {
-          console.log('➕ Creating new product (no valid ID found)');
-          response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
-        }
+
+          if (validProductId) {
+            console.log(`🔄 Updating product with ID: ${validProductId}`);
+            response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), submitData);
+          } else {
+            console.log('➕ Creating new product (no valid ID found)');
+            response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
+          }
         } catch (imageError) {
           // Log full error details
           console.error('Image upload error details:', {
@@ -1770,14 +1770,14 @@ const ProductModal = ({ product, onClose }) => {
               headers: imageError.config?.headers
             }
           });
-          
+
           // Check for Multer "Unexpected field" error
           const errorData = imageError.response?.data || {};
           const errorMessage = errorData.message || errorData.error || '';
           if (errorMessage.includes('Unexpected field') && imagesWithColors.length > 0) {
             console.warn('Multer "Unexpected field" error detected. This may be due to image color fields not being accepted by the backend Multer configuration.');
           }
-          
+
           // Re-throw the error - let multer handle file uploads
           throw imageError;
         }
@@ -1788,35 +1788,35 @@ const ProductModal = ({ product, onClose }) => {
         if (product) {
           // When updating without new files, we still need to send deletion arrays
           // Build the complete list of existing image URLs that should be kept
-          const imagesToKeep = imagePreviews.filter(preview => 
-            typeof preview === 'string' && 
-            !preview.startsWith('blob:') && 
+          const imagesToKeep = imagePreviews.filter(preview =>
+            typeof preview === 'string' &&
+            !preview.startsWith('blob:') &&
             !preview.startsWith('data:') &&
             existingImages.includes(preview)
           );
-          
+
           // Add images array for deletion support
           // Backend flow: Compares existing images vs. new list, deletes removed ones
           // Empty array [] = delete all existing images
           dataToSend.images = imagesToKeep;
-          
+
           // Build color_images structure for deletion support
           // ALWAYS send this field when updating (even if empty) to support deletion
           const colorImagesToKeep = [];
           const existingImagesByColor = {};
-          
+
           // Group existing images by hex code (only URLs, not blob previews)
           // These are images that are still in the UI (not removed by user)
           imagesWithColors.forEach(img => {
-            if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) && 
-                img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
+            if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
+              img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
               if (!existingImagesByColor[img.hexCode]) {
                 existingImagesByColor[img.hexCode] = [];
               }
               existingImagesByColor[img.hexCode].push(img.preview);
             }
           });
-          
+
           // Build color_images structure from existing color images that should be kept
           // Only include colors that still have images in the UI
           existingColorImages.forEach(colorImg => {
@@ -1832,13 +1832,13 @@ const ProductModal = ({ product, onClose }) => {
             // If keptImages.length === 0, this color was completely removed - don't include it
             // This ensures the color is deleted from storage and database
           });
-          
+
           // ALWAYS add color_images array for deletion support (even if empty)
           // Backend behavior:
           // - Empty array [] = Delete ALL color images from storage, set DB to null
           // - Non-empty array = Replace existing with this list, delete removed images
           dataToSend.color_images = colorImagesToKeep;
-          
+
           if (import.meta.env.DEV) {
             console.log('📤 Image Update Flow - JSON Body:');
             console.log('  - Images to KEEP (array):', imagesToKeep);
@@ -1852,11 +1852,11 @@ const ProductModal = ({ product, onClose }) => {
             }
           }
         }
-        
-        
+
+
         // Get valid product ID using helper function
         const validProductId = getValidProductId();
-        
+
         if (validProductId) {
           console.log(`🔄 Updating product with ID: ${validProductId}`);
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), dataToSend);
@@ -1865,12 +1865,12 @@ const ProductModal = ({ product, onClose }) => {
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
         }
       }
-      
+
       // Handle nested response structure: { success, message, data: { product: {...} } }
       const responseData = response.data?.data || response.data;
       let savedProduct = responseData?.product || responseData;
       const successMessage = response.data?.message || (product ? 'Product updated successfully' : 'Product created successfully');
-      
+
       // Remove variant-related fields from saved product response
       if (savedProduct && savedProduct.id) {
         const {
@@ -1881,10 +1881,10 @@ const ProductModal = ({ product, onClose }) => {
           pack_type,
           ...cleanSavedProduct
         } = savedProduct;
-        
+
         // Update currentProduct with cleaned product data (without variant fields)
         setCurrentProduct(cleanSavedProduct);
-        
+
         // If this is an eye hygiene product, fetch variants separately after save
         if (isEyeHygiene && savedProduct.id) {
           fetchSizeVolumeVariants(savedProduct.id).catch(err => {
@@ -1892,16 +1892,16 @@ const ProductModal = ({ product, onClose }) => {
           });
         }
       }
-      
+
       toast.success(successMessage);
-      
+
       // Reset image files after successful save
       setImageFiles([]);
       setImagePreviews([]);
       setExistingImages([]);
       setImagesWithColors([]);
       setExistingColorImages([]);
-      
+
       // Close modal - parent component will refresh the products list
       onClose();
     } catch (error) {
@@ -1913,7 +1913,7 @@ const ProductModal = ({ product, onClose }) => {
         data: error.response?.data,
         headers: error.response?.headers
       });
-      
+
       // Network errors (backend not available, timeout, etc.)
       if (!error.response) {
         if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
@@ -1931,7 +1931,7 @@ const ProductModal = ({ product, onClose }) => {
         // Check for Prisma validation errors
         const errorData = error.response?.data || {};
         const errorMessage = errorData.message || errorData.error || '';
-        
+
         // Log the full error for debugging
         console.error('Server 500 error details:', {
           message: errorMessage,
@@ -1939,22 +1939,22 @@ const ProductModal = ({ product, onClose }) => {
           stack: errorData.stack,
           fullData: errorData
         });
-        
+
         // Log the full Prisma error if available
         if (errorData.fullData || errorData.stack) {
           console.error('Full Prisma error:', JSON.stringify(errorData, null, 2));
         }
-        
+
         if (errorMessage.includes('Prisma') || errorMessage.includes('Invalid value provided')) {
           // Try to extract more detailed Prisma error information
           const prismaErrorMatch = errorMessage.match(/Invalid `prisma\.(\w+)\.(\w+)`/);
           const fieldMatch = errorMessage.match(/Argument `(\w+)`:/);
           const fieldName = fieldMatch ? fieldMatch[1] : (prismaErrorMatch ? prismaErrorMatch[2] : 'field');
-          
+
           // Try to extract the actual error reason
           const reasonMatch = errorMessage.match(/Argument `\w+`:(.+?)(?:\.|$)/);
           const reason = reasonMatch ? reasonMatch[1].trim() : 'has an invalid value';
-          
+
           toast.error(`Prisma validation error: ${fieldName} ${reason}. Please check the form data and console for details.`);
           console.error('Prisma validation error details:', {
             field: fieldName,
@@ -1976,7 +1976,7 @@ const ProductModal = ({ product, onClose }) => {
       } else {
         // Check for validation errors (400, 422, etc.)
         const errorData = error.response?.data || {};
-        
+
         if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
           // Show validation errors
           const validationErrors = errorData.errors.map(err => {
@@ -1986,11 +1986,11 @@ const ProductModal = ({ product, onClose }) => {
           }).join(', ');
           toast.error(`Validation failed: ${validationErrors}`);
         } else {
-          const errorMessage = errorData.message || 
-                             errorData.error || 
-                             errorData.errors?.[0]?.msg ||
-                             `Failed to save product (${error.response.status})`;
-          
+          const errorMessage = errorData.message ||
+            errorData.error ||
+            errorData.errors?.[0]?.msg ||
+            `Failed to save product (${error.response.status})`;
+
           // Show error message
           toast.error(errorMessage);
         }
@@ -2002,39 +2002,39 @@ const ProductModal = ({ product, onClose }) => {
 
   // Check if product is eye hygiene by product_type or category FIRST
   // Use multiple sources for category name to ensure we detect eye hygiene products even before categories load
-  const currentCategory = categories.find(cat => 
-    cat.id === formData.category_id || 
+  const currentCategory = categories.find(cat =>
+    cat.id === formData.category_id ||
     cat.id === parseInt(formData.category_id) ||
     String(cat.id) === String(formData.category_id)
   );
   const categoryName = (
-    currentCategory?.name || 
-    product?.category?.name || 
+    currentCategory?.name ||
+    product?.category?.name ||
     product?.category_name ||
-    (product?.category_id && categories.find(c => 
-      c.id === product.category_id || 
+    (product?.category_id && categories.find(c =>
+      c.id === product.category_id ||
       c.id === parseInt(product.category_id) ||
       String(c.id) === String(product.category_id)
     )?.name) ||
     ''
   ).toLowerCase().trim();
   const isEyeHygieneByCategory = categoryName.includes('eye') && categoryName.includes('hygiene');
-  
+
   // Also check the product prop's product_type in case it's set but formData hasn't been updated yet
   const productTypeFromProduct = product?.product_type || '';
   const formProductType = formData.product_type || '';
-  
+
   // Check if product_type is 'eye_hygiene' or legacy 'accessory' with eye hygiene category
   const isEyeHygieneByProductType = productTypeFromProduct === 'eye_hygiene' || formProductType === 'eye_hygiene';
-  
+
   // Legacy: Also check for 'accessory' with eye hygiene category (for backward compatibility)
   const isLegacyAccessory = productTypeFromProduct === 'accessory' || formProductType === 'accessory';
   const isEyeHygieneFromLegacyAccessory = isLegacyAccessory && isEyeHygieneByCategory;
-  
+
   // Final determination: eye hygiene if explicitly set OR detected by category (including legacy 'accessory')
-  const isEyeHygiene = isEyeHygieneByProductType || 
-                       isEyeHygieneByCategory || 
-                       isEyeHygieneFromLegacyAccessory;
+  const isEyeHygiene = isEyeHygieneByProductType ||
+    isEyeHygieneByCategory ||
+    isEyeHygieneFromLegacyAccessory;
 
   // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids (but NOT eye hygiene)
   // Show Spherical and Astigmatism Configurations for contact lens products
@@ -2042,7 +2042,7 @@ const ProductModal = ({ product, onClose }) => {
   const productTypeCheck = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
   const isFrameOrSunglasses = productTypeCheck && !isEyeHygiene; // Exclude eye hygiene products
   const isContactLens = formData.product_type === 'contact_lens' && !isEyeHygiene; // Also exclude eye hygiene from contact lens tabs
-  
+
   // Debug logging for eye hygiene detection
   if (product && (categoryName.includes('eye') || categoryName.includes('hygiene') || formData.product_type === 'eye_hygiene' || productTypeFromProduct === 'accessory')) {
     console.log('🔍 Eye Hygiene Detection:', {
@@ -2060,7 +2060,7 @@ const ProductModal = ({ product, onClose }) => {
       currentCategoryId: currentCategory?.id
     });
   }
-  
+
   const tabs = [
     { id: 'general', label: 'General' }, // Always shown - contains all basic product fields
     ...(isFrameOrSunglasses ? [
@@ -2077,7 +2077,7 @@ const ProductModal = ({ product, onClose }) => {
     { id: 'images', label: 'Images' }, // Always shown - all products can have images
     { id: 'seo', label: 'SEO' }, // Always shown - all products can have SEO settings
   ];
-  
+
   // Log tabs for eye hygiene products to help with debugging
   if (isEyeHygiene && product) {
     console.log(`📋 Eye Hygiene product edit - Available tabs:`, tabs.map(t => t.label).join(', '));
@@ -2150,14 +2150,14 @@ const ProductModal = ({ product, onClose }) => {
           const axiosResponse = response.value; // This is the axios response object
           const responseData = axiosResponse.data; // This is the actual API response
           let extractedData = [];
-          
+
           // Generate snake_case version of key
           const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-          
+
           // Generate singular versions
           const singularKey = key.slice(0, -1); // Remove last 's'
           const singularSnakeKey = snakeKey.slice(0, -1);
-          
+
           // Special handling for certain keys
           const alternativeKeys = {
             'frameSizes': ['frame_sizes', 'frameSize', 'frame_size'],
@@ -2174,15 +2174,15 @@ const ProductModal = ({ product, onClose }) => {
             'prescriptionLensTypes': ['prescription_lens_types', 'prescriptionLensType', 'prescription_lens_type', 'prescription_lens', 'prescriptionLens'],
             'dropdownValues': ['dropdown_values', 'dropdownValue', 'dropdown_value', 'prescription_form_dropdown_values', 'values', 'value']
           };
-          
+
           const altKeys = alternativeKeys[key] || [];
           const allKeysToCheck = [key, snakeKey, singularKey, singularSnakeKey, ...altKeys];
-          
+
           // Helper function to recursively find arrays
           const findFirstArray = (obj, depth = 0, maxDepth = 5) => {
             if (depth > maxDepth || !obj || typeof obj !== 'object') return null;
             if (Array.isArray(obj) && obj.length > 0) return obj;
-            
+
             for (const value of Object.values(obj)) {
               if (Array.isArray(value) && value.length > 0) return value;
               if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -2192,11 +2192,11 @@ const ProductModal = ({ product, onClose }) => {
             }
             return null;
           };
-          
+
           // Strategy 1: Check responseData.data (most common structure)
           if (responseData?.data) {
             const dataObj = responseData.data;
-            
+
             // Direct array in data.data
             if (Array.isArray(dataObj)) {
               extractedData = dataObj;
@@ -2210,7 +2210,7 @@ const ProductModal = ({ product, onClose }) => {
                   break;
                 }
               }
-              
+
               // If still not found, check nested data.data.data
               if (extractedData.length === 0 && dataObj.data) {
                 if (Array.isArray(dataObj.data)) {
@@ -2224,7 +2224,7 @@ const ProductModal = ({ product, onClose }) => {
                   }
                 }
               }
-              
+
               // Try common array keys (results, items, list, data)
               if (extractedData.length === 0) {
                 const commonKeys = ['results', 'items', 'list', 'data', 'records'];
@@ -2235,7 +2235,7 @@ const ProductModal = ({ product, onClose }) => {
                   }
                 }
               }
-              
+
               // Last resort: find ANY array in the data object
               if (extractedData.length === 0) {
                 const foundArray = findFirstArray(dataObj);
@@ -2245,12 +2245,12 @@ const ProductModal = ({ product, onClose }) => {
               }
             }
           }
-          
+
           // Strategy 2: Check if responseData is directly an array
           if (extractedData.length === 0 && Array.isArray(responseData)) {
             extractedData = responseData;
           }
-          
+
           // Strategy 3: Check for keys at root level
           if (extractedData.length === 0 && responseData && typeof responseData === 'object') {
             // Try exact key matches first
@@ -2260,7 +2260,7 @@ const ProductModal = ({ product, onClose }) => {
                 break;
               }
             }
-            
+
             // Try common array keys at root
             if (extractedData.length === 0) {
               const commonKeys = ['data', 'results', 'items', 'list', 'records'];
@@ -2271,7 +2271,7 @@ const ProductModal = ({ product, onClose }) => {
                 }
               }
             }
-            
+
             // Last resort: find ANY array in the response
             if (extractedData.length === 0) {
               const foundArray = findFirstArray(responseData);
@@ -2280,7 +2280,7 @@ const ProductModal = ({ product, onClose }) => {
               }
             }
           }
-          
+
           // Helper function to find all arrays in response
           const findAllArrays = (obj, path = '') => {
             const arrays = [];
@@ -2296,7 +2296,7 @@ const ProductModal = ({ product, onClose }) => {
             }
             return arrays;
           };
-          
+
           // Debug logging and final fallback
           if (extractedData.length > 0) {
             console.log(`✅ Successfully extracted ${extractedData.length} ${key} items`);
@@ -2315,7 +2315,7 @@ const ProductModal = ({ product, onClose }) => {
               console.warn(`Response structure:`, JSON.stringify(responseData, null, 2).substring(0, 1000));
             }
           }
-          
+
           return Array.isArray(extractedData) ? extractedData : [];
         } else if (response.status === 'rejected') {
           console.error(`❌ Failed to fetch ${key}:`, response.reason);
@@ -2336,7 +2336,7 @@ const ProductModal = ({ product, onClose }) => {
       const thicknessOptionsData = extractData(thicknessOptionsRes, 'thicknessOptions');
       const prescriptionLensTypesData = extractData(prescriptionLensTypesRes, 'prescriptionLensTypes');
       const prescriptionDropdownData = extractData(prescriptionDropdownRes, 'dropdownValues');
-      
+
       console.log('📊 Setting lens management data:', {
         frameSizes: frameSizesData.length,
         lensTypes: lensTypesData.length,
@@ -2352,7 +2352,7 @@ const ProductModal = ({ product, onClose }) => {
         prescriptionLensTypes: prescriptionLensTypesData.length,
         prescriptionDropdownValues: prescriptionDropdownData.length,
       });
-      
+
       setFrameSizes(frameSizesData);
       setLensTypesList(lensTypesData);
       setLensOptions(lensOptionsData);
@@ -2404,7 +2404,7 @@ const ProductModal = ({ product, onClose }) => {
     const findFirstArray = (obj, depth = 0, maxDepth = 5) => {
       if (depth > maxDepth || !obj || typeof obj !== 'object') return null;
       if (Array.isArray(obj) && obj.length > 0) return obj;
-      
+
       for (const value of Object.values(obj)) {
         if (Array.isArray(value) && value.length > 0) return value;
         if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -2418,7 +2418,7 @@ const ProductModal = ({ product, onClose }) => {
     // Strategy 1: Check responseData.data (most common structure)
     if (responseData?.data) {
       const dataObj = responseData.data;
-      
+
       // Direct array in data.data
       if (Array.isArray(dataObj)) {
         extractedData = dataObj;
@@ -2434,7 +2434,7 @@ const ProductModal = ({ product, onClose }) => {
             break;
           }
         }
-        
+
         // If still not found, check nested data.data.data
         if (extractedData.length === 0 && dataObj.data) {
           if (Array.isArray(dataObj.data)) {
@@ -2450,7 +2450,7 @@ const ProductModal = ({ product, onClose }) => {
             }
           }
         }
-        
+
         // Try common array keys (results, items, list, data)
         if (extractedData.length === 0) {
           const commonKeys = ['results', 'items', 'list', 'data', 'records', 'configs'];
@@ -2462,7 +2462,7 @@ const ProductModal = ({ product, onClose }) => {
             }
           }
         }
-        
+
         // Last resort: find ANY array in the data object
         if (extractedData.length === 0) {
           const foundArray = findFirstArray(dataObj);
@@ -2473,13 +2473,13 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
     }
-    
+
     // Strategy 2: Check if responseData is directly an array
     if (extractedData.length === 0 && Array.isArray(responseData)) {
       extractedData = responseData;
       console.log(`✅ Found direct array response (${responseData.length} items)`);
     }
-    
+
     // Strategy 3: Check for keys at root level
     if (extractedData.length === 0 && responseData && typeof responseData === 'object') {
       // Try exact key matches first
@@ -2490,7 +2490,7 @@ const ProductModal = ({ product, onClose }) => {
           break;
         }
       }
-      
+
       // Try common array keys at root
       if (extractedData.length === 0) {
         const commonKeys = ['data', 'results', 'items', 'list', 'records', 'configs'];
@@ -2502,7 +2502,7 @@ const ProductModal = ({ product, onClose }) => {
           }
         }
       }
-      
+
       // Last resort: find ANY array in the response
       if (extractedData.length === 0) {
         const foundArray = findFirstArray(responseData);
@@ -2530,7 +2530,7 @@ const ProductModal = ({ product, onClose }) => {
         }
         return arrays;
       };
-      
+
       const foundArrays = findAllArrays(responseData);
       if (foundArrays.length > 0) {
         const sortedArrays = foundArrays.sort((a, b) => b.length - a.length);
@@ -2540,14 +2540,14 @@ const ProductModal = ({ product, onClose }) => {
         console.log(`📊 All found arrays:`, foundArrays.map(a => `${a.path} (${a.length} items)`));
       }
     }
-    
+
     // Validate extracted data
     if (!Array.isArray(extractedData)) {
       console.warn(`⚠️ Extracted data is not an array for ${key}:`, typeof extractedData, extractedData);
       console.warn(`⚠️ Full response structure:`, JSON.stringify(responseData, null, 2));
       return [];
     }
-    
+
     if (extractedData.length > 0) {
       console.log(`✅ Successfully extracted ${extractedData.length} ${key} items`);
       // Log first item structure for debugging
@@ -2561,7 +2561,7 @@ const ProductModal = ({ product, onClose }) => {
     } else {
       console.warn(`⚠️ No data extracted for ${key}. Response structure:`, JSON.stringify(responseData, null, 2).substring(0, 1000));
     }
-    
+
     return extractedData;
   };
 
@@ -2573,19 +2573,19 @@ const ProductModal = ({ product, onClose }) => {
     }
     try {
       setLoadingSpherical(true);
-      
+
       // Build endpoint with query parameters
       const queryParams = new URLSearchParams();
       queryParams.append('limit', '1000');
       queryParams.append('page', '1');
-      
+
       // Try product_id filter first
       let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}&product_id=${currentProduct.id}`;
       console.log(`🔍 Fetching spherical configs for product ${currentProduct.id} from: ${endpoint}`);
-      
+
       let response;
       let useProductIdFilter = true;
-      
+
       try {
         response = await api.get(endpoint);
         console.log('📦 Spherical configs API response:', response);
@@ -2603,11 +2603,11 @@ const ProductModal = ({ product, onClose }) => {
           throw filterError;
         }
       }
-      
+
       // Extract data from response - try multiple extraction strategies
       let configsData = extractConfigData(response, 'sphericalConfigs');
       console.log(`📊 Raw extracted data:`, configsData);
-      
+
       // If extraction returned empty, try alternative extraction methods
       if (!configsData || configsData.length === 0) {
         console.log('🔍 Primary extraction returned empty, trying alternative methods...');
@@ -2618,7 +2618,7 @@ const ProductModal = ({ product, onClose }) => {
           console.log(`✅ Alternative extraction found ${configsData.length} items`);
         }
       }
-      
+
       // If we fetched all configs, filter by product_id client-side
       if (!useProductIdFilter && configsData && configsData.length > 0) {
         const beforeFilter = configsData.length;
@@ -2632,12 +2632,12 @@ const ProductModal = ({ product, onClose }) => {
         });
         console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${currentProduct?.id}`);
       }
-      
+
       // Validate and set data
       if (Array.isArray(configsData)) {
         console.log(`✅ Successfully extracted ${configsData.length} spherical configs:`, configsData);
         setSphericalConfigs(configsData);
-        
+
         if (configsData.length === 0) {
           console.log('ℹ️ No spherical configs found for this product');
         }
@@ -2652,7 +2652,7 @@ const ProductModal = ({ product, onClose }) => {
         console.error('Error status:', error.response.status);
         console.error('Error headers:', error.response.headers);
       }
-      
+
       // Handle different error cases
       if (!error.response) {
         toast.error('Cannot connect to server. Check if backend is running.');
@@ -2685,19 +2685,19 @@ const ProductModal = ({ product, onClose }) => {
     }
     try {
       setLoadingAstigmatism(true);
-      
+
       // Build endpoint with query parameters
       const queryParams = new URLSearchParams();
       queryParams.append('limit', '1000');
       queryParams.append('page', '1');
-      
+
       // Try product_id filter first
       let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}&product_id=${currentProduct.id}`;
       console.log(`🔍 Fetching astigmatism configs for product ${currentProduct.id} from: ${endpoint}`);
-      
+
       let response;
       let useProductIdFilter = true;
-      
+
       try {
         response = await api.get(endpoint);
         console.log('📦 Astigmatism configs API response:', response);
@@ -2715,11 +2715,11 @@ const ProductModal = ({ product, onClose }) => {
           throw filterError;
         }
       }
-      
+
       // Extract data from response - try multiple extraction strategies
       let configsData = extractConfigData(response, 'astigmatismConfigs');
       console.log(`📊 Raw extracted data:`, configsData);
-      
+
       // If extraction returned empty, try alternative extraction methods
       if (!configsData || configsData.length === 0) {
         console.log('🔍 Primary extraction returned empty, trying alternative methods...');
@@ -2730,7 +2730,7 @@ const ProductModal = ({ product, onClose }) => {
           console.log(`✅ Alternative extraction found ${configsData.length} items`);
         }
       }
-      
+
       // If we fetched all configs, filter by product_id client-side
       if (!useProductIdFilter && configsData && configsData.length > 0) {
         const beforeFilter = configsData.length;
@@ -2743,12 +2743,12 @@ const ProductModal = ({ product, onClose }) => {
         });
         console.log(`🔍 Filtered from ${beforeFilter} to ${configsData.length} configs for product ${currentProduct.id}`);
       }
-      
+
       // Validate and set data
       if (Array.isArray(configsData)) {
         console.log(`✅ Successfully extracted ${configsData.length} astigmatism configs:`, configsData);
         setAstigmatismConfigs(configsData);
-        
+
         if (configsData.length === 0) {
           console.log('ℹ️ No astigmatism configs found for this product');
         }
@@ -2763,7 +2763,7 @@ const ProductModal = ({ product, onClose }) => {
         console.error('Error status:', error.response.status);
         console.error('Error headers:', error.response.headers);
       }
-      
+
       // Handle different error cases
       if (!error.response) {
         toast.error('Cannot connect to server. Check if backend is running.');
@@ -2845,7 +2845,7 @@ const ProductModal = ({ product, onClose }) => {
         console.log(`📋 ${title} table - Data length: ${data.length}`, data);
       }
     }, [title, data, loading]);
-    
+
     if (loading) {
       return <div className="text-center py-4 text-gray-500">Loading {title}...</div>;
     }
@@ -2854,15 +2854,15 @@ const ProductModal = ({ product, onClose }) => {
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <h4 className="text-md font-semibold text-gray-800">{title}</h4>
-                    <button
-                      type="button"
+          <button
+            type="button"
             onClick={onAdd}
             className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 text-sm"
-                    >
+          >
             <FiPlus className="w-3 h-3" />
             Add
-                    </button>
-                  </div>
+          </button>
+        </div>
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
@@ -2894,21 +2894,21 @@ const ProductModal = ({ product, onClose }) => {
                       ))}
                       <td className="px-3 py-2">
                         <div className="flex gap-2">
-                  <button
-                    type="button"
+                          <button
+                            type="button"
                             onClick={() => onEdit(item)}
                             className="text-indigo-600 hover:text-indigo-900"
                           >
                             <FiEdit2 className="w-3 h-3" />
-                  </button>
-                        <button
-                          type="button"
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => onDelete(item.id)}
                             className="text-red-600 hover:text-red-900"
-                        >
+                          >
                             <FiTrash2 className="w-3 h-3" />
-                        </button>
-                      </div>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -2916,8 +2916,8 @@ const ProductModal = ({ product, onClose }) => {
               )}
             </tbody>
           </table>
-                          </div>
-                        </div>
+        </div>
+      </div>
     );
   };
 
@@ -2931,32 +2931,31 @@ const ProductModal = ({ product, onClose }) => {
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
-                  <button
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 transition-all duration-200"
               aria-label="Close"
             >
               <FiX className="w-6 h-6" />
-                  </button>
-            </div>
+            </button>
           </div>
-          
+        </div>
+
         {/* Tabs */}
         <div className="border-b border-gray-200 bg-white px-6 flex gap-1 flex-shrink-0">
           {tabs.map((tab) => (
-                        <button
+            <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
-                activeTab === tab.id
+              className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === tab.id
                   ? 'border-indigo-500 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
             >
               {tab.label}
-                        </button>
+            </button>
           ))}
-          </div>
+        </div>
 
         {/* Scrollable Form Content */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(90vh - 200px)' }}>
@@ -2964,270 +2963,270 @@ const ProductModal = ({ product, onClose }) => {
             {/* General Tab */}
             {activeTab === 'general' && (
               <>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('productName')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="input-modern"
-              required
-            />
-          </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t('productName')} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="input-modern"
+                    required
+                  />
+                </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('slug')}
-            </label>
-            <input
-              type="text"
-              name="slug"
-              value={formData.slug}
-              onChange={handleChange}
-              className="input-modern"
-              placeholder="product-slug"
-            />
-          </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t('slug')}
+                  </label>
+                  <input
+                    type="text"
+                    name="slug"
+                    value={formData.slug}
+                    onChange={handleChange}
+                    className="input-modern"
+                    placeholder="product-slug"
+                  />
+                </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                SKU <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="sku"
-                value={formData.sku}
-                onChange={handleChange}
-                className="input-modern"
-                required
-              />
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      SKU <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="sku"
+                      value={formData.sku}
+                      onChange={handleChange}
+                      className="input-modern"
+                      required
+                    />
+                  </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('price')} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                step="0.01"
-                className="input-modern"
-                required
-              />
-            </div>
-          </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t('price')} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleChange}
+                      step="0.01"
+                      className="input-modern"
+                      required
+                    />
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('compareAtPrice')}
-              </label>
-              <input
-                type="number"
-                name="compare_at_price"
-                value={formData.compare_at_price}
-                onChange={handleChange}
-                step="0.01"
-                className="input-modern"
-                placeholder={t('originalPrice')}
-              />
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t('compareAtPrice')}
+                    </label>
+                    <input
+                      type="number"
+                      name="compare_at_price"
+                      value={formData.compare_at_price}
+                      onChange={handleChange}
+                      step="0.01"
+                      className="input-modern"
+                      placeholder={t('originalPrice')}
+                    />
+                  </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('costPrice')}
-              </label>
-              <input
-                type="number"
-                name="cost_price"
-                value={formData.cost_price}
-                onChange={handleChange}
-                step="0.01"
-                className="input-modern"
-                placeholder={t('wholesaleCost')}
-              />
-            </div>
-          </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t('costPrice')}
+                    </label>
+                    <input
+                      type="number"
+                      name="cost_price"
+                      value={formData.cost_price}
+                      onChange={handleChange}
+                      step="0.01"
+                      className="input-modern"
+                      placeholder={t('wholesaleCost')}
+                    />
+                  </div>
+                </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('shortDescription')}
-            </label>
-            <input
-              type="text"
-              name="short_description"
-              value={formData.short_description}
-              onChange={handleChange}
-              className="input-modern"
-              placeholder={t('briefProductDescription')}
-            />
-          </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t('shortDescription')}
+                  </label>
+                  <input
+                    type="text"
+                    name="short_description"
+                    value={formData.short_description}
+                    onChange={handleChange}
+                    className="input-modern"
+                    placeholder={t('briefProductDescription')}
+                  />
+                </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('description')}
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="4"
-              className="input-modern resize-none"
-              placeholder="Enter product description..."
-            />
-          </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t('description')}
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows="4"
+                    className="input-modern resize-none"
+                    placeholder="Enter product description..."
+                  />
+                </div>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('category')} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleChange}
-                  className="input-modern"
-                  required
-                >
-                  <option value="">{t('selectCategory')}</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        {t('category')} <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="category_id"
+                        value={formData.category_id}
+                        onChange={handleChange}
+                        className="input-modern"
+                        required
+                      >
+                        <option value="">{t('selectCategory')}</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('subCategories')}
-                </label>
-                <select
-                  name="sub_category_id"
-                  value={formData.sub_category_id}
-                  onChange={handleChange}
-                  disabled={!formData.category_id}
-                  className="input-modern disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">{formData.category_id ? t('selectCategory').replace('Category', 'SubCategory') : t('selectCategory') + ' First'}</option>
-                  {subCategories.map((subCat) => (
-                    <option key={subCat.id} value={subCat.id}>
-                      {subCat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        {t('subCategories')}
+                      </label>
+                      <select
+                        name="sub_category_id"
+                        value={formData.sub_category_id}
+                        onChange={handleChange}
+                        disabled={!formData.category_id}
+                        className="input-modern disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="">{formData.category_id ? t('selectCategory').replace('Category', 'SubCategory') : t('selectCategory') + ' First'}</option>
+                        {subCategories.map((subCat) => (
+                          <option key={subCat.id} value={subCat.id}>
+                            {subCat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
                   {/* Sub-SubCategory Selection */}
-            {formData.sub_category_id && (
-              <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('parentSubCategory')} <span className="text-gray-500 text-xs font-normal">({t('optional')} - {t('nestedSubCategoryNote')})</span>
-                </label>
-                {nestedSubCategories.length > 0 ? (
-                  <>
-                    <select
-                      name="parent_subcategory_id"
-                      value={formData.parent_subcategory_id}
+                  {formData.sub_category_id && (
+                    <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        {t('parentSubCategory')} <span className="text-gray-500 text-xs font-normal">({t('optional')} - {t('nestedSubCategoryNote')})</span>
+                      </label>
+                      {nestedSubCategories.length > 0 ? (
+                        <>
+                          <select
+                            name="parent_subcategory_id"
+                            value={formData.parent_subcategory_id}
+                            onChange={handleChange}
+                            className="input-modern border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                          >
+                            <option value="">{t('noneTopLevel')}</option>
+                            {nestedSubCategories.map((nestedSubCat) => (
+                              <option key={nestedSubCat.id} value={nestedSubCat.id}>
+                                {nestedSubCat.name}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-xs text-blue-600 mt-2 flex items-center">
+                            <span className="mr-1">ℹ️</span>
+                            Select a sub-subcategory if this product belongs to a nested subcategory under "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}"
+                          </p>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500 italic py-2 bg-white rounded px-3 border border-gray-200">
+                          No sub-subcategories available for "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}". This product will use the parent SubCategory.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Product Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="product_type"
+                    value={formData.product_type}
+                    onChange={handleChange}
+                    className="input-modern"
+                    required
+                  >
+                    <option value="">Select Product Type</option>
+                    <option value="frame">Frame (Eyeglasses)</option>
+                    <option value="sunglasses">Sunglasses</option>
+                    <option value="contact_lens">Contact Lens</option>
+                    <option value="eye_hygiene">Eye Hygiene</option>
+                    <option value="lens">Lens</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Stock Quantity
+                    </label>
+                    <input
+                      type="number"
+                      name="stock_quantity"
+                      value={formData.stock_quantity}
                       onChange={handleChange}
-                      className="input-modern border-blue-300 focus:border-blue-500 focus:ring-blue-500"
-                    >
-                      <option value="">{t('noneTopLevel')}</option>
-                      {nestedSubCategories.map((nestedSubCat) => (
-                        <option key={nestedSubCat.id} value={nestedSubCat.id}>
-                          {nestedSubCat.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-blue-600 mt-2 flex items-center">
-                      <span className="mr-1">ℹ️</span>
-                      Select a sub-subcategory if this product belongs to a nested subcategory under "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}"
-                    </p>
-                  </>
-                ) : (
-                  <div className="text-sm text-gray-500 italic py-2 bg-white rounded px-3 border border-gray-200">
-                    No sub-subcategories available for "{subCategories.find(sc => sc.id === parseInt(formData.sub_category_id))?.name || 'selected subcategory'}". This product will use the parent SubCategory.
+                      min="0"
+                      className="input-modern"
+                    />
                   </div>
-                )}
-              </div>
-            )}
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Product Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="product_type"
-              value={formData.product_type}
-              onChange={handleChange}
-              className="input-modern"
-              required
-            >
-              <option value="">Select Product Type</option>
-              <option value="frame">Frame (Eyeglasses)</option>
-              <option value="sunglasses">Sunglasses</option>
-              <option value="contact_lens">Contact Lens</option>
-              <option value="eye_hygiene">Eye Hygiene</option>
-              <option value="lens">Lens</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Stock Quantity
-              </label>
-              <input
-                type="number"
-                name="stock_quantity"
-                value={formData.stock_quantity}
-                onChange={handleChange}
-                min="0"
-                className="input-modern"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Stock Status
-              </label>
-              <select
-                name="stock_status"
-                value={formData.stock_status}
-                onChange={handleChange}
-                className="input-modern"
-              >
-                <option value="in_stock">In Stock</option>
-                <option value="out_of_stock">Out of Stock</option>
-                <option value="backorder">Backorder</option>
-                <option value="preorder">Preorder</option>
-              </select>
-            </div>
-          </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Stock Status
+                    </label>
+                    <select
+                      name="stock_status"
+                      value={formData.stock_status}
+                      onChange={handleChange}
+                      className="input-modern"
+                    >
+                      <option value="in_stock">In Stock</option>
+                      <option value="out_of_stock">Out of Stock</option>
+                      <option value="backorder">Backorder</option>
+                      <option value="preorder">Preorder</option>
+                    </select>
+                  </div>
+                </div>
 
 
                 {/* Frame/Lens related fields - Only show for frames, sunglasses, opty-kids */}
                 {!isEyeHygiene && (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-200 pt-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Shape
-              </label>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Frame Shape
+                        </label>
                         <select
-                name="frame_shape"
-                value={formData.frame_shape}
-                onChange={handleChange}
-                className="input-modern"
+                          name="frame_shape"
+                          value={formData.frame_shape}
+                          onChange={handleChange}
+                          className="input-modern"
                         >
                           <option value="">Select Frame Shape</option>
                           {frameShapes.map((shape) => (
@@ -3236,20 +3235,20 @@ const ProductModal = ({ product, onClose }) => {
                             </option>
                           ))}
                         </select>
-            </div>
+                      </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Material
-              </label>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Frame Material
+                        </label>
                         <select
-                name="frame_material"
+                          name="frame_material"
                           value={Array.isArray(formData.frame_material) ? formData.frame_material[0] : formData.frame_material}
-                onChange={(e) => {
-                  const value = e.target.value;
+                          onChange={(e) => {
+                            const value = e.target.value;
                             setFormData({ ...formData, frame_material: value ? [value] : [] });
-                }}
-                className="input-modern"
+                          }}
+                          className="input-modern"
                         >
                           <option value="">Select Frame Material</option>
                           {frameMaterials.map((material) => (
@@ -3258,57 +3257,57 @@ const ProductModal = ({ product, onClose }) => {
                             </option>
                           ))}
                         </select>
-            </div>
-          </div>
+                      </div>
+                    </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Frame Color
-              </label>
-              <input
-                type="text"
-                name="frame_color"
-                value={formData.frame_color}
-                onChange={handleChange}
-                className="input-modern"
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Frame Color
+                        </label>
+                        <input
+                          type="text"
+                          name="frame_color"
+                          value={formData.frame_color}
+                          onChange={handleChange}
+                          className="input-modern"
                           placeholder="e.g., Black, Brown, Blue"
-              />
-            </div>
+                        />
+                      </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Gender
-              </label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="input-modern"
-              >
-                <option value="">Select Gender</option>
-                {genders.map((gender) => (
-                  <option key={gender} value={gender}>
-                    {gender.charAt(0).toUpperCase() + gender.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Gender
+                        </label>
+                        <select
+                          name="gender"
+                          value={formData.gender}
+                          onChange={handleChange}
+                          className="input-modern"
+                        >
+                          <option value="">Select Gender</option>
+                          {genders.map((gender) => (
+                            <option key={gender} value={gender}>
+                              {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Lens Type
-            </label>
-            <input
-              type="text"
-              name="lens_type"
-              value={formData.lens_type}
-              onChange={handleChange}
-              className="input-modern"
-              placeholder="Enter any lens type"
-            />
-          </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Lens Type
+                      </label>
+                      <input
+                        type="text"
+                        name="lens_type"
+                        value={formData.lens_type}
+                        onChange={handleChange}
+                        className="input-modern"
+                        placeholder="Enter any lens type"
+                      />
+                    </div>
                   </>
                 )}
 
@@ -3346,7 +3345,7 @@ const ProductModal = ({ product, onClose }) => {
                     <strong>ℹ️ Note:</strong> Lens Management configurations are global settings that apply to all frames, sunglasses, and opty-kids products.
                   </p>
                 </div>
-                
+
                 <div className="space-y-6 max-h-[60vh] overflow-y-auto">
                   {/* Frame Sizes Table */}
                   <LensManagementTable
@@ -3941,20 +3940,20 @@ const ProductModal = ({ product, onClose }) => {
                     <h3 className="text-lg font-semibold text-gray-900">Size/Volume Variants</h3>
                     <p className="text-sm text-gray-500 mt-1">
                       Manage multiple volume options (e.g., 5ml, 10ml, 30ml) with individual prices, stock, and SKUs
-                  </p>
-                </div>
+                    </p>
+                  </div>
                   {getValidProductId() && (
-                  <button
-                    type="button"
-                    onClick={() => {
+                    <button
+                      type="button"
+                      onClick={() => {
                         setEditingVariant(null);
                         setVariantModalOpen(true);
                       }}
                       className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
                     >
                       <FiPlus className="w-4 h-4" />
-                    Add Variant
-                  </button>
+                      Add Variant
+                    </button>
                   )}
                 </div>
 
@@ -3972,9 +3971,9 @@ const ProductModal = ({ product, onClose }) => {
                 ) : sizeVolumeVariants.length === 0 ? (
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
                     <p className="text-gray-600 mb-4">No variants added yet.</p>
-                          <button
-                            type="button"
-                            onClick={() => {
+                    <button
+                      type="button"
+                      onClick={() => {
                         setEditingVariant(null);
                         setVariantModalOpen(true);
                       }}
@@ -3982,8 +3981,8 @@ const ProductModal = ({ product, onClose }) => {
                     >
                       <FiPlus className="w-4 h-4" />
                       Add First Variant
-                          </button>
-                        </div>
+                    </button>
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
@@ -4012,13 +4011,12 @@ const ProductModal = ({ product, onClose }) => {
                             <td className="px-4 py-3 text-sm text-gray-600">
                               <div className="font-medium">{variant.stock_quantity ?? 0}</div>
                               {variant.stock_status && (
-                                <div className={`text-xs mt-1 ${
-                                  variant.stock_status === 'in_stock' ? 'text-green-600' : 
-                                  variant.stock_status === 'out_of_stock' ? 'text-red-600' : 
-                                  'text-yellow-600'
-                                }`}>
+                                <div className={`text-xs mt-1 ${variant.stock_status === 'in_stock' ? 'text-green-600' :
+                                    variant.stock_status === 'out_of_stock' ? 'text-red-600' :
+                                      'text-yellow-600'
+                                  }`}>
                                   {String(variant.stock_status).replace(/_/g, ' ')}
-                          </div>
+                                </div>
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600">{variant.sku || '-'}</td>
@@ -4053,7 +4051,7 @@ const ProductModal = ({ product, onClose }) => {
                                 >
                                   <FiTrash2 className="w-4 h-4" />
                                 </button>
-                          </div>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -4068,390 +4066,388 @@ const ProductModal = ({ product, onClose }) => {
             {activeTab === 'images' && (
               <>
                 {/* Multiple Images Upload - Enhanced Design */}
-          <div className="border-t border-gray-200 pt-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              {t('productImages')} <span className="text-indigo-600 font-bold">({t('multipleSelectionSupported')})</span>
-            </label>
-            
-            <div className="space-y-4">
-              {/* Display existing/preview images */}
-              {imagePreviews.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700">
-                      {t('selectedImages')} ({imagePreviews.length})
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImageFiles([]);
-                        setImagePreviews([]);
-                        setExistingImages([]); // Clear existing images tracking - will send images: "[]" to delete all
-                        toast.success(t('clearAll'));
-                      }}
-                      className="text-xs text-red-600 hover:text-red-800 font-medium"
-                    >
-                      {t('clearAll')}
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {imagePreviews.map((preview, index) => {
-                      const isExisting = typeof preview === 'string' && !preview.startsWith('blob:') && !preview.startsWith('data:') && existingImages.includes(preview);
-                      return (
-                        <div key={index} className="relative group">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className={`w-full h-32 object-cover rounded-xl border-2 shadow-md hover:border-indigo-400 transition-all ${
-                              isExisting ? 'border-blue-300' : 'border-gray-200'
-                            }`}
-                            onError={(e) => {
-                              console.error('Image preview error:', e);
-                              toast.error(`Failed to display image ${index + 1}`);
-                              // Remove failed image
-                              removeImage(index);
-                            }}
-                          />
+                <div className="border-t border-gray-200 pt-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    {t('productImages')} <span className="text-indigo-600 font-bold">({t('multipleSelectionSupported')})</span>
+                  </label>
+
+                  <div className="space-y-4">
+                    {/* Display existing/preview images */}
+                    {imagePreviews.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-medium text-gray-700">
+                            {t('selectedImages')} ({imagePreviews.length})
+                          </p>
                           <button
                             type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
-                            title="Remove image"
+                            onClick={() => {
+                              setImageFiles([]);
+                              setImagePreviews([]);
+                              setExistingImages([]); // Clear existing images tracking - will send images: "[]" to delete all
+                              toast.success(t('clearAll'));
+                            }}
+                            className="text-xs text-red-600 hover:text-red-800 font-medium"
                           >
-                            <FiX className="w-4 h-4" />
+                            {t('clearAll')}
                           </button>
-                          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs text-center py-1.5 rounded-b-xl ${
-                            isExisting ? 'bg-blue-600/80' : ''
-                          }`}>
-                            {isExisting ? 'Existing' : 'New'} - Image {index + 1}
-                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              
-              {/* Upload area - Enhanced */}
-              <label 
-                htmlFor="product-image-input"
-                className="flex flex-col items-center justify-center w-full min-h-[180px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-200 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 group"
-              >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
-                  <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-4 group-hover:bg-indigo-200 transition-colors">
-                    <FiUpload className="w-8 h-8 text-indigo-600" />
-                  </div>
-                  <p className="text-base font-semibold text-gray-700 mb-1">
-                    {imagePreviews.length > 0 ? t('addMoreImages') : t('clickToSelectMultipleImages')}
-                  </p>
-                  <p className="text-sm text-gray-600 text-center">
-                    {t('youCanSelectMultipleImages')}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    {t('supportedFormats')}
-                  </p>
-                  {imagePreviews.length > 0 && (
-                    <div className="mt-3 px-4 py-2 bg-indigo-100 rounded-lg">
-                      <p className="text-sm text-indigo-700 font-semibold">
-                        ✓ {imagePreviews.length} image{imagePreviews.length !== 1 ? 's' : ''} selected
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageChange}
-                  className="hidden"
-                  id="product-image-input"
-                />
-              </label>
-              <p className="text-xs text-gray-500 text-center">
-                💡 Tip: Hold Ctrl (Windows) or Cmd (Mac) to select multiple images, or drag and drop files
-              </p>
-            </div>
-          </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                          {imagePreviews.map((preview, index) => {
+                            const isExisting = typeof preview === 'string' && !preview.startsWith('blob:') && !preview.startsWith('data:') && existingImages.includes(preview);
+                            return (
+                              <div key={index} className="relative group">
+                                <img
+                                  src={preview}
+                                  alt={`Preview ${index + 1}`}
+                                  className={`w-full h-32 object-cover rounded-xl border-2 shadow-md hover:border-indigo-400 transition-all ${isExisting ? 'border-blue-300' : 'border-gray-200'
+                                    }`}
+                                  onError={(e) => {
+                                    console.error('Image preview error:', e);
+                                    toast.error(`Failed to display image ${index + 1}`);
+                                    // Remove failed image
+                                    removeImage(index);
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(index)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
+                                  title="Remove image"
+                                >
+                                  <FiX className="w-4 h-4" />
+                                </button>
+                                <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs text-center py-1.5 rounded-b-xl ${isExisting ? 'bg-blue-600/80' : ''
+                                  }`}>
+                                  {isExisting ? 'Existing' : 'New'} - Image {index + 1}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
-          {/* 3D Model Upload - Per Postman Collection - Hide for Eye Hygiene */}
-          {!isEyeHygiene && (
-          <div className="border-t border-gray-200 pt-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              {t('model3D')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
-            </label>
-            <div className="space-y-4">
-              {/* Display existing/preview 3D model */}
-              {model3DPreview && (
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700">
-                      {t('model3D')} {t('selected')}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={removeModel3D}
-                      className="text-xs text-red-600 hover:text-red-800 font-medium"
+                    {/* Upload area - Enhanced */}
+                    <label
+                      htmlFor="product-image-input"
+                      className="flex flex-col items-center justify-center w-full min-h-[180px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-200 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 group"
                     >
-                      Remove
-                    </button>
-                  </div>
-                  <div className="bg-gray-100 rounded-xl p-4 border-2 border-gray-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center">
-                        <span className="text-2xl">📦</span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-900">
-                          {model3DFile ? model3DFile.name : '3D Model'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {model3DFile ? `${(model3DFile.size / 1024 / 1024).toFixed(2)} MB` : 'Existing model'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Upload area */}
-              <label 
-                htmlFor="product-3d-model-input"
-                className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-200 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 group"
-              >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-3 group-hover:bg-indigo-200 transition-colors">
-                    <span className="text-2xl">📦</span>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">
-                    {model3DPreview ? 'Replace 3D Model' : 'Click to Upload 3D Model'}
-                  </p>
-                  <p className="text-xs text-gray-600 text-center">
-                    Supported: GLB, GLTF, OBJ, FBX, DAE
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 text-center">
-                    Max size: 50MB
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  accept=".glb,.gltf,.obj,.fbx,.dae"
-                  onChange={handleModel3DChange}
-                  className="hidden"
-                  id="product-3d-model-input"
-                />
-              </label>
-            </div>
-          </div>
-          )}
-
-          {/* Images with Color Codes - Single Upload System - Hide for Eye Hygiene */}
-          {!isEyeHygiene && (
-          <div className="border-t border-gray-200 pt-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              {t('imagesWithColorCodes')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
-            </label>
-            <p className="text-xs text-gray-600 mb-4">
-              Upload images and assign a hex color code to each image. Each image can be associated with a specific color variant.
-              Format: <code className="bg-gray-100 px-1 rounded">#RRGGBB</code> (e.g., #000000 for black, #FFD700 for gold)
-            </p>
-            
-            {/* Display images with their assigned hex codes */}
-            {imagesWithColors.length > 0 && (
-              <div className="mb-4 space-y-3">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-gray-700">
-                    Images with Colors ({imagesWithColors.length})
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImagesWithColors([]);
-                      setExistingColorImages([]); // Clear existing color images tracking - will send color_images: "[]" to delete all
-                      toast.success('All color images cleared');
-                    }}
-                    className="text-xs text-red-600 hover:text-red-800 font-medium"
-                  >
-                    Clear All
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {imagesWithColors.map((img) => (
-                    <div key={img.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="relative mb-2">
-                        <img
-                          src={img.preview}
-                          alt="Product color variant"
-                          className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImageWithColor(img.id)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg"
-                          title="Remove image"
-                        >
-                          <FiX className="w-3 h-3" />
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Hex Color Code
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={img.hexCode || ''}
-                              onChange={(e) => updateImageHexCode(img.id, e.target.value)}
-                              placeholder="#000000"
-                              className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                              pattern="^#[0-9A-Fa-f]{6}$"
-                            />
-                            {img.hexCode && isValidHexCode(img.hexCode) && (
-                              <div 
-                                className="w-8 h-8 rounded border-2 border-gray-300 shadow-sm flex-shrink-0"
-                                style={{ backgroundColor: img.hexCode }}
-                                title={img.hexCode}
-                              />
-                            )}
-                          </div>
-                          {img.hexCode && !isValidHexCode(img.hexCode) && (
-                            <p className="text-xs text-red-600 mt-1">Invalid hex code format</p>
-                          )}
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                        <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-4 group-hover:bg-indigo-200 transition-colors">
+                          <FiUpload className="w-8 h-8 text-indigo-600" />
                         </div>
-                        {img.hexCode && isValidHexCode(img.hexCode) && (
-                          <p className="text-xs text-gray-600">
-                            {getColorNameFromHex(img.hexCode)} ({img.hexCode})
-                          </p>
+                        <p className="text-base font-semibold text-gray-700 mb-1">
+                          {imagePreviews.length > 0 ? t('addMoreImages') : t('clickToSelectMultipleImages')}
+                        </p>
+                        <p className="text-sm text-gray-600 text-center">
+                          {t('youCanSelectMultipleImages')}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                          {t('supportedFormats')}
+                        </p>
+                        {imagePreviews.length > 0 && (
+                          <div className="mt-3 px-4 py-2 bg-indigo-100 rounded-lg">
+                            <p className="text-sm text-indigo-700 font-semibold">
+                              ✓ {imagePreviews.length} image{imagePreviews.length !== 1 ? 's' : ''} selected
+                            </p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Upload area for images with colors */}
-            <label 
-              htmlFor="images-with-colors-input"
-              className="flex flex-col items-center justify-center w-full min-h-[150px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-200 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 group"
-            >
-              <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-3 group-hover:bg-indigo-200 transition-colors">
-                  <FiUpload className="w-6 h-6 text-indigo-600" />
-                </div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">
-                  {imagesWithColors.length > 0 ? 'Add More Images' : 'Click to Upload Images'}
-                </p>
-                <p className="text-xs text-gray-600 text-center">
-                  Upload images and assign hex color codes to each
-                </p>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Supported formats: PNG, JPG, JPEG, WEBP • Max 5MB per image
-                </p>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-                className="hidden"
-                id="images-with-colors-input"
-              />
-            </label>
-            
-            {/* Quick color picker for common colors */}
-            <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <p className="text-xs font-medium text-blue-700 mb-2">{t('quickColorCodes')}</p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { hex: '#000000', name: 'Black' },
-                  { hex: '#8B4513', name: 'Brown' },
-                  { hex: '#0000FF', name: 'Blue' },
-                  { hex: '#FF0000', name: 'Red' },
-                  { hex: '#008000', name: 'Green' },
-                  { hex: '#808080', name: 'Gray' },
-                  { hex: '#FFD700', name: 'Gold' },
-                  { hex: '#C0C0C0', name: 'Silver' },
-                ].map(({ hex, name }) => (
-                  <button
-                    key={hex}
-                    type="button"
-                    onClick={() => {
-                      // Apply to all images without hex codes
-                      setImagesWithColors(imagesWithColors.map(img => 
-                        !img.hexCode ? { ...img, hexCode: hex } : img
-                      ));
-                      toast.success(`Applied ${name} (${hex}) to unassigned images`);
-                    }}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs"
-                    title={`Apply ${name} (${hex}) to unassigned images`}
-                  >
-                    <div 
-                      className="w-4 h-4 rounded border border-gray-300"
-                      style={{ backgroundColor: hex }}
-                    />
-                    <span className="text-gray-700">{name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          )}
-          
-          {/* General Images (without color codes) - Optional */}
-          <div className="border-t border-gray-200 pt-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              {t('generalProductImages')} <span className="text-gray-500 text-xs font-normal">({t('noColorCodes')})</span>
-            </label>
-            <p className="text-xs text-gray-600 mb-4">
-              Upload general product images that are not associated with specific color variants.
-            </p>
-            <div className="space-y-4">
-              {imagePreviews.length > 0 && (
-                <div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={preview}
-                          alt={`General image ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-xl border-2 border-gray-200 shadow-md hover:border-indigo-400 transition-all"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
-                          title="Remove image"
-                        >
-                          <FiX className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        className="hidden"
+                        id="product-image-input"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 text-center">
+                      💡 Tip: Hold Ctrl (Windows) or Cmd (Mac) to select multiple images, or drag and drop files
+                    </p>
                   </div>
                 </div>
-              )}
-              <label 
-                htmlFor="general-image-input"
-                className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-gray-400 hover:bg-gray-50/50 transition-all duration-200"
-              >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
-                  <FiUpload className="w-6 h-6 text-gray-400 mb-2" />
-                  <p className="text-sm font-medium text-gray-700">
-                    {imagePreviews.length > 0 ? 'Add More General Images' : 'Upload General Images'}
+
+                {/* 3D Model Upload - Per Postman Collection - Hide for Eye Hygiene */}
+                {!isEyeHygiene && (
+                  <div className="border-t border-gray-200 pt-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      {t('model3D')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
+                    </label>
+                    <div className="space-y-4">
+                      {/* Display existing/preview 3D model */}
+                      {model3DPreview && (
+                        <div className="relative">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-medium text-gray-700">
+                              {t('model3D')} {t('selected')}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={removeModel3D}
+                              className="text-xs text-red-600 hover:text-red-800 font-medium"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <div className="bg-gray-100 rounded-xl p-4 border-2 border-gray-200">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                <span className="text-2xl">📦</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {model3DFile ? model3DFile.name : '3D Model'}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {model3DFile ? `${(model3DFile.size / 1024 / 1024).toFixed(2)} MB` : 'Existing model'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Upload area */}
+                      <label
+                        htmlFor="product-3d-model-input"
+                        className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-200 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 group"
+                      >
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                          <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-3 group-hover:bg-indigo-200 transition-colors">
+                            <span className="text-2xl">📦</span>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">
+                            {model3DPreview ? 'Replace 3D Model' : 'Click to Upload 3D Model'}
+                          </p>
+                          <p className="text-xs text-gray-600 text-center">
+                            Supported: GLB, GLTF, OBJ, FBX, DAE
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1 text-center">
+                            Max size: 50MB
+                          </p>
+                        </div>
+                        <input
+                          type="file"
+                          accept=".glb,.gltf,.obj,.fbx,.dae"
+                          onChange={handleModel3DChange}
+                          className="hidden"
+                          id="product-3d-model-input"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* Images with Color Codes - Single Upload System - Hide for Eye Hygiene */}
+                {!isEyeHygiene && (
+                  <div className="border-t border-gray-200 pt-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      {t('imagesWithColorCodes')} <span className="text-gray-500 text-xs font-normal">({t('optional')})</span>
+                    </label>
+                    <p className="text-xs text-gray-600 mb-4">
+                      Upload images and assign a hex color code to each image. Each image can be associated with a specific color variant.
+                      Format: <code className="bg-gray-100 px-1 rounded">#RRGGBB</code> (e.g., #000000 for black, #FFD700 for gold)
+                    </p>
+
+                    {/* Display images with their assigned hex codes */}
+                    {imagesWithColors.length > 0 && (
+                      <div className="mb-4 space-y-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-medium text-gray-700">
+                            Images with Colors ({imagesWithColors.length})
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImagesWithColors([]);
+                              setExistingColorImages([]); // Clear existing color images tracking - will send color_images: "[]" to delete all
+                              toast.success('All color images cleared');
+                            }}
+                            className="text-xs text-red-600 hover:text-red-800 font-medium"
+                          >
+                            Clear All
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {imagesWithColors.map((img) => (
+                            <div key={img.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                              <div className="relative mb-2">
+                                <img
+                                  src={img.preview}
+                                  alt="Product color variant"
+                                  className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImageWithColor(img.id)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg"
+                                  title="Remove image"
+                                >
+                                  <FiX className="w-3 h-3" />
+                                </button>
+                              </div>
+                              <div className="space-y-2">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Hex Color Code
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={img.hexCode || ''}
+                                      onChange={(e) => updateImageHexCode(img.id, e.target.value)}
+                                      placeholder="#000000"
+                                      className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                      pattern="^#[0-9A-Fa-f]{6}$"
+                                    />
+                                    {img.hexCode && isValidHexCode(img.hexCode) && (
+                                      <div
+                                        className="w-8 h-8 rounded border-2 border-gray-300 shadow-sm flex-shrink-0"
+                                        style={{ backgroundColor: img.hexCode }}
+                                        title={img.hexCode}
+                                      />
+                                    )}
+                                  </div>
+                                  {img.hexCode && !isValidHexCode(img.hexCode) && (
+                                    <p className="text-xs text-red-600 mt-1">Invalid hex code format</p>
+                                  )}
+                                </div>
+                                {img.hexCode && isValidHexCode(img.hexCode) && (
+                                  <p className="text-xs text-gray-600">
+                                    {getColorNameFromHex(img.hexCode)} ({img.hexCode})
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload area for images with colors */}
+                    <label
+                      htmlFor="images-with-colors-input"
+                      className="flex flex-col items-center justify-center w-full min-h-[150px] border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-200 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 group"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-3 group-hover:bg-indigo-200 transition-colors">
+                          <FiUpload className="w-6 h-6 text-indigo-600" />
+                        </div>
+                        <p className="text-sm font-semibold text-gray-700 mb-1">
+                          {imagesWithColors.length > 0 ? 'Add More Images' : 'Click to Upload Images'}
+                        </p>
+                        <p className="text-xs text-gray-600 text-center">
+                          Upload images and assign hex color codes to each
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                          Supported formats: PNG, JPG, JPEG, WEBP • Max 5MB per image
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        className="hidden"
+                        id="images-with-colors-input"
+                      />
+                    </label>
+
+                    {/* Quick color picker for common colors */}
+                    <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <p className="text-xs font-medium text-blue-700 mb-2">{t('quickColorCodes')}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { hex: '#000000', name: 'Black' },
+                          { hex: '#8B4513', name: 'Brown' },
+                          { hex: '#0000FF', name: 'Blue' },
+                          { hex: '#FF0000', name: 'Red' },
+                          { hex: '#008000', name: 'Green' },
+                          { hex: '#808080', name: 'Gray' },
+                          { hex: '#FFD700', name: 'Gold' },
+                          { hex: '#C0C0C0', name: 'Silver' },
+                        ].map(({ hex, name }) => (
+                          <button
+                            key={hex}
+                            type="button"
+                            onClick={() => {
+                              // Apply to all images without hex codes
+                              setImagesWithColors(imagesWithColors.map(img =>
+                                !img.hexCode ? { ...img, hexCode: hex } : img
+                              ));
+                              toast.success(`Applied ${name} (${hex}) to unassigned images`);
+                            }}
+                            className="flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs"
+                            title={`Apply ${name} (${hex}) to unassigned images`}
+                          >
+                            <div
+                              className="w-4 h-4 rounded border border-gray-300"
+                              style={{ backgroundColor: hex }}
+                            />
+                            <span className="text-gray-700">{name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* General Images (without color codes) - Optional */}
+                <div className="border-t border-gray-200 pt-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    {t('generalProductImages')} <span className="text-gray-500 text-xs font-normal">({t('noColorCodes')})</span>
+                  </label>
+                  <p className="text-xs text-gray-600 mb-4">
+                    Upload general product images that are not associated with specific color variants.
                   </p>
+                  <div className="space-y-4">
+                    {imagePreviews.length > 0 && (
+                      <div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={preview}
+                                alt={`General image ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-xl border-2 border-gray-200 shadow-md hover:border-indigo-400 transition-all"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100 z-10"
+                                title="Remove image"
+                              >
+                                <FiX className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <label
+                      htmlFor="general-image-input"
+                      className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-gray-400 hover:bg-gray-50/50 transition-all duration-200"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                        <FiUpload className="w-6 h-6 text-gray-400 mb-2" />
+                        <p className="text-sm font-medium text-gray-700">
+                          {imagePreviews.length > 0 ? 'Add More General Images' : 'Upload General Images'}
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleGeneralImageChange}
+                        className="hidden"
+                        id="general-image-input"
+                      />
+                    </label>
+                  </div>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleGeneralImageChange}
-                  className="hidden"
-                  id="general-image-input"
-                />
-              </label>
-            </div>
-          </div>
-                </>
+              </>
             )}
 
             {/* Spherical Configurations Tab */}
@@ -4490,7 +4486,7 @@ const ProductModal = ({ product, onClose }) => {
                         {sphericalConfigs.length === 0 ? (
                           <tr>
                             <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
-                              {currentProduct?.id 
+                              {currentProduct?.id
                                 ? 'No spherical configurations found. Click "Add Configuration" to create one.'
                                 : 'No spherical configurations found. Save the product first to add configurations.'}
                             </td>
@@ -4501,7 +4497,7 @@ const ProductModal = ({ product, onClose }) => {
                             const displayName = config.display_name || config.displayName || config.name || 'N/A';
                             const price = config.price !== undefined ? config.price : '0.00';
                             const isActive = config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true);
-                            
+
                             return (
                               <tr key={config.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
@@ -4579,7 +4575,7 @@ const ProductModal = ({ product, onClose }) => {
                         {astigmatismConfigs.length === 0 ? (
                           <tr>
                             <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
-                              {currentProduct?.id 
+                              {currentProduct?.id
                                 ? 'No astigmatism configurations found. Click "Add Configuration" to create one.'
                                 : 'No astigmatism configurations found. Save the product first to add configurations.'}
                             </td>
@@ -4590,7 +4586,7 @@ const ProductModal = ({ product, onClose }) => {
                             const displayName = config.display_name || config.displayName || config.name || 'N/A';
                             const price = config.price !== undefined ? config.price : '0.00';
                             const isActive = config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true);
-                            
+
                             return (
                               <tr key={config.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
@@ -4635,45 +4631,45 @@ const ProductModal = ({ product, onClose }) => {
             {/* SEO Tab */}
             {activeTab === 'seo' && (
               <>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Meta Title
-                </label>
-                <input
-                  type="text"
-                  name="meta_title"
-                  value={formData.meta_title}
-                  onChange={handleChange}
-                  className="input-modern"
-                  placeholder="SEO title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Meta Description
-                </label>
-                <textarea
-                  name="meta_description"
-                  value={formData.meta_description}
-                  onChange={handleChange}
-                  rows="2"
-                  className="input-modern resize-none"
-                  placeholder="SEO description"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Meta Keywords
-                </label>
-                <input
-                  type="text"
-                  name="meta_keywords"
-                  value={formData.meta_keywords}
-                  onChange={handleChange}
-                  className="input-modern"
-                  placeholder="keyword1, keyword2, keyword3"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Meta Title
+                  </label>
+                  <input
+                    type="text"
+                    name="meta_title"
+                    value={formData.meta_title}
+                    onChange={handleChange}
+                    className="input-modern"
+                    placeholder="SEO title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Meta Description
+                  </label>
+                  <textarea
+                    name="meta_description"
+                    value={formData.meta_description}
+                    onChange={handleChange}
+                    rows="2"
+                    className="input-modern resize-none"
+                    placeholder="SEO description"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Meta Keywords
+                  </label>
+                  <input
+                    type="text"
+                    name="meta_keywords"
+                    value={formData.meta_keywords}
+                    onChange={handleChange}
+                    className="input-modern"
+                    placeholder="keyword1, keyword2, keyword3"
+                  />
+                </div>
               </>
             )}
           </div>
@@ -4696,7 +4692,7 @@ const ProductModal = ({ product, onClose }) => {
             </button>
           </div>
         </form>
-        
+
         {/* Configuration Modals - Rendered outside form to avoid nested forms */}
         {sphericalModalOpen && (
           <SphericalConfigModal
@@ -4726,7 +4722,7 @@ const ProductModal = ({ product, onClose }) => {
             }}
           />
         )}
-        
+
         {/* Size/Volume Variant Modal */}
         {variantModalOpen && getValidProductId() && SizeVolumeVariantModalComponent && (
           <SizeVolumeVariantModalComponent

@@ -20,6 +20,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     // Fetch products when component mounts
@@ -62,6 +63,11 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
             : ''),
         size_label: frameSize.size_label || frameSize.sizeLabel || '',
       });
+      // Set selected product if editing existing frame size
+      if (frameSize.product_id || frameSize.productId) {
+        const productId = frameSize.product_id || frameSize.productId;
+        setSelectedProduct(products.find(p => p.id == productId) || null);
+      }
     } else {
       setFormData({
         product_id: '',
@@ -72,8 +78,9 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
         frame_height: '',
         size_label: '',
       });
+      setSelectedProduct(null);
     }
-  }, [frameSize]);
+  }, [frameSize, products]);
 
   const fetchProducts = async () => {
     try {
@@ -89,6 +96,11 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
     } finally {
       setProductsLoading(false);
     }
+  };
+
+  const handleProductSelect = (product) => {
+    setSelectedProduct(product);
+    setFormData({ ...formData, product_id: product.id });
   };
 
   const handleChange = (e) => {
@@ -167,23 +179,100 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               {t('selectProduct')} <span className="text-red-500">*</span>
             </label>
-            <select
-              name="product_id"
-              value={formData.product_id}
-              onChange={handleChange}
-              className="input-modern"
-              required
-              disabled={productsLoading}
-            >
-              <option value="">{productsLoading ? 'Loading products...' : 'Select a product'}</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name} {product.product_code ? `(${product.product_code})` : ''}
-                </option>
-              ))}
-            </select>
-            {products.length === 0 && !productsLoading && (
-              <p className="text-xs text-gray-500 mt-1">No products available</p>
+            
+            {/* Selected Product Display */}
+            {selectedProduct && (
+              <div className="mb-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-indigo-900">{selectedProduct.name}</p>
+                    <p className="text-sm text-indigo-700">
+                      {selectedProduct.product_code && `Code: ${selectedProduct.product_code}`}
+                      {selectedProduct.price && ` • Price: $${selectedProduct.price}`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setFormData({ ...formData, product_id: '' });
+                    }}
+                    className="text-indigo-600 hover:text-indigo-800"
+                  >
+                    <FiX className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Products Table */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="max-h-60 overflow-y-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product Name
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Code
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {productsLoading ? (
+                      <tr>
+                        <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                          Loading products...
+                        </td>
+                      </tr>
+                    ) : products.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                          No products available
+                        </td>
+                      </tr>
+                    ) : (
+                      products.map((product) => (
+                        <tr
+                          key={product.id}
+                          onClick={() => handleProductSelect(product)}
+                          className={`cursor-pointer hover:bg-gray-50 transition-colors ${
+                            selectedProduct?.id === product.id ? 'bg-indigo-50' : ''
+                          }`}
+                        >
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {product.name}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {product.product_code || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {product.price ? `$${product.price}` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {product.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {!selectedProduct && (
+              <p className="text-xs text-gray-500 mt-1">Click on a product to select it</p>
             )}
           </div>
 

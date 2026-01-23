@@ -241,10 +241,12 @@ const FrameSizes = () => {
       {modalOpen && (
         <FrameSizeModal
           frameSize={selectedFrameSize}
-          onClose={() => {
+          onClose={(shouldRefresh = false) => {
             setModalOpen(false);
             setSelectedFrameSize(null);
-            fetchFrameSizes();
+            if (shouldRefresh) {
+              fetchFrameSizes();
+            }
           }}
         />
       )}

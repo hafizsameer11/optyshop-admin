@@ -331,10 +331,14 @@ const FrameSizes = () => {
         <FrameSizeModal
           frameSize={selectedFrameSize}
           onClose={(shouldRefresh = false) => {
+            console.log('🔄 FrameSizeModal onClose called with shouldRefresh:', shouldRefresh);
             setModalOpen(false);
             setSelectedFrameSize(null);
             if (shouldRefresh) {
+              console.log('📋 Refreshing frame sizes list after modal save');
               fetchFrameSizes();
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

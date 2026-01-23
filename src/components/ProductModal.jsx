@@ -81,6 +81,7 @@ const ProductModal = ({ product, onClose }) => {
   // saved: true if form was saved successfully, false/undefined if cancelled/closed
   const handleLensManagementClose = (modalType) => {
     return (saved = false) => {
+      console.log(`🔄 ${modalType} modal closing with saved=${saved}`);
       // Close the lens management modal
       const modalStateSetters = {
         'frameSize': [setFrameSizeModalOpen, setSelectedFrameSize],
@@ -110,6 +111,8 @@ const ProductModal = ({ product, onClose }) => {
         setTimeout(() => {
           fetchLensManagementData();
         }, 100);
+      } else {
+        console.log(`❌ ${modalType} modal closed without refresh (cancelled)`);
       }
       // If cancelled, just close the modal and stay in product modal
     };

@@ -123,6 +123,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
       let response;
       if (frameSize) {
+        console.log('🔄 Updating frame size:', frameSize.id, submitData);
         response = await api.put(API_ROUTES.ADMIN.FRAME_SIZES.UPDATE(frameSize.id), submitData);
         // Handle response structure: { success, message, data: { frameSize: {...} } }
         if (response.data?.success) {
@@ -131,6 +132,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
           toast.success('Frame size updated successfully');
         }
       } else {
+        console.log('➕ Creating new frame size:', submitData);
         response = await api.post(API_ROUTES.ADMIN.FRAME_SIZES.CREATE, submitData);
         // Handle response structure: { success, message, data: { frameSize: {...} } }
         if (response.data?.success) {
@@ -139,6 +141,8 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
           toast.success('Frame size created successfully');
         }
       }
+      
+      console.log('✅ Frame size operation completed, calling onClose(true) to refresh table');
       onClose(true); // Pass true to indicate successful save
     } catch (error) {
       console.error('Frame size save error:', error);

@@ -1944,14 +1944,24 @@ const Products = () => {
           <table className="w-full min-w-[800px]">
             <thead className="bg-white border-b border-gray-200">
               <tr>
-                {getTableColumns().map((column) => (
-                  <th 
-                    key={column.key}
-                    className={`table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs ${column.responsive}`}
-                  >
-                    {column.label}
-                </th>
-                ))}
+                {getTableColumns().map((column) => {
+                  // Show header only if column is always visible OR if any product is expanded
+                  const hasExpandedProducts = expandedProducts.size > 0;
+                  const shouldShowHeader = column.alwaysVisible || hasExpandedProducts;
+                  
+                  if (!shouldShowHeader) {
+                    return <th key={column.key} className="hidden"></th>;
+                  }
+                  
+                  return (
+                    <th 
+                      key={column.key}
+                      className={`table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs ${column.responsive}`}
+                    >
+                      {column.label}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">

@@ -18,13 +18,16 @@ const FrameSizes = () => {
   const fetchFrameSizes = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Starting to fetch frame sizes...');
       // Try admin endpoint first, fallback to public endpoint if needed
       let response;
       try {
         response = await api.get(API_ROUTES.ADMIN.FRAME_SIZES.LIST);
+        console.log('✅ API call successful:', response);
       } catch (adminError) {
         // If admin endpoint doesn't exist, rethrow the error
         // Frame sizes should only be managed through admin endpoint
+        console.log('❌ Admin API call failed:', adminError);
         throw adminError;
       }
       console.log('Frame sizes API Response:', response.data);
@@ -336,7 +339,10 @@ const FrameSizes = () => {
             setSelectedFrameSize(null);
             if (shouldRefresh) {
               console.log('📋 Refreshing frame sizes list after modal save');
-              fetchFrameSizes();
+              // Use setTimeout to ensure modal is fully closed before refresh
+              setTimeout(() => {
+                fetchFrameSizes();
+              }, 100);
             } else {
               console.log('❌ Modal closed without refresh (cancelled or failed)');
             }

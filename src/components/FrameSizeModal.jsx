@@ -111,15 +111,43 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.product_id) {
+      toast.error('Please select a product');
+      return;
+    }
+    if (!formData.lens_width) {
+      toast.error('Please enter lens width');
+      return;
+    }
+    if (!formData.bridge_width) {
+      toast.error('Please enter bridge width');
+      return;
+    }
+    if (!formData.temple_length) {
+      toast.error('Please enter temple length');
+      return;
+    }
+    if (!formData.size_label) {
+      toast.error('Please select a size label');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      // Prepare data - convert empty strings to null for optional fields
+      // Prepare data - convert empty strings to null for optional fields and ensure numbers
       const submitData = {
         ...formData,
-        frame_width: formData.frame_width === '' ? null : formData.frame_width,
-        frame_height: formData.frame_height === '' ? null : formData.frame_height,
+        lens_width: parseFloat(formData.lens_width),
+        bridge_width: parseFloat(formData.bridge_width),
+        temple_length: parseFloat(formData.temple_length),
+        frame_width: formData.frame_width ? parseFloat(formData.frame_width) : null,
+        frame_height: formData.frame_height ? parseFloat(formData.frame_height) : null,
       };
+
+      console.log('🚀 Submitting frame size data:', submitData);
 
       let response;
       if (frameSize) {
@@ -145,11 +173,24 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
       console.log('✅ Frame size operation completed, calling onClose(true) to refresh table');
       onClose(true); // Pass true to indicate successful save
     } catch (error) {
-      console.error('Frame size save error:', error);
+      console.error('❌ Frame size save error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      // Don't close modal on error - let user try again
       if (!error.response) {
         toast.error('Backend unavailable - Cannot save frame size');
       } else if (error.response.status === 401) {
         toast.error('❌ Demo mode - Please log in with real credentials to save frame sizes');
+      } else if (error.response.status === 422) {
+        // Validation errors
+        const validationErrors = error.response?.data?.errors || error.response?.data?.message || 'Validation failed';
+        if (typeof validationErrors === 'object') {
+          Object.values(validationErrors).forEach(err => {
+            toast.error(Array.isArray(err) ? err[0] : err);
+          });
+        } else {
+          toast.error(validationErrors);
+        }
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to save frame size';
         toast.error(errorMessage);
@@ -178,7 +219,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1" noValidate>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               {t('selectProduct')} <span className="text-red-500">*</span>

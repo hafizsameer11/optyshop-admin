@@ -343,6 +343,22 @@ export const API_ROUTES = {
   },
 
   // ============================================
+  // FLASH OFFERS (PUBLIC - GET only)
+  // ============================================
+  FLASH_OFFERS: {
+    LIST: `/flash-offers`,                        // PUBLIC - Get all flash offers
+    ACTIVE: `/flash-offers/active`,              // PUBLIC - Get active flash offer
+  },
+
+  // ============================================
+  // PRODUCT GIFTS (PUBLIC - GET only)
+  // ============================================
+  PRODUCT_GIFTS: {
+    LIST: `/product-gifts`,                      // PUBLIC - Get all product gifts
+    BY_PRODUCT: (productId) => `/product-gifts/product/${productId}`, // PUBLIC - Get gifts for specific product
+  },
+
+  // ============================================
   // FORMS (PUBLIC - all routes)
   // ============================================
   // Form configs and submissions are PUBLIC (no auth required)

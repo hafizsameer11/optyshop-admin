@@ -128,6 +128,8 @@ const ProductModal = ({ product, onClose }) => {
     category_id: '',
     sub_category_id: '',
     parent_subcategory_id: '', // For nested subcategories
+    brand_id: '',
+    model_name: '',
     frame_shape: '',
     frame_material: [], // Changed to array for multiple selections
     frame_color: '',
@@ -144,6 +146,7 @@ const ProductModal = ({ product, onClose }) => {
     is_featured: false,
   });
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const categoriesRef = useRef([]);
   const fetchSubCategoriesRef = useRef(null);
   const checkAndSetSubSubCategoryRef = useRef(null);
@@ -430,6 +433,8 @@ const ProductModal = ({ product, onClose }) => {
           category_id: productToUse.category_id || '',
           sub_category_id: productToUse.sub_category_id || productToUse.subcategory_id || '',
           parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
+          brand_id: productToUse.brand_id || '',
+          model_name: productToUse.model_name || '',
           frame_shape: productToUse.frame_shape || '',
           frame_material: Array.isArray(productToUse.frame_material)
             ? productToUse.frame_material
@@ -614,6 +619,8 @@ const ProductModal = ({ product, onClose }) => {
         category_id: '',
         sub_category_id: '',
         parent_subcategory_id: '',
+        brand_id: '',
+        model_name: '',
         frame_shape: '',
         frame_material: [],
         frame_color: '',
@@ -721,6 +728,17 @@ const ProductModal = ({ product, onClose }) => {
       const categoriesData = optionsData.categories || [];
       setCategories(categoriesData);
       categoriesRef.current = categoriesData;
+
+      // Fetch brands
+      try {
+        const brandsResponse = await api.get(API_ROUTES.ADMIN.BRANDS.LIST);
+        const brandsData = brandsResponse.data?.data?.brands || brandsResponse.data?.brands || [];
+        setBrands(Array.isArray(brandsData) ? brandsData : []);
+      } catch (brandError) {
+        console.warn('Failed to fetch brands', brandError);
+        setBrands([]);
+      }
+
       setFrameShapes(optionsData.frameShapes || []);
 
       // Merge API frame materials with additional material types
@@ -1448,6 +1466,12 @@ const ProductModal = ({ product, onClose }) => {
           dataToSend.compare_at_price = comparePrice;
         }
       }
+      if (formData.brand_id) {
+        dataToSend.brand_id = parseInt(formData.brand_id);
+      }
+      if (formData.model_name) {
+        dataToSend.model_name = formData.model_name.trim();
+      }
       // Send product_type if it's provided
       if (formData.product_type) {
         dataToSend.product_type = formData.product_type;
@@ -2079,6 +2103,9 @@ const ProductModal = ({ product, onClose }) => {
     ] : []),
     { id: 'images', label: 'Images' }, // Always shown - all products can have images
     { id: 'seo', label: 'SEO' }, // Always shown - all products can have SEO settings
+    { id: 'clip', label: 'clip' },
+    { id: 'auctions', label: 'Auctions' },
+    { id: 'progressive', label: 'Progressive' },
   ];
 
   // Log tabs for eye hygiene products to help with debugging
@@ -2966,6 +2993,41 @@ const ProductModal = ({ product, onClose }) => {
             {/* General Tab */}
             {activeTab === 'general' && (
               <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t('brand') || 'Brand'}
+                    </label>
+                    <select
+                      name="brand_id"
+                      value={formData.brand_id}
+                      onChange={handleChange}
+                      className="input-modern"
+                    >
+                      <option value="">Select Brand</option>
+                      {brands.map((brand) => (
+                        <option key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t('model') || 'Model'}
+                    </label>
+                    <input
+                      type="text"
+                      name="model_name"
+                      value={formData.model_name}
+                      onChange={handleChange}
+                      className="input-modern"
+                      placeholder="e.g., RB 3025"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     {t('productName')} <span className="text-red-500">*</span>
@@ -4672,6 +4734,33 @@ const ProductModal = ({ product, onClose }) => {
                     className="input-modern"
                     placeholder="keyword1, keyword2, keyword3"
                   />
+                </div>
+              </>
+            )}
+
+            {/* Clip Tab */}
+            {activeTab === 'clip' && (
+              <>
+                <div className="p-6">
+                  <p className="text-gray-600">Clip configuration content goes here.</p>
+                </div>
+              </>
+            )}
+
+            {/* Auctions Tab */}
+            {activeTab === 'auctions' && (
+              <>
+                <div className="p-6">
+                  <p className="text-gray-600">Auctions configuration content goes here.</p>
+                </div>
+              </>
+            )}
+
+            {/* Progressive Tab */}
+            {activeTab === 'progressive' && (
+              <>
+                <div className="p-6">
+                  <p className="text-gray-600">Progressive configuration content goes here.</p>
                 </div>
               </>
             )}

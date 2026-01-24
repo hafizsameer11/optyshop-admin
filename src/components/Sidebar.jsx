@@ -36,7 +36,8 @@ import {
   FiTruck,
   FiLogOut,
   FiMenu,
-  FiAward
+  FiAward,
+  FiGift
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -118,6 +119,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       children: [
         { path: '/coupons', icon: FiTag, label: t('coupons') },
         { path: '/campaigns', icon: FiTrendingUp, label: t('campaigns') },
+        { path: '/flash-offers', icon: FiZap, label: t('flashOffers') },
+        { path: '/free-gifts', icon: FiGift, label: t('freeGifts') },
         { path: '/banners', icon: FiImage, label: t('banners') },
         { path: '/brands', icon: FiAward, label: t('brands') },
       ]

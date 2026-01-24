@@ -511,6 +511,24 @@ export const API_ROUTES = {
       DELETE: (id) => `/admin/campaigns/${id}`,
     },
 
+    // Flash Offers Management
+    FLASH_OFFERS: {
+      LIST: `/admin/flash-offers`,
+      CREATE: `/admin/flash-offers`,
+      BY_ID: (id) => `/admin/flash-offers/${id}`,
+      UPDATE: (id) => `/admin/flash-offers/${id}`,
+      DELETE: (id) => `/admin/flash-offers/${id}`,
+    },
+
+    // Free Gifts Management
+    FREE_GIFTS: {
+      LIST: `/admin/product-gifts`,
+      CREATE: `/admin/product-gifts`,
+      BY_ID: (id) => `/admin/product-gifts/${id}`,
+      UPDATE: (id) => `/admin/product-gifts/${id}`,
+      DELETE: (id) => `/admin/product-gifts/${id}`,
+    },
+
     // Brands Management
     BRANDS: {
       LIST: `/admin/brands`,

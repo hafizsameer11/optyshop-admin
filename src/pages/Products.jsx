@@ -300,8 +300,10 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState(initialState.searchTerm);
   const [categoryFilter, setCategoryFilter] = useState(initialState.categoryFilter);
   const [subCategoryFilter, setSubCategoryFilter] = useState(initialState.subCategoryFilter);
+  const [brandFilter, setBrandFilter] = useState('');
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [page, setPage] = useState(initialState.page);
@@ -330,7 +332,20 @@ const Products = () => {
   useEffect(() => {
     fetchCategories();
     fetchSubCategories();
+    fetchBrands();
   }, []);
+
+  const fetchBrands = async () => {
+    try {
+      const response = await api.get(API_ROUTES.ADMIN.BRANDS.LIST);
+      const responseData = response.data?.data || response.data || {};
+      const brandsData = responseData.brands || responseData || [];
+      setBrands(Array.isArray(brandsData) ? brandsData : []);
+    } catch (error) {
+      console.warn('Failed to fetch brands:', error);
+      setBrands([]);
+    }
+  };
   
   // When categories are loaded and we have a restored categoryFilter, fetch subcategories
   useEffect(() => {
@@ -350,7 +365,7 @@ const Products = () => {
       console.log(`⏳ Waiting for category IDs to be resolved for section "${selectedSection}" before fetching products...`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, categoryFilter, subCategoryFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds, searchTrigger]);
+  }, [page, categoryFilter, subCategoryFilter, brandFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds, searchTrigger]);
   
   // Fetch subcategories when category filter changes
   useEffect(() => {
@@ -561,6 +576,11 @@ const Products = () => {
         // Manual subcategory filter if selected (per Postman collection: sub_category_id query param)
         if (subCategoryFilter) {
           params.append('sub_category_id', subCategoryFilter);
+        }
+
+        // Manual brand filter if selected (per backend update: brand_id query param)
+        if (brandFilter) {
+          params.append('brand_id', brandFilter);
         }
       }
       
@@ -1396,6 +1416,7 @@ const Products = () => {
         { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: false },
       ],
       'all': [
+        { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell', alwaysVisible: false },
         { key: 'color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: false },
         { key: 'product_type', label: 'Product Type', responsive: 'hidden md:table-cell', alwaysVisible: false },
       ],
@@ -1444,6 +1465,13 @@ const Products = () => {
           </td>
         );
       
+      case 'brand':
+        return (
+          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
+            {product.brand?.name || product.brand_name || product.contact_lens_brand || '-'}
+          </td>
+        );
+
       case 'category':
         return (
           <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
@@ -1912,14 +1940,34 @@ const Products = () => {
                 ))}
               </select>
             </div>
+
+            {/* Brand Filter */}
+            <div>
+              <select
+                value={brandFilter}
+                onChange={(e) => {
+                  setBrandFilter(e.target.value);
+                  setPage(1); // Reset to first page on filter change
+                }}
+                className="input-modern w-full"
+              >
+                <option value="">All Brands</option>
+                {brands.map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             
             {/* Clear Filters Button */}
-            {(categoryFilter || subCategoryFilter || searchTerm || selectedSection !== 'all') && (
+            {(categoryFilter || subCategoryFilter || brandFilter || searchTerm || selectedSection !== 'all') && (
               <div>
                 <button
                   onClick={() => {
                     setCategoryFilter('');
                     setSubCategoryFilter('');
+                    setBrandFilter('');
                     setSearchTerm('');
                     setSelectedSection('all');
                     setPage(1);

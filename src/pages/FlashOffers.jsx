@@ -182,7 +182,15 @@ const FlashOffers = () => {
                       {offer.description || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {offer.discount_percentage ? `${offer.discount_percentage}%` : '0%'}
+                      {offer.discount_value ? (
+                        offer.discount_type === 'percentage' 
+                          ? `${offer.discount_value}%`
+                          : `$${offer.discount_value}`
+                      ) : offer.discount_percentage ? (
+                        `${offer.discount_percentage}%`
+                      ) : (
+                        '0%'
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {offer.products && Array.isArray(offer.products) && offer.products.length > 0 ? (

@@ -117,6 +117,88 @@ const ProductModal = ({ product, onClose }) => {
       // If cancelled, just close the modal and stay in product modal
     };
   };
+
+  // SKU Generation function for all product types
+  const generateSKU = () => {
+    // Get brand name from brands array
+    const selectedBrand = brands.find(brand => brand.id === parseInt(formData.brand_id));
+    const brandCode = selectedBrand?.name || '';
+    
+    // Convert brand name to code (e.g., Ray-Ban -> RB)
+    const brandAbbreviation = brandCode
+      .split('-')
+      .map(part => part.trim().charAt(0).toUpperCase())
+      .join('');
+    
+    const model = formData.model_name || '';
+    const lensWidth = formData.lens_width || '';
+    const frameColor = formData.frame_color || '';
+    
+    // Check product type to determine format
+    const productType = formData.product_type || 'frame';
+    
+    if (productType === 'prescription_glasses' || productType === 'eyeglasses') {
+      // Prescription glasses format: RB*RX5228*54*17*2000
+      const bridgeWidth = formData.bridge_width || '';
+      
+      if (!brandAbbreviation || !model || !lensWidth || !bridgeWidth || !frameColor) {
+        toast.error('All fields required for prescription glasses SKU: Brand, Model, Lens Width, Bridge Width, Frame Color');
+        return null;
+      }
+      
+      return `${brandAbbreviation}*${model}*${lensWidth}*${bridgeWidth}*${frameColor}`;
+      
+    } else if (productType === 'sunglasses') {
+      // Sunglasses format: RB-RX5228-54-2000-POLARIZED
+      const lensMaterial = formData.lens_material || '';
+      
+      if (!brandAbbreviation || !model || !lensWidth || !frameColor || !lensMaterial) {
+        toast.error('All fields required for sunglasses SKU: Brand, Model, Lens Width, Frame Color, Lens Material');
+        return null;
+      }
+      
+      return `${brandAbbreviation}-${model}-${lensWidth}-${frameColor}-${lensMaterial}`;
+      
+    } else if (productType === 'contact_lenses') {
+      // Contact lenses format: ACUVUE-OASYS-6PK-8.6-14.2
+      const packaging = formData.packaging || ''; // e.g., 6PK, 30PK
+      const baseCurve = formData.base_curve || ''; // e.g., 8.6
+      const diameter = formData.diameter || ''; // e.g., 14.2
+      
+      if (!brandAbbreviation || !model || !packaging || !baseCurve || !diameter) {
+        toast.error('All fields required for contact lenses SKU: Brand, Model, Packaging, Base Curve, Diameter');
+        return null;
+      }
+      
+      return `${brandAbbreviation}-${model}-${packaging}-${baseCurve}-${diameter}`;
+      
+    } else if (productType === 'solution' || productType === 'eye_hygiene') {
+      // Solutions format: OPTI-FREE-EXPRESS-355ML
+      const volume = formData.volume || ''; // e.g., 355ML, 300ML
+      
+      if (!brandAbbreviation || !model || !volume) {
+        toast.error('All fields required for solution SKU: Brand, Model, Volume');
+        return null;
+      }
+      
+      return `${brandAbbreviation}-${model}-${volume}`;
+      
+    } else {
+      // Default format for regular frames
+      if (!brandAbbreviation || !model || !lensWidth || !frameColor) {
+        toast.error('All fields required for SKU generation: Brand, Model, Lens Width, Frame Color');
+        return null;
+      }
+      
+      return `${brandAbbreviation}*${model}*${lensWidth}*${frameColor}`;
+    }
+  };
+
+  // Legacy function for backward compatibility
+  const generatePrescriptionGlassesSKU = () => {
+    return generateSKU();
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -130,6 +212,13 @@ const ProductModal = ({ product, onClose }) => {
     parent_subcategory_id: '', // For nested subcategories
     brand_id: '',
     model_name: '',
+    lens_width: '', // Added for prescription glasses SKU generation
+    bridge_width: '', // Added for prescription glasses SKU generation
+    lens_material: '', // Added for sunglasses SKU generation
+    packaging: '', // Added for contact lenses SKU generation
+    base_curve: '', // Added for contact lenses SKU generation
+    diameter: '', // Added for contact lenses SKU generation
+    volume: '', // Added for solutions SKU generation
     frame_shape: '',
     frame_material: [], // Changed to array for multiple selections
     frame_color: '',
@@ -435,6 +524,13 @@ const ProductModal = ({ product, onClose }) => {
           parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
           brand_id: productToUse.brand_id || '',
           model_name: productToUse.model_name || '',
+          lens_width: productToUse.lens_width || '', // Added for prescription glasses SKU generation
+          bridge_width: productToUse.bridge_width || '', // Added for prescription glasses SKU generation
+          lens_material: productToUse.lens_material || '', // Added for sunglasses SKU generation
+          packaging: productToUse.packaging || '', // Added for contact lenses SKU generation
+          base_curve: productToUse.base_curve || '', // Added for contact lenses SKU generation
+          diameter: productToUse.diameter || '', // Added for contact lenses SKU generation
+          volume: productToUse.volume || '', // Added for solutions SKU generation
           frame_shape: productToUse.frame_shape || '',
           frame_material: Array.isArray(productToUse.frame_material)
             ? productToUse.frame_material
@@ -621,6 +717,13 @@ const ProductModal = ({ product, onClose }) => {
         parent_subcategory_id: '',
         brand_id: '',
         model_name: '',
+        lens_width: '', // Added for prescription glasses SKU generation
+        bridge_width: '', // Added for prescription glasses SKU generation
+        lens_material: '', // Added for sunglasses SKU generation
+        packaging: '', // Added for contact lenses SKU generation
+        base_curve: '', // Added for contact lenses SKU generation
+        diameter: '', // Added for contact lenses SKU generation
+        volume: '', // Added for solutions SKU generation
         frame_shape: '',
         frame_material: [],
         frame_color: '',
@@ -1471,6 +1574,27 @@ const ProductModal = ({ product, onClose }) => {
       }
       if (formData.model_name) {
         dataToSend.model_name = formData.model_name.trim();
+      }
+      if (formData.lens_width) {
+        dataToSend.lens_width = formData.lens_width.trim();
+      }
+      if (formData.bridge_width) {
+        dataToSend.bridge_width = formData.bridge_width.trim();
+      }
+      if (formData.lens_material) {
+        dataToSend.lens_material = formData.lens_material.trim();
+      }
+      if (formData.packaging) {
+        dataToSend.packaging = formData.packaging.trim();
+      }
+      if (formData.base_curve) {
+        dataToSend.base_curve = formData.base_curve.trim();
+      }
+      if (formData.diameter) {
+        dataToSend.diameter = formData.diameter.trim();
+      }
+      if (formData.volume) {
+        dataToSend.volume = formData.volume.trim();
       }
       // Send product_type if it's provided
       if (formData.product_type) {
@@ -3023,10 +3147,211 @@ const ProductModal = ({ product, onClose }) => {
                       value={formData.model_name}
                       onChange={handleChange}
                       className="input-modern"
-                      placeholder="e.g., RB 3025"
+                      placeholder="e.g., RX5228"
                     />
                   </div>
                 </div>
+
+                {/* SKU Generation Fields - Dynamic based on product type */}
+                {(formData.product_type === 'prescription_glasses' || formData.product_type === 'eyeglasses' || formData.product_type === 'sunglasses' || formData.product_type === 'frame') ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Lens Width (Caliber) <span className="text-xs text-gray-500">(for SKU)</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="lens_width"
+                          value={formData.lens_width}
+                          onChange={handleChange}
+                          className="input-modern"
+                          placeholder="e.g., 54"
+                        />
+                      </div>
+
+                      {(formData.product_type === 'prescription_glasses' || formData.product_type === 'eyeglasses') ? (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Bridge Width <span className="text-xs text-gray-500">(for SKU)</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="bridge_width"
+                            value={formData.bridge_width}
+                            onChange={handleChange}
+                            className="input-modern"
+                            placeholder="e.g., 17"
+                          />
+                        </div>
+                      ) : formData.product_type === 'sunglasses' ? (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Lens Material <span className="text-xs text-gray-500">(for SKU)</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="lens_material"
+                            value={formData.lens_material}
+                            onChange={handleChange}
+                            className="input-modern"
+                            placeholder="e.g., POLARIZED"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Bridge Width <span className="text-xs text-gray-500">(optional)</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="bridge_width"
+                            value={formData.bridge_width}
+                            onChange={handleChange}
+                            className="input-modern"
+                            placeholder="e.g., 17"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : formData.product_type === 'contact_lenses' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Packaging <span className="text-xs text-gray-500">(for SKU)</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="packaging"
+                        value={formData.packaging}
+                        onChange={handleChange}
+                        className="input-modern"
+                        placeholder="e.g., 6PK, 30PK"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Base Curve <span className="text-xs text-gray-500">(for SKU)</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="base_curve"
+                        value={formData.base_curve}
+                        onChange={handleChange}
+                        className="input-modern"
+                        placeholder="e.g., 8.6"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Diameter <span className="text-xs text-gray-500">(for SKU)</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="diameter"
+                        value={formData.diameter}
+                        onChange={handleChange}
+                        className="input-modern"
+                        placeholder="e.g., 14.2"
+                      />
+                    </div>
+                    <div></div> {/* Empty div for grid alignment */}
+                  </div>
+                ) : formData.product_type === 'solution' || formData.product_type === 'eye_hygiene' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Volume <span className="text-xs text-gray-500">(for SKU)</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="volume"
+                        value={formData.volume}
+                        onChange={(e) => {
+                          handleChange(e);
+                          const value = e.target.value;
+                          
+                          // Auto-change image when volume changes for eye hygiene products
+                          if (value && (formData.product_type === 'eye_hygiene' || formData.product_type === 'solution') && imagesWithColors.length > 0) {
+                            // Find image that matches the volume (case-insensitive)
+                            const volumeImage = imagesWithColors.find(img => 
+                              img.hexCode && (
+                                img.hexCode.toLowerCase().includes(value.toLowerCase()) ||
+                                value.toLowerCase().includes(img.hexCode.toLowerCase())
+                              )
+                            );
+                            
+                            if (volumeImage) {
+                              // Update the main image preview to show the volume-specific image
+                              setImagePreviews([volumeImage.preview, ...imagePreviews.filter(preview => preview !== volumeImage.preview)]);
+                              toast.success(`Image updated for ${value} variant`);
+                            } else {
+                              // Try to find image by volume mapping to common colors
+                              const volumeColorMap = {
+                                '100ml': '#FF6B6B',
+                                '200ml': '#4ECDC4', 
+                                '300ml': '#45B7D1',
+                                '355ml': '#96CEB4',
+                                '500ml': '#FFEAA7',
+                                '750ml': '#DDA0DD',
+                                '1000ml': '#98D8C8'
+                              };
+                              
+                              const mappedColor = volumeColorMap[value.toLowerCase().replace(/\s+/g, '')];
+                              if (mappedColor) {
+                                const mappedImage = imagesWithColors.find(img => img.hexCode === mappedColor);
+                                if (mappedImage) {
+                                  setImagePreviews([mappedImage.preview, ...imagePreviews.filter(preview => preview !== mappedImage.preview)]);
+                                  toast.success(`Image updated for ${value} variant`);
+                                }
+                              }
+                            }
+                          }
+                        }}
+                        className="input-modern"
+                        placeholder="e.g., 355ML, 300ML"
+                      />
+                      {formData.volume && (formData.product_type === 'eye_hygiene' || formData.product_type === 'solution') && imagePreviews.length > 0 && (
+                        <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-xs text-green-700">
+                            <span className="font-medium">Variant-specific image active:</span> Showing image for {formData.volume} variant
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div></div> {/* Empty div for grid alignment */}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Lens Width (Caliber) <span className="text-xs text-gray-500">(for SKU)</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="lens_width"
+                        value={formData.lens_width}
+                        onChange={handleChange}
+                        className="input-modern"
+                        placeholder="e.g., 54"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Bridge Width <span className="text-xs text-gray-500">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="bridge_width"
+                        value={formData.bridge_width}
+                        onChange={handleChange}
+                        className="input-modern"
+                        placeholder="e.g., 17"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -3061,14 +3386,42 @@ const ProductModal = ({ product, onClose }) => {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       SKU <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="sku"
-                      value={formData.sku}
-                      onChange={handleChange}
-                      className="input-modern"
-                      required
-                    />
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        name="sku"
+                        value={formData.sku}
+                        onChange={handleChange}
+                        className="input-modern flex-1"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const generatedSKU = generateSKU();
+                          if (generatedSKU) {
+                            setFormData(prev => ({ ...prev, sku: generatedSKU }));
+                            toast.success('SKU generated successfully!');
+                          }
+                        }}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium whitespace-nowrap"
+                        title="Auto-generate SKU based on product type"
+                      >
+                        Auto Generate
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formData.product_type === 'sunglasses' 
+                        ? 'Format: Brand-Model-Caliber-Color-Lens Material (e.g., RB-RX5228-54-2000-POLARIZED)'
+                        : formData.product_type === 'prescription_glasses' || formData.product_type === 'eyeglasses'
+                        ? 'Format: Brand*Model*Caliber*Bridge*Color (e.g., RB*RX5228*54*17*2000)'
+                        : formData.product_type === 'contact_lenses'
+                        ? 'Format: Brand-Model-Packaging-BaseCurve-Diameter (e.g., ACUVUE-OASYS-6PK-8.6-14.2)'
+                        : formData.product_type === 'solution' || formData.product_type === 'eye_hygiene'
+                        ? 'Format: Brand-Model-Volume (e.g., OPTI-FREE-EXPRESS-355ML)'
+                        : 'Format: Brand*Model*Caliber*Color (e.g., RB*RX5228*54*2000)'
+                      }
+                    </p>
                   </div>
 
                   <div>

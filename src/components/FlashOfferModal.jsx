@@ -10,8 +10,7 @@ const FlashOfferModal = ({ offer, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    discount_type: 'percentage',
-    discount_value: '',
+    discount_percentage: '',
     starts_at: '',
     ends_at: '',
     is_active: true,
@@ -53,8 +52,7 @@ const FlashOfferModal = ({ offer, onClose, onSuccess }) => {
       setFormData({
         title: offer.title || '',
         description: offer.description || '',
-        discount_type: offer.discount_type || 'percentage',
-        discount_value: offer.discount_value || '',
+        discount_percentage: offer.discount_percentage || '',
         starts_at: formatDate(offer.starts_at),
         ends_at: formatDate(offer.ends_at),
         is_active: offer.is_active !== undefined ? offer.is_active : true,
@@ -67,8 +65,7 @@ const FlashOfferModal = ({ offer, onClose, onSuccess }) => {
       setFormData({
         title: '',
         description: '',
-        discount_type: 'percentage',
-        discount_value: '',
+        discount_percentage: '',
         starts_at: '',
         ends_at: '',
         is_active: true,
@@ -168,15 +165,15 @@ const FlashOfferModal = ({ offer, onClose, onSuccess }) => {
         setLoading(false);
         return;
       }
-      if (!formData.discount_value) {
-        toast.error('Discount value is required');
+      if (!formData.discount_percentage) {
+        toast.error('Discount percentage is required');
         setLoading(false);
         return;
       }
       
-      const discountValue = parseFloat(formData.discount_value);
-      if (isNaN(discountValue) || discountValue < 0) {
-        toast.error('Discount value must be a valid positive number');
+      const discountPercentage = parseFloat(formData.discount_percentage);
+      if (isNaN(discountPercentage) || discountPercentage < 0 || discountPercentage > 100) {
+        toast.error('Discount percentage must be a valid number between 0 and 100');
         setLoading(false);
         return;
       }
@@ -197,8 +194,7 @@ const FlashOfferModal = ({ offer, onClose, onSuccess }) => {
 
       const dataToSend = {
         title: formData.title.trim(),
-        discount_type: formData.discount_type,
-        discount_value: discountValue,
+        discount_percentage: discountPercentage,
         starts_at: formData.starts_at,
         ends_at: formData.ends_at,
         is_active: formData.is_active,
@@ -374,37 +370,23 @@ const FlashOfferModal = ({ offer, onClose, onSuccess }) => {
             />
           </div>
 
-          {/* Discount Type and Value */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Discount Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="discount_type"
-                value={formData.discount_type}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount ($)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Discount Value <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="discount_value"
-                value={formData.discount_value}
-                onChange={handleChange}
-                min="0"
-                step={formData.discount_type === 'percentage' ? '1' : '0.01'}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                required
-              />
-            </div>
+          {/* Discount Percentage */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Discount Percentage <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="discount_percentage"
+              value={formData.discount_percentage}
+              onChange={handleChange}
+              min="0"
+              max="100"
+              step="1"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              required
+            />
+            <p className="mt-1 text-sm text-gray-500">Enter a percentage value between 0 and 100</p>
           </div>
 
           {/* Start and End Dates */}

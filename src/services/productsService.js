@@ -101,6 +101,11 @@ export const getProductCalibers = async (productId) => {
     const response = await api.get(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.LIST(productId));
     return response.data;
   } catch (error) {
+    // If endpoint doesn't exist (404), return empty calibers array as fallback
+    if (error.response?.status === 404) {
+      console.warn('Product calibers endpoint not found, returning empty array');
+      return { calibers: [] };
+    }
     console.error('Error fetching product calibers:', error);
     throw error;
   }
@@ -115,6 +120,11 @@ export const createProductCaliber = async (productId, mm, caliberData) => {
     const response = await api.post(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.CREATE(productId, mm), caliberData);
     return response.data;
   } catch (error) {
+    // If endpoint doesn't exist (404), show user-friendly message
+    if (error.response?.status === 404) {
+      console.warn('Product calibers endpoint not found - backend implementation required');
+      throw new Error('Caliber management is not yet available. Please contact the backend team to implement the MM calibers API endpoints.');
+    }
     console.error('Error creating product caliber:', error);
     throw error;
   }
@@ -129,6 +139,11 @@ export const updateProductCaliber = async (productId, mm, caliberData) => {
     const response = await api.put(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.UPDATE(productId, mm), caliberData);
     return response.data;
   } catch (error) {
+    // If endpoint doesn't exist (404), show user-friendly message
+    if (error.response?.status === 404) {
+      console.warn('Product calibers endpoint not found - backend implementation required');
+      throw new Error('Caliber management is not yet available. Please contact the backend team to implement the MM calibers API endpoints.');
+    }
     console.error('Error updating product caliber:', error);
     throw error;
   }
@@ -143,6 +158,11 @@ export const deleteProductCaliber = async (productId, mm) => {
     const response = await api.delete(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.DELETE(productId, mm));
     return response.data;
   } catch (error) {
+    // If endpoint doesn't exist (404), show user-friendly message
+    if (error.response?.status === 404) {
+      console.warn('Product calibers endpoint not found - backend implementation required');
+      throw new Error('Caliber management is not yet available. Please contact the backend team to implement the MM calibers API endpoints.');
+    }
     console.error('Error deleting product caliber:', error);
     throw error;
   }

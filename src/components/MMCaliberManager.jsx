@@ -170,7 +170,9 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
             <p className="text-sm text-gray-500 mt-1">Manage frame size options with images</p>
           </div>
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               if (!productId) {
                 toast.error('Please save the product first before adding calibers');
                 return;
@@ -178,6 +180,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
               setShowAddForm(true);
             }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            type="button"
           >
             <FiPlus className="w-4 h-4" />
             Add Caliber
@@ -206,14 +209,18 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       {/* Add/Edit Form */}
       {showAddForm && (
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-medium text-gray-900">
                 {editingCaliber ? 'Edit Caliber' : 'Add New Caliber'}
               </h4>
               <button
                 type="button"
-                onClick={resetForm}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  resetForm();
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <FiX className="w-5 h-5" />
@@ -302,7 +309,11 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
             <div className="flex gap-3 justify-end">
               <button
                 type="button"
-                onClick={resetForm}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  resetForm();
+                }}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Cancel
@@ -310,6 +321,9 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
               <button
                 type="submit"
                 disabled={loading}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 <FiSave className="w-4 h-4" />

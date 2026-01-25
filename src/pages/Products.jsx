@@ -208,25 +208,22 @@ const ProductImage = ({ product, refreshKey }) => {
     }
   };
 
-  // If no image source or error, show placeholder
-  if (!imageSrc || imageError) {
-    return (
-      <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
-        <FiImage className="w-5 h-5 text-gray-400" />
-      </div>
-    );
-  }
-
   // Show image with loading state and error fallback
   return (
-    <div className="relative w-10 h-10 flex-shrink-0">
-      {imageLoading && !imageError && (
-        <div className="absolute inset-0 bg-gray-200 rounded flex items-center justify-center z-10">
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin"></div>
+    <>
+      {!imageSrc || imageError ? (
+        <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
+          <FiImage className="w-5 h-5 text-gray-400" />
         </div>
-      )}
-      {imageSrc && !imageError && (
-        <img
+      ) : (
+        <div className="relative w-10 h-10 flex-shrink-0">
+          {imageLoading && !imageError && (
+            <div className="absolute inset-0 bg-gray-200 rounded flex items-center justify-center z-10">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin"></div>
+            </div>
+          )}
+          {imageSrc && !imageError && (
+            <img
           src={imageSrc}
           alt={product?.name || 'Product'}
           className={`w-10 h-10 rounded object-cover bg-gray-100 flex-shrink-0 transition-opacity duration-200 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
@@ -241,7 +238,9 @@ const ProductImage = ({ product, refreshKey }) => {
           <FiImage className="w-5 h-5 text-gray-400" />
         </div>
       )}
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 

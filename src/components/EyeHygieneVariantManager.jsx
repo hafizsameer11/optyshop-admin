@@ -119,14 +119,30 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
         toast.success('Variant created successfully');
       }
       
+      // Reset form and hide it to return to variant table
       resetForm();
-      // Add a small delay to ensure server processes the data
+      
+      // Add a small delay to ensure server processes the data, then refresh variants
       setTimeout(() => {
         loadVariants();
       }, 500);
     } catch (error) {
       console.error('Error saving variant:', error);
-      toast.error(error.response?.data?.message || 'Failed to save variant');
+      
+      // Handle different types of errors appropriately
+      if (!error.response) {
+        toast.error('Network error - Please check your connection and try again');
+      } else if (error.response.status === 401) {
+        toast.error('Authentication error - Please log in again');
+      } else if (error.response.status === 422) {
+        // Validation errors
+        const validationErrors = error.response.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat();
+        errorMessages.forEach(msg => toast.error(msg));
+      } else {
+        const errorMessage = error.response?.data?.message || 'Failed to save variant';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -413,10 +429,19 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FiSave className="w-4 h-4" />
-                {editingVariant ? 'Update' : 'Create'} Variant
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    {editingVariant ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  <>
+                    <FiSave className="w-4 h-4" />
+                    {editingVariant ? 'Update' : 'Create'} Variant
+                  </>
+                )}
               </button>
             </div>
           </form>

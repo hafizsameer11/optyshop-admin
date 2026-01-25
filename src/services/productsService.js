@@ -98,7 +98,7 @@ export const getCategoryProductsWithCalibers = async (categoryId, params = {}) =
  */
 export const getProductCalibers = async (productId) => {
   try {
-    const response = await api.get(API_ROUTES.ADMIN.PRODUCTS.BY_ID(productId) + '/calibers');
+    const response = await api.get(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.LIST(productId));
     return response.data;
   } catch (error) {
     console.error('Error fetching product calibers:', error);
@@ -112,7 +112,7 @@ export const getProductCalibers = async (productId) => {
  */
 export const createProductCaliber = async (productId, mm, caliberData) => {
   try {
-    const response = await api.post(API_ROUTES.ADMIN.PRODUCTS.BY_ID(productId) + `/calibers/${mm}`, caliberData);
+    const response = await api.post(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.CREATE(productId, mm), caliberData);
     return response.data;
   } catch (error) {
     console.error('Error creating product caliber:', error);
@@ -126,7 +126,7 @@ export const createProductCaliber = async (productId, mm, caliberData) => {
  */
 export const updateProductCaliber = async (productId, mm, caliberData) => {
   try {
-    const response = await api.put(API_ROUTES.ADMIN.PRODUCTS.BY_ID(productId) + `/calibers/${mm}`, caliberData);
+    const response = await api.put(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.UPDATE(productId, mm), caliberData);
     return response.data;
   } catch (error) {
     console.error('Error updating product caliber:', error);
@@ -140,7 +140,7 @@ export const updateProductCaliber = async (productId, mm, caliberData) => {
  */
 export const deleteProductCaliber = async (productId, mm) => {
   try {
-    const response = await api.delete(API_ROUTES.ADMIN.PRODUCTS.BY_ID(productId) + `/calibers/${mm}`);
+    const response = await api.delete(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.DELETE(productId, mm));
     return response.data;
   } catch (error) {
     console.error('Error deleting product caliber:', error);

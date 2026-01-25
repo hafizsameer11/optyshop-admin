@@ -63,6 +63,8 @@ export const API_ROUTES = {
     BY_ID: (id) => `/products/${id}`,           // PUBLIC
     BY_SLUG: (slug) => `/products/slug/${slug}`, // PUBLIC
     RELATED: (id) => `/products/${id}/related`,  // PUBLIC
+    // New endpoints for MM calibers
+    WITH_CALIBERS: (id) => `/products/${id}/calibers`, // PUBLIC - Get product with caliber options
     // Section-specific endpoints
     SECTION: {
       SUNGLASSES: `/products/section/sunglasses`,        // PUBLIC - Filters by product_type='sunglasses'
@@ -79,6 +81,8 @@ export const API_ROUTES = {
     LIST: `/categories`,                        // PUBLIC
     BY_ID: (id) => `/categories/${id}`,         // PUBLIC
     BY_SLUG: (slug) => `/categories/slug/${slug}`, // PUBLIC
+    // New endpoint for category products with calibers
+    PRODUCTS_WITH_CALIBERS: (id) => `/categories/${id}/products`, // PUBLIC - Category products with calibers
   },
 
   // ============================================
@@ -413,6 +417,17 @@ export const API_ROUTES = {
         EYEGLASSES: `/admin/products/section/eyeglasses`,        // ADMIN - Filters by product_type='frame'
         CONTACT_LENSES: `/admin/products/section/contact-lenses`, // ADMIN - Filters by product_type='contact_lens'
         EYE_HYGIENE: `/admin/products/section/eye-hygiene`,      // ADMIN - Filters by product_type='eye_hygiene'
+      },
+      // MM Caliber Management (for frame/glasses products)
+      MM_CALIBERS: {
+        LIST: (productId) => `/admin/products/${productId}/calibers`, // GET all calibers for product
+        CREATE: (productId, mm) => `/admin/products/${productId}/calibers/${mm}`, // POST create caliber
+        UPDATE: (productId, mm) => `/admin/products/${productId}/calibers/${mm}`, // PUT update caliber
+        DELETE: (productId, mm) => `/admin/products/${productId}/calibers/${mm}`, // DELETE caliber
+      },
+      // Eye Hygiene Variants Management
+      EYE_HYGIENE_VARIANTS: {
+        LIST: (productId) => `/admin/products/${productId}/eye-hygiene-variants`, // GET all variants for product
       },
       // Size/Volume Variants Management (for Eye Hygiene products)
       SIZE_VOLUME_VARIANTS: {
@@ -841,6 +856,18 @@ export const API_ROUTES = {
       DELETE: (id) => `/cms/testimonials/${id}`, // ADMIN
     },
   },
+
+    // ============================================
+    // EYE HYGIENE VARIANTS (ADMIN ONLY)
+    // ============================================
+    // ALL routes under /api/admin/eye-hygiene-variants/* require admin_token
+    EYE_HYGIENE_VARIANTS: {
+      LIST: `/admin/eye-hygiene-variants`,                    // GET all variants
+      BY_ID: (id) => `/admin/eye-hygiene-variants/${id}`,     // GET variant by ID
+      CREATE: `/admin/eye-hygiene-variants`,                   // POST create variant
+      UPDATE: (id) => `/admin/eye-hygiene-variants/${id}`,     // PUT update variant
+      DELETE: (id) => `/admin/eye-hygiene-variants/${id}`,     // DELETE variant
+    },
 
   // ============================================
   // ANALYTICS (ADMIN ONLY)

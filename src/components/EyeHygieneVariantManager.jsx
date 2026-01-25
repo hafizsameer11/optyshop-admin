@@ -53,7 +53,9 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
   const loadVariants = async () => {
     try {
       setLoading(true);
+      console.log('Loading variants for product:', productId);
       const data = await getProductEyeHygieneVariants(productId);
+      console.log('Variants loaded:', data);
       setVariants(data.variants || []);
       if (onVariantsUpdate) {
         onVariantsUpdate(data.variants || []);
@@ -107,16 +109,21 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
       
       if (editingVariant) {
         // Update existing variant
-        await updateEyeHygieneVariant(editingVariant.id, submitData);
+        const response = await updateEyeHygieneVariant(editingVariant.id, submitData);
+        console.log('Variant updated successfully:', response);
         toast.success('Variant updated successfully');
       } else {
         // Create new variant
-        await createEyeHygieneVariant(submitData);
+        const response = await createEyeHygieneVariant(submitData);
+        console.log('Variant created successfully:', response);
         toast.success('Variant created successfully');
       }
       
       resetForm();
-      loadVariants();
+      // Add a small delay to ensure server processes the data
+      setTimeout(() => {
+        loadVariants();
+      }, 500);
     } catch (error) {
       console.error('Error saving variant:', error);
       toast.error(error.response?.data?.message || 'Failed to save variant');

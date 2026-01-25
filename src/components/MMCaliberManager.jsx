@@ -49,7 +49,9 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   const loadCalibers = async () => {
     try {
       setLoading(true);
+      console.log('Loading calibers for product:', productId);
       const data = await getProductCalibers(productId);
+      console.log('Calibers loaded:', data);
       setCalibers(data.calibers || []);
       if (onCalibersUpdate) {
         onCalibersUpdate(data.calibers || []);
@@ -93,20 +95,25 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       
       if (editingCaliber) {
         // Update existing caliber
-        await updateProductCaliber(productId, editingCaliber.mm, {
+        const response = await updateProductCaliber(productId, editingCaliber.mm, {
           image_url: formData.image_url
         });
+        console.log('Caliber updated successfully:', response);
         toast.success('Caliber updated successfully');
       } else {
         // Create new caliber
-        await createProductCaliber(productId, formData.mm, {
+        const response = await createProductCaliber(productId, formData.mm, {
           image_url: formData.image_url
         });
+        console.log('Caliber created successfully:', response);
         toast.success('Caliber created successfully');
       }
       
       resetForm();
-      loadCalibers();
+      // Add a small delay to ensure server processes the data
+      setTimeout(() => {
+        loadCalibers();
+      }, 500);
     } catch (error) {
       console.error('Error saving caliber:', error);
       toast.error(error.response?.data?.message || 'Failed to save caliber');

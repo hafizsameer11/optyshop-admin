@@ -21,6 +21,8 @@ import PrescriptionLensTypeModal from './PrescriptionLensTypeModal';
 import PrescriptionFormDropdownValueModal from './PrescriptionFormDropdownValueModal';
 import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
+import MMCaliberManager from './MMCaliberManager';
+import EyeHygieneVariantManager from './EyeHygieneVariantManager';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -2215,6 +2217,7 @@ const ProductModal = ({ product, onClose }) => {
   const tabs = [
     { id: 'general', label: 'General' }, // Always shown - contains all basic product fields
     ...(isFrameOrSunglasses ? [
+      { id: 'mm-calibers', label: 'MM Calibers' },
       { id: 'lens-management', label: 'Lens Management' },
     ] : []),
     ...(isContactLens ? [
@@ -2223,6 +2226,7 @@ const ProductModal = ({ product, onClose }) => {
     ] : []),
     // Only show Size/Volume Variants tab for saved eye hygiene products (product must have an ID)
     ...(isEyeHygiene && getValidProductId() ? [
+      { id: 'eye-hygiene-variants', label: 'Eye Hygiene Variants' },
       { id: 'variants', label: 'Size/Volume Variants' },
     ] : []),
     { id: 'images', label: 'Images' }, // Always shown - all products can have images
@@ -3755,6 +3759,18 @@ const ProductModal = ({ product, onClose }) => {
               </>
             )}
 
+            {/* MM Calibers Tab */}
+            {activeTab === 'mm-calibers' && (
+              <MMCaliberManager
+                productId={getValidProductId()}
+                productType={formData.product_type}
+                onCalibersUpdate={(calibers) => {
+                  // Update form data with calibers if needed
+                  console.log('Calibers updated:', calibers);
+                }}
+              />
+            )}
+
             {/* Lens Management Tab */}
             {activeTab === 'lens-management' && (
               <div className="space-y-6">
@@ -4348,6 +4364,18 @@ const ProductModal = ({ product, onClose }) => {
                   )}
                 </div>
               </div>
+            )}
+
+            {/* Eye Hygiene Variants Tab */}
+            {activeTab === 'eye-hygiene-variants' && (
+              <EyeHygieneVariantManager
+                productId={getValidProductId()}
+                productType={formData.product_type}
+                onVariantsUpdate={(variants) => {
+                  // Update form data with variants if needed
+                  console.log('Eye hygiene variants updated:', variants);
+                }}
+              />
             )}
 
             {/* Size/Volume Variants Tab - Eye Hygiene Products */}

@@ -3084,9 +3084,21 @@ const ProductModal = ({ product, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-gray-200/50 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Fixed Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white flex-shrink-0">
-          <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {product ? t('editProduct') : t('addProduct')}
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
+              {product ? t('editProduct') : t('addProduct')}
+            </h2>
+            {product && (
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full border border-blue-200">
+                  {product.name}
+                </span>
+                <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-full border border-gray-200">
+                  ID: {product.id}
+                </span>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
             <button

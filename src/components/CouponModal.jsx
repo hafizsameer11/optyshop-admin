@@ -95,7 +95,7 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
   const fetchProducts = async () => {
     try {
       setProductsLoading(true);
-      const response = await api.get(`${API_ROUTES.PRODUCTS.LIST}?limit=1000`);
+      const response = await api.get(`${API_ROUTES.ADMIN.PRODUCTS.LIST}?limit=1000`);
       const productsData = response.data?.data?.products || response.data?.products || response.data || [];
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (error) {

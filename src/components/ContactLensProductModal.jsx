@@ -226,6 +226,22 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
   };
 
+  const fetchNestedSubCategoriesForConfig = async (subCategoryId) => {
+    if (!subCategoryId) {
+      setNestedSubCategoriesForConfig([]);
+      return;
+    }
+    try {
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_PARENT(subCategoryId));
+      const responseData = response.data?.data || response.data || {};
+      const nestedData = responseData.subcategories || response.data || [];
+      setNestedSubCategoriesForConfig(Array.isArray(nestedData) ? nestedData : []);
+    } catch (error) {
+      console.warn('Failed to fetch nested subcategories for config', error);
+      setNestedSubCategoriesForConfig([]);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === 'category_id') {

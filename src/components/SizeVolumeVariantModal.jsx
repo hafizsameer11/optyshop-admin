@@ -78,7 +78,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
       // For now, we'll create a temporary URL
       const tempUrl = URL.createObjectURL(file);
       setFormData(prev => ({ ...prev, image_url: tempUrl }));
-      toast.info('Image uploaded (temporary URL for demo)');
+      toast.success('Image uploaded (temporary URL for demo)');
     }
   };
 
@@ -133,6 +133,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
         toast.success('Variant created successfully');
       }
       
+      console.log('✅ Variant saved successfully, closing modal with refresh=true');
       onClose(true); // Pass saved=true to trigger refresh
     } catch (error) {
       console.error('Variant save error:', error);

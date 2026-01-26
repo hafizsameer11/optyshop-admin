@@ -36,15 +36,15 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate }) 
   const loadVariants = async () => {
     try {
       setLoading(true);
-      console.log('Loading size-volume variants for product:', productId);
+      console.log('🔄 Loading size-volume variants for product:', productId);
       const data = await getProductSizeVolumeVariants(productId);
-      console.log('Size-volume variants loaded:', data);
+      console.log('✅ Size-volume variants loaded:', data);
       setVariants(data.variants || []);
       if (onVariantsUpdate) {
         onVariantsUpdate(data.variants || []);
       }
     } catch (error) {
-      console.error('Error loading variants:', error);
+      console.error('❌ Error loading variants:', error);
       toast.error('Failed to load variants');
     } finally {
       setLoading(false);
@@ -56,6 +56,7 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate }) 
       toast.error('Please save the product first before adding variants');
       return;
     }
+    console.log('🔄 Opening Add Variant modal for product:', productId);
     setEditingVariant(null);
     setShowModal(true);
   };
@@ -84,9 +85,11 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate }) 
   };
 
   const handleModalClose = (refresh = false) => {
+    console.log('🔄 SizeVolumeVariantManager.handleModalClose called with refresh=', refresh);
     setShowModal(false);
     setEditingVariant(null);
     if (refresh) {
+      console.log('🔄 Refreshing variants after modal close');
       loadVariants();
     }
   };

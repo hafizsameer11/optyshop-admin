@@ -101,6 +101,21 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         });
         console.log('Caliber updated successfully:', response);
         toast.success('Caliber updated successfully');
+        
+        // Update the caliber in local state
+        const updatedCaliber = {
+          mm: editingCaliber.mm,
+          image_url: formData.image_url
+        };
+        console.log('🔄 Updating caliber in table:', updatedCaliber);
+        setCalibers(prev => prev.map(c => 
+          c.mm === editingCaliber.mm ? updatedCaliber : c
+        ));
+        if (onCalibersUpdate) {
+          onCalibersUpdate(calibers.map(c => 
+            c.mm === editingCaliber.mm ? updatedCaliber : c
+          ));
+        }
       } else {
         // Create new caliber
         const response = await createProductCaliber(productId, formData.mm, {
@@ -108,17 +123,22 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         });
         console.log('✅ Caliber created successfully:', response);
         toast.success('Caliber created successfully');
+        
+        // Add the new caliber to local state immediately (no page refresh)
+        const newCaliber = {
+          mm: formData.mm,
+          image_url: formData.image_url
+        };
+        console.log('🔄 Adding new caliber to table:', newCaliber);
+        setCalibers(prev => [...prev, newCaliber]);
+        if (onCalibersUpdate) {
+          onCalibersUpdate([...calibers, newCaliber]);
+        }
       }
       
       // Close form immediately to show table
-      console.log('🔄 Closing form and refreshing caliber list...');
+      console.log('🔄 Closing form...');
       resetForm();
-      
-      // Add a small delay to ensure server processes the data before refresh
-      setTimeout(() => {
-        console.log('🔄 Refreshing caliber list after creation...');
-        loadCalibers();
-      }, 300);
     } catch (error) {
       console.error('Error saving caliber:', error);
       toast.error(error.response?.data?.message || 'Failed to save caliber');

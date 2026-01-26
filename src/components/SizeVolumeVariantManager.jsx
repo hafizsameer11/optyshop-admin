@@ -62,8 +62,13 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate, on
   };
 
   const handleEdit = (variant) => {
+    console.log('🔧 Edit button clicked for variant:', variant);
+    console.log('🔧 onEditVariant function available:', !!onEditVariant);
     if (onEditVariant) {
+      console.log('🔧 Calling onEditVariant with variant:', variant);
       onEditVariant(variant);
+    } else {
+      console.error('❌ onEditVariant prop is not provided');
     }
   };
 

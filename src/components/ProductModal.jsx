@@ -4405,8 +4405,11 @@ const ProductModal = ({ product, onClose }) => {
                   setVariantModalOpen(true);
                 }}
                 onEditVariant={(variant) => {
+                  console.log('🔧 ProductModal: onEditVariant called with variant:', variant);
+                  console.log('🔧 ProductModal: Setting editingVariant and opening modal');
                   setEditingVariant(variant);
                   setVariantModalOpen(true);
+                  console.log('🔧 ProductModal: variantModalOpen set to true, editingVariant set');
                 }}
               />
             )}
@@ -5101,21 +5104,29 @@ const ProductModal = ({ product, onClose }) => {
 
         {/* Size/Volume Variant Modal */}
         {variantModalOpen && getValidProductId() && SizeVolumeVariantModalComponent && (
-          <SizeVolumeVariantModalComponent
-            variant={editingVariant}
-            productId={getValidProductId()}
-            onClose={async (saved = false) => {
-              setVariantModalOpen(false);
-              setEditingVariant(null);
-              // Don't reset the component to null to avoid re-import
-              if (saved) {
-                const productId = getValidProductId();
-                if (productId) {
-                  await fetchSizeVolumeVariants(productId);
+          <>
+            {console.log('🔧 ProductModal: Rendering SizeVolumeVariantModal with editingVariant:', editingVariant)}
+            <SizeVolumeVariantModalComponent
+              variant={editingVariant}
+              productId={getValidProductId()}
+              onClose={async (saved = false) => {
+                console.log('🔧 ProductModal: SizeVolumeVariantModal onClose called, saved:', saved);
+                setVariantModalOpen(false);
+                setEditingVariant(null);
+                // Don't reset the component to null to avoid re-import
+                if (saved) {
+                  const productId = getValidProductId();
+                  // Refresh the variants list
+                  try {
+                    const response = await api.get(`/api/admin/products/${productId}/size-volume-variants`);
+                    setSizeVolumeVariants(response.data?.data?.variants || []);
+                  } catch (error) {
+                    console.error('Failed to refresh variants:', error);
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          </>
         )}
         {variantModalOpen && !SizeVolumeVariantModalComponent && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">

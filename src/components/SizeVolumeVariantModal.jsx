@@ -8,6 +8,9 @@ import { useI18n } from '../context/I18nContext';
 
 const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
   const { t } = useI18n();
+  console.log('🔧 SizeVolumeVariantModal: Component mounted');
+  console.log('🔧 SizeVolumeVariantModal: variant prop:', variant);
+  console.log('🔧 SizeVolumeVariantModal: productId:', productId);
   const [formData, setFormData] = useState({
     size_volume: '',
     pack_type: '',
@@ -25,7 +28,9 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.log('🔧 SizeVolumeVariantModal: useEffect triggered, variant:', variant);
     if (variant) {
+      console.log('🔧 SizeVolumeVariantModal: Editing existing variant, setting form data');
       // Editing existing variant
       setFormData({
         size_volume: variant.size_volume || '',
@@ -41,7 +46,13 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
         sort_order: variant.sort_order !== null && variant.sort_order !== undefined ? variant.sort_order : '',
         image_url: variant.image_url || '',
       });
+      console.log('🔧 SizeVolumeVariantModal: Form data set for editing:', {
+        size_volume: variant.size_volume || '',
+        price: variant.price || '',
+        pack_type: variant.pack_type || ''
+      });
     } else {
+      console.log('🔧 SizeVolumeVariantModal: Creating new variant, resetting form data');
       // New variant
       setFormData({
         size_volume: '',

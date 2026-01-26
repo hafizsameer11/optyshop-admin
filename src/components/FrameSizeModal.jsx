@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { createFrameSize, updateFrameSize } from '../api/frameSizes';
 
 const FrameSizeModal = ({ frameSize, onClose }) => {
   const { t } = useI18n();
@@ -152,7 +153,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
       let response;
       if (frameSize) {
         console.log('🔄 Updating frame size:', frameSize.id, submitData);
-        response = await api.put(API_ROUTES.ADMIN.FRAME_SIZES.UPDATE(frameSize.id), submitData);
+        response = await updateFrameSize(frameSize.id, submitData);
         // Handle response structure: { success, message, data: { frameSize: {...} } }
         if (response.data?.success) {
           toast.success(response.data.message || 'Frame size updated successfully');
@@ -161,7 +162,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
         }
       } else {
         console.log('➕ Creating new frame size:', submitData);
-        response = await api.post(API_ROUTES.ADMIN.FRAME_SIZES.CREATE, submitData);
+        response = await createFrameSize(submitData);
         // Handle response structure: { success, message, data: { frameSize: {...} } }
         if (response.data?.success) {
           toast.success(response.data.message || 'Frame size created successfully');
@@ -171,7 +172,8 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
       }
       
       console.log('✅ Frame size operation completed, calling onClose(true) to refresh table');
-      onClose(true); // Pass true to indicate successful save
+      // Close modal and trigger parent refresh without page reload
+      onClose(true);
     } catch (error) {
       console.error('❌ Frame size save error:', error);
       console.error('Error response:', error.response?.data);

@@ -24,6 +24,8 @@ import AstigmatismConfigModal from './AstigmatismConfigModal';
 import MMCaliberManager from './MMCaliberManager';
 import EyeHygieneVariantManager from './EyeHygieneVariantManager';
 import SizeVolumeVariantManager from './SizeVolumeVariantManager';
+import SizeVolumeVariantModal from './SizeVolumeVariantModal';
+import { getProductSizeVolumeVariants } from '../services/productsService';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -272,20 +274,6 @@ const ProductModal = ({ product, onClose }) => {
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [editingVariant, setEditingVariant] = useState(null);
   const [variantModalOpen, setVariantModalOpen] = useState(false);
-  const [SizeVolumeVariantModalComponent, setSizeVolumeVariantModalComponent] = useState(null);
-
-  // Dynamically load SizeVolumeVariantModal component when needed
-  useEffect(() => {
-    if (variantModalOpen && !SizeVolumeVariantModalComponent) {
-      import('./SizeVolumeVariantModal').then(module => {
-        setSizeVolumeVariantModalComponent(() => module.default);
-      }).catch(error => {
-        console.error('Failed to load SizeVolumeVariantModal:', error);
-        toast.error('Failed to load variant modal');
-        setVariantModalOpen(false);
-      });
-    }
-  }, [variantModalOpen, SizeVolumeVariantModalComponent]);
   const [prescriptionDropdownValues, setPrescriptionDropdownValues] = useState([]);
 
   const [loadingLensManagement, setLoadingLensManagement] = useState({});
@@ -5103,37 +5091,28 @@ const ProductModal = ({ product, onClose }) => {
         )}
 
         {/* Size/Volume Variant Modal */}
-        {variantModalOpen && getValidProductId() && SizeVolumeVariantModalComponent && (
+        {variantModalOpen && getValidProductId() && (
           <>
             {console.log('🔧 ProductModal: Rendering SizeVolumeVariantModal with editingVariant:', editingVariant)}
-            <SizeVolumeVariantModalComponent
+            <SizeVolumeVariantModal
               variant={editingVariant}
               productId={getValidProductId()}
               onClose={async (saved = false) => {
                 console.log('🔧 ProductModal: SizeVolumeVariantModal onClose called, saved:', saved);
                 setVariantModalOpen(false);
                 setEditingVariant(null);
-                // Don't reset the component to null to avoid re-import
                 if (saved) {
-                  const productId = getValidProductId();
-                  // Refresh the variants list
+                  // Refresh the variants list after saving
                   try {
-                    const response = await api.get(`/api/admin/products/${productId}/size-volume-variants`);
-                    setSizeVolumeVariants(response.data?.data?.variants || []);
+                    const data = await getProductSizeVolumeVariants(getValidProductId());
+                    setSizeVolumeVariants(data.data?.variants || []);
                   } catch (error) {
-                    console.error('Failed to refresh variants:', error);
+                    console.error('Error refreshing variants:', error);
                   }
                 }
               }}
             />
           </>
-        )}
-        {variantModalOpen && !SizeVolumeVariantModalComponent && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
-            <div className="bg-white rounded-2xl p-8">
-              <div className="spinner"></div>
-            </div>
-          </div>
         )}
       </div>
     </div>

@@ -4,6 +4,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import FrameSizeModal from '../components/FrameSizeModal';
 import { API_ROUTES } from '../config/apiRoutes';
+import { getFrameSizes, deleteFrameSize } from '../api/frameSizes';
 
 const FrameSizes = () => {
   const [frameSizes, setFrameSizes] = useState([]);
@@ -19,17 +20,10 @@ const FrameSizes = () => {
     try {
       setLoading(true);
       console.log('🔄 Starting to fetch frame sizes...');
-      // Try admin endpoint first, fallback to public endpoint if needed
-      let response;
-      try {
-        response = await api.get(API_ROUTES.ADMIN.FRAME_SIZES.LIST);
-        console.log('✅ API call successful:', response);
-      } catch (adminError) {
-        // If admin endpoint doesn't exist, rethrow the error
-        // Frame sizes should only be managed through admin endpoint
-        console.log('❌ Admin API call failed:', adminError);
-        throw adminError;
-      }
+      
+      const response = await getFrameSizes();
+      console.log('✅ API call successful:', response);
+      
       console.log('Frame sizes API Response:', response.data);
       
       // Handle the nested data structure from the API
@@ -200,13 +194,14 @@ const FrameSizes = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.FRAME_SIZES.DELETE(id));
+      const response = await deleteFrameSize(id);
       // Handle response structure: { success, message }
       if (response.data?.success) {
         toast.success(response.data.message || 'Frame size deleted successfully');
       } else {
         toast.success('Frame size deleted successfully');
       }
+      // Refresh the list without page reload
       fetchFrameSizes();
     } catch (error) {
       console.error('Frame size delete error:', error);

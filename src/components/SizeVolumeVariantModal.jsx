@@ -31,6 +31,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
     console.log('🔧 SizeVolumeVariantModal: useEffect triggered, variant:', variant);
     if (variant) {
       console.log('🔧 SizeVolumeVariantModal: Editing existing variant, setting form data');
+      console.log('🔧 SizeVolumeVariantModal: variant.image_url:', variant.image_url);
       // Editing existing variant
       setFormData({
         size_volume: variant.size_volume || '',
@@ -49,7 +50,8 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
       console.log('🔧 SizeVolumeVariantModal: Form data set for editing:', {
         size_volume: variant.size_volume || '',
         price: variant.price || '',
-        pack_type: variant.pack_type || ''
+        pack_type: variant.pack_type || '',
+        image_url: variant.image_url || ''
       });
     } else {
       console.log('🔧 SizeVolumeVariantModal: Creating new variant, resetting form data');
@@ -79,6 +81,9 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
       setFormData({ ...formData, [name]: value === '' ? '' : value });
     } else {
       setFormData({ ...formData, [name]: value });
+      if (name === 'image_url') {
+        console.log('🔧 SizeVolumeVariantModal: image_url changed to:', value);
+      }
     }
   };
 
@@ -369,13 +374,18 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
             {formData.image_url && (
               <div className="mt-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Image Preview</label>
+                {console.log('🔧 SizeVolumeVariantModal: Rendering image preview with URL:', formData.image_url)}
                 <div className="flex items-center gap-4">
                   <img
                     src={formData.image_url}
                     alt="Variant preview"
                     className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                     onError={(e) => {
+                      console.error('🔧 SizeVolumeVariantModal: Image failed to load:', formData.image_url);
                       e.target.src = 'https://via.placeholder.com/80x80?text=Error';
+                    }}
+                    onLoad={() => {
+                      console.log('🔧 SizeVolumeVariantModal: Image loaded successfully:', formData.image_url);
                     }}
                   />
                   <div>

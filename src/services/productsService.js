@@ -135,11 +135,11 @@ export const getProductCalibers = async (productId) => {
 
 /**
  * Create a new caliber for a product
- * POST /api/admin/products/:id/calibers/:mm
+ * POST /api/admin/products/:id/calibers
  */
 export const createProductCaliber = async (productId, mm, caliberData) => {
   try {
-    const response = await api.post(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.CREATE(productId, mm), caliberData);
+    const response = await api.post(API_ROUTES.ADMIN.PRODUCTS.MM_CALIBERS.CREATE(productId), { mm, ...caliberData });
     return response.data;
   } catch (error) {
     // If endpoint doesn't exist (404), show user-friendly message

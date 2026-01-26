@@ -421,7 +421,7 @@ export const API_ROUTES = {
       // MM Caliber Management (for frame/glasses products)
       MM_CALIBERS: {
         LIST: (productId) => `/admin/products/${productId}/calibers`, // GET all calibers for product
-        CREATE: (productId, mm) => `/admin/products/${productId}/calibers/${mm}`, // POST create caliber
+        CREATE: (productId) => `/admin/products/${productId}/calibers`, // POST create caliber (mm in body)
         UPDATE: (productId, mm) => `/admin/products/${productId}/calibers/${mm}`, // PUT update caliber
         DELETE: (productId, mm) => `/admin/products/${productId}/calibers/${mm}`, // DELETE caliber
       },

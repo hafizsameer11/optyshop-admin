@@ -39,11 +39,11 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate }) 
       console.log('🔄 Loading size-volume variants for product:', productId);
       const data = await getProductSizeVolumeVariants(productId);
       console.log('✅ Size-volume variants loaded:', data);
-      console.log('📊 Variants array:', data.variants);
-      console.log('📊 Variants count:', data.variants?.length || 0);
-      setVariants(data.variants || []);
+      console.log('📊 Variants array:', data.data?.variants);
+      console.log('📊 Variants count:', data.data?.variants?.length || 0);
+      setVariants(data.data?.variants || []);
       if (onVariantsUpdate) {
-        onVariantsUpdate(data.variants || []);
+        onVariantsUpdate(data.data?.variants || []);
       }
     } catch (error) {
       console.error('❌ Error loading variants:', error);

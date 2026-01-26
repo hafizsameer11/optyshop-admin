@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { mmCalibersApi } from '../api/mmCalibers';
 import { 
-  getProductCalibers, 
-  createProductCaliber, 
-  updateProductCaliber, 
-  deleteProductCaliber,
   validateCaliberData,
   formatCaliberDisplay,
   supportsMMCalibers
@@ -50,26 +47,15 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
     try {
       setLoading(true);
       console.log('🔄 Loading calibers for product:', productId);
-      const data = await getProductCalibers(productId);
+      const data = await mmCalibersApi.getProductCalibers(productId);
       console.log('✅ Calibers loaded successfully:', data);
-      setCalibers(data.calibers || []);
+      setCalibers(data.data || data.calibers || []);
       if (onCalibersUpdate) {
-        onCalibersUpdate(data.calibers || []);
+        onCalibersUpdate(data.data || data.calibers || []);
       }
     } catch (error) {
       console.error('❌ Error loading calibers:', error);
-      
-      // Check if it's a backend not implemented error
-      if (error.message && error.message.includes('Caliber management is not yet available')) {
-        console.warn('Backend not implemented, starting with empty calibers list');
-        // Don't show error for missing backend - just start with empty list
-        setCalibers([]);
-        if (onCalibersUpdate) {
-          onCalibersUpdate([]);
-        }
-      } else {
-        toast.error('Failed to load calibers');
-      }
+      toast.error('Failed to load calibers');
     } finally {
       setLoading(false);
     }
@@ -107,7 +93,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       
       if (editingCaliber) {
         // Update existing caliber
-        const response = await updateProductCaliber(productId, editingCaliber.mm, {
+        const response = await mmCalibersApi.updateCaliber(productId, editingCaliber.mm, {
           image_url: formData.image_url
         });
         console.log('Caliber updated successfully:', response);
@@ -123,13 +109,14 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
           c.mm === editingCaliber.mm ? updatedCaliber : c
         ));
         if (onCalibersUpdate) {
-          onCalibersUpdate(calibers.map(c => 
+          onCalibersUpdate(prev => prev.map(c => 
             c.mm === editingCaliber.mm ? updatedCaliber : c
           ));
         }
       } else {
         // Create new caliber
-        const response = await createProductCaliber(productId, formData.mm, {
+        const response = await mmCalibersApi.addCaliberToProduct(productId, {
+          mm: formData.mm,
           image_url: formData.image_url
         });
         console.log('✅ Caliber created successfully:', response);
@@ -143,45 +130,22 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         console.log('🔄 Adding new caliber to table:', newCaliber);
         setCalibers(prev => [...prev, newCaliber]);
         if (onCalibersUpdate) {
-          onCalibersUpdate([...calibers, newCaliber]);
+          onCalibersUpdate(prev => [...prev, newCaliber]);
         }
       }
       
       // Close form immediately to show table
       console.log('🔄 Closing form...');
       resetForm();
+      
+      // Reload calibers to ensure we have the latest data from server
+      setTimeout(() => {
+        loadCalibers();
+      }, 500);
     } catch (error) {
       console.error('Error saving caliber:', error);
-      
-      // Check if it's a backend not implemented error
-      if (error.message && error.message.includes('Caliber management is not yet available')) {
-        // Backend is not implemented - provide a fallback simulation
-        console.warn('Backend not implemented, using fallback simulation');
-        toast.error('Backend API not yet implemented. Simulating save for demonstration.');
-        
-        // Simulate successful creation/update for demo purposes
-        const newCaliber = {
-          mm: formData.mm,
-          image_url: formData.image_url
-        };
-        
-        if (editingCaliber) {
-          setCalibers(prev => prev.map(c => 
-            c.mm === editingCaliber.mm ? newCaliber : c
-          ));
-          toast.success('Caliber updated (simulated - backend not implemented)');
-        } else {
-          setCalibers(prev => [...prev, newCaliber]);
-          toast.success('Caliber created (simulated - backend not implemented)');
-        }
-        
-        // Close form
-        resetForm();
-      } else {
-        // Other types of errors
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to save caliber';
-        toast.error(errorMessage);
-      }
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save caliber';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -204,25 +168,13 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
 
     try {
       setLoading(true);
-      await deleteProductCaliber(productId, caliber.mm);
+      await mmCalibersApi.deleteCaliber(productId, caliber.mm);
       toast.success('Caliber deleted successfully');
       loadCalibers();
     } catch (error) {
       console.error('Error deleting caliber:', error);
-      
-      // Check if it's a backend not implemented error
-      if (error.message && error.message.includes('Caliber management is not yet available')) {
-        console.warn('Backend not implemented, simulating delete');
-        toast.success('Caliber deleted (simulated - backend not implemented)');
-        // Remove from local state
-        setCalibers(prev => prev.filter(c => c.mm !== caliber.mm));
-        if (onCalibersUpdate) {
-          onCalibersUpdate(calibers.filter(c => c.mm !== caliber.mm));
-        }
-      } else {
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to delete caliber';
-        toast.error(errorMessage);
-      }
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete caliber';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -266,22 +218,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         </div>
       </div>
 
-      {/* Backend not implemented warning */}
-      <div className="px-6 py-3 bg-amber-50 border-b border-amber-200">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 text-amber-600">
-            <svg fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm text-amber-800">
-              <strong>Backend API Not Implemented:</strong> Caliber management is currently simulated for demonstration. Contact the backend team to implement the MM calibers API endpoints.
-            </p>
-          </div>
-        </div>
-      </div>
-
+      
       {/* Warning message when product is not saved */}
       {!productId && (
         <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">

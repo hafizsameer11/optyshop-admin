@@ -23,6 +23,7 @@ import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
 import MMCaliberManager from './MMCaliberManager';
 import EyeHygieneVariantManager from './EyeHygieneVariantManager';
+import SizeVolumeVariantManager from './SizeVolumeVariantManager';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -4392,132 +4393,14 @@ const ProductModal = ({ product, onClose }) => {
 
             {/* Size/Volume Variants Tab - Eye Hygiene Products */}
             {activeTab === 'variants' && isEyeHygiene && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Size/Volume Variants</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Manage multiple volume options (e.g., 5ml, 10ml, 30ml) with individual prices, stock, and SKUs
-                    </p>
-                  </div>
-                  {getValidProductId() && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingVariant(null);
-                        setVariantModalOpen(true);
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
-                    >
-                      <FiPlus className="w-4 h-4" />
-                      Add Variant
-                    </button>
-                  )}
-                </div>
-
-                {!getValidProductId() ? (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Note:</strong> Please save the product first before adding size/volume variants.
-                    </p>
-                  </div>
-                ) : loadingVariants ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="spinner"></div>
-                    <span className="ml-3 text-gray-600">Loading variants...</span>
-                  </div>
-                ) : sizeVolumeVariants.length === 0 ? (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-                    <p className="text-gray-600 mb-4">No variants added yet.</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingVariant(null);
-                        setVariantModalOpen(true);
-                      }}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
-                    >
-                      <FiPlus className="w-4 h-4" />
-                      Add First Variant
-                    </button>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Size/Volume</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Pack Type</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Price</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Compare At Price</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Stock</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">SKU</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Expiry Date</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {sizeVolumeVariants.map((variant) => (
-                          <tr key={variant.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-900 font-medium">{variant.size_volume || '-'}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{variant.pack_type || '-'}</td>
-                            <td className="px-4 py-3 text-sm text-gray-900 font-semibold">${variant.price ? parseFloat(variant.price).toFixed(2) : '0.00'}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">
-                              {variant.compare_at_price ? `$${parseFloat(variant.compare_at_price).toFixed(2)}` : '-'}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">
-                              <div className="font-medium">{variant.stock_quantity ?? 0}</div>
-                              {variant.stock_status && (
-                                <div className={`text-xs mt-1 ${variant.stock_status === 'in_stock' ? 'text-green-600' :
-                                    variant.stock_status === 'out_of_stock' ? 'text-red-600' :
-                                      'text-yellow-600'
-                                  }`}>
-                                  {String(variant.stock_status).replace(/_/g, ' ')}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{variant.sku || '-'}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">
-                              {variant.expiry_date ? new Date(variant.expiry_date).toLocaleDateString() : '-'}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              {variant.is_active !== false ? (
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 border border-green-200">Active</span>
-                              ) : (
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200">Inactive</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingVariant(variant);
-                                    setVariantModalOpen(true);
-                                  }}
-                                  className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-                                  title="Edit"
-                                >
-                                  <FiEdit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => deleteSizeVolumeVariant(variant.id)}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                  title="Delete"
-                                >
-                                  <FiTrash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              <SizeVolumeVariantManager
+                productId={getValidProductId()}
+                productType={formData.product_type}
+                onVariantsUpdate={(variants) => {
+                  // Optional: Handle variants update if needed
+                  console.log('Size/Volume variants updated:', variants);
+                }}
+              />
             )}
 
             {/* Images Tab */}

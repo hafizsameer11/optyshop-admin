@@ -15,6 +15,26 @@ export const MMCaliber = {
   image_url: ''     // string - URL to the image for this caliber
 };
 
+// Size/Volume Variant Interface
+export const SizeVolumeVariant = {
+  id: 0,
+  product_id: 0,
+  size_volume: '',
+  pack_type: '',
+  price: 0,
+  compare_at_price: 0,
+  cost_price: 0,
+  stock_quantity: 0,
+  stock_status: 'in_stock',
+  sku: '',
+  expiry_date: '',
+  is_active: true,
+  sort_order: 0,
+  image_url: '',
+  created_at: '',
+  updated_at: ''
+};
+
 // Eye Hygiene Variant Interface
 export const EyeHygieneVariant = {
   id: 0,
@@ -53,7 +73,9 @@ export const Product = {
   // New fields for frame/glasses products
   mm_calibers: [],  // Array of MMCaliber objects
   // New field for eye hygiene products
-  eye_hygiene_variants: []  // Array of EyeHygieneVariant objects
+  eye_hygiene_variants: [],  // Array of EyeHygieneVariant objects
+  // New field for size-volume variants
+  size_volume_variants: []   // Array of SizeVolumeVariant objects
 };
 
 // ============================================
@@ -257,6 +279,94 @@ export const getProductEyeHygieneVariants = async (productId) => {
 };
 
 // ============================================
+// ADMIN API FUNCTIONS - SIZE/VOLUME VARIANT MANAGEMENT
+// ============================================
+
+/**
+ * Get all size-volume variants for a specific product
+ * GET /api/admin/products/:id/size-volume-variants
+ */
+export const getProductSizeVolumeVariants = async (productId) => {
+  try {
+    const response = await api.get(API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.LIST(productId));
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product size-volume variants:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a single size-volume variant by ID
+ * GET /api/admin/products/:productId/size-volume-variants/:variantId
+ */
+export const getSizeVolumeVariantById = async (productId, variantId) => {
+  try {
+    const response = await api.get(API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.BY_ID(productId, variantId));
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching size-volume variant:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create a new size-volume variant
+ * POST /api/admin/products/:id/size-volume-variants
+ */
+export const createSizeVolumeVariant = async (productId, variantData) => {
+  try {
+    const response = await api.post(API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.CREATE(productId), variantData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating size-volume variant:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update a size-volume variant
+ * PUT /api/admin/products/:productId/size-volume-variants/:variantId
+ */
+export const updateSizeVolumeVariant = async (productId, variantId, variantData) => {
+  try {
+    const response = await api.put(API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.UPDATE(productId, variantId), variantData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating size-volume variant:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a size-volume variant
+ * DELETE /api/admin/products/:productId/size-volume-variants/:variantId
+ */
+export const deleteSizeVolumeVariant = async (productId, variantId) => {
+  try {
+    const response = await api.delete(API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.DELETE(productId, variantId));
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting size-volume variant:', error);
+    throw error;
+  }
+};
+
+/**
+ * Bulk update size-volume variants
+ * PUT /api/admin/products/:id/size-volume-variants/bulk
+ */
+export const bulkUpdateSizeVolumeVariants = async (productId, variantsData) => {
+  try {
+    const response = await api.put(API_ROUTES.ADMIN.PRODUCTS.SIZE_VOLUME_VARIANTS.BULK_UPDATE(productId), variantsData);
+    return response.data;
+  } catch (error) {
+    console.error('Error bulk updating size-volume variants:', error);
+    throw error;
+  }
+};
+
+// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
@@ -271,6 +381,13 @@ export const supportsMMCalibers = (productType) => {
  * Check if a product supports eye hygiene variants
  */
 export const supportsEyeHygieneVariants = (productType) => {
+  return productType === ProductTypes.EYE_HYGIENE;
+};
+
+/**
+ * Check if a product supports size-volume variants (eye hygiene products)
+ */
+export const supportsSizeVolumeVariants = (productType) => {
   return productType === ProductTypes.EYE_HYGIENE;
 };
 
@@ -333,11 +450,41 @@ export const validateEyeHygieneVariantData = (variantData) => {
   return errors;
 };
 
+/**
+ * Validate size-volume variant data
+ */
+export const validateSizeVolumeVariantData = (variantData) => {
+  const errors = [];
+  
+  if (!variantData.size_volume || variantData.size_volume.trim().length === 0) {
+    errors.push('Size/Volume is required');
+  }
+  
+  if (!variantData.product_id || isNaN(variantData.product_id)) {
+    errors.push('Product ID is required and must be a number');
+  }
+  
+  if (!variantData.price || isNaN(variantData.price) || variantData.price < 0) {
+    errors.push('Price is required and must be a positive number');
+  }
+  
+  if (variantData.image_url) {
+    try {
+      new URL(variantData.image_url);
+    } catch {
+      errors.push('Image URL must be a valid URL');
+    }
+  }
+  
+  return errors;
+};
+
 export default {
   // Type exports
   ProductTypes,
   MMCaliber,
   EyeHygieneVariant,
+  SizeVolumeVariant,
   Product,
   
   // Public functions
@@ -358,10 +505,20 @@ export default {
   deleteEyeHygieneVariant,
   getProductEyeHygieneVariants,
   
+  // Size/Volume Variant functions
+  getProductSizeVolumeVariants,
+  getSizeVolumeVariantById,
+  createSizeVolumeVariant,
+  updateSizeVolumeVariant,
+  deleteSizeVolumeVariant,
+  bulkUpdateSizeVolumeVariants,
+  
   // Utility functions
   supportsMMCalibers,
   supportsEyeHygieneVariants,
+  supportsSizeVolumeVariants,
   formatCaliberDisplay,
   validateCaliberData,
-  validateEyeHygieneVariantData
+  validateEyeHygieneVariantData,
+  validateSizeVolumeVariantData
 };

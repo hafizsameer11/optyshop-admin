@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
+import { FiX, FiUpload, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -20,6 +20,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
     expiry_date: '',
     is_active: true,
     sort_order: '',
+    image_url: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -38,6 +39,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
         expiry_date: variant.expiry_date ? new Date(variant.expiry_date).toISOString().split('T')[0] : '',
         is_active: variant.is_active !== undefined ? variant.is_active : true,
         sort_order: variant.sort_order !== null && variant.sort_order !== undefined ? variant.sort_order : '',
+        image_url: variant.image_url || '',
       });
     } else {
       // New variant
@@ -53,6 +55,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
         expiry_date: '',
         is_active: true,
         sort_order: '',
+        image_url: '',
       });
     }
   }, [variant]);
@@ -65,6 +68,17 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
       setFormData({ ...formData, [name]: value === '' ? '' : value });
     } else {
       setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // In a real implementation, you would upload the file to a server
+      // For now, we'll create a temporary URL
+      const tempUrl = URL.createObjectURL(file);
+      setFormData(prev => ({ ...prev, image_url: tempUrl }));
+      toast.info('Image uploaded (temporary URL for demo)');
     }
   };
 
@@ -97,6 +111,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
         expiry_date: formData.expiry_date || null,
         is_active: formData.is_active,
         sort_order: formData.sort_order !== '' ? parseInt(formData.sort_order) : 0,
+        image_url: formData.image_url || null,
       };
 
       let response;
@@ -314,6 +329,50 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
                 Active
               </label>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Variant Image
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                name="image_url"
+                value={formData.image_url}
+                onChange={handleChange}
+                placeholder="https://example.com/image.jpg"
+                className="flex-1 input-modern"
+              />
+              <label className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-2">
+                <FiUpload className="w-4 h-4" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            {formData.image_url && (
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Image Preview</label>
+                <div className="flex items-center gap-4">
+                  <img
+                    src={formData.image_url}
+                    alt="Variant preview"
+                    className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/80x80?text=Error';
+                    }}
+                  />
+                  <div>
+                    <p className="font-medium text-gray-900">{formData.size_volume || 'Variant'}</p>
+                    <p className="text-sm text-gray-600">${formData.price || '0.00'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white flex-shrink-0">

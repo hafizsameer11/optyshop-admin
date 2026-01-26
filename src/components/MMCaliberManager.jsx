@@ -49,15 +49,15 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   const loadCalibers = async () => {
     try {
       setLoading(true);
-      console.log('Loading calibers for product:', productId);
+      console.log('🔄 Loading calibers for product:', productId);
       const data = await getProductCalibers(productId);
-      console.log('Calibers loaded:', data);
+      console.log('✅ Calibers loaded successfully:', data);
       setCalibers(data.calibers || []);
       if (onCalibersUpdate) {
         onCalibersUpdate(data.calibers || []);
       }
     } catch (error) {
-      console.error('Error loading calibers:', error);
+      console.error('❌ Error loading calibers:', error);
       toast.error('Failed to load calibers');
     } finally {
       setLoading(false);
@@ -65,6 +65,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   };
 
   const resetForm = () => {
+    console.log('🔄 Resetting caliber form - closing form and showing table');
     setFormData({ 
       mm: '', 
       image_url: '',
@@ -105,15 +106,19 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         const response = await createProductCaliber(productId, formData.mm, {
           image_url: formData.image_url
         });
-        console.log('Caliber created successfully:', response);
+        console.log('✅ Caliber created successfully:', response);
         toast.success('Caliber created successfully');
       }
       
+      // Close form immediately to show table
+      console.log('🔄 Closing form and refreshing caliber list...');
       resetForm();
-      // Add a small delay to ensure server processes the data
+      
+      // Add a small delay to ensure server processes the data before refresh
       setTimeout(() => {
+        console.log('🔄 Refreshing caliber list after creation...');
         loadCalibers();
-      }, 500);
+      }, 300);
     } catch (error) {
       console.error('Error saving caliber:', error);
       toast.error(error.response?.data?.message || 'Failed to save caliber');

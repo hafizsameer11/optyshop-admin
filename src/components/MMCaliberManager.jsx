@@ -165,13 +165,21 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   };
 
   const handleEdit = (caliber) => {
+    console.log('🔧 Edit button clicked for caliber:', caliber);
+    console.log('🔧 Current showAddForm state:', showAddForm);
     setEditingCaliber(caliber);
     setFormData({
       mm: caliber.mm,
       image_url: caliber.image_url,
       product_id: productId || ''
     });
+    console.log('🔧 Setting showAddForm to true');
     setShowAddForm(true);
+    console.log('🔧 Form data set:', {
+      mm: caliber.mm,
+      image_url: caliber.image_url,
+      product_id: productId || ''
+    });
   };
 
   const handleDelete = async (caliber) => {
@@ -275,7 +283,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       )}
 
       {/* Add/Edit Form */}
-      {showAddForm && (
+      {console.log('🔍 Rendering check - showAddForm:', showAddForm, 'editingCaliber:', editingCaliber) || showAddForm && (
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50" onSubmit={(e) => e.preventDefault()}>
           <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">

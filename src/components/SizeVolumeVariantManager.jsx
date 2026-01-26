@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload, FiDollarSign, FiPackage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import SizeVolumeVariantModal from './SizeVolumeVariantModal';
 import { 
   getProductSizeVolumeVariants,
   createSizeVolumeVariant,
@@ -11,11 +10,9 @@ import {
   validateSizeVolumeVariantData
 } from '../services/productsService';
 
-const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate }) => {
+const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate, onAddVariant, onEditVariant }) => {
   const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [editingVariant, setEditingVariant] = useState(null);
 
   // Check if product supports size-volume variants
   if (!supportsSizeVolumeVariants(productType)) {
@@ -59,13 +56,15 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate }) 
       return;
     }
     console.log('🔄 Opening Add Variant modal for product:', productId);
-    setEditingVariant(null);
-    setShowModal(true);
+    if (onAddVariant) {
+      onAddVariant();
+    }
   };
 
   const handleEdit = (variant) => {
-    setEditingVariant(variant);
-    setShowModal(true);
+    if (onEditVariant) {
+      onEditVariant(variant);
+    }
   };
 
   const handleDelete = async (variant) => {
@@ -83,17 +82,6 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate }) 
       toast.error(error.response?.data?.message || 'Failed to delete variant');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleModalClose = (refresh = false) => {
-    console.log('🔄 SizeVolumeVariantManager.handleModalClose called with refresh=', refresh);
-    console.log('🔄 Current variants count before refresh:', variants.length);
-    setShowModal(false);
-    setEditingVariant(null);
-    if (refresh) {
-      console.log('🔄 Refreshing variants after modal close');
-      loadVariants();
     }
   };
 
@@ -304,15 +292,6 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate }) 
           </>
         )}
       </div>
-
-      {/* Size/Volume Variant Modal */}
-      {showModal && (
-        <SizeVolumeVariantModal
-          variant={editingVariant}
-          productId={productId}
-          onClose={handleModalClose}
-        />
-      )}
     </div>
   );
 };

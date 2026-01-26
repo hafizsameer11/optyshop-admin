@@ -4400,6 +4400,14 @@ const ProductModal = ({ product, onClose }) => {
                   // Optional: Handle variants update if needed
                   console.log('Size/Volume variants updated:', variants);
                 }}
+                onAddVariant={() => {
+                  setEditingVariant(null);
+                  setVariantModalOpen(true);
+                }}
+                onEditVariant={(variant) => {
+                  setEditingVariant(variant);
+                  setVariantModalOpen(true);
+                }}
               />
             )}
 
@@ -5099,7 +5107,7 @@ const ProductModal = ({ product, onClose }) => {
             onClose={async (saved = false) => {
               setVariantModalOpen(false);
               setEditingVariant(null);
-              setSizeVolumeVariantModalComponent(null); // Reset component when closed
+              // Don't reset the component to null to avoid re-import
               if (saved) {
                 const productId = getValidProductId();
                 if (productId) {

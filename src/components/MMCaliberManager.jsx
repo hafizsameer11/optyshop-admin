@@ -276,8 +276,8 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
 
       {/* Add/Edit Form */}
       {showAddForm && (
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50" onSubmit={(e) => e.preventDefault()}>
+          <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-medium text-gray-900">
                 {editingCaliber ? 'Edit Caliber' : 'Add New Caliber'}
@@ -387,10 +387,12 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
                 Cancel
               </button>
               <button
-                type="submit"
+                type="button"
                 disabled={loading}
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
+                  handleSubmit(e);
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >

@@ -58,7 +58,18 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       }
     } catch (error) {
       console.error('❌ Error loading calibers:', error);
-      toast.error('Failed to load calibers');
+      
+      // Check if it's a backend not implemented error
+      if (error.message && error.message.includes('Caliber management is not yet available')) {
+        console.warn('Backend not implemented, starting with empty calibers list');
+        // Don't show error for missing backend - just start with empty list
+        setCalibers([]);
+        if (onCalibersUpdate) {
+          onCalibersUpdate([]);
+        }
+      } else {
+        toast.error('Failed to load calibers');
+      }
     } finally {
       setLoading(false);
     }
@@ -141,7 +152,36 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       resetForm();
     } catch (error) {
       console.error('Error saving caliber:', error);
-      toast.error(error.response?.data?.message || 'Failed to save caliber');
+      
+      // Check if it's a backend not implemented error
+      if (error.message && error.message.includes('Caliber management is not yet available')) {
+        // Backend is not implemented - provide a fallback simulation
+        console.warn('Backend not implemented, using fallback simulation');
+        toast.error('Backend API not yet implemented. Simulating save for demonstration.');
+        
+        // Simulate successful creation/update for demo purposes
+        const newCaliber = {
+          mm: formData.mm,
+          image_url: formData.image_url
+        };
+        
+        if (editingCaliber) {
+          setCalibers(prev => prev.map(c => 
+            c.mm === editingCaliber.mm ? newCaliber : c
+          ));
+          toast.success('Caliber updated (simulated - backend not implemented)');
+        } else {
+          setCalibers(prev => [...prev, newCaliber]);
+          toast.success('Caliber created (simulated - backend not implemented)');
+        }
+        
+        // Close form
+        resetForm();
+      } else {
+        // Other types of errors
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to save caliber';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -169,7 +209,20 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       loadCalibers();
     } catch (error) {
       console.error('Error deleting caliber:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete caliber');
+      
+      // Check if it's a backend not implemented error
+      if (error.message && error.message.includes('Caliber management is not yet available')) {
+        console.warn('Backend not implemented, simulating delete');
+        toast.success('Caliber deleted (simulated - backend not implemented)');
+        // Remove from local state
+        setCalibers(prev => prev.filter(c => c.mm !== caliber.mm));
+        if (onCalibersUpdate) {
+          onCalibersUpdate(calibers.filter(c => c.mm !== caliber.mm));
+        }
+      } else {
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to delete caliber';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -210,6 +263,22 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
             <FiPlus className="w-4 h-4" />
             Add Caliber
           </button>
+        </div>
+      </div>
+
+      {/* Backend not implemented warning */}
+      <div className="px-6 py-3 bg-amber-50 border-b border-amber-200">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 text-amber-600">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm text-amber-800">
+              <strong>Backend API Not Implemented:</strong> Caliber management is currently simulated for demonstration. Contact the backend team to implement the MM calibers API endpoints.
+            </p>
+          </div>
         </div>
       </div>
 

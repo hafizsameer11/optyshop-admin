@@ -117,14 +117,15 @@ const FreeGiftModal = ({ gift, onClose, onSuccess }) => {
       }
 
       const dataToSend = {
-        product_id: parseInt(formData.product_id),
-        gift_product_id: parseInt(formData.gift_product_id),
-        min_quantity: parseInt(formData.min_quantity),
-        is_active: formData.is_active,
+        name: `Free Gift: ${products.find(p => p.id === parseInt(formData.gift_product_id))?.name || 'Product'}`,
+        productId: parseInt(formData.product_id),
+        giftProductId: parseInt(formData.gift_product_id),
+        minQuantity: parseInt(formData.min_quantity),
+        isActive: formData.is_active,
       };
 
       if (formData.max_quantity !== '') {
-        dataToSend.max_quantity = parseInt(formData.max_quantity);
+        dataToSend.maxQuantity = parseInt(formData.max_quantity);
       }
 
       if (formData.description && formData.description.trim()) {

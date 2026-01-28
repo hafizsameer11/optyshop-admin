@@ -320,7 +320,15 @@ const BannerModal = ({ banner, onClose }) => {
       if (formData.position) {
         submitData.append('position', formData.position);
       }
-      submitData.append('sort_order', formData.sort_order.toString());
+      // Validate sort_order is a number
+      const sortOrder = parseInt(formData.sort_order, 10);
+      if (isNaN(sortOrder) || sortOrder < 0) {
+        toast.error('Sort order must be a valid positive number');
+        setLoading(false);
+        return;
+      }
+      
+      submitData.append('sort_order', sortOrder.toString());
       submitData.append('is_active', formData.is_active.toString());
 
       // Add category_id and sub_category_id based on page_type

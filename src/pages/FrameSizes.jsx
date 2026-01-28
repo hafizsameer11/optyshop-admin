@@ -61,7 +61,7 @@ const FrameSizes = () => {
       console.log('Length:', frameSizesData?.length);
       if (frameSizesData.length > 0) {
         console.log('First frame size data:', frameSizesData[0]);
-        console.log('First frame size product:', frameSizesData[0].product);
+        console.log('Available keys in first frame size:', Object.keys(frameSizesData[0]));
       }
       
       if (Array.isArray(frameSizesData)) {
@@ -247,7 +247,7 @@ const FrameSizes = () => {
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  PRODUCT
+                  PRODUCT ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   SLUG
@@ -283,10 +283,10 @@ const FrameSizes = () => {
                       {size.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {size.product?.name || 'N/A'}
+                      {size.product_id || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.product?.slug || 'n/a'}
+                      {size.size_label ? size.size_label.toLowerCase().replace(/\s+/g, '-') : 'n/a'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {size.size_label || 'N/A'}

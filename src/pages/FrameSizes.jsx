@@ -292,13 +292,13 @@ const FrameSizes = () => {
                       {size.size_label || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.lens_width ? `${size.lens_width} mm` : 'N/A'}
+                      {size.lens_width !== undefined && size.lens_width !== null ? `${size.lens_width} mm` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.bridge_width ? `${size.bridge_width} mm` : 'N/A'}
+                      {size.bridge_width !== undefined && size.bridge_width !== null ? `${size.bridge_width} mm` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.temple_length ? `${size.temple_length} mm` : 'N/A'}
+                      {size.temple_length !== undefined && size.temple_length !== null ? `${size.temple_length} mm` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button 

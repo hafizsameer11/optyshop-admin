@@ -131,13 +131,13 @@ const Brands = () => {
               {brands.map((brand) => (
                 <tr key={brand.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {brand.logo_url ? (
+                    {brand.logo_image ? (
                       <div className="relative group">
                         <img
-                          src={brand.logo_url}
+                          src={brand.logo_image}
                           alt={brand.name}
                           className="w-16 h-16 object-contain rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white p-1"
-                          onClick={() => window.open(brand.logo_url, '_blank')}
+                          onClick={() => window.open(brand.logo_image, '_blank')}
                           title="Click to view full logo"
                         />
                       </div>

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import bannerAPI from '../api/banners';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { API_ROUTES } from '../config/apiRoutes';
 
 const BannerModal = ({ banner, onClose }) => {
   const { t } = useI18n();
@@ -164,7 +165,7 @@ const BannerModal = ({ banner, onClose }) => {
 
     try {
       // Fetch top-level subcategories for the category
-      const response = await api.get(`/categories/${categoryId}/subcategories`);
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
 
@@ -196,7 +197,7 @@ const BannerModal = ({ banner, onClose }) => {
 
     try {
       // Fetch nested subcategories (sub-subcategories) for the selected subcategory
-      const response = await api.get(`/subcategories/${subCategoryId}/nested`);
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_PARENT(subCategoryId));
       const responseData = response.data?.data || response.data || {};
       const nestedData = responseData.subcategories || responseData || [];
       setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);

@@ -330,6 +330,7 @@ const FrameSizes = () => {
           frameSize={selectedFrameSize}
           onClose={(shouldRefresh = false) => {
             console.log('🔄 FrameSizeModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedFrameSize:', selectedFrameSize);
             setModalOpen(false);
             setSelectedFrameSize(null);
             if (shouldRefresh) {
@@ -348,11 +349,13 @@ const FrameSizes = () => {
                   size_label: 'Small',
                   created_at: new Date().toISOString()
                 };
+                console.log('🔄 Adding new frame size to table:', newFrameSize);
                 setFrameSizes(prev => [newFrameSize, ...prev]);
                 toast.success('Frame size added to table (demo mode)');
               }
               // Use setTimeout to ensure modal is fully closed before refresh
               setTimeout(() => {
+                console.log('🔄 Fetching frame sizes from API');
                 fetchFrameSizes();
               }, 100);
             } else {

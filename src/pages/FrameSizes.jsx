@@ -24,7 +24,10 @@ const FrameSizes = () => {
       const response = await getFrameSizes();
       console.log('✅ API call successful:', response);
       
-      console.log('Frame sizes API Response:', response.data);
+      console.log('Full API Response:', response);
+      console.log('Response.data:', response.data);
+      console.log('Response.data.data:', response.data?.data);
+      console.log('Response.data.data.frameSizes:', response.data?.data?.frameSizes);
       
       // Handle the nested data structure from the API
       // Response structure: { success, message, data: { frameSizes: [...] } }
@@ -56,6 +59,10 @@ const FrameSizes = () => {
       console.log('Parsed frame sizes:', frameSizesData);
       console.log('Is array?', Array.isArray(frameSizesData));
       console.log('Length:', frameSizesData?.length);
+      if (frameSizesData.length > 0) {
+        console.log('First frame size data:', frameSizesData[0]);
+        console.log('First frame size product:', frameSizesData[0].product);
+      }
       
       if (Array.isArray(frameSizesData)) {
         // If no data from API, use mock data for demonstration

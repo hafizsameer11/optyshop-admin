@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { API_ROUTES } from '../config/apiRoutes';
+import bannerAPI from '../api/banners';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 
@@ -146,7 +146,7 @@ const BannerModal = ({ banner, onClose }) => {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get(API_ROUTES.CATEGORIES.LIST);
+      const response = await api.get('/categories');
       const categoriesData = response.data?.data?.categories || response.data?.categories || response.data || [];
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
@@ -164,7 +164,7 @@ const BannerModal = ({ banner, onClose }) => {
 
     try {
       // Fetch top-level subcategories for the category
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+      const response = await api.get(`/categories/${categoryId}/subcategories`);
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
 
@@ -196,7 +196,7 @@ const BannerModal = ({ banner, onClose }) => {
 
     try {
       // Fetch nested subcategories (sub-subcategories) for the selected subcategory
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_PARENT(subCategoryId));
+      const response = await api.get(`/subcategories/${subCategoryId}/nested`);
       const responseData = response.data?.data || response.data || {};
       const nestedData = responseData.subcategories || responseData || [];
       setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);
@@ -344,29 +344,14 @@ const BannerModal = ({ banner, onClose }) => {
       }
 
       let response;
-      let requestUrl;
       if (banner) {
-        // Use admin route for updating with safety check
-        requestUrl = API_ROUTES.ADMIN?.BANNERS?.UPDATE?.(banner.id) || `/admin/banners/${banner.id}`;
-        console.log('Updating banner - URL:', requestUrl);
-        response = await api.put(requestUrl, submitData);
-        // Handle response structure: { success, message, data: { banner: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Banner updated successfully');
-        } else {
-          toast.success('Banner updated successfully');
-        }
+        console.log('Updating banner with ID:', banner.id);
+        response = await bannerAPI.update(banner.id, submitData);
+        toast.success('Banner updated successfully');
       } else {
-        // Use admin route for creating with safety check
-        requestUrl = API_ROUTES.ADMIN?.BANNERS?.CREATE || '/admin/banners';
-        console.log('Creating banner - URL:', requestUrl);
-        response = await api.post(requestUrl, submitData);
-        // Handle response structure: { success, message, data: { banner: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Banner created successfully');
-        } else {
-          toast.success('Banner created successfully');
-        }
+        console.log('Creating new banner');
+        response = await bannerAPI.create(submitData);
+        toast.success('Banner created successfully');
       }
       onClose();
     } catch (error) {

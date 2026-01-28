@@ -3,7 +3,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import BannerModal from '../components/BannerModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import bannerAPI from '../api/banners';
 
 // Banner Image Component with error handling
 const BannerImage = ({ banner }) => {
@@ -114,35 +114,10 @@ const Banners = () => {
   const fetchBanners = async () => {
     try {
       setLoading(true);
-      // Use ADMIN route for listing banners with safety check
-      const bannersRoute = API_ROUTES.ADMIN?.BANNERS?.LIST || API_ROUTES.BANNERS?.LIST || '/admin/banners';
+      console.log('Fetching banners with filters:', filters);
       
-      // Build query parameters
-      const queryParams = new URLSearchParams();
-      if (filters.page_type) queryParams.append('page_type', filters.page_type);
-      if (filters.category_id) queryParams.append('category_id', filters.category_id);
-      if (filters.sub_category_id) queryParams.append('sub_category_id', filters.sub_category_id);
-      
-      const url = queryParams.toString() ? `${bannersRoute}?${queryParams.toString()}` : bannersRoute;
-      console.log('Fetching banners from route:', url);
-      
-      const response = await api.get(url);
-      console.log('Banners API Response:', response.data);
-      
-      // Handle response structure: { success, message, data: { banners: [...] } }
-      // Or direct array: { banners: [...] }
-      let bannersData = [];
-      
-      if (response.data?.data) {
-        // Handle nested structure: { data: { banners: [...] } } or { data: [...] }
-        bannersData = response.data.data.banners || response.data.data || [];
-      } else if (Array.isArray(response.data)) {
-        bannersData = response.data;
-      } else if (response.data?.banners) {
-        bannersData = response.data.banners;
-      }
-      
-      console.log('Parsed banners:', bannersData);
+      const bannersData = await bannerAPI.getAll(filters);
+      console.log('Fetched banners:', bannersData);
       setBanners(Array.isArray(bannersData) ? bannersData : []);
     } catch (error) {
       console.error('Banners API error:', error);
@@ -182,7 +157,7 @@ const Banners = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get(API_ROUTES.CATEGORIES.LIST);
+      const response = await api.get('/categories');
       const categoriesData = response.data?.data?.categories || response.data?.categories || response.data || [];
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
@@ -198,7 +173,7 @@ const Banners = () => {
     }
 
     try {
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+      const response = await api.get(`/categories/${categoryId}/subcategories`);
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
       
@@ -243,15 +218,8 @@ const Banners = () => {
     }
 
     try {
-      // Use admin route for deletion with safety check
-      const deleteUrl = API_ROUTES.ADMIN?.BANNERS?.DELETE?.(id) || `/admin/banners/${id}`;
-      const response = await api.delete(deleteUrl);
-      // Handle response structure
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Banner deleted successfully');
-      } else {
-        toast.success('Banner deleted successfully');
-      }
+      await bannerAPI.delete(id);
+      toast.success('Banner deleted successfully');
       fetchBanners();
     } catch (error) {
       console.error('Banner delete error:', error);
@@ -384,10 +352,10 @@ const Banners = () => {
                   Page Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
+                  Assignment
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Subcategory
+                  Parent Category
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Link URL
@@ -412,7 +380,7 @@ const Banners = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {banners.length === 0 ? (
                 <tr>
-                  <td colSpan="11" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="10" className="px-6 py-4 text-center text-sm text-gray-500">
                     No banners found
                   </td>
                 </tr>
@@ -431,10 +399,57 @@ const Banners = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {banner.category?.name || banner.Category?.name || (banner.category_id || banner.categoryId ? `ID: ${banner.category_id || banner.categoryId}` : 'N/A')}
+                      {(() => {
+                        const pageType = banner.page_type || banner.pageType || 'home';
+                        if (pageType === 'home') {
+                          return (
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                              Home Page
+                            </span>
+                          );
+                        }
+                        
+                        const categoryName = banner.category?.name || banner.Category?.name || `ID: ${banner.category_id || banner.categoryId}`;
+                        const subcategoryName = banner.subCategory?.name || banner.SubCategory?.name || banner.subcategory?.name || 
+                          (banner.sub_category_id || banner.subCategoryId ? `ID: ${banner.sub_category_id || banner.subCategoryId}` : null);
+                        
+                        if (pageType === 'category') {
+                          return (
+                            <div>
+                              <div className="font-medium text-gray-900">{categoryName}</div>
+                              <div className="text-xs text-gray-500">Category Page</div>
+                            </div>
+                          );
+                        } else if (pageType === 'subcategory') {
+                          return (
+                            <div>
+                              <div className="font-medium text-gray-900">{subcategoryName || 'N/A'}</div>
+                              <div className="text-xs text-gray-500">in {categoryName}</div>
+                            </div>
+                          );
+                        } else if (pageType === 'sub_subcategory') {
+                          return (
+                            <div>
+                              <div className="font-medium text-gray-900">{subcategoryName || 'N/A'}</div>
+                              <div className="text-xs text-gray-500">sub-subcategory in {categoryName}</div>
+                            </div>
+                          );
+                        }
+                        return categoryName || 'N/A';
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {banner.subCategory?.name || banner.SubCategory?.name || banner.subcategory?.name || (banner.sub_category_id || banner.subCategoryId ? `ID: ${banner.sub_category_id || banner.subCategoryId}` : 'N/A')}
+                      {(() => {
+                        const pageType = banner.page_type || banner.pageType || 'home';
+                        if (pageType === 'home' || pageType === 'category') {
+                          return <span className="text-gray-400">—</span>;
+                        }
+                        
+                        const subcategoryName = banner.subCategory?.name || banner.SubCategory?.name || banner.subcategory?.name || 
+                          (banner.sub_category_id || banner.subCategoryId ? `ID: ${banner.sub_category_id || banner.subCategoryId}` : 'N/A');
+                        
+                        return subcategoryName;
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {banner.link_url ? (

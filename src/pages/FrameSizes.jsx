@@ -43,13 +43,7 @@ const FrameSizes = () => {
         } else if (response.data.data.frameSize) {
           // Single frame size returned as array
           frameSizesData = [response.data.data.frameSize];
-        } else if (response.data.data.data?.frameSizes) {
-          frameSizesData = response.data.data.data.frameSizes;
-        } else if (response.data.data.data?.frame_sizes) {
-          frameSizesData = response.data.data.data.frame_sizes;
         }
-      } else if (Array.isArray(response.data)) {
-        frameSizesData = response.data;
       } else if (response.data?.frameSizes) {
         frameSizesData = response.data.frameSizes;
       } else if (response.data?.frame_sizes) {

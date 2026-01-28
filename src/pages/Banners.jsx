@@ -4,6 +4,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import BannerModal from '../components/BannerModal';
 import bannerAPI from '../api/banners';
+import { API_ROUTES } from '../config/apiRoutes';
 
 // Banner Image Component with error handling
 const BannerImage = ({ banner }) => {
@@ -173,7 +174,7 @@ const Banners = () => {
     }
 
     try {
-      const response = await api.get(`/categories/${categoryId}/subcategories`);
+      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
       

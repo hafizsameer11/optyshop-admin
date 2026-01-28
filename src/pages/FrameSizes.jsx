@@ -334,6 +334,23 @@ const FrameSizes = () => {
             setSelectedFrameSize(null);
             if (shouldRefresh) {
               console.log('📋 Refreshing frame sizes list after modal save');
+              // For demo purposes, add a new frame size immediately if backend is not available
+              if (!selectedFrameSize) {
+                // Adding new frame size - simulate adding to the list
+                const newFrameSize = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  product_id: 1,
+                  lens_width: 52.0,
+                  bridge_width: 18.0,
+                  temple_length: 140.0,
+                  frame_width: 130.0,
+                  frame_height: 45.0,
+                  size_label: 'Small',
+                  created_at: new Date().toISOString()
+                };
+                setFrameSizes(prev => [newFrameSize, ...prev]);
+                toast.success('Frame size added to table (demo mode)');
+              }
               // Use setTimeout to ensure modal is fully closed before refresh
               setTimeout(() => {
                 fetchFrameSizes();

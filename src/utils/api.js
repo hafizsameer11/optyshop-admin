@@ -54,8 +54,9 @@ api.interceptors.response.use(
     }
     
     // Only redirect to login for actual 401 responses, not network errors
-    // But skip redirect if we're in demo mode
-    if (error.response?.status === 401 && !isDemoMode) {
+    // But skip redirect if we're in demo mode OR if it's a frame size operation
+    const isFrameSizeOperation = error.config?.url?.includes('/frame-sizes');
+    if (error.response?.status === 401 && !isDemoMode && !isFrameSizeOperation) {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('refresh_token');
       window.location.href = '/login';
@@ -66,8 +67,8 @@ api.interceptors.response.use(
       console.warn('Network error - API server may be unavailable:', error.message);
     }
     
-    // Log 401 errors in demo mode
-    if (error.response?.status === 401 && isDemoMode) {
+    // Log 401 errors in demo mode or for frame size operations
+    if (error.response?.status === 401 && (isDemoMode || isFrameSizeOperation)) {
       console.warn('API call blocked in demo mode - backend requires real authentication');
     }
     

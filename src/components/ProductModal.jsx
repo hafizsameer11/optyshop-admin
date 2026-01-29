@@ -34,6 +34,7 @@ import {
 } from '../api/products';
 import { getBrands } from '../api/brands';
 import { getSubCategories } from '../api/subCategories';
+import { getCategories } from '../api/categories';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -860,7 +861,7 @@ const ProductModal = ({ product, onClose }) => {
       console.error('Failed to fetch product options', error);
       // Fallback to just categories if options endpoint fails
       try {
-        const response = await api.get(API_ROUTES.CATEGORIES.LIST);
+        const response = await getCategories({ is_active: true, sortBy: 'sort_order', sortOrder: 'asc' });
         const categoriesData = response.data?.data?.categories || response.data?.categories || response.data || [];
         setCategories(categoriesData);
         categoriesRef.current = categoriesData;

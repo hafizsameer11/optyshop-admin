@@ -32,6 +32,8 @@ import {
   getProducts,
   deleteProduct
 } from '../api/products';
+import { getBrands } from '../api/brands';
+import { getSubCategories } from '../api/subCategories';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -344,9 +346,14 @@ const ProductModal = ({ product, onClose }) => {
     if (!subCategoryId) return;
 
     try {
-      // Fetch the subcategory to check if it has a parent (is a sub-subcategory)
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_ID(subCategoryId));
-      const subCatData = response.data?.data?.subcategory || response.data?.data || response.data?.subcategory || response.data || {};
+      // Use the subcategories API service to get subcategory by ID
+      const response = await getSubCategories();
+      const allSubCategories = response.data?.data?.subcategories || response.data?.subcategories || response.data || [];
+      
+      // Find the specific subcategory by ID
+      const subCatData = Array.isArray(allSubCategories) 
+        ? allSubCategories.find(sub => sub.id === parseInt(subCategoryId)) 
+        : {};
 
       // Check if this subcategory has a parent (is a sub-subcategory)
       const parentId = subCatData.parent_id !== undefined ? subCatData.parent_id :
@@ -831,8 +838,8 @@ const ProductModal = ({ product, onClose }) => {
 
       // Fetch brands
       try {
-        const brandsResponse = await api.get(API_ROUTES.ADMIN.BRANDS.LIST);
-        const brandsData = brandsResponse.data?.data?.brands || brandsResponse.data?.brands || [];
+        const brandsResponse = await getBrands({ is_active: true, sortBy: 'name', sortOrder: 'asc' });
+        const brandsData = brandsResponse.data?.data?.brands || brandsResponse.data?.brands || brandsResponse.data || [];
         setBrands(Array.isArray(brandsData) ? brandsData : []);
       } catch (brandError) {
         console.warn('Failed to fetch brands', brandError);
@@ -884,14 +891,12 @@ const ProductModal = ({ product, onClose }) => {
     }
 
     try {
-      // Per Postman collection: Use /subcategories/by-category/:categoryId
-      // This returns top-level subcategories with their nested children
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+      // Use the subcategories API service
+      const response = await getSubCategories({ category_id: categoryId, is_active: true, sortBy: 'sort_order', sortOrder: 'asc' });
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
 
       // Filter to get only top-level subcategories (parent_id = null)
-      // Per Postman: top-level subcategories have parent_id = null
       const topLevel = Array.isArray(subCatData)
         ? subCatData.filter(sub => {
           const parentId = sub.parent_id !== undefined ? sub.parent_id :
@@ -906,28 +911,7 @@ const ProductModal = ({ product, onClose }) => {
       setSubCategories(topLevel);
     } catch (error) {
       console.warn('Failed to fetch subcategories for category', categoryId, error);
-      // Try alternative: fetch all subcategories and filter by category_id
-      try {
-        const response = await api.get(`${API_ROUTES.SUBCATEGORIES.LIST}?category_id=${categoryId}`);
-        const responseData = response.data?.data || response.data || {};
-        const subCatData = responseData.subcategories || responseData || [];
-        // Filter to get only top-level subcategories (parent_id = null)
-        const filtered = Array.isArray(subCatData)
-          ? subCatData.filter(sub => {
-            const categoryMatch = sub.category_id === parseInt(categoryId);
-            const parentId = sub.parent_id !== undefined ? sub.parent_id :
-              sub.parentId ||
-              sub.parent_subcategory_id ||
-              sub.parentSubcategoryId;
-            const isTopLevel = parentId === null || parentId === undefined || parentId === '';
-            return categoryMatch && isTopLevel;
-          })
-          : [];
-        setSubCategories(filtered);
-      } catch (altError) {
-        console.warn('Alternative subcategories fetch also failed', altError);
-        setSubCategories([]);
-      }
+      setSubCategories([]);
     }
   };
 
@@ -938,26 +922,27 @@ const ProductModal = ({ product, onClose }) => {
     }
 
     try {
-      // Per Postman collection: Use /subcategories/by-parent/:parentId to get nested subcategories
-      // This is the recommended endpoint for cascading dropdowns
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_PARENT(subCategoryId));
+      // Use the subcategories API service to get all subcategories and filter by parent_id
+      const response = await getSubCategories({ is_active: true, sortBy: 'sort_order', sortOrder: 'asc' });
       const responseData = response.data?.data || response.data || {};
-      const nestedData = responseData.subcategories || responseData || [];
+      const allSubCategories = responseData.subcategories || responseData || [];
+
+      // Filter to get only nested subcategories (parent_id = subCategoryId)
+      const nestedData = Array.isArray(allSubCategories)
+        ? allSubCategories.filter(sub => {
+          const parentId = sub.parent_id !== undefined ? sub.parent_id :
+            sub.parentId ||
+            sub.parent_subcategory_id ||
+            sub.parentSubcategoryId;
+          return parentId === parseInt(subCategoryId);
+        })
+        : [];
 
       console.log(`📊 Fetched ${nestedData.length} nested subcategories for parent ${subCategoryId}`);
-      setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);
+      setNestedSubCategories(nestedData);
     } catch (error) {
-      console.warn('Failed to fetch nested subcategories using by-parent, trying alternative endpoint...', error);
-      // Fallback to alternative endpoint: /subcategories/:id/subcategories
-      try {
-        const response = await api.get(API_ROUTES.SUBCATEGORIES.NESTED(subCategoryId));
-        const responseData = response.data?.data || response.data || {};
-        const nestedData = responseData.subcategories || responseData || [];
-        setNestedSubCategories(Array.isArray(nestedData) ? nestedData : []);
-      } catch (altError) {
-        console.warn('Alternative nested subcategories fetch also failed', altError);
-        setNestedSubCategories([]);
-      }
+      console.warn('Failed to fetch nested subcategories', error);
+      setNestedSubCategories([]);
     }
   };
 

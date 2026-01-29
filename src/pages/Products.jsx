@@ -7,10 +7,13 @@ import ContactLensProductModal from '../components/ContactLensProductModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import api from '../utils/api';
 import { 
   getProducts,
   deleteProduct
 } from '../api/products';
+import { getBrands } from '../api/brands';
+import { getSubCategories } from '../api/subCategories';
 
 // Debounce hook to delay API calls
 const useDebounce = (value, delay) => {
@@ -339,7 +342,7 @@ const Products = () => {
 
   const fetchBrands = async () => {
     try {
-      const response = await api.get(API_ROUTES.ADMIN.BRANDS.LIST);
+      const response = await getBrands({ is_active: true, sortBy: 'name', sortOrder: 'asc' });
       const responseData = response.data?.data || response.data || {};
       const brandsData = responseData.brands || responseData || [];
       setBrands(Array.isArray(brandsData) ? brandsData : []);
@@ -407,7 +410,7 @@ const Products = () => {
       return;
     }
     try {
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+      const response = await getSubCategories({ category_id: categoryId, is_active: true, sortBy: 'sort_order', sortOrder: 'asc' });
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
       setSubCategories(Array.isArray(subCatData) ? subCatData : []);
@@ -421,7 +424,7 @@ const Products = () => {
     try {
       // Fetch all subcategories (including nested) to build a complete lookup map
       // This includes both top-level and nested subcategories
-      const response = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.LIST);
+      const response = await getSubCategories({ is_active: true, sortBy: 'sort_order', sortOrder: 'asc' });
       const responseData = response.data?.data || response.data || {};
       const subCatData = responseData.subcategories || responseData || [];
       
@@ -1256,7 +1259,7 @@ const Products = () => {
         // Fetch subcategories for each category
         const subCategoryPromises = categoryIds.map(async (categoryId) => {
           try {
-            return api.get(API_ROUTES.SUBCATEGORIES.BY_CATEGORY(categoryId));
+            return getSubCategories({ category_id: categoryId, is_active: true, sortBy: 'sort_order', sortOrder: 'asc' });
           } catch (error) {
             console.warn(`Failed to fetch subcategories for category ${categoryId}:`, error);
             return { data: { data: { subcategories: [] } } };
@@ -1288,9 +1291,21 @@ const Products = () => {
             
             // Also try to fetch nested subcategories from API
             try {
-              const nestedResponse = await api.get(API_ROUTES.ADMIN.SUBCATEGORIES.BY_PARENT(subCat.id));
+              const nestedResponse = await getSubCategories({ is_active: true, sortBy: 'sort_order', sortOrder: 'asc' });
               const nestedData = nestedResponse.data?.data || nestedResponse.data || {};
-              const nestedSubCats = nestedData.subcategories || nestedData || [];
+              const allNestedSubCats = nestedData.subcategories || nestedData || [];
+              
+              // Filter to get only nested subcategories (parent_id = subCat.id)
+              const nestedSubCats = Array.isArray(allNestedSubCats)
+                ? allNestedSubCats.filter(nested => {
+                  const parentId = nested.parent_id !== undefined ? nested.parent_id :
+                                 nested.parentId ||
+                                 nested.parent_subcategory_id ||
+                                 nested.parentSubcategoryId;
+                  return parentId === subCat.id;
+                })
+                : [];
+                
               if (Array.isArray(nestedSubCats)) {
                 nestedSubCats.forEach(nested => {
                   if (nested.id) nestedSubCategoryIds.push(nested.id);

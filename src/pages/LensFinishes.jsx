@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import api from '../utils/api';
 import LensFinishModal from '../components/LensFinishModal';
+import { API_ROUTES } from '../config/apiRoutes';
 import { 
   getLensFinishes,
   deleteLensFinish

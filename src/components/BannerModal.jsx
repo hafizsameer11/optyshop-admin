@@ -285,12 +285,7 @@ const BannerModal = ({ banner, onClose }) => {
     setLoading(true);
 
     try {
-      // Validate image for new banners
-      if (!banner && !imageFile) {
-        toast.error('Please select an image for the banner');
-        setLoading(false);
-        return;
-      }
+      // Validate image for new banners (removed - now optional)
 
       const submitData = new FormData();
 
@@ -355,13 +350,26 @@ const BannerModal = ({ banner, onClose }) => {
       let response;
       if (banner) {
         console.log('Updating banner with ID:', banner.id);
+        console.log('Submitting data:', Object.fromEntries(submitData.entries()));
         response = await bannerAPI.update(banner.id, submitData);
+        console.log('Banner update response:', response);
         toast.success('Banner updated successfully');
       } else {
         console.log('Creating new banner');
+        console.log('Submitting data:', Object.fromEntries(submitData.entries()));
         response = await bannerAPI.create(submitData);
+        console.log('Banner create response:', response);
         toast.success('Banner created successfully');
       }
+      
+      // Verify the response contains the saved data
+      if (response && (response.id || response.data?.id)) {
+        console.log('✅ Banner saved successfully with ID:', response.id || response.data?.id);
+        console.log('✅ Saved banner data:', response);
+      } else {
+        console.warn('⚠️ Banner saved but response format unexpected:', response);
+      }
+      
       onClose();
     } catch (error) {
       console.error('Banner save error:', error);
@@ -448,14 +456,13 @@ const BannerModal = ({ banner, onClose }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('title')} *
+              {t('title')}
             </label>
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              required
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="e.g., Welcome Banner"
             />
@@ -463,7 +470,7 @@ const BannerModal = ({ banner, onClose }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('image')} *
+              {t('image')}
             </label>
             {imagePreview && (
               <div className="mb-4">
@@ -482,7 +489,6 @@ const BannerModal = ({ banner, onClose }) => {
               type="file"
               accept="image/*"
               onChange={handleImageChange}
-              required={!banner}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-2">

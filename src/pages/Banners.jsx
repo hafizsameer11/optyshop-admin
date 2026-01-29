@@ -338,6 +338,41 @@ const Banners = () => {
         </div>
       </div>
 
+      {/* Filter Summary */}
+      {(filters.page_type || filters.category_id || filters.sub_category_id) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-blue-800">Active Filters:</span>
+              {filters.page_type && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  Page Type: {getPageTypeLabel(filters.page_type)}
+                </span>
+              )}
+              {filters.category_id && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  Category: {categories.find(c => c.id === parseInt(filters.category_id))?.name || `ID: ${filters.category_id}`}
+                </span>
+              )}
+              {filters.sub_category_id && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  Subcategory: {subCategories.find(s => s.id === parseInt(filters.sub_category_id))?.name || `ID: ${filters.sub_category_id}`}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setFilters({ page_type: '', category_id: '', sub_category_id: '' });
+                setSubCategories([]);
+              }}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -386,8 +421,23 @@ const Banners = () => {
                   </td>
                 </tr>
               ) : (
-                banners.map((banner) => (
-                  <tr key={banner.id}>
+                banners.map((banner) => {
+                  // Check if this banner matches the current filters
+                  const isFilteredByPageType = filters.page_type && (banner.page_type || banner.pageType) === filters.page_type;
+                  const isFilteredByCategory = filters.category_id && (banner.category_id || banner.categoryId) === parseInt(filters.category_id);
+                  const isFilteredBySubCategory = filters.sub_category_id && (banner.sub_category_id || banner.subCategoryId) === parseInt(filters.sub_category_id);
+                  
+                  // Determine if row should be highlighted
+                  const isHighlighted = 
+                    (filters.page_type && isFilteredByPageType) ||
+                    (filters.category_id && isFilteredByCategory) ||
+                    (filters.sub_category_id && isFilteredBySubCategory);
+                  
+                  return (
+                    <tr 
+                      key={banner.id} 
+                      className={isHighlighted ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
+                    >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <BannerImage banner={banner} />
                     </td>
@@ -503,7 +553,8 @@ const Banners = () => {
                       </button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

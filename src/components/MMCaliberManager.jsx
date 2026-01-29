@@ -61,6 +61,9 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       if (error.response?.status === 500) {
         setApiError('Backend API not implemented - MM Calibers endpoint is not available on the server');
         toast.error('Backend API not implemented for MM Calibers');
+      } else if (error.response?.status === 404) {
+        setApiError('Product not found - The product may not exist or has been deleted');
+        toast.error('Product not found');
       } else if (error.message && error.message.includes('Caliber management is not yet available')) {
         setApiError(error.message);
       } else {
@@ -158,6 +161,9 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       if (error.response?.status === 500) {
         setApiError('Backend API not implemented - MM Calibers endpoint is not available on the server');
         toast.error('Backend API not implemented for MM Calibers');
+      } else if (error.response?.status === 404) {
+        setApiError('Product not found - The product may not exist or has been deleted');
+        toast.error('Product not found');
       } else if (error.message && error.message.includes('Caliber management is not yet available')) {
         setApiError(error.message);
         toast.error(error.message);
@@ -204,6 +210,9 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       if (error.response?.status === 500) {
         setApiError('Backend API not implemented - MM Calibers endpoint is not available on the server');
         toast.error('Backend API not implemented for MM Calibers');
+      } else if (error.response?.status === 404) {
+        setApiError('Product not found - The product may not exist or has been deleted');
+        toast.error('Product not found');
       } else if (error.message && error.message.includes('Caliber management is not yet available')) {
         setApiError(error.message);
         toast.error(error.message);

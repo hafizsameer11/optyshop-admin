@@ -295,7 +295,7 @@ const FrameSizes = () => {
                       {size.product_id || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.size_label ? size.size_label.toLowerCase().replace(/\s+/g, '-') : 'n/a'}
+                      {size.product?.slug || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {size.size_label || 'N/A'}

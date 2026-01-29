@@ -3811,11 +3811,11 @@ const ProductModal = ({ product, onClose }) => {
                     columns={['ID', 'Name', 'Slug', 'Width', 'Bridge', 'Temple', 'Status']}
                     getRowData={(item) => [
                       item.id,
-                      item.name || 'N/A',
-                      item.slug || 'N/A',
-                      item.width || 'N/A',
-                      item.bridge || 'N/A',
-                      item.temple || 'N/A',
+                      item.product?.name || '',
+                      item.product?.slug || '',
+                      item.lens_width ? `${item.lens_width} mm` : '',
+                      item.bridge_width ? `${item.bridge_width} mm` : '',
+                      item.temple_length ? `${item.temple_length} mm` : '',
                       <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {item.is_active !== false ? 'Active' : 'Inactive'}
                       </span>

@@ -57,8 +57,11 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       }
     } catch (error) {
       console.error('❌ Error loading calibers:', error);
-      // Check if this is a "backend not implemented" error
-      if (error.message && error.message.includes('Caliber management is not yet available')) {
+      // Check if this is a 500 error or "backend not implemented" error
+      if (error.response?.status === 500) {
+        setApiError('Backend API not implemented - MM Calibers endpoint is not available on the server');
+        toast.error('Backend API not implemented for MM Calibers');
+      } else if (error.message && error.message.includes('Caliber management is not yet available')) {
         setApiError(error.message);
       } else {
         toast.error('Failed to load calibers');
@@ -151,8 +154,11 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       }, 500);
     } catch (error) {
       console.error('Error saving caliber:', error);
-      // Check if this is a "backend not implemented" error
-      if (error.message && error.message.includes('Caliber management is not yet available')) {
+      // Check if this is a 500 error or "backend not implemented" error
+      if (error.response?.status === 500) {
+        setApiError('Backend API not implemented - MM Calibers endpoint is not available on the server');
+        toast.error('Backend API not implemented for MM Calibers');
+      } else if (error.message && error.message.includes('Caliber management is not yet available')) {
         setApiError(error.message);
         toast.error(error.message);
       } else {
@@ -194,8 +200,11 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       loadCalibers();
     } catch (error) {
       console.error('Error deleting caliber:', error);
-      // Check if this is a "backend not implemented" error
-      if (error.message && error.message.includes('Caliber management is not yet available')) {
+      // Check if this is a 500 error or "backend not implemented" error
+      if (error.response?.status === 500) {
+        setApiError('Backend API not implemented - MM Calibers endpoint is not available on the server');
+        toast.error('Backend API not implemented for MM Calibers');
+      } else if (error.message && error.message.includes('Caliber management is not yet available')) {
         setApiError(error.message);
         toast.error(error.message);
       } else {

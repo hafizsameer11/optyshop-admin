@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import LensOptionModal from '../components/LensOptionModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getLensOptions,
+  deleteLensOption
+} from '../api/lensOptions';
 
 const LensOptions = () => {
   const [lensOptions, setLensOptions] = useState([]);
@@ -19,22 +21,19 @@ const LensOptions = () => {
   const fetchLensOptions = async () => {
     try {
       setLoading(true);
-      // Build query string with optional type filter
-      let queryString = 'page=1&limit=1000';
+      const params = {
+        page: 1,
+        limit: 1000,
+      };
+      
       if (filterType !== 'all') {
-        queryString += `&type=${filterType}`;
+        params.type = filterType;
       }
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_OPTIONS.LIST}?${queryString}`);
-      console.log('Lens options API Response:', JSON.stringify(response.data, null, 2));
+
+      const response = await getLensOptions(params);
+      console.log('✅ Lens options fetched successfully:', response.data);
       
       // Handle various response structures from the API
-      // Possible formats:
-      // 1. { success: true, data: { lensOptions: [...], pagination: {...} } }
-      // 2. { success: true, data: { data: [...], pagination: {...} } }
-      // 3. { success: true, data: [...] }
-      // 4. { lensOptions: [...], pagination: {...} }
-      // 5. { data: [...], pagination: {...} }
-      // 6. [...] (direct array)
       let lensOptionsData = [];
       
       if (response.data) {
@@ -101,14 +100,13 @@ const LensOptions = () => {
           console.warn('No lens options found. Check if lens options exist in the database.');
         }
       } else {
-        console.error('Lens options data is not an array:', lensOptionsData);
+        console.error('❌ Lens options data is not an array:', lensOptionsData);
         console.error('Response structure:', JSON.stringify(response.data, null, 2));
         setLensOptions([]);
       }
     } catch (error) {
-      console.error('Lens options API error:', error);
+      console.error('❌ Lens options fetch error:', error);
       console.error('Error details:', error.response?.data);
-      console.error('Error status:', error.response?.status);
       setLensOptions([]);
       if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
@@ -140,11 +138,12 @@ const LensOptions = () => {
     }
 
     try {
-      await api.delete(API_ROUTES.ADMIN.LENS_OPTIONS.DELETE(id));
+      const response = await deleteLensOption(id);
+      console.log('✅ Lens option deleted successfully:', response.data);
       toast.success('Lens option deleted successfully');
       fetchLensOptions();
     } catch (error) {
-      console.error('Lens option delete error:', error);
+      console.error('❌ Lens option delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens option');
       } else if (error.response.status === 401) {
@@ -277,10 +276,12 @@ const LensOptions = () => {
       {modalOpen && (
         <LensOptionModal
           lensOption={selectedLensOption}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLensOption(null);
-            fetchLensOptions();
+            if (shouldRefresh) {
+              fetchLensOptions();
+            }
           }}
         />
       )}

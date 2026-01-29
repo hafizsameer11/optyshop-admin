@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import PrescriptionLensTypeModal from '../components/PrescriptionLensTypeModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getPrescriptionLensTypes,
+  deletePrescriptionLensType
+} from '../api/prescriptionLensTypes';
 
 const PrescriptionLensTypes = () => {
   const [lensTypes, setLensTypes] = useState([]);
@@ -18,22 +20,13 @@ const PrescriptionLensTypes = () => {
   const fetchLensTypes = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.LIST}?page=1&limit=1000`);
-      console.log('Prescription lens types API Response:', JSON.stringify(response.data, null, 2));
+      const response = await getPrescriptionLensTypes({ page: 1, limit: 1000 });
+      console.log('✅ Prescription lens types fetched successfully:', response.data);
       
       let lensTypesData = [];
       
       if (response.data) {
         // Handle various response structures from the API
-        // Possible formats:
-        // 1. { success: true, data: { prescriptionLensTypes: [...], pagination: {...} } }
-        // 2. { success: true, data: { data: [...], pagination: {...} } }
-        // 3. { success: true, data: [...] }
-        // 4. { data: { prescriptionLensTypes: [...], pagination: {...} } }
-        // 5. { prescriptionLensTypes: [...], pagination: {...} }
-        // 6. [...] (direct array)
-        
-        // Check for nested data structure first
         if (response.data.data) {
           const dataObj = response.data.data;
           
@@ -94,7 +87,7 @@ const PrescriptionLensTypes = () => {
         setLensTypes([]);
       }
     } catch (error) {
-      console.error('Prescription lens types API error:', error);
+      console.error('❌ Prescription lens types fetch error:', error);
       console.error('Error details:', error.response?.data);
       setLensTypes([]);
       if (error.response?.status === 401) {
@@ -127,15 +120,12 @@ const PrescriptionLensTypes = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.DELETE(id));
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Prescription lens type deleted successfully');
-      } else {
-        toast.success('Prescription lens type deleted successfully');
-      }
+      const response = await deletePrescriptionLensType(id);
+      console.log('✅ Prescription lens type deleted successfully:', response.data);
+      toast.success('Prescription lens type deleted successfully');
       fetchLensTypes();
     } catch (error) {
-      console.error('Prescription lens type delete error:', error);
+      console.error('❌ Prescription lens type delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete prescription lens type');
       } else if (error.response.status === 401) {
@@ -304,10 +294,12 @@ const PrescriptionLensTypes = () => {
       {modalOpen && (
         <PrescriptionLensTypeModal
           lensType={selectedLensType}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLensType(null);
-            fetchLensTypes();
+            if (shouldRefresh) {
+              fetchLensTypes();
+            }
           }}
         />
       )}

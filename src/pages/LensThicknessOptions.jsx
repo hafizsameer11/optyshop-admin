@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import LensThicknessOptionModal from '../components/LensThicknessOptionModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getLensThicknessOptions,
+  deleteLensThicknessOption
+} from '../api/lensThicknessOptions';
 
 const LensThicknessOptions = () => {
   const [options, setOptions] = useState([]);
@@ -21,18 +23,19 @@ const LensThicknessOptions = () => {
   const fetchOptions = async () => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams();
-      queryParams.append('page', '1');
-      queryParams.append('limit', '1000');
+      const params = {
+        page: 1,
+        limit: 1000,
+      };
+      
       if (filters.isActive !== '') {
-        queryParams.append('isActive', filters.isActive);
+        params.is_active = filters.isActive === 'true';
       }
 
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_THICKNESS_OPTIONS.LIST}?${queryParams.toString()}`);
-      console.log('Lens thickness options API Response:', response.data);
+      const response = await getLensThicknessOptions(params);
+      console.log('✅ Lens thickness options fetched successfully:', response.data);
       
       // Handle various response structures from the API
-      // Expected: { success: true, data: { options: [...], pagination: {...} } }
       let optionsData = [];
       
       if (response.data) {
@@ -62,18 +65,14 @@ const LensThicknessOptions = () => {
         setOptions([]);
       }
     } catch (error) {
-      console.error('Lens thickness options API error:', error);
+      console.error('❌ Lens thickness options fetch error:', error);
       console.error('Error details:', error.response?.data);
-      console.error('Request URL:', error.config?.url);
-      console.error('Full URL:', error.config?.baseURL + error.config?.url);
       setOptions([]);
       if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else if (error.response?.status === 404) {
-        const fullUrl = error.config?.baseURL + error.config?.url;
-        console.error(`Endpoint not found: ${fullUrl}`);
         toast.error(
-          `Endpoint not found: ${error.config?.url || '/admin/lens-thickness-options'}. ` +
+          `Endpoint not found: /admin/lens-thickness-options. ` +
           'The backend may need to implement this endpoint. Check backend routes.'
         );
       } else if (!error.response) {
@@ -102,15 +101,12 @@ const LensThicknessOptions = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.LENS_THICKNESS_OPTIONS.DELETE(id));
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Lens thickness option deleted successfully');
-      } else {
-        toast.success('Lens thickness option deleted successfully');
-      }
+      const response = await deleteLensThicknessOption(id);
+      console.log('✅ Lens thickness option deleted successfully:', response.data);
+      toast.success('Lens thickness option deleted successfully');
       fetchOptions();
     } catch (error) {
-      console.error('Lens thickness option delete error:', error);
+      console.error('❌ Lens thickness option delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens thickness option');
       } else if (error.response.status === 401) {
@@ -305,10 +301,12 @@ const LensThicknessOptions = () => {
       {modalOpen && (
         <LensThicknessOptionModal
           option={selectedOption}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedOption(null);
-            fetchOptions();
+            if (shouldRefresh) {
+              fetchOptions();
+            }
           }}
         />
       )}

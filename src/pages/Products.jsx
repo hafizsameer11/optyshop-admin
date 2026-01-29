@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiEye, FiChevronDown, FiChevronUp } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import ContactLensProductModal from '../components/ContactLensProductModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { 
+  getProducts,
+  deleteProduct
+} from '../api/products';
 
 // Debounce hook to delay API calls
 const useDebounce = (value, delay) => {
@@ -619,7 +622,14 @@ const Products = () => {
         note: 'Using search term that triggers on Enter key press only'
       });
       
-      const response = await api.get(endpoint);
+      const response = await getProducts({
+        page: page,
+        limit: 12,
+        search: trimmedSearch || undefined,
+        category_id: sectionCategoryIds.length > 0 ? sectionCategoryIds : undefined,
+        sub_category_id: subCategoryFilter || undefined,
+        brand_id: brandFilter || undefined
+      });
       
       // Handle the nested data structure from the API
       // Response structure: { success, message, data: { products: [], pagination: {} } }
@@ -805,11 +815,12 @@ const Products = () => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      await api.delete(API_ROUTES.ADMIN.PRODUCTS.DELETE(id));
+      const response = await deleteProduct(id);
+      console.log('✅ Product deleted successfully:', response.data);
       toast.success('Product deleted successfully');
       fetchProducts();
     } catch (error) {
-      console.error('Product delete error:', error);
+      console.error('❌ Product delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete product');
       } else if (error.response.status === 401) {
@@ -1046,20 +1057,22 @@ const Products = () => {
     );
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = (shouldRefresh = false) => {
     setModalOpen(false);
     setEditingProduct(null);
-    // Refresh products list immediately to reflect changes (new products, updates, removed images, etc.)
+    // Only refresh products list if the modal indicates a successful save
     // Flow: User saves product → Backend saves product with category_id → 
-    //       Modal closes → We fetch updated products → Table shows updated data
+    //       Modal closes with shouldRefresh=true → We fetch updated products → Table shows updated data
     // Note: New products will appear in:
     //       1. "All Products" section (always shows all products)
     //       2. Their specific category section (filtered by category_id)
     // The backend has already processed the save, so we can refresh right away
-    fetchProducts();
-    // Force image refresh by updating the refresh key to ensure removed images disappear from table
-    // This cache-busts the ProductImage component so it loads fresh images
-    setImageRefreshKey(Date.now());
+    if (shouldRefresh) {
+      fetchProducts();
+      // Force image refresh by updating the refresh key to ensure removed images disappear from table
+      // This cache-busts the ProductImage component so it loads fresh images
+      setImageRefreshKey(Date.now());
+    }
   };
 
   // Section options

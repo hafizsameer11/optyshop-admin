@@ -7,7 +7,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
   createLensColor, 
-  updateLensColor 
+  updateLensColor,
+  getLensColors,
+  deleteLensColor
 } from '../api/lensColors';
 
 const LensColorModal = ({ lensColor, onClose }) => {
@@ -461,7 +463,8 @@ const LensColorModal = ({ lensColor, onClose }) => {
         } else {
           toast.success('Lens color updated successfully');
         }
-        onClose(true); // Pass true to indicate successful save
+        console.log('✅ Lens color updated successfully:', response.data);
+        onClose(true);
       } else {
         // Create multiple colors
         let successCount = 0;
@@ -608,6 +611,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
 
         if (successCount > 0) {
           toast.success(`Successfully created ${successCount} color(s)`);
+          console.log(`✅ Successfully created ${successCount} lens color(s)`);
         }
         if (errorCount > 0) {
           toast.error(`Failed to create ${errorCount} color(s)`);

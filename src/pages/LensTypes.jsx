@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import LensTypeModal from '../components/LensTypeModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getLensTypes,
+  deleteLensType
+} from '../api/lensTypes';
 
 const LensTypes = () => {
   const [lensTypes, setLensTypes] = useState([]);
@@ -18,16 +20,10 @@ const LensTypes = () => {
   const fetchLensTypes = async () => {
     try {
       setLoading(true);
-      // Fetch with high limit to get all records
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_TYPES.LIST}?page=1&limit=1000`);
-      console.log('Lens types API Response:', response.data);
+      const response = await getLensTypes({ page: 1, limit: 1000 });
+      console.log('✅ Lens types fetched successfully:', response.data);
       
       // Handle various response structures from the API
-      // Possible formats:
-      // 1. { success: true, data: { lensTypes: [...], pagination: {...} } }
-      // 2. { success: true, data: [...] }
-      // 3. { lensTypes: [...], pagination: {...} }
-      // 4. [...] (direct array)
       let lensTypesData = [];
       
       if (response.data) {
@@ -55,7 +51,7 @@ const LensTypes = () => {
         setLensTypes([]);
       }
     } catch (error) {
-      console.error('Lens types API error:', error);
+      console.error('❌ Lens types fetch error:', error);
       console.error('Error details:', error.response?.data);
       // Use empty array as fallback
       setLensTypes([]);
@@ -80,16 +76,12 @@ const LensTypes = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.LENS_TYPES.DELETE(id));
-      // Handle response structure: { success, message }
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Lens type deleted successfully');
-      } else {
-        toast.success('Lens type deleted successfully');
-      }
+      const response = await deleteLensType(id);
+      console.log('✅ Lens type deleted successfully:', response.data);
+      toast.success('Lens type deleted successfully');
       fetchLensTypes();
     } catch (error) {
-      console.error('Lens type delete error:', error);
+      console.error('❌ Lens type delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens type');
       } else if (error.response.status === 401) {
@@ -231,10 +223,12 @@ const LensTypes = () => {
       {modalOpen && (
         <LensTypeModal
           lensType={selectedLensType}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLensType(null);
-            fetchLensTypes();
+            if (shouldRefresh) {
+              fetchLensTypes();
+            }
           }}
         />
       )}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import LensCoatingModal from '../components/LensCoatingModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getLensCoatings,
+  deleteLensCoating
+} from '../api/lensCoatings';
 
 const LensCoatings = () => {
   const [lensCoatings, setLensCoatings] = useState([]);
@@ -18,16 +20,10 @@ const LensCoatings = () => {
   const fetchLensCoatings = async () => {
     try {
       setLoading(true);
-      // Fetch with high limit to get all records
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_COATINGS.LIST}?page=1&limit=1000`);
-      console.log('Lens coatings API Response:', response.data);
+      const response = await getLensCoatings({ page: 1, limit: 1000 });
+      console.log('✅ Lens coatings fetched successfully:', response.data);
       
       // Handle various response structures from the API
-      // Possible formats:
-      // 1. { success: true, data: { lensCoatings: [...], pagination: {...} } }
-      // 2. { success: true, data: [...] }
-      // 3. { lensCoatings: [...], pagination: {...} }
-      // 4. [...] (direct array)
       let lensCoatingsData = [];
       
       if (response.data) {
@@ -51,13 +47,12 @@ const LensCoatings = () => {
       if (Array.isArray(lensCoatingsData)) {
         setLensCoatings(lensCoatingsData);
       } else {
-        console.error('Lens coatings data is not an array:', lensCoatingsData);
+        console.error('❌ Lens coatings data is not an array:', lensCoatingsData);
         setLensCoatings([]);
       }
     } catch (error) {
-      console.error('Lens coatings API error:', error);
+      console.error('❌ Lens coatings fetch error:', error);
       console.error('Error details:', error.response?.data);
-      // Use empty array as fallback
       setLensCoatings([]);
     } finally {
       setLoading(false);
@@ -80,16 +75,12 @@ const LensCoatings = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.LENS_COATINGS.DELETE(id));
-      // Handle response structure: { success, message }
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Lens coating deleted successfully');
-      } else {
-        toast.success('Lens coating deleted successfully');
-      }
+      const response = await deleteLensCoating(id);
+      console.log('✅ Lens coating deleted successfully:', response.data);
+      toast.success('Lens coating deleted successfully');
       fetchLensCoatings();
     } catch (error) {
-      console.error('Lens coating delete error:', error);
+      console.error('❌ Lens coating delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens coating');
       } else if (error.response.status === 401) {
@@ -227,10 +218,12 @@ const LensCoatings = () => {
       {modalOpen && (
         <LensCoatingModal
           lensCoating={selectedLensCoating}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLensCoating(null);
-            fetchLensCoatings();
+            if (shouldRefresh) {
+              fetchLensCoatings();
+            }
           }}
         />
       )}

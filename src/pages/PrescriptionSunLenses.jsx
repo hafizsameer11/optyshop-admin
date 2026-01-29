@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import PrescriptionSunLensModal from '../components/PrescriptionSunLensModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getPrescriptionSunLenses,
+  deletePrescriptionSunLens
+} from '../api/prescriptionSunLenses';
 
 const PrescriptionSunLenses = () => {
   const [lenses, setLenses] = useState([]);
@@ -20,15 +22,20 @@ const PrescriptionSunLenses = () => {
   const fetchLenses = async () => {
     try {
       setLoading(true);
-      let queryString = 'page=1&limit=1000';
+      const params = {
+        page: 1,
+        limit: 1000,
+      };
+      
       if (filterType !== 'all') {
-        queryString += `&type=${filterType}`;
+        params.type = filterType;
       }
       if (filterActive !== 'all') {
-        queryString += `&isActive=${filterActive === 'active' ? 'true' : 'false'}`;
+        params.is_active = filterActive === 'active';
       }
-      const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_SUN_LENSES.LIST}?${queryString}`);
-      console.log('Prescription Sun Lenses API Response:', JSON.stringify(response.data, null, 2));
+
+      const response = await getPrescriptionSunLenses(params);
+      console.log('✅ Prescription sun lenses fetched successfully:', response.data);
       
       let lensesData = [];
       
@@ -70,33 +77,15 @@ const PrescriptionSunLenses = () => {
         }
       }
       
-      console.log('Parsed lenses data:', lensesData);
-      console.log('Parsed lenses count:', lensesData.length);
-      
       if (Array.isArray(lensesData)) {
-        // Filter out invalid entries
-        lensesData = lensesData.filter(lens => {
-          return lens && 
-                 (lens.id !== undefined && lens.id !== null) &&
-                 (lens.name !== undefined && lens.name !== null) &&
-                 typeof lens.name === 'string' &&
-                 lens.name.trim().length > 0;
-        });
-        
-        console.log('Filtered lenses count:', lensesData.length);
-        console.log('Sample lens:', lensesData[0]);
         setLenses(lensesData);
-        
-        if (lensesData.length === 0) {
-          console.warn('No prescription sun lenses found after filtering. Check API response structure.');
-        }
       } else {
-        console.error('Lenses data is not an array:', lensesData);
-        console.error('Response structure:', response.data);
+        console.error('❌ Prescription sun lenses data is not an array:', lensesData);
         setLenses([]);
       }
     } catch (error) {
-      console.error('Prescription Sun Lenses API error:', error);
+      console.error('❌ Prescription sun lenses fetch error:', error);
+      console.error('Error details:', error.response?.data);
       setLenses([]);
       if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
@@ -128,11 +117,12 @@ const PrescriptionSunLenses = () => {
     }
 
     try {
-      await api.delete(API_ROUTES.ADMIN.PRESCRIPTION_SUN_LENSES.DELETE(id));
+      const response = await deletePrescriptionSunLens(id);
+      console.log('✅ Prescription sun lens deleted successfully:', response.data);
       toast.success('Prescription sun lens deleted successfully');
       fetchLenses();
     } catch (error) {
-      console.error('Prescription sun lens delete error:', error);
+      console.error('❌ Prescription sun lens delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete prescription sun lens');
       } else if (error.response.status === 401) {
@@ -281,10 +271,12 @@ const PrescriptionSunLenses = () => {
       {modalOpen && (
         <PrescriptionSunLensModal
           lens={selectedLens}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLens(null);
-            fetchLenses();
+            if (shouldRefresh) {
+              fetchLenses();
+            }
           }}
         />
       )}

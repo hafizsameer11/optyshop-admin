@@ -564,10 +564,12 @@ const Banners = () => {
       {modalOpen && (
         <BannerModal
           banner={selectedBanner}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedBanner(null);
-            fetchBanners();
+            if (shouldRefresh) {
+              fetchBanners();
+            }
           }}
         />
       )}

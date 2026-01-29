@@ -5,6 +5,12 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { 
+  createPrescriptionSunLens, 
+  updatePrescriptionSunLens,
+  getPrescriptionSunLenses,
+  deletePrescriptionSunLens
+} from '../api/prescriptionSunLenses';
 
 const PrescriptionSunLensModal = ({ lens, onClose }) => {
   const { t } = useI18n();
@@ -84,13 +90,15 @@ const PrescriptionSunLensModal = ({ lens, onClose }) => {
 
       let response;
       if (lens) {
-        response = await api.put(API_ROUTES.ADMIN.PRESCRIPTION_SUN_LENSES.UPDATE(lens.id), submitData);
-        toast.success(response.data?.message || 'Prescription sun lens updated successfully');
+        response = await updatePrescriptionSunLens(lens.id, submitData);
+        console.log('✅ Prescription sun lens updated successfully:', response.data);
+        toast.success('Prescription sun lens updated successfully');
       } else {
-        response = await api.post(API_ROUTES.ADMIN.PRESCRIPTION_SUN_LENSES.CREATE, submitData);
-        toast.success(response.data?.message || 'Prescription sun lens created successfully');
+        response = await createPrescriptionSunLens(submitData);
+        console.log('✅ Prescription sun lens created successfully:', response.data);
+        toast.success('Prescription sun lens created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('Prescription sun lens save error:', error);
       if (!error.response) {

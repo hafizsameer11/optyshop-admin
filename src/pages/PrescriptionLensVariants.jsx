@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import PrescriptionLensVariantModal from '../components/PrescriptionLensVariantModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getPrescriptionLensVariants,
+  deletePrescriptionLensVariant
+} from '../api/prescriptionLensVariants';
+import { getPrescriptionLensTypes } from '../api/prescriptionLensTypes';
 
 const PrescriptionLensVariants = () => {
   const [variants, setVariants] = useState([]);
@@ -27,7 +30,7 @@ const PrescriptionLensVariants = () => {
 
   const fetchLensTypes = async () => {
     try {
-      const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_LENS_TYPES.LIST}?page=1&limit=1000`);
+      const response = await getPrescriptionLensTypes({ page: 1, limit: 1000 });
       let lensTypesData = [];
       
       if (response.data) {
@@ -48,42 +51,35 @@ const PrescriptionLensVariants = () => {
         setLensTypes(lensTypesData);
       }
     } catch (error) {
-      console.error('Prescription lens types fetch error:', error);
+      console.error('❌ Prescription lens types fetch error:', error);
     }
   };
 
   const fetchVariants = async () => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams();
-      queryParams.append('page', '1');
-      queryParams.append('limit', '1000');
+      const params = {
+        page: 1,
+        limit: 1000,
+      };
+      
       if (filters.prescriptionLensTypeId) {
-        queryParams.append('prescriptionLensTypeId', filters.prescriptionLensTypeId);
+        params.prescriptionLensTypeId = filters.prescriptionLensTypeId;
       }
       if (filters.isActive !== '') {
-        queryParams.append('isActive', filters.isActive);
+        params.is_active = filters.isActive === 'true';
       }
       if (filters.isRecommended !== '') {
-        queryParams.append('isRecommended', filters.isRecommended);
+        params.isRecommended = filters.isRecommended === 'true';
       }
 
-      const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_LENS_VARIANTS.LIST}?${queryParams.toString()}`);
-      console.log('Prescription lens variants API Response:', JSON.stringify(response.data, null, 2));
+      const response = await getPrescriptionLensVariants(params);
+      console.log('✅ Prescription lens variants fetched successfully:', response.data);
       
       let variantsData = [];
       
       if (response.data) {
         // Handle various response structures from the API
-        // Possible formats:
-        // 1. { success: true, data: { prescriptionLensVariants: [...], pagination: {...} } }
-        // 2. { success: true, data: { data: [...], pagination: {...} } }
-        // 3. { success: true, data: { variants: [...], pagination: {...} } }
-        // 4. { success: true, data: [...] }
-        // 5. { data: { prescriptionLensVariants: [...], pagination: {...} } }
-        // 6. { prescriptionLensVariants: [...], pagination: {...} }
-        // 7. [...] (direct array)
-        
         // Check for nested data structure first
         if (response.data.data) {
           const dataObj = response.data.data;
@@ -145,27 +141,23 @@ const PrescriptionLensVariants = () => {
         
         setVariants(variantsData);
       } else {
-        console.error('Prescription lens variants data is not an array:', variantsData);
+        console.error('❌ Prescription lens variants data is not an array:', variantsData);
         console.error('Response structure:', JSON.stringify(response.data, null, 2));
         setVariants([]);
       }
     } catch (error) {
-      console.error('Prescription lens variants API error:', error);
+      console.error('❌ Prescription lens variants fetch error:', error);
       console.error('Error details:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      console.error('Error config:', error.config);
-      
+      setVariants([]);
       if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else if (error.response?.status === 404) {
-        toast.error('Prescription lens variants endpoint not found. Check API configuration.');
+        toast.error('Prescription Lens Variants endpoint not found. Check API configuration.');
       } else if (!error.response) {
         toast.error('Cannot connect to server. Check if backend is running.');
       } else {
-        toast.error(error.response?.data?.message || 'Failed to load prescription lens variants');
+        toast.error('Failed to fetch prescription lens variants. Check console for details.');
       }
-      
-      setVariants([]);
     } finally {
       setLoading(false);
     }
@@ -187,15 +179,12 @@ const PrescriptionLensVariants = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.PRESCRIPTION_LENS_VARIANTS.DELETE(id));
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Prescription lens variant deleted successfully');
-      } else {
-        toast.success('Prescription lens variant deleted successfully');
-      }
+      const response = await deletePrescriptionLensVariant(id);
+      console.log('✅ Prescription lens variant deleted successfully:', response.data);
+      toast.success('Prescription lens variant deleted successfully');
       fetchVariants();
     } catch (error) {
-      console.error('Prescription lens variant delete error:', error);
+      console.error('❌ Prescription lens variant delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete prescription lens variant');
       } else if (error.response.status === 401) {
@@ -456,10 +445,12 @@ const PrescriptionLensVariants = () => {
         <PrescriptionLensVariantModal
           variant={selectedVariant}
           lensTypes={lensTypes}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedVariant(null);
-            fetchVariants();
+            if (shouldRefresh) {
+              fetchVariants();
+            }
           }}
         />
       )}

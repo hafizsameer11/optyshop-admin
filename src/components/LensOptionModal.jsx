@@ -7,7 +7,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
   createLensOption, 
-  updateLensOption 
+  updateLensOption,
+  getLensOptions,
+  deleteLensOption
 } from '../api/lensOptions';
 
 const LensOptionModal = ({ lensOption, onClose }) => {
@@ -90,19 +92,15 @@ const LensOptionModal = ({ lensOption, onClose }) => {
 
       let response;
       if (lensOption) {
-        // PUT /api/admin/lens-options/:id (Admin endpoint)
-        // Endpoint: PUT {{base_url}}/api/admin/lens-options/:id
-        // Auth: Authorization: Bearer {{admin_token}}
         response = await updateLensOption(lensOption.id, submitData);
-        toast.success(response.data?.message || 'Lens option updated successfully');
+        console.log('✅ Lens option updated successfully:', response.data);
+        toast.success('Lens option updated successfully');
       } else {
-        // POST /api/admin/lens-options (Admin endpoint)
-        // Endpoint: POST {{base_url}}/api/admin/lens-options
-        // Auth: Authorization: Bearer {{admin_token}}
         response = await createLensOption(submitData);
-        toast.success(response.data?.message || 'Lens option created successfully');
+        console.log('✅ Lens option created successfully:', response.data);
+        toast.success('Lens option created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error(' Lens option save error:', error);
       console.error('Error response:', error.response?.data);

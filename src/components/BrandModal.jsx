@@ -5,6 +5,12 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { 
+  createBrand, 
+  updateBrand,
+  getBrands,
+  deleteBrand
+} from '../api/brands';
 
 const BrandModal = ({ brand, onClose, onSuccess }) => {
   const { t } = useI18n();
@@ -133,16 +139,18 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
 
       if (brand) {
         // Update existing brand
-        await api.put(API_ROUTES.ADMIN.BRANDS.UPDATE(brand.id), formDataToSend);
+        const response = await updateBrand(brand.id, formDataToSend);
+        console.log('✅ Brand updated successfully:', response.data);
         toast.success(t('brandUpdated') || 'Brand updated successfully');
       } else {
         // Create new brand
-        await api.post(API_ROUTES.ADMIN.BRANDS.CREATE, formDataToSend);
+        const response = await createBrand(formDataToSend);
+        console.log('✅ Brand created successfully:', response.data);
         toast.success(t('brandCreated') || 'Brand created successfully');
       }
 
       onSuccess();
-      onClose();
+      onClose(true);
     } catch (error) {
       console.error('Brand save error:', error);
       console.error('Error response:', error.response?.data);

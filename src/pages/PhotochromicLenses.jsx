@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import PhotochromicLensModal from '../components/PhotochromicLensModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getPhotochromicLenses,
+  deletePhotochromicLens
+} from '../api/photochromicLenses';
 
 const PhotochromicLenses = () => {
   const [lenses, setLenses] = useState([]);
@@ -19,12 +21,17 @@ const PhotochromicLenses = () => {
   const fetchLenses = async () => {
     try {
       setLoading(true);
-      let queryString = 'page=1&limit=1000';
+      const params = {
+        page: 1,
+        limit: 1000,
+      };
+      
       if (filterActive !== 'all') {
-        queryString += `&isActive=${filterActive === 'active' ? 'true' : 'false'}`;
+        params.is_active = filterActive === 'active';
       }
-      const response = await api.get(`${API_ROUTES.ADMIN.PHOTOCHROMIC_LENSES.LIST}?${queryString}`);
-      console.log('Photochromic Lenses API Response:', JSON.stringify(response.data, null, 2));
+
+      const response = await getPhotochromicLenses(params);
+      console.log('✅ Photochromic lenses fetched successfully:', response.data);
       
       let lensesData = [];
       
@@ -68,10 +75,12 @@ const PhotochromicLenses = () => {
         
         setLenses(lensesData);
       } else {
+        console.error('❌ Photochromic lenses data is not an array:', lensesData);
         setLenses([]);
       }
     } catch (error) {
-      console.error('Photochromic Lenses API error:', error);
+      console.error('❌ Photochromic lenses fetch error:', error);
+      console.error('Error details:', error.response?.data);
       setLenses([]);
       if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
@@ -103,11 +112,12 @@ const PhotochromicLenses = () => {
     }
 
     try {
-      await api.delete(API_ROUTES.ADMIN.PHOTOCHROMIC_LENSES.DELETE(id));
+      const response = await deletePhotochromicLens(id);
+      console.log('✅ Photochromic lens deleted successfully:', response.data);
       toast.success('Photochromic lens deleted successfully');
       fetchLenses();
     } catch (error) {
-      console.error('Photochromic lens delete error:', error);
+      console.error('❌ Photochromic lens delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete photochromic lens');
       } else if (error.response.status === 401) {
@@ -242,10 +252,12 @@ const PhotochromicLenses = () => {
       {modalOpen && (
         <PhotochromicLensModal
           lens={selectedLens}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLens(null);
-            fetchLenses();
+            if (shouldRefresh) {
+              fetchLenses();
+            }
           }}
         />
       )}

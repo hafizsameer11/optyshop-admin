@@ -7,7 +7,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
   createLensCoating, 
-  updateLensCoating 
+  updateLensCoating,
+  getLensCoatings,
+  deleteLensCoating
 } from '../api/lensCoatings';
 
 const LensCoatingModal = ({ lensCoating, onClose }) => {
@@ -90,22 +92,14 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
       let response;
       if (lensCoating) {
         response = await updateLensCoating(lensCoating.id, submitData);
-        // Handle response structure: { success, message, data: { lensCoating: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens coating updated successfully');
-        } else {
-          toast.success('Lens coating updated successfully');
-        }
+        console.log('✅ Lens coating updated successfully:', response.data);
+        toast.success('Lens coating updated successfully');
       } else {
         response = await createLensCoating(submitData);
-        // Handle response structure: { success, message, data: { lensCoating: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens coating created successfully');
-        } else {
-          toast.success('Lens coating created successfully');
-        }
+        console.log('✅ Lens coating created successfully:', response.data);
+        toast.success('Lens coating created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('❌ Lens coating save error:', error);
       console.error('Error response:', error.response?.data);

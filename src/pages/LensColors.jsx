@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import LensColorModal from '../components/LensColorModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getLensColors,
+  deleteLensColor
+} from '../api/lensColors';
 
 const LensColors = () => {
   const [lensColors, setLensColors] = useState([]);
@@ -193,21 +195,10 @@ const LensColors = () => {
   const fetchLensColors = async () => {
     try {
       setLoading(true);
-      // Fetch with high limit to get all records
-      // GET /api/admin/lens-colors (Admin endpoint)
-      // Endpoint: GET {{base_url}}/api/admin/lens-colors?page=1&limit=100
-      // Auth: Authorization: Bearer {{admin_token}}
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_COLORS.LIST}?page=1&limit=1000`);
-      console.log('Lens colors API Response:', JSON.stringify(response.data, null, 2));
+      const response = await getLensColors({ page: 1, limit: 1000 });
+      console.log('✅ Lens colors fetched successfully:', response.data);
       
       // Handle various response structures from the API
-      // Possible formats:
-      // 1. { success: true, data: { data: [...], pagination: {...} } }
-      // 2. { success: true, data: { lensColors: [...], pagination: {...} } }
-      // 3. { success: true, data: [...] }
-      // 4. { data: [...], pagination: {...} }
-      // 5. { lensColors: [...], pagination: {...} }
-      // 6. [...] (direct array)
       let lensColorsData = [];
       
       if (response.data) {
@@ -274,14 +265,13 @@ const LensColors = () => {
           console.warn('No lens colors found. Check if lens colors exist in the database.');
         }
       } else {
-        console.error('Lens colors data is not an array:', lensColorsData);
+        console.error('❌ Lens colors data is not an array:', lensColorsData);
         console.error('Response structure:', JSON.stringify(response.data, null, 2));
         setLensColors([]);
       }
     } catch (error) {
-      console.error('Lens colors API error:', error);
+      console.error('❌ Lens colors fetch error:', error);
       console.error('Error details:', error.response?.data);
-      console.error('Error status:', error.response?.status);
       setLensColors([]);
       if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
@@ -313,16 +303,12 @@ const LensColors = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.LENS_COLORS.DELETE(id));
-      // Handle response structure: { success, message }
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Lens color deleted successfully');
-      } else {
-        toast.success('Lens color deleted successfully');
-      }
+      const response = await deleteLensColor(id);
+      console.log('✅ Lens color deleted successfully:', response.data);
+      toast.success('Lens color deleted successfully');
       fetchLensColors();
     } catch (error) {
-      console.error('Lens color delete error:', error);
+      console.error('❌ Lens color delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens color');
       } else if (error.response.status === 401) {
@@ -499,10 +485,12 @@ const LensColors = () => {
       {modalOpen && (
         <LensColorModal
           lensColor={selectedLensColor}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLensColor(null);
-            fetchLensColors();
+            if (shouldRefresh) {
+              fetchLensColors();
+            }
           }}
         />
       )}

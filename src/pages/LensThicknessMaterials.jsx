@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import LensThicknessMaterialModal from '../components/LensThicknessMaterialModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getLensThicknessMaterials,
+  deleteLensThicknessMaterial
+} from '../api/lensThicknessMaterials';
 
 const LensThicknessMaterials = () => {
   const [materials, setMaterials] = useState([]);
@@ -21,18 +23,19 @@ const LensThicknessMaterials = () => {
   const fetchMaterials = async () => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams();
-      queryParams.append('page', '1');
-      queryParams.append('limit', '1000');
+      const params = {
+        page: 1,
+        limit: 1000,
+      };
+      
       if (filters.isActive !== '') {
-        queryParams.append('isActive', filters.isActive);
+        params.is_active = filters.isActive === 'true';
       }
 
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_THICKNESS_MATERIALS.LIST}?${queryParams.toString()}`);
-      console.log('Lens thickness materials API Response:', response.data);
+      const response = await getLensThicknessMaterials(params);
+      console.log('✅ Lens thickness materials fetched successfully:', response.data);
       
       // Handle various response structures from the API
-      // Expected: { success: true, data: { materials: [...], pagination: {...} } }
       let materialsData = [];
       
       if (response.data) {
@@ -62,18 +65,14 @@ const LensThicknessMaterials = () => {
         setMaterials([]);
       }
     } catch (error) {
-      console.error('Lens thickness materials API error:', error);
+      console.error('❌ Lens thickness materials fetch error:', error);
       console.error('Error details:', error.response?.data);
-      console.error('Request URL:', error.config?.url);
-      console.error('Full URL:', error.config?.baseURL + error.config?.url);
       setMaterials([]);
       if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else if (error.response?.status === 404) {
-        const fullUrl = error.config?.baseURL + error.config?.url;
-        console.error(`Endpoint not found: ${fullUrl}`);
         toast.error(
-          `Endpoint not found: ${error.config?.url || '/admin/lens-thickness-materials'}. ` +
+          `Endpoint not found: /admin/lens-thickness-materials. ` +
           'The backend may need to implement this endpoint. Check backend routes.'
         );
       } else if (!error.response) {
@@ -102,15 +101,12 @@ const LensThicknessMaterials = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.LENS_THICKNESS_MATERIALS.DELETE(id));
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Lens thickness material deleted successfully');
-      } else {
-        toast.success('Lens thickness material deleted successfully');
-      }
+      const response = await deleteLensThicknessMaterial(id);
+      console.log('✅ Lens thickness material deleted successfully:', response.data);
+      toast.success('Lens thickness material deleted successfully');
       fetchMaterials();
     } catch (error) {
-      console.error('Lens thickness material delete error:', error);
+      console.error('❌ Lens thickness material delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens thickness material');
       } else if (error.response.status === 401) {
@@ -301,10 +297,12 @@ const LensThicknessMaterials = () => {
       {modalOpen && (
         <LensThicknessMaterialModal
           material={selectedMaterial}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedMaterial(null);
-            fetchMaterials();
+            if (shouldRefresh) {
+              fetchMaterials();
+            }
           }}
         />
       )}

@@ -7,7 +7,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
   createLensType, 
-  updateLensType 
+  updateLensType,
+  getLensTypes,
+  deleteLensType
 } from '../api/lensTypes';
 
 const LensTypeModal = ({ lensType, onClose }) => {
@@ -85,22 +87,14 @@ const LensTypeModal = ({ lensType, onClose }) => {
       let response;
       if (lensType) {
         response = await updateLensType(lensType.id, submitData);
-        // Handle response structure: { success, message, data: { lensType: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens type updated successfully');
-        } else {
-          toast.success('Lens type updated successfully');
-        }
+        console.log('✅ Lens type updated successfully:', response.data);
+        toast.success('Lens type updated successfully');
       } else {
         response = await createLensType(submitData);
-        // Handle response structure: { success, message, data: { lensType: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens type created successfully');
-        } else {
-          toast.success('Lens type created successfully');
-        }
+        console.log('✅ Lens type created successfully:', response.data);
+        toast.success('Lens type created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('❌ Lens type save error:', error);
       console.error('Error response:', error.response?.data);

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import LensFinishModal from '../components/LensFinishModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getLensFinishes,
+  deleteLensFinish
+} from '../api/lensFinishes';
 
 const LensFinishes = () => {
   const [lensFinishes, setLensFinishes] = useState([]);
@@ -22,21 +24,10 @@ const LensFinishes = () => {
   const fetchLensFinishes = async () => {
     try {
       setLoading(true);
-      // Fetch with high limit to get all records
-      // GET /api/admin/lens-finishes (Admin endpoint)
-      // Endpoint: GET {{base_url}}/api/admin/lens-finishes?page=1&limit=100
-      // Auth: Authorization: Bearer {{admin_token}}
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_FINISHES.LIST}?page=1&limit=1000`);
-      console.log('Lens finishes API Response:', JSON.stringify(response.data, null, 2));
+      const response = await getLensFinishes({ page: 1, limit: 1000 });
+      console.log('✅ Lens finishes fetched successfully:', response.data);
       
       // Handle various response structures from the API
-      // Possible formats:
-      // 1. { success: true, data: { data: [...], pagination: {...} } }
-      // 2. { success: true, data: { lensFinishes: [...], pagination: {...} } }
-      // 3. { success: true, data: [...] }
-      // 4. { data: [...], pagination: {...} }
-      // 5. { lensFinishes: [...], pagination: {...} }
-      // 6. [...] (direct array)
       let lensFinishesData = [];
       
       if (response.data) {
@@ -93,9 +84,8 @@ const LensFinishes = () => {
         setLensFinishes([]);
       }
     } catch (error) {
-      console.error('Lens finishes API error:', error);
+      console.error('❌ Lens finishes fetch error:', error);
       console.error('Error details:', error.response?.data);
-      console.error('Error status:', error.response?.status);
       setLensFinishes([]);
       if (error.response?.status === 401) {
         toast.error('Authentication required. Please log in again.');
@@ -247,16 +237,12 @@ const LensFinishes = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.LENS_FINISHES.DELETE(id));
-      // Handle response structure: { success, message }
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Lens finish deleted successfully');
-      } else {
-        toast.success('Lens finish deleted successfully');
-      }
+      const response = await deleteLensFinish(id);
+      console.log('✅ Lens finish deleted successfully:', response.data);
+      toast.success('Lens finish deleted successfully');
       fetchLensFinishes();
     } catch (error) {
-      console.error('Lens finish delete error:', error);
+      console.error('❌ Lens finish delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens finish');
       } else if (error.response.status === 401) {
@@ -483,10 +469,12 @@ const LensFinishes = () => {
       {modalOpen && (
         <LensFinishModal
           lensFinish={selectedLensFinish}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLensFinish(null);
-            fetchLensFinishes();
+            if (shouldRefresh) {
+              fetchLensFinishes();
+            }
           }}
         />
       )}

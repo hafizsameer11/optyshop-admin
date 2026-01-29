@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiChevronDown, FiChevronRight } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import CategoryModal from '../components/CategoryModal';
 import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getCategories,
+  deleteCategory
+} from '../api/categories';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -21,17 +24,8 @@ const Categories = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      // Try admin endpoint first, fallback to public endpoint
-      let response;
-      try {
-        // Try admin endpoint first
-        response = await api.get(API_ROUTES.ADMIN.CATEGORIES.LIST);
-      } catch (adminError) {
-        // If admin endpoint fails, try public endpoint
-        response = await api.get(API_ROUTES.CATEGORIES.LIST);
-      }
-      
-      console.log('Categories API Response:', response.data);
+      const response = await getCategories({ page: 1, limit: 1000 });
+      console.log('✅ Categories fetched successfully:', response.data);
       
       // Handle the nested data structure from the API
       // Response structure: { success, message, data: { categories: [...] } } or { categories: [...] }
@@ -43,13 +37,23 @@ const Categories = () => {
       if (Array.isArray(categoriesData)) {
         setCategories(categoriesData);
       } else {
-        console.error('Categories data is not an array:', categoriesData);
+        console.error('❌ Categories data is not an array:', categoriesData);
         setCategories([]);
       }
     } catch (error) {
-      console.error('Categories API error:', error);
+      console.error('❌ Categories fetch error:', error);
+      console.error('Error details:', error.response?.data);
       // Use empty array as fallback - silent for all errors (demo mode, offline, etc.)
       setCategories([]);
+      if (error.response?.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else if (error.response?.status === 404) {
+        toast.error('Categories endpoint not found. Check API configuration.');
+      } else if (!error.response) {
+        toast.error('Cannot connect to server. Check if backend is running.');
+      } else {
+        toast.error('Failed to fetch categories. Check console for details.');
+      }
     } finally {
       setLoading(false);
     }
@@ -59,12 +63,12 @@ const Categories = () => {
     if (!window.confirm('Are you sure you want to delete this category?')) return;
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.CATEGORIES.DELETE(id));
-      const successMessage = response.data?.message || 'Category deleted successfully';
-      toast.success(successMessage);
+      const response = await deleteCategory(id);
+      console.log('✅ Category deleted successfully:', response.data);
+      toast.success('Category deleted successfully');
       fetchCategories();
     } catch (error) {
-      console.error('Category delete error:', error);
+      console.error('❌ Category delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete category');
       } else if (error.response.status === 401) {
@@ -246,10 +250,12 @@ const Categories = () => {
       {modalOpen && (
         <CategoryModal
           category={editingCategory}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setEditingCategory(null);
-            fetchCategories();
+            if (shouldRefresh) {
+              fetchCategories();
+            }
           }}
         />
       )}

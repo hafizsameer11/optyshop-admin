@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import LensTreatmentModal from '../components/LensTreatmentModal';
-import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getLensTreatments,
+  deleteLensTreatment
+} from '../api/lensTreatments';
 
 const LensTreatments = () => {
   const [lensTreatments, setLensTreatments] = useState([]);
@@ -18,20 +20,10 @@ const LensTreatments = () => {
   const fetchLensTreatments = async () => {
     try {
       setLoading(true);
-      // Fetch with high limit to get all records
-      const response = await api.get(`${API_ROUTES.ADMIN.LENS_TREATMENTS.LIST}?page=1&limit=1000`);
-      console.log('Lens treatments API Response (Full):', JSON.stringify(response.data, null, 2));
-      console.log('Lens treatments API Response Type:', typeof response.data);
-      console.log('Lens treatments API Response Keys:', response.data ? Object.keys(response.data) : 'null');
+      const response = await getLensTreatments({ page: 1, limit: 1000 });
+      console.log('✅ Lens treatments fetched successfully:', response.data);
       
       // Handle various response structures from the API
-      // Possible formats:
-      // 1. { success: true, data: { lensTreatments: [...], pagination: {...} } }
-      // 2. { success: true, data: { treatments: [...], pagination: {...} } }
-      // 3. { success: true, data: [...] }
-      // 4. { lensTreatments: [...], pagination: {...} }
-      // 5. { treatments: [...], pagination: {...} }
-      // 6. [...] (direct array)
       let lensTreatmentsData = [];
       
       if (response.data) {
@@ -74,7 +66,6 @@ const LensTreatments = () => {
       
       console.log('Parsed lens treatments:', lensTreatmentsData);
       console.log('Parsed lens treatments count:', lensTreatmentsData.length);
-      console.log('Is array?', Array.isArray(lensTreatmentsData));
       
       if (Array.isArray(lensTreatmentsData)) {
         setLensTreatments(lensTreatmentsData);
@@ -82,16 +73,12 @@ const LensTreatments = () => {
           console.warn('Lens treatments array is empty. Check if data exists in database.');
         }
       } else {
-        console.error('Lens treatments data is not an array:', lensTreatmentsData);
-        console.error('Type:', typeof lensTreatmentsData);
+        console.error('❌ Lens treatments data is not an array:', lensTreatmentsData);
         setLensTreatments([]);
       }
     } catch (error) {
-      console.error('Lens treatments API error:', error);
+      console.error('❌ Lens treatments fetch error:', error);
       console.error('Error details:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      console.error('Error message:', error.message);
-      // Use empty array as fallback
       setLensTreatments([]);
       toast.error('Failed to fetch lens treatments. Please check console for details.');
     } finally {
@@ -115,16 +102,12 @@ const LensTreatments = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.LENS_TREATMENTS.DELETE(id));
-      // Handle response structure: { success, message }
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Lens treatment deleted successfully');
-      } else {
-        toast.success('Lens treatment deleted successfully');
-      }
+      const response = await deleteLensTreatment(id);
+      console.log('✅ Lens treatment deleted successfully:', response.data);
+      toast.success('Lens treatment deleted successfully');
       fetchLensTreatments();
     } catch (error) {
-      console.error('Lens treatment delete error:', error);
+      console.error('❌ Lens treatment delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens treatment');
       } else if (error.response.status === 401) {
@@ -277,10 +260,12 @@ const LensTreatments = () => {
       {modalOpen && (
         <LensTreatmentModal
           lensTreatment={selectedLensTreatment}
-          onClose={() => {
+          onClose={(shouldRefresh) => {
             setModalOpen(false);
             setSelectedLensTreatment(null);
-            fetchLensTreatments();
+            if (shouldRefresh) {
+              fetchLensTreatments();
+            }
           }}
         />
       )}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import api from '../../utils/api';
 import toast from 'react-hot-toast';
-import { API_ROUTES } from '../../config/apiRoutes';
 import PrescriptionFormDropdownValueModal from '../../components/PrescriptionFormDropdownValueModal';
+import { 
+  getPrescriptionFormDropdownValues,
+  deletePrescriptionFormDropdownValue
+} from '../../api/prescriptionFormDropdownValues';
 
 const PrescriptionFormDropdownValues = () => {
   const [values, setValues] = useState([]);
@@ -21,21 +23,17 @@ const PrescriptionFormDropdownValues = () => {
   const fetchValues = async () => {
     try {
       setLoading(true);
-      let url = API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.LIST;
-      const params = new URLSearchParams();
-      if (filterFieldType) params.append('field_type', filterFieldType);
-      if (filterEyeType) params.append('eye_type', filterEyeType);
-      if (filterFormType) params.append('form_type', filterFormType);
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
+      const params = {
+        page: 1,
+        limit: 1000,
+      };
+      
+      if (filterFieldType) params.field_type = filterFieldType;
+      if (filterEyeType && filterEyeType !== '') params.eye_type = filterEyeType;
+      if (filterFormType) params.form_type = filterFormType;
 
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://optyshop-frontend.hmstech.org/api';
-      const fullUrl = `${baseURL}${url}`;
-      console.log('Fetching prescription form dropdown values from:', fullUrl);
-      console.log('API Route:', url);
-      const response = await api.get(url);
-      console.log('Prescription form dropdown values API Response:', response.data);
+      const response = await getPrescriptionFormDropdownValues(params);
+      console.log('✅ Prescription form dropdown values fetched successfully:', response.data);
       
       let valuesData = [];
 
@@ -73,7 +71,7 @@ const PrescriptionFormDropdownValues = () => {
         setValues([]);
       }
     } catch (error) {
-      console.error('Prescription form dropdown values API error:', error);
+      console.error('❌ Prescription form dropdown values fetch error:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       
@@ -82,7 +80,7 @@ const PrescriptionFormDropdownValues = () => {
       } else if (error.response.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else if (error.response.status === 404) {
-        const requestedUrl = error.config?.url || url;
+        const requestedUrl = error.config?.url || '';
         const fullUrl = error.config?.baseURL ? `${error.config.baseURL}${requestedUrl}` : requestedUrl;
         toast.error(
           `Endpoint not found (404). The Prescription Forms API endpoint may not be implemented on the backend yet.\n\n` +
@@ -125,15 +123,12 @@ const PrescriptionFormDropdownValues = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.DELETE(id));
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Dropdown value deleted successfully');
-      } else {
-        toast.success('Dropdown value deleted successfully');
-      }
+      const response = await deletePrescriptionFormDropdownValue(id);
+      console.log('✅ Dropdown value deleted successfully:', response.data);
+      toast.success('Dropdown value deleted successfully');
       fetchValues();
     } catch (error) {
-      console.error('Delete error:', error);
+      console.error('❌ Dropdown value delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete value');
       } else if (error.response.status === 401) {

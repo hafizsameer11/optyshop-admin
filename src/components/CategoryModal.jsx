@@ -6,6 +6,12 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { 
+  createCategory, 
+  updateCategory,
+  getCategories,
+  deleteCategory
+} from '../api/categories';
 
 const CategoryModal = ({ category, onClose }) => {
   const { t } = useI18n();
@@ -92,9 +98,11 @@ const CategoryModal = ({ category, onClose }) => {
 
       let response;
       if (category) {
-        response = await api.put(API_ROUTES.ADMIN.CATEGORIES.UPDATE(category.id), dataToSend);
+        response = await updateCategory(category.id, dataToSend);
+        console.log('✅ Category updated successfully:', response.data);
       } else {
-        response = await api.post(API_ROUTES.ADMIN.CATEGORIES.CREATE, dataToSend);
+        response = await createCategory(dataToSend);
+        console.log('✅ Category created successfully:', response.data);
       }
       
       // Handle response structure: { success, message, data: { category: {...} } }
@@ -102,7 +110,7 @@ const CategoryModal = ({ category, onClose }) => {
       const successMessage = response.data?.message || (category ? 'Category updated successfully' : 'Category created successfully');
       
       toast.success(successMessage);
-      onClose();
+      onClose(true);
     } catch (error) {
       console.error('Category save error:', error);
       if (!error.response) {

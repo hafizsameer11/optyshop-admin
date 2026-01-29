@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiImage, FiExternalLink } from 'react-icons/fi';
-import api from '../utils/api';
 import toast from 'react-hot-toast';
 import BrandModal from '../components/BrandModal';
 import { API_ROUTES } from '../config/apiRoutes';
+import { 
+  getBrands,
+  deleteBrand
+} from '../api/brands';
 
 const Brands = () => {
   const [brands, setBrands] = useState([]);
@@ -18,12 +21,14 @@ const Brands = () => {
   const fetchBrands = async () => {
     try {
       setLoading(true);
-      const response = await api.get(API_ROUTES.ADMIN.BRANDS.LIST);
+      const response = await getBrands({ page: 1, limit: 1000 });
+      console.log('✅ Brands fetched successfully:', response.data);
       // API response structure: { success: true, message: "...", data: { brands: [...] } }
       const brandsData = response.data?.data?.brands || response.data?.brands || [];
       setBrands(Array.isArray(brandsData) ? brandsData : []);
     } catch (error) {
-      console.error('Brands API error:', error);
+      console.error('❌ Brands fetch error:', error);
+      console.error('Error details:', error.response?.data);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot fetch brands');
       } else if (error.response.status === 401) {
@@ -53,11 +58,12 @@ const Brands = () => {
     }
 
     try {
-      await api.delete(API_ROUTES.ADMIN.BRANDS.DELETE(id));
+      const response = await deleteBrand(id);
+      console.log('✅ Brand deleted successfully:', response.data);
       toast.success('Brand deleted successfully');
       fetchBrands();
     } catch (error) {
-      console.error('Brand delete error:', error);
+      console.error('❌ Brand delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete brand');
       } else if (error.response.status === 401) {
@@ -69,12 +75,18 @@ const Brands = () => {
     }
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = (shouldRefresh = false) => {
     setModalOpen(false);
     setSelectedBrand(null);
+    if (shouldRefresh) {
+      fetchBrands();
+    }
   };
 
   const handleModalSuccess = () => {
+    // This callback is called after successful save
+    // The modal already triggers refresh via onClose(true), so this is redundant
+    // but keeping for backward compatibility
     fetchBrands();
   };
 

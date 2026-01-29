@@ -5,7 +5,9 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import { 
   createPrescriptionFormDropdownValue, 
-  updatePrescriptionFormDropdownValue 
+  updatePrescriptionFormDropdownValue,
+  getPrescriptionFormDropdownValues,
+  deletePrescriptionFormDropdownValue
 } from '../api/prescriptionFormDropdownValues';
 
 const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
@@ -109,11 +111,8 @@ const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
       let response;
       if (value) {
         response = await updatePrescriptionFormDropdownValue(value.id, submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Dropdown value updated successfully');
-        } else {
-          toast.success('Dropdown value updated successfully');
-        }
+        console.log('✅ Dropdown value updated successfully:', response.data);
+        toast.success('Dropdown value updated successfully');
       } else {
         // Check for multiple values (comma-separated)
         const valuesToCreate = formData.value.toString().split(',').map(v => v.trim()).filter(v => v !== '');
@@ -129,18 +128,16 @@ const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
           });
 
           await Promise.all(createPromises);
+          console.log(`✅ ${valuesToCreate.length} dropdown values created successfully`);
           toast.success(`${valuesToCreate.length} dropdown values created successfully`);
         } else {
           // Single creation
           response = await createPrescriptionFormDropdownValue(submitData);
-          if (response.data?.success) {
-            toast.success(response.data.message || 'Dropdown value created successfully');
-          } else {
-            toast.success('Dropdown value created successfully');
-          }
+          console.log('✅ Dropdown value created successfully:', response.data);
+          toast.success('Dropdown value created successfully');
         }
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('❌ Prescription Form Dropdown Value save error:', error);
       console.error('Error response:', error.response?.data);

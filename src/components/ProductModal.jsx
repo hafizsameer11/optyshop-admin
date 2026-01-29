@@ -26,6 +26,12 @@ import EyeHygieneVariantManager from './EyeHygieneVariantManager';
 import SizeVolumeVariantManager from './SizeVolumeVariantManager';
 import SizeVolumeVariantModal from './SizeVolumeVariantModal';
 import { getProductSizeVolumeVariants } from '../services/productsService';
+import { 
+  createProduct,
+  updateProduct,
+  getProducts,
+  deleteProduct
+} from '../api/products';
 
 // Helper function to validate hex code format (#RRGGBB)
 const isValidHexCode = (hex) => {
@@ -1894,10 +1900,10 @@ const ProductModal = ({ product, onClose }) => {
 
           if (validProductId) {
             console.log(`🔄 Updating product with ID: ${validProductId}`);
-            response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), submitData);
+            response = await updateProduct(validProductId, submitData);
           } else {
             console.log('➕ Creating new product (no valid ID found)');
-            response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
+            response = await createProduct(submitData);
           }
         } catch (imageError) {
           // Log full error details
@@ -2001,10 +2007,10 @@ const ProductModal = ({ product, onClose }) => {
 
         if (validProductId) {
           console.log(`🔄 Updating product with ID: ${validProductId}`);
-          response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(validProductId), dataToSend);
+          response = await updateProduct(validProductId, dataToSend);
         } else {
           console.log('➕ Creating new product (no valid ID found)');
-          response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
+          response = await createProduct(dataToSend);
         }
       }
 
@@ -2045,7 +2051,7 @@ const ProductModal = ({ product, onClose }) => {
       setExistingColorImages([]);
 
       // Close modal - parent component will refresh the products list
-      onClose();
+      onClose(true);
     } catch (error) {
       // Log full error details for debugging
       console.error('Product save error:', error);

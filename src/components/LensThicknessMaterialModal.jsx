@@ -7,7 +7,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
   createLensThicknessMaterial, 
-  updateLensThicknessMaterial 
+  updateLensThicknessMaterial,
+  getLensThicknessMaterials,
+  deleteLensThicknessMaterial
 } from '../api/lensThicknessMaterials';
 
 const LensThicknessMaterialModal = ({ material, onClose }) => {
@@ -103,20 +105,14 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
       let response;
       if (material) {
         response = await updateLensThicknessMaterial(material.id, submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens thickness material updated successfully');
-        } else {
-          toast.success('Lens thickness material updated successfully');
-        }
+        console.log('✅ Lens thickness material updated successfully:', response.data);
+        toast.success('Lens thickness material updated successfully');
       } else {
         response = await createLensThicknessMaterial(submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens thickness material created successfully');
-        } else {
-          toast.success('Lens thickness material created successfully');
-        }
+        console.log('✅ Lens thickness material created successfully:', response.data);
+        toast.success('Lens thickness material created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('❌ Lens thickness material save error:', error);
       console.error('Error response:', error.response?.data);

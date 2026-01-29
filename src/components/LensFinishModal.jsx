@@ -7,7 +7,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
   createLensFinish, 
-  updateLensFinish 
+  updateLensFinish,
+  getLensFinishes,
+  deleteLensFinish
 } from '../api/lensFinishes';
 
 const LensFinishModal = ({ lensFinish, onClose }) => {
@@ -254,22 +256,14 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
       let response;
       if (lensFinish) {
         response = await updateLensFinish(lensFinish.id, submitData);
-        // Handle response structure: { success, message, data: { lensFinish: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens finish updated successfully');
-        } else {
-          toast.success('Lens finish updated successfully');
-        }
+        console.log('✅ Lens finish updated successfully:', response.data);
+        toast.success('Lens finish updated successfully');
       } else {
         response = await createLensFinish(submitData);
-        // Handle response structure: { success, message, data: { lensFinish: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens finish created successfully');
-        } else {
-          toast.success('Lens finish created successfully');
-        }
+        console.log('✅ Lens finish created successfully:', response.data);
+        toast.success('Lens finish created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('❌ Lens finish save error:', error);
       console.error('Error response:', error.response?.data);

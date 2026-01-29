@@ -7,7 +7,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
   createLensTreatment, 
-  updateLensTreatment 
+  updateLensTreatment,
+  getLensTreatments,
+  deleteLensTreatment
 } from '../api/lensTreatments';
 
 const LensTreatmentModal = ({ lensTreatment, onClose }) => {
@@ -118,22 +120,14 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
       let response;
       if (lensTreatment) {
         response = await updateLensTreatment(lensTreatment.id, submitData);
-        // Handle response structure: { success, message, data: { lensTreatment: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens treatment updated successfully');
-        } else {
-          toast.success('Lens treatment updated successfully');
-        }
+        console.log('✅ Lens treatment updated successfully:', response.data);
+        toast.success('Lens treatment updated successfully');
       } else {
         response = await createLensTreatment(submitData);
-        // Handle response structure: { success, message, data: { lensTreatment: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens treatment created successfully');
-        } else {
-          toast.success('Lens treatment created successfully');
-        }
+        console.log('✅ Lens treatment created successfully:', response.data);
+        toast.success('Lens treatment created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('❌ Lens treatment save error:', error);
       console.error('Error response:', error.response?.data);

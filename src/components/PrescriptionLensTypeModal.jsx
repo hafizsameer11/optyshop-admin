@@ -6,9 +6,11 @@ import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
-  createLensType, 
-  updateLensType 
-} from '../api/lensTypes';
+  createPrescriptionLensType, 
+  updatePrescriptionLensType,
+  getPrescriptionLensTypes,
+  deletePrescriptionLensType
+} from '../api/prescriptionLensTypes';
 
 const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
   const [formData, setFormData] = useState({
@@ -83,21 +85,15 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
 
       let response;
       if (lensType) {
-        response = await updateLensType(lensType.id, submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Prescription lens type updated successfully');
-        } else {
-          toast.success('Prescription lens type updated successfully');
-        }
+        response = await updatePrescriptionLensType(lensType.id, submitData);
+        console.log('✅ Prescription lens type updated successfully:', response.data);
+        toast.success('Prescription lens type updated successfully');
       } else {
-        response = await createLensType(submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Prescription lens type created successfully');
-        } else {
-          toast.success('Prescription lens type created successfully');
-        }
+        response = await createPrescriptionLensType(submitData);
+        console.log('✅ Prescription lens type created successfully:', response.data);
+        toast.success('Prescription lens type created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('❌ Prescription lens type save error:', error);
       console.error('Error response:', error.response?.data);

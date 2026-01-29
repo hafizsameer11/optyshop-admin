@@ -5,6 +5,12 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { 
+  createSubCategory, 
+  updateSubCategory,
+  getSubCategories,
+  deleteSubCategory
+} from '../api/subCategories';
 
 const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
     const { t } = useI18n();
@@ -252,9 +258,11 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
             // API Response: { success, message, data: { subcategory: {} } }
             let response;
             if (subCategory) {
-                response = await api.put(API_ROUTES.ADMIN.SUBCATEGORIES.UPDATE(subCategory.id), dataToSend);
+                response = await updateSubCategory(subCategory.id, dataToSend);
+                console.log('✅ SubCategory updated successfully:', response.data);
             } else {
-                response = await api.post(API_ROUTES.ADMIN.SUBCATEGORIES.CREATE, dataToSend);
+                response = await createSubCategory(dataToSend);
+                console.log('✅ SubCategory created successfully:', response.data);
             }
 
             // Extract created/updated subcategory from response
@@ -307,7 +315,7 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
             }
             
             // Close modal and trigger refresh
-            onClose();
+            onClose(true);
         } catch (error) {
             console.error('SubCategory save error:', error);
             if (!error.response) {

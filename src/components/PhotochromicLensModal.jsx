@@ -7,7 +7,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { 
   createPhotochromicLens, 
-  updatePhotochromicLens 
+  updatePhotochromicLens,
+  getPhotochromicLenses,
+  deletePhotochromicLens
 } from '../api/photochromicLenses';
 
 const PhotochromicLensModal = ({ lens, onClose }) => {
@@ -85,12 +87,14 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
       let response;
       if (lens) {
         response = await updatePhotochromicLens(lens.id, submitData);
-        toast.success(response.data?.message || 'Photochromic lens updated successfully');
+        console.log('✅ Photochromic lens updated successfully:', response.data);
+        toast.success('Photochromic lens updated successfully');
       } else {
         response = await createPhotochromicLens(submitData);
-        toast.success(response.data?.message || 'Photochromic lens created successfully');
+        console.log('✅ Photochromic lens created successfully:', response.data);
+        toast.success('Photochromic lens created successfully');
       }
-      onClose(true); // Pass true to indicate successful save
+      onClose(true);
     } catch (error) {
       console.error('❌ Photochromic lens save error:', error);
       console.error('Error response:', error.response?.data);

@@ -4,6 +4,12 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
+import { 
+  createPrescriptionLensVariant, 
+  updatePrescriptionLensVariant,
+  getPrescriptionLensVariants,
+  deletePrescriptionLensVariant
+} from '../api/prescriptionLensVariants';
 
 const PrescriptionLensVariantModal = ({ variant, lensTypes, onClose }) => {
   const [formData, setFormData] = useState({
@@ -78,21 +84,15 @@ const PrescriptionLensVariantModal = ({ variant, lensTypes, onClose }) => {
 
       let response;
       if (variant) {
-        response = await api.put(API_ROUTES.ADMIN.PRESCRIPTION_LENS_VARIANTS.UPDATE(variant.id), submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Prescription lens variant updated successfully');
-        } else {
-          toast.success('Prescription lens variant updated successfully');
-        }
+        response = await updatePrescriptionLensVariant(variant.id, submitData);
+        console.log('✅ Prescription lens variant updated successfully:', response.data);
+        toast.success('Prescription lens variant updated successfully');
       } else {
-        response = await api.post(API_ROUTES.ADMIN.PRESCRIPTION_LENS_VARIANTS.CREATE, submitData);
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Prescription lens variant created successfully');
-        } else {
-          toast.success('Prescription lens variant created successfully');
-        }
+        response = await createPrescriptionLensVariant(submitData);
+        console.log('✅ Prescription lens variant created successfully:', response.data);
+        toast.success('Prescription lens variant created successfully');
       }
-      onClose();
+      onClose(true);
     } catch (error) {
       console.error('Prescription lens variant save error:', error);
       if (!error.response) {

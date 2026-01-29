@@ -247,6 +247,9 @@ const FrameSizes = () => {
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  NAME
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   PRODUCT ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -265,6 +268,9 @@ const FrameSizes = () => {
                   TEMPLE
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  STATUS
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ACTIONS
                 </th>
               </tr>
@@ -272,7 +278,7 @@ const FrameSizes = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {frameSizes.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="10" className="px-6 py-4 text-center text-sm text-gray-500">
                     No frame sizes found
                   </td>
                 </tr>
@@ -281,6 +287,9 @@ const FrameSizes = () => {
                   <tr key={size.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {size.id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {size.product?.name || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {size.product_id || 'N/A'}
@@ -292,13 +301,18 @@ const FrameSizes = () => {
                       {size.size_label || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.lens_width !== undefined && size.lens_width !== null ? `${size.lens_width} mm` : 'N/A'}
+                      {size.lens_width && parseFloat(size.lens_width) > 0 ? `${size.lens_width} mm` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.bridge_width !== undefined && size.bridge_width !== null ? `${size.bridge_width} mm` : 'N/A'}
+                      {size.bridge_width && parseFloat(size.bridge_width) > 0 ? `${size.bridge_width} mm` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.temple_length !== undefined && size.temple_length !== null ? `${size.temple_length} mm` : 'N/A'}
+                      {size.temple_length && parseFloat(size.temple_length) > 0 ? `${size.temple_length} mm` : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        Active
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button 

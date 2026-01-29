@@ -29,31 +29,15 @@ const FrameSizes = () => {
       console.log('Response.data.data:', response.data?.data);
       console.log('Response.data.data.frameSizes:', response.data?.data?.frameSizes);
       
-      // Handle the nested data structure from the API
-      // Response structure: { success, message, data: { frameSizes: [...] } }
-      // Single frame size: { success, message, data: { frameSize: {...} } }
-      // Also handle if data is directly an array or if it's in data.data
+      // Simplified data parsing based on the actual JSON response structure
       let frameSizesData = [];
       
-      if (response.data?.data) {
-        // Check for various possible structures
-        if (Array.isArray(response.data.data)) {
-          frameSizesData = response.data.data;
-        } else if (response.data.data.frameSizes) {
-          frameSizesData = response.data.data.frameSizes;
-        } else if (response.data.data.frame_sizes) {
-          frameSizesData = response.data.data.frame_sizes;
-        } else if (response.data.data.frameSize) {
-          // Single frame size returned as array
-          frameSizesData = [response.data.data.frameSize];
-        }
+      if (response.data?.data?.frameSizes) {
+        frameSizesData = response.data.data.frameSizes;
       } else if (response.data?.frameSizes) {
         frameSizesData = response.data.frameSizes;
-      } else if (response.data?.frame_sizes) {
-        frameSizesData = response.data.frame_sizes;
-      } else if (response.data?.frameSize) {
-        // Single frame size
-        frameSizesData = [response.data.frameSize];
+      } else if (Array.isArray(response.data?.data)) {
+        frameSizesData = response.data.data;
       }
       
       console.log('Parsed frame sizes:', frameSizesData);
@@ -65,59 +49,7 @@ const FrameSizes = () => {
       }
       
       if (Array.isArray(frameSizesData)) {
-        // If no data from API, use mock data for demonstration
-        if (frameSizesData.length === 0) {
-          const mockData = [
-            {
-              id: 1,
-              product_id: 101,
-              lens_width: 52.0,
-              bridge_width: 18.0,
-              temple_length: 140.0,
-              frame_width: 130.0,
-              frame_height: 45.0,
-              size_label: 'Small',
-              created_at: '2024-01-15T10:30:00Z'
-            },
-            {
-              id: 2,
-              product_id: 102,
-              lens_width: 54.0,
-              bridge_width: 19.0,
-              temple_length: 145.0,
-              frame_width: 135.0,
-              frame_height: 48.0,
-              size_label: 'Medium',
-              created_at: '2024-01-16T14:20:00Z'
-            },
-            {
-              id: 3,
-              product_id: 103,
-              lens_width: 56.0,
-              bridge_width: 20.0,
-              temple_length: 150.0,
-              frame_width: 140.0,
-              frame_height: 50.0,
-              size_label: 'Large',
-              created_at: '2024-01-17T09:15:00Z'
-            },
-            {
-              id: 4,
-              product_id: 104,
-              lens_width: 58.0,
-              bridge_width: 21.0,
-              temple_length: 155.0,
-              frame_width: 145.0,
-              frame_height: 52.0,
-              size_label: 'Extra Large',
-              created_at: '2024-01-18T16:45:00Z'
-            }
-          ];
-          console.log('Using mock data for demonstration');
-          setFrameSizes(mockData);
-        } else {
-          setFrameSizes(frameSizesData);
-        }
+        setFrameSizes(frameSizesData);
       } else {
         console.error('Frame sizes data is not an array:', frameSizesData);
         setFrameSizes([]);
@@ -125,55 +57,7 @@ const FrameSizes = () => {
     } catch (error) {
       console.error('Frame sizes API error:', error);
       console.error('Error details:', error.response?.data);
-      // Use mock data as fallback when API fails
-      console.log('API failed, using mock data for demonstration');
-      const mockData = [
-        {
-          id: 1,
-          product_id: 101,
-          lens_width: 52.0,
-          bridge_width: 18.0,
-          temple_length: 140.0,
-          frame_width: 130.0,
-          frame_height: 45.0,
-          size_label: 'Small',
-          created_at: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: 2,
-          product_id: 102,
-          lens_width: 54.0,
-          bridge_width: 19.0,
-          temple_length: 145.0,
-          frame_width: 135.0,
-          frame_height: 48.0,
-          size_label: 'Medium',
-          created_at: '2024-01-16T14:20:00Z'
-        },
-        {
-          id: 3,
-          product_id: 103,
-          lens_width: 56.0,
-          bridge_width: 20.0,
-          temple_length: 150.0,
-          frame_width: 140.0,
-          frame_height: 50.0,
-          size_label: 'Large',
-          created_at: '2024-01-17T09:15:00Z'
-        },
-        {
-          id: 4,
-          product_id: 104,
-          lens_width: 58.0,
-          bridge_width: 21.0,
-          temple_length: 155.0,
-          frame_width: 145.0,
-          frame_height: 52.0,
-          size_label: 'Extra Large',
-          created_at: '2024-01-18T16:45:00Z'
-        }
-      ];
-      setFrameSizes(mockData);
+      setFrameSizes([]);
     } finally {
       setLoading(false);
     }
@@ -256,9 +140,6 @@ const FrameSizes = () => {
                   SLUG
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  SIZE
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   WIDTH
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -278,7 +159,7 @@ const FrameSizes = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {frameSizes.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="9" className="px-6 py-4 text-center text-sm text-gray-500">
                     No frame sizes found
                   </td>
                 </tr>
@@ -289,29 +170,26 @@ const FrameSizes = () => {
                       {size.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {size.product?.name || 'N/A'}
+                      {size.product?.name || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {size.product_id || 'N/A'}
+                      {size.product_id || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.product?.slug || 'N/A'}
+                      {size.product?.slug || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.size_label || 'N/A'}
+                      {size.lens_width ? `${size.lens_width} mm` : ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.lens_width && parseFloat(size.lens_width) > 0 ? `${size.lens_width} mm` : 'N/A'}
+                      {size.bridge_width ? `${size.bridge_width} mm` : ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.bridge_width && parseFloat(size.bridge_width) > 0 ? `${size.bridge_width} mm` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.temple_length && parseFloat(size.temple_length) > 0 ? `${size.temple_length} mm` : 'N/A'}
+                      {size.temple_length ? `${size.temple_length} mm` : ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        Active
+                        {size.status || 'Active'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

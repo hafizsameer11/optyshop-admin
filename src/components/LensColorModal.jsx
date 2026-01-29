@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiUpload, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { 
+  createLensColor, 
+  updateLensColor 
+} from '../api/lensColors';
 
 const LensColorModal = ({ lensColor, onClose }) => {
   const { t } = useI18n();
@@ -448,7 +452,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
           formDataToSend.append('image_url', formData.image_url);
         }
 
-        const response = await api.put(API_ROUTES.ADMIN.LENS_COLORS.UPDATE(lensColor.id), formDataToSend, {
+        const response = await updateLensColor(lensColor.id, formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
 
@@ -547,13 +551,13 @@ const LensColorModal = ({ lensColor, onClose }) => {
               }
               console.log(`Creating color ${i + 1} with image (FormData):`, formDataObj);
 
-              response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, formDataToSend, {
+              response = await createLensColor(formDataToSend, {
                 headers: { 'Content-Type': 'multipart/form-data' }
               });
             } else {
               console.log(`Creating color ${i + 1} without image (JSON):`, JSON.stringify(dataToSend, null, 2));
 
-              response = await api.post(API_ROUTES.ADMIN.LENS_COLORS.CREATE, dataToSend, {
+              response = await createLensColor(dataToSend, {
                 headers: { 'Content-Type': 'application/json' }
               });
             }

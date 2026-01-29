@@ -112,27 +112,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    // Check for demo credentials - use demo mode directly (no API call needed)
-    if (email === 'admin@test.com' && password === 'admin123') {
-      // Use demo mode directly
-      const demoUser = {
-        id: 1,
-        email: 'admin@test.com',
-        first_name: 'Admin',
-        last_name: 'User',
-        role: 'admin',
-        is_active: true
-      };
-      
-      const demoToken = 'demo_token_' + Date.now();
-      localStorage.setItem('admin_token', demoToken);
-      localStorage.setItem('demo_user', JSON.stringify(demoUser));
-      setUser(demoUser);
-      toast.success('✅ Login successful! (Demo Mode)');
-      return true;
-    }
+    console.log('Login attempt:', { email, password });
     
-    // For non-demo credentials, try real API
+    // Try real API first
     try {
       const response = await api.post(API_ROUTES.AUTH.LOGIN, { email, password });
       
@@ -166,19 +148,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message;
       
-      // Suppress "Route not found" errors (404) - these are expected if endpoint doesn't exist
-      if (error.response?.status === 404 || errorMessage?.toLowerCase().includes('route not found')) {
-        // Silently handle route not found errors
-        console.warn('Login endpoint not found - this might be expected');
-        return false;
-      }
-      
-      // If it's a network error with non-demo credentials, suggest using demo mode
-      if (error.code === 'ECONNABORTED' || error.message.includes('Network Error') || error.message.includes('timeout')) {
-        toast.error('Backend not available. Try demo credentials: admin@test.com / admin123');
-      } else {
-        toast.error(errorMessage || 'Invalid credentials');
-      }
+      // Show actual error message
+      toast.error(errorMessage || 'Login failed');
       return false;
     }
   };

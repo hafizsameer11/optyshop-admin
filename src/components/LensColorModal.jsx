@@ -622,11 +622,24 @@ const LensColorModal = ({ lensColor, onClose }) => {
       }
     } catch (error) {
       console.error('Lens color save error:', error);
-      if (!error.response) {
-        toast.error('Backend unavailable - Cannot save lens color');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials to save lens colors');
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      // For any error, still close modal and try to refresh
+      // This ensures the UI doesn't get stuck
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 API error occurred, but still closing modal and refreshing');
+        toast.error('Backend error - Changes may not be saved');
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) to refresh table');
+          onClose(true);
+        }, 1000);
       } else {
+        // For validation errors, don't close modal
         const errorMessage = error.response?.data?.message || 'Failed to save lens color';
         toast.error(errorMessage);
       }

@@ -53,8 +53,26 @@ const LensTypes = () => {
     } catch (error) {
       console.error('❌ Lens types fetch error:', error);
       console.error('Error details:', error.response?.data);
-      // Use empty array as fallback
-      setLensTypes([]);
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error - keeping existing data or using empty array');
+        toast.error('Backend error - Unable to fetch latest data');
+        // Keep existing data or use empty array if no data exists
+        if (lensTypes.length === 0) {
+          setLensTypes([]);
+        }
+      } else {
+        // For other errors, use empty array
+        setLensTypes([]);
+        const errorMessage = error.response?.data?.message || 'Failed to fetch lens types';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -82,10 +100,18 @@ const LensTypes = () => {
       fetchLensTypes();
     } catch (error) {
       console.error('❌ Lens type delete error:', error);
-      if (!error.response) {
-        toast.error('Backend unavailable - Cannot delete lens type');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 API error during delete, removing from local state');
+        toast.error('Backend error - Removing from local view');
+        // Remove from local state immediately to update UI
+        setLensTypes(prev => prev.filter(type => type.id !== id));
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens type';
         toast.error(errorMessage);

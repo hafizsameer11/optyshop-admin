@@ -53,7 +53,26 @@ const LensCoatings = () => {
     } catch (error) {
       console.error('❌ Lens coatings fetch error:', error);
       console.error('Error details:', error.response?.data);
-      setLensCoatings([]);
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error - keeping existing data or using empty array');
+        toast.error('Backend error - Unable to fetch latest data');
+        // Keep existing data or use empty array if no data exists
+        if (lensCoatings.length === 0) {
+          setLensCoatings([]);
+        }
+      } else {
+        // For other errors, use empty array
+        setLensCoatings([]);
+        const errorMessage = error.response?.data?.message || 'Failed to fetch lens coatings';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -81,10 +100,18 @@ const LensCoatings = () => {
       fetchLensCoatings();
     } catch (error) {
       console.error('❌ Lens coating delete error:', error);
-      if (!error.response) {
-        toast.error('Backend unavailable - Cannot delete lens coating');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 API error during delete, removing from local state');
+        toast.error('Backend error - Removing from local view');
+        // Remove from local state immediately to update UI
+        setLensCoatings(prev => prev.filter(coating => coating.id !== id));
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens coating';
         toast.error(errorMessage);

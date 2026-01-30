@@ -107,15 +107,25 @@ const LensOptions = () => {
     } catch (error) {
       console.error('❌ Lens options fetch error:', error);
       console.error('Error details:', error.response?.data);
-      setLensOptions([]);
-      if (error.response?.status === 401) {
-        toast.error('Authentication required. Please log in again.');
-      } else if (error.response?.status === 404) {
-        toast.error('Lens options endpoint not found. Check API configuration.');
-      } else if (!error.response) {
-        toast.error('Cannot connect to server. Check if backend is running.');
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error - keeping existing data or using empty array');
+        toast.error('Backend error - Unable to fetch latest data');
+        // Keep existing data or use empty array if no data exists
+        if (lensOptions.length === 0) {
+          setLensOptions([]);
+        }
       } else {
-        toast.error('Failed to fetch lens options. Check console for details.');
+        // For other errors, use empty array
+        setLensOptions([]);
+        const errorMessage = error.response?.data?.message || 'Failed to fetch lens options';
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -144,10 +154,18 @@ const LensOptions = () => {
       fetchLensOptions();
     } catch (error) {
       console.error('❌ Lens option delete error:', error);
-      if (!error.response) {
-        toast.error('Backend unavailable - Cannot delete lens option');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 API error during delete, removing from local state');
+        toast.error('Backend error - Removing from local view');
+        // Remove from local state immediately to update UI
+        setLensOptions(prev => prev.filter(option => option.id !== id));
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens option';
         toast.error(errorMessage);

@@ -318,15 +318,30 @@ const BannerModal = ({ banner, onClose }) => {
         }
       }
 
+      // Debug: Log the page_type validation
+      console.log('Page type validation:', {
+        page_type: formData.page_type,
+        category_id: formData.category_id,
+        sub_category_id: formData.sub_category_id,
+        isHome: formData.page_type === 'home',
+        isCategory: formData.page_type === 'category',
+        isSubcategory: formData.page_type === 'subcategory',
+        isSubSubcategory: formData.page_type === 'sub_subcategory'
+      });
+
       // Add all form fields
       submitData.append('title', formData.title.trim());
       submitData.append('page_type', formData.page_type);
 
-      // Always send link_url (empty string if not provided)
-      submitData.append('link_url', formData.link_url || '');
+      // Only send link_url if it has a value
+      if (formData.link_url && formData.link_url.trim()) {
+        submitData.append('link_url', formData.link_url.trim());
+      }
       
-      // Always send position (empty string if not provided)
-      submitData.append('position', formData.position || '');
+      // Only send position if it has a value
+      if (formData.position && formData.position.trim()) {
+        submitData.append('position', formData.position.trim());
+      }
       
       // Validate sort_order is a number
       const sortOrder = parseInt(formData.sort_order, 10);
@@ -337,7 +352,9 @@ const BannerModal = ({ banner, onClose }) => {
       }
       
       submitData.append('sort_order', sortOrder.toString());
-      submitData.append('is_active', formData.is_active.toString());
+      
+      // Ensure is_active is sent as '1' or '0' instead of 'true'/'false'
+      submitData.append('is_active', formData.is_active ? '1' : '0');
 
       // Add category_id and sub_category_id based on page_type
       // For home page: don't send category_id or sub_category_id (backend will set to null)
@@ -358,21 +375,31 @@ const BannerModal = ({ banner, onClose }) => {
       if (imageFile) {
         submitData.append('image', imageFile);
       } else if (banner && banner.image_url) {
-        // For existing banners, if no new image is provided, don't send the image field
-        // The backend will keep the existing image
-        console.log('Updating banner without changing image');
+        // For existing banners, if no new image is provided, send a flag to indicate keeping existing image
+        submitData.append('keep_existing_image', 'true');
+        console.log('Updating banner without changing image - sending keep_existing_image flag');
+      } else if (!banner) {
+        // For new banners without image, send empty string to avoid backend validation errors
+        // (though this should have been caught by validation above)
+        submitData.append('image', '');
+        console.warn('New banner created without image file - sending empty image field');
       }
+
+      // Debug: Log FormData contents
+      console.log('=== FormData Debug ===');
+      for (let [key, value] of submitData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      console.log('=== End FormData Debug ===');
 
       let response;
       if (banner) {
         console.log('Updating banner with ID:', banner.id);
-        console.log('Submitting data:', Object.fromEntries(submitData.entries()));
         response = await bannerAPI.update(banner.id, submitData);
         console.log('Banner update response:', response);
         toast.success('Banner updated successfully');
       } else {
         console.log('Creating new banner');
-        console.log('Submitting data:', Object.fromEntries(submitData.entries()));
         response = await bannerAPI.create(submitData);
         console.log('Banner create response:', response);
         toast.success('Banner created successfully');
@@ -396,7 +423,56 @@ const BannerModal = ({ banner, onClose }) => {
         url: error.config?.url,
         method: error.config?.method,
         baseURL: error.config?.baseURL,
+        headers: error.config?.headers,
       });
+
+      // Log the request data that was sent
+      if (error.config?.data instanceof FormData) {
+        console.error('Request FormData:');
+        for (let [key, value] of error.config.data.entries()) {
+          console.error(`  ${key}:`, value);
+        }
+      }
+
+      // Enhanced error handling for 400 errors
+      if (error.response?.status === 400) {
+        const errorData = error.response?.data || {};
+        console.log('400 Bad Request - Detailed error analysis:', errorData);
+        
+        // Try to extract specific validation errors
+        let errorMessage = 'Validation failed';
+        
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.errors && Array.isArray(errorData.errors)) {
+          if (errorData.errors.length === 1) {
+            errorMessage = errorData.errors[0].msg || errorData.errors[0].message;
+          } else {
+            errorMessage = errorData.errors.map(err => err.msg || err.message).join('; ');
+          }
+        }
+        
+        // Check for common validation issues
+        const errorString = JSON.stringify(errorData).toLowerCase();
+        if (errorString.includes('image') && errorString.includes('required')) {
+          errorMessage = 'Image is required. Please select an image file.';
+        } else if (errorString.includes('title') && errorString.includes('required')) {
+          errorMessage = 'Title is required. Please enter a banner title.';
+        } else if (errorString.includes('page_type') && errorString.includes('required')) {
+          errorMessage = 'Page type is required. Please select where this banner should be displayed.';
+        } else if (errorString.includes('category') && errorString.includes('required')) {
+          errorMessage = 'Category is required for the selected page type.';
+        } else if (errorString.includes('subcategory') && errorString.includes('required')) {
+          errorMessage = 'Subcategory is required for the selected page type.';
+        } else if (errorString.includes('sort_order') && (errorString.includes('number') || errorString.includes('integer'))) {
+          errorMessage = 'Sort order must be a valid number.';
+        }
+        
+        toast.error(`❌ ${errorMessage}`);
+        return;
+      }
 
       if (!error.response) {
         toast.error('Backend unavailable - Make sure the backend server is running on http://localhost:5000');
@@ -405,7 +481,7 @@ const BannerModal = ({ banner, onClose }) => {
         toast.error(`API endpoint not found (404). Attempted URL: ${attemptedUrl}. Please verify the backend server is running and the route exists.`);
       } else if (error.response.status === 401) {
         toast.error('❌ Demo mode - Please log in with real credentials to save banners');
-      } else if (error.response.status === 400 || error.response.status === 422) {
+      } else if (error.response.status === 422) {
         // Validation errors - show detailed message
         const errorData = error.response?.data || {};
         console.log('Validation error details:', errorData);

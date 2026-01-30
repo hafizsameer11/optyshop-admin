@@ -106,17 +106,14 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
     setLoading(true);
 
     try {
-      // Validate required fields
-      if (!formData.name || !formData.name.trim()) {
-        toast.error('Brand name is required');
-        setLoading(false);
-        return;
-      }
+      // All fields are now optional - no validation required
 
       const formDataToSend = new FormData();
       
-      // Required fields
-      formDataToSend.append('name', formData.name.trim());
+      // Only send fields that have values
+      if (formData.name && formData.name.trim()) {
+        formDataToSend.append('name', formData.name.trim());
+      }
       
       // Optional fields - only send if they have values (per Postman collection)
       if (formData.slug && formData.slug.trim()) {
@@ -207,7 +204,7 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
           {/* Brand Name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('brandName') || 'Brand Name'} <span className="text-red-500">*</span>
+              {t('brandName') || 'Brand Name'}
             </label>
             <input
               type="text"
@@ -216,7 +213,6 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
               onChange={handleChange}
               className="input-modern"
               placeholder={t('brandNamePlaceholder') || 'e.g., ZEISS, ZENNI, Transitions'}
-              required
             />
           </div>
 

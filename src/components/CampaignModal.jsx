@@ -113,15 +113,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
   }, [formData.name, campaign]);
 
   const areAllFieldsFilled = () => {
-    const requiredFields = ['name', 'slug', 'description', 'starts_at', 'ends_at'];
-    for (const field of requiredFields) {
-      if (!formData[field] || (typeof formData[field] === 'string' && !formData[field].trim())) {
-        return false;
-      }
-    }
-    if (!formData.campaign_type || !formData.campaign_type.trim()) {
-      return false;
-    }
+    // All fields are now optional - no validation required
     return true;
   };
 
@@ -130,32 +122,21 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
     setLoading(true);
 
     try {
-      if (!formData.name || !formData.name.trim()) {
-        toast.error('Campaign name is required');
-        setLoading(false);
-        return;
-      }
-      if (!formData.slug || !formData.slug.trim()) {
-        toast.error('Campaign slug is required');
-        setLoading(false);
-        return;
-      }
-      if (!formData.description || !formData.description.trim()) {
-        toast.error('Description is required');
-        setLoading(false);
-        return;
-      }
-      if (!formData.starts_at || !formData.ends_at) {
-        toast.error('Start and end dates are required');
-        setLoading(false);
-        return;
-      }
+      // All fields are now optional - no validation required
 
       // Always use FormData for campaign creation/update (backend expects multipart/form-data)
       const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name.trim());
-      formDataToSend.append('slug', formData.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-'));
-      formDataToSend.append('description', formData.description.trim());
+      
+      // Only send fields that have values
+      if (formData.name && formData.name.trim()) {
+        formDataToSend.append('name', formData.name.trim());
+      }
+      if (formData.slug && formData.slug.trim()) {
+        formDataToSend.append('slug', formData.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-'));
+      }
+      if (formData.description && formData.description.trim()) {
+        formDataToSend.append('description', formData.description.trim());
+      }
       
       // Convert dates to ISO format (backend expects ISO format)
       // Use direct string concatenation to avoid timezone shifts
@@ -176,9 +157,15 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
         return dateString;
       };
       
-      formDataToSend.append('starts_at', formatDateForAPI(formData.starts_at));
-      formDataToSend.append('ends_at', formatDateForAPI(formData.ends_at));
       formDataToSend.append('is_active', formData.is_active.toString());
+      
+      // Only send dates if they have values
+      if (formData.starts_at) {
+        formDataToSend.append('starts_at', formatDateForAPI(formData.starts_at));
+      }
+      if (formData.ends_at) {
+        formDataToSend.append('ends_at', formatDateForAPI(formData.ends_at));
+      }
       
       // Send optional fields only if they have values (per Postman collection)
       if (formData.campaign_type && formData.campaign_type.trim()) {
@@ -273,7 +260,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('campaignName')} <span className="text-red-500">*</span>
+              {t('campaignName')}
             </label>
             <input
               type="text"
@@ -281,14 +268,13 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
               value={formData.name}
               onChange={handleChange}
               className="input-modern"
-              required
               placeholder="e.g., Winter Sale 2025"
             />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Slug <span className="text-red-500">*</span>
+              Slug
             </label>
             <input
               type="text"
@@ -296,7 +282,6 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
               value={formData.slug}
               onChange={handleChange}
               className="input-modern font-mono"
-              required
               placeholder="e.g., winter-sale-2025"
             />
             <p className="mt-1 text-xs text-gray-500">URL-friendly identifier (auto-generated from name)</p>
@@ -304,7 +289,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('description')} <span className="text-red-500">*</span>
+              {t('description')}
             </label>
             <textarea
               name="description"
@@ -312,7 +297,6 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
               onChange={handleChange}
               rows="3"
               className="input-modern resize-none"
-              required
               placeholder="Brief description of the campaign..."
             />
           </div>
@@ -334,7 +318,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('startsAt')} <span className="text-red-500">*</span>
+                {t('startsAt')}
               </label>
               <input
                 type="date"
@@ -342,13 +326,12 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
                 value={formData.starts_at}
                 onChange={handleChange}
                 className="input-modern"
-                required
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('endsAt')} <span className="text-red-500">*</span>
+                {t('endsAt')}
               </label>
               <input
                 type="date"
@@ -356,7 +339,6 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
                 value={formData.ends_at}
                 onChange={handleChange}
                 className="input-modern"
-                required
               />
             </div>
           </div>

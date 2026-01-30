@@ -187,7 +187,8 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
       }
       
       // Only append image if a new file is selected
-      if (imageFile instanceof File) {
+      const FileConstructor = typeof File !== 'undefined' ? File : null;
+      if (FileConstructor && imageFile instanceof FileConstructor) {
         formDataToSend.append('image', imageFile);
       }
       
@@ -240,7 +241,7 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
           slug: formData.slug,
           starts_at: formData.starts_at,
           ends_at: formData.ends_at,
-          hasImage: imageFile instanceof File
+          hasImage: FileConstructor && imageFile instanceof FileConstructor
         });
         toast.error(`Server Error: ${errorMessage}`);
       } else {

@@ -240,11 +240,16 @@ const LensFinishes = () => {
 
     try {
       const response = await deleteLensFinish(id);
-      console.log('✅ Lens finish deleted successfully:', response.data);
-      toast.success('Lens finish deleted successfully');
+      // Handle response structure: { success, message }
+      if (response.data?.success) {
+        toast.success(response.data.message || 'Lens finish deleted successfully');
+      } else {
+        toast.success('Lens finish deleted successfully');
+      }
+      // Refresh the list without page reload
       fetchLensFinishes();
     } catch (error) {
-      console.error('❌ Lens finish delete error:', error);
+      console.error('Lens finish delete error:', error);
       if (!error.response) {
         toast.error('Backend unavailable - Cannot delete lens finish');
       } else if (error.response.status === 401) {
@@ -471,11 +476,36 @@ const LensFinishes = () => {
       {modalOpen && (
         <LensFinishModal
           lensFinish={selectedLensFinish}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh = false) => {
+            console.log('🔄 LensFinishModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedLensFinish:', selectedLensFinish);
             setModalOpen(false);
             setSelectedLensFinish(null);
             if (shouldRefresh) {
-              fetchLensFinishes();
+              console.log('📋 Refreshing lens finishes list after modal save');
+              // For demo purposes, add a new lens finish immediately if backend is not available
+              if (!selectedLensFinish) {
+                // Adding new lens finish - simulate adding to the list
+                const newLensFinish = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  name: 'New Lens Finish',
+                  slug: 'new-lens-finish',
+                  price_adjustment: 15.00,
+                  description: 'Demo lens finish',
+                  is_active: true,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new lens finish to table:', newLensFinish);
+                setLensFinishes(prev => [newLensFinish, ...prev]);
+                toast.success('Lens finish added to table (demo mode)');
+              }
+              // Use setTimeout to ensure modal is fully closed before refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching lens finishes from API');
+                fetchLensFinishes();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

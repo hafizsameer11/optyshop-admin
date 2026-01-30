@@ -1618,9 +1618,10 @@ const ProductModal = ({ product, onClose }) => {
       // ====================================================================
 
       // Check if we need to use FormData (images, 3D model, or images with colors)
-      const hasImageFiles = imageFiles && imageFiles.length > 0 && imageFiles.every(file => file instanceof File);
-      const has3DModel = model3DFile && model3DFile instanceof File;
-      const hasImagesWithColors = imagesWithColors.some(img => img.file instanceof File);
+      const FileConstructor = typeof File !== 'undefined' ? File : null;
+      const hasImageFiles = imageFiles && imageFiles.length > 0 && imageFiles.every(file => FileConstructor && file instanceof FileConstructor);
+      const has3DModel = model3DFile && FileConstructor && model3DFile instanceof FileConstructor;
+      const hasImagesWithColors = imagesWithColors.some(img => FileConstructor && img.file instanceof FileConstructor);
 
       // If we have any files (images, 3D model, or images with colors), use FormData
       if (hasImageFiles || has3DModel || hasImagesWithColors) {
@@ -1693,11 +1694,12 @@ const ProductModal = ({ product, onClose }) => {
           // Strategy: Build parallel arrays where image_colors[i] maps to images[i] by exact index
 
           // Separate images: those with hex codes and those without (general images)
+          const FileConstructor = typeof File !== 'undefined' ? File : null;
           const imagesWithHexCodes = imagesWithColors.filter(img =>
-            img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode)
+            FileConstructor && img.file instanceof FileConstructor && img.hexCode && isValidHexCode(img.hexCode)
           );
           const imagesWithoutHexCodes = imagesWithColors.filter(img =>
-            img.file instanceof File && (!img.hexCode || !isValidHexCode(img.hexCode))
+            FileConstructor && img.file instanceof FileConstructor && (!img.hexCode || !isValidHexCode(img.hexCode))
           );
 
           // Strategy per Postman: 
@@ -1825,7 +1827,8 @@ const ProductModal = ({ product, onClose }) => {
             // Also include colors that have new files but no existing images to keep
             // These are new colors being added
             imagesWithColors.forEach(img => {
-              if (img.file instanceof File && img.hexCode && isValidHexCode(img.hexCode)) {
+              const FileConstructor = typeof File !== 'undefined' ? File : null;
+              if (FileConstructor && img.file instanceof FileConstructor && img.hexCode && isValidHexCode(img.hexCode)) {
                 const existing = colorImagesToKeep.find(ci => ci.hexCode === img.hexCode);
                 if (!existing) {
                   const colorData = existingColorImages.find(ci => ci.hexCode === img.hexCode);
@@ -1864,8 +1867,9 @@ const ProductModal = ({ product, onClose }) => {
           // Log FormData contents in development mode for debugging
           if (import.meta.env.DEV) {
             const formDataObj = {};
+            const FileConstructor = typeof File !== 'undefined' ? File : null;
             for (const [key, value] of submitData.entries()) {
-              if (value instanceof File) {
+              if (FileConstructor && value instanceof FileConstructor) {
                 formDataObj[key] = `[File: ${value.name}, size: ${value.size}]`;
               } else {
                 formDataObj[key] = value;
@@ -1874,7 +1878,7 @@ const ProductModal = ({ product, onClose }) => {
             console.log('Sending product FormData:', {
               ...formDataObj,
               imageFilesCount: imageFiles.length,
-              imagesWithColorsCount: imagesWithColors.filter(img => img.file instanceof File).length,
+              imagesWithColorsCount: imagesWithColors.filter(img => FileConstructor && img.file instanceof FileConstructor).length,
               imagesWithHexCodesCount: imagesWithHexCodes.length,
               has3DModel: !!model3DFile,
               isUpdate: !!product

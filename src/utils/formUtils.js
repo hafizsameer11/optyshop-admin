@@ -57,7 +57,7 @@ export const submitForm = async (formType, formData, options = {}) => {
     }
 
     const config = {
-      headers: formData instanceof FormData 
+      headers: (typeof FormData !== 'undefined' && formData instanceof FormData) 
         ? {} // Let browser set Content-Type for FormData
         : { 'Content-Type': 'application/json' },
       ...options,
@@ -240,9 +240,13 @@ export const deleteFormRequest = async (requestType, id) => {
  * @returns {FormData|Object} Prepared form data
  */
 export const prepareFormData = (formData, fileFields = []) => {
+  // Check if File constructor is available (might not be in some environments)
+  const FileConstructor = typeof File !== 'undefined' ? File : null;
+  
   const hasFiles = fileFields.some(field => {
     const value = formData[field];
-    return value instanceof File || (Array.isArray(value) && value.some(v => v instanceof File));
+    return (FileConstructor && value instanceof FileConstructor) || 
+           (Array.isArray(value) && value.some(v => FileConstructor && v instanceof FileConstructor));
   });
 
   if (hasFiles) {
@@ -251,11 +255,11 @@ export const prepareFormData = (formData, fileFields = []) => {
     Object.keys(formData).forEach(key => {
       const value = formData[key];
       
-      if (value instanceof File) {
+      if (FileConstructor && value instanceof FileConstructor) {
         formDataObj.append(key, value);
       } else if (Array.isArray(value)) {
         value.forEach((item, index) => {
-          if (item instanceof File) {
+          if (FileConstructor && item instanceof FileConstructor) {
             formDataObj.append(`${key}[${index}]`, item);
           } else {
             formDataObj.append(`${key}[${index}]`, JSON.stringify(item));

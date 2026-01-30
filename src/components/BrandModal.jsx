@@ -144,7 +144,8 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
       formDataToSend.append('is_active', formData.is_active.toString());
       
       // Logo upload (only if new logo selected)
-      if (logoFile instanceof File) {
+      const FileConstructor = typeof File !== 'undefined' ? File : null;
+      if (FileConstructor && logoFile instanceof FileConstructor) {
         formDataToSend.append('logo', logoFile);
       }
 
@@ -168,7 +169,7 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
       console.error('Request payload:', {
         name: formData.name,
         slug: formData.slug,
-        hasLogo: logoFile instanceof File,
+        hasLogo: FileConstructor && logoFile instanceof FileConstructor,
         sort_order: formData.sort_order,
         is_active: formData.is_active
       });

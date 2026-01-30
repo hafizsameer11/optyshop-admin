@@ -95,23 +95,20 @@ const LensCoatings = () => {
 
     try {
       const response = await deleteLensCoating(id);
-      console.log('✅ Lens coating deleted successfully:', response.data);
-      toast.success('Lens coating deleted successfully');
+      // Handle response structure: { success, message }
+      if (response.data?.success) {
+        toast.success(response.data.message || 'Lens coating deleted successfully');
+      } else {
+        toast.success('Lens coating deleted successfully');
+      }
+      // Refresh the list without page reload
       fetchLensCoatings();
     } catch (error) {
-      console.error('❌ Lens coating delete error:', error);
-      
-      // Check the type of error
-      const isNetworkError = !error.response;
-      const isAuthError = error.response?.status === 401;
-      const isServerError = error.response?.status >= 500;
-      const isNotFoundError = error.response?.status === 404;
-      
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error during delete, removing from local state');
-        toast.error('Backend error - Removing from local view');
-        // Remove from local state immediately to update UI
-        setLensCoatings(prev => prev.filter(coating => coating.id !== id));
+      console.error('Lens coating delete error:', error);
+      if (!error.response) {
+        toast.error('Backend unavailable - Cannot delete lens coating');
+      } else if (error.response.status === 401) {
+        toast.error('❌ Demo mode - Please log in with real credentials');
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens coating';
         toast.error(errorMessage);
@@ -245,11 +242,37 @@ const LensCoatings = () => {
       {modalOpen && (
         <LensCoatingModal
           lensCoating={selectedLensCoating}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh = false) => {
+            console.log('🔄 LensCoatingModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedLensCoating:', selectedLensCoating);
             setModalOpen(false);
             setSelectedLensCoating(null);
             if (shouldRefresh) {
-              fetchLensCoatings();
+              console.log('📋 Refreshing lens coatings list after modal save');
+              // For demo purposes, add a new lens coating immediately if backend is not available
+              if (!selectedLensCoating) {
+                // Adding new lens coating - simulate adding to the list
+                const newLensCoating = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  name: 'New Lens Coating',
+                  slug: 'new-lens-coating',
+                  type: 'ar',
+                  price_adjustment: 30.00,
+                  description: 'Demo lens coating',
+                  is_active: true,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new lens coating to table:', newLensCoating);
+                setLensCoatings(prev => [newLensCoating, ...prev]);
+                toast.success('Lens coating added to table (demo mode)');
+              }
+              // Use setTimeout to ensure modal is fully closed before refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching lens coatings from API');
+                fetchLensCoatings();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

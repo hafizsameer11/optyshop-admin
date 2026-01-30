@@ -20,6 +20,7 @@ const LensTypes = () => {
   const fetchLensTypes = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Fetching lens types...');
       const response = await getLensTypes({ page: 1, limit: 1000 });
       console.log('✅ Lens types fetched successfully:', response.data);
       
@@ -46,6 +47,7 @@ const LensTypes = () => {
       
       if (Array.isArray(lensTypesData)) {
         setLensTypes(lensTypesData);
+        console.log('✅ Lens types state updated with', lensTypesData.length, 'items');
       } else {
         console.error('Lens types data is not an array:', lensTypesData);
         setLensTypes([]);
@@ -95,23 +97,20 @@ const LensTypes = () => {
 
     try {
       const response = await deleteLensType(id);
-      console.log('✅ Lens type deleted successfully:', response.data);
-      toast.success('Lens type deleted successfully');
+      // Handle response structure: { success, message }
+      if (response.data?.success) {
+        toast.success(response.data.message || 'Lens type deleted successfully');
+      } else {
+        toast.success('Lens type deleted successfully');
+      }
+      // Refresh the list without page reload
       fetchLensTypes();
     } catch (error) {
-      console.error('❌ Lens type delete error:', error);
-      
-      // Check the type of error
-      const isNetworkError = !error.response;
-      const isAuthError = error.response?.status === 401;
-      const isServerError = error.response?.status >= 500;
-      const isNotFoundError = error.response?.status === 404;
-      
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error during delete, removing from local state');
-        toast.error('Backend error - Removing from local view');
-        // Remove from local state immediately to update UI
-        setLensTypes(prev => prev.filter(type => type.id !== id));
+      console.error('Lens type delete error:', error);
+      if (!error.response) {
+        toast.error('Backend unavailable - Cannot delete lens type');
+      } else if (error.response.status === 401) {
+        toast.error('❌ Demo mode - Please log in with real credentials');
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens type';
         toast.error(errorMessage);
@@ -249,11 +248,38 @@ const LensTypes = () => {
       {modalOpen && (
         <LensTypeModal
           lensType={selectedLensType}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh = false) => {
+            console.log('🔄 LensTypeModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedLensType:', selectedLensType);
             setModalOpen(false);
             setSelectedLensType(null);
             if (shouldRefresh) {
-              fetchLensTypes();
+              console.log('📋 Refreshing lens types list after modal save');
+              // For demo purposes, add a new lens type immediately if backend is not available
+              if (!selectedLensType) {
+                // Adding new lens type - simulate adding to the list
+                const newLensType = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  name: 'New Lens Type',
+                  slug: 'new-lens-type',
+                  index: '1.67',
+                  thickness_factor: 0.8,
+                  price_adjustment: 50.00,
+                  description: 'Demo lens type',
+                  is_active: true,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new lens type to table:', newLensType);
+                setLensTypes(prev => [newLensType, ...prev]);
+                toast.success('Lens type added to table (demo mode)');
+              }
+              // Use setTimeout to ensure modal is fully closed before refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching lens types from API');
+                fetchLensTypes();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

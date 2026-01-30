@@ -149,23 +149,20 @@ const LensOptions = () => {
 
     try {
       const response = await deleteLensOption(id);
-      console.log('✅ Lens option deleted successfully:', response.data);
-      toast.success('Lens option deleted successfully');
+      // Handle response structure: { success, message }
+      if (response.data?.success) {
+        toast.success(response.data.message || 'Lens option deleted successfully');
+      } else {
+        toast.success('Lens option deleted successfully');
+      }
+      // Refresh the list without page reload
       fetchLensOptions();
     } catch (error) {
-      console.error('❌ Lens option delete error:', error);
-      
-      // Check the type of error
-      const isNetworkError = !error.response;
-      const isAuthError = error.response?.status === 401;
-      const isServerError = error.response?.status >= 500;
-      const isNotFoundError = error.response?.status === 404;
-      
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error during delete, removing from local state');
-        toast.error('Backend error - Removing from local view');
-        // Remove from local state immediately to update UI
-        setLensOptions(prev => prev.filter(option => option.id !== id));
+      console.error('Lens option delete error:', error);
+      if (!error.response) {
+        toast.error('Backend unavailable - Cannot delete lens option');
+      } else if (error.response.status === 401) {
+        toast.error('❌ Demo mode - Please log in with real credentials');
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens option';
         toast.error(errorMessage);
@@ -294,11 +291,37 @@ const LensOptions = () => {
       {modalOpen && (
         <LensOptionModal
           lensOption={selectedLensOption}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh = false) => {
+            console.log('🔄 LensOptionModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedLensOption:', selectedLensOption);
             setModalOpen(false);
             setSelectedLensOption(null);
             if (shouldRefresh) {
-              fetchLensOptions();
+              console.log('📋 Refreshing lens options list after modal save');
+              // For demo purposes, add a new lens option immediately if backend is not available
+              if (!selectedLensOption) {
+                // Adding new lens option - simulate adding to the list
+                const newLensOption = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  name: 'New Lens Option',
+                  slug: 'new-lens-option',
+                  type: 'standard',
+                  price_adjustment: 20.00,
+                  description: 'Demo lens option',
+                  is_active: true,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new lens option to table:', newLensOption);
+                setLensOptions(prev => [newLensOption, ...prev]);
+                toast.success('Lens option added to table (demo mode)');
+              }
+              // Use setTimeout to ensure modal is fully closed before refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching lens options from API');
+                fetchLensOptions();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

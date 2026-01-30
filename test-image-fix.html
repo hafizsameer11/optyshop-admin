@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image URL Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-image { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; }
+        .placeholder { width: 100px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Image URL Normalization Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Copy of the normalizeImageUrl function from the React component
+        function normalizeImageUrl(url) {
+            if (!url || typeof url !== 'string') return null;
+            
+            const trimmedUrl = url.trim();
+            if (!trimmedUrl) return null;
+            
+            try {
+                // Try to parse as absolute URL first
+                const urlObj = new URL(trimmedUrl);
+                
+                // Only block obviously problematic domains, be more permissive
+                const blockedDomains = ['example.com', 'test.com', 'placeholder.com'];
+                const hostname = urlObj.hostname.toLowerCase();
+                
+                // Check if it's a blocked domain (but allow localhost, 127.0.0.1 for development)
+                if (blockedDomains.some(domain => hostname.includes(domain))) {
+                    console.warn(`Skipping blocked image URL: ${trimmedUrl}`);
+                    return null;
+                }
+                
+                // Valid external URL - return as is
+                return trimmedUrl;
+            } catch (e) {
+                // Not a valid absolute URL, might be relative
+                if (trimmedUrl.startsWith('/')) {
+                    // Relative path - try to construct full URL using API base URL
+                    const apiBaseUrl = 'https://optyshop-frontend.hmstech.org/api';
+                    // Remove /api suffix if present, then append the relative path
+                    const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+                    return `${baseUrl}${trimmedUrl}`;
+                }
+                
+                // For other invalid formats, try to fix common issues
+                if (trimmedUrl.startsWith('http') || trimmedUrl.startsWith('https')) {
+                    // URL starts with http/https but failed to parse - might be malformed
+                    console.warn(`Malformed image URL, attempting to fix: ${trimmedUrl}`);
+                    return trimmedUrl; // Return as-is and let browser handle it
+                }
+                
+                // Invalid URL format
+                console.warn(`Invalid image URL format: ${trimmedUrl}`);
+                return null;
+            }
+        }
+
+        // Test various URL patterns
+        const testUrls = [
+            'https://example.com/image.jpg',
+            'https://optyshop-frontend.hmstech.org/uploads/image.jpg',
+            '/uploads/products/image.jpg',
+            'http://localhost:3000/image.jpg',
+            'https://cdn.example.com/image.png',
+            'invalid-url',
+            '',
+            null,
+            'https://picsum.photos/100/100',
+            'https://via.placeholder.com/100'
+        ];
+
+        const results = document.getElementById('results');
+        
+        testUrls.forEach(url => {
+            const normalized = normalizeImageUrl(url);
+            const resultDiv = document.createElement('div');
+            resultDiv.style.margin = '10px 0';
+            
+            if (normalized) {
+                resultDiv.innerHTML = `
+                    <div class="success">✅ ${url} → ${normalized}</div>
+                    <img src="${normalized}" class="test-image" alt="Test" 
+                         onload="console.log('Loaded: ${normalized}')" 
+                         onerror="console.error('Failed: ${normalized}')">
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ ${url} → null (blocked/invalid)</div>
+                    <div class="placeholder">📷 No Image</div>
+                `;
+            }
+            
+            results.appendChild(resultDiv);
+        });
+    </script>
+</body>
+</html>

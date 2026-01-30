@@ -95,15 +95,17 @@ const normalizeImageUrl = (url) => {
   const trimmedUrl = url.trim();
   if (!trimmedUrl) return null;
   
-  // Skip test/example URLs that will cause CORS errors
-  const testDomains = ['example.com', 'localhost', '127.0.0.1', 'test.com', 'placeholder.com'];
   try {
+    // Try to parse as absolute URL first
     const urlObj = new URL(trimmedUrl);
+    
+    // Only block obviously problematic domains, be more permissive
+    const blockedDomains = ['example.com', 'test.com', 'placeholder.com'];
     const hostname = urlObj.hostname.toLowerCase();
     
-    // Check if it's a test domain
-    if (testDomains.some(domain => hostname.includes(domain))) {
-      console.warn(`Skipping test/example image URL: ${trimmedUrl}`);
+    // Check if it's a blocked domain (but allow localhost, 127.0.0.1 for development)
+    if (blockedDomains.some(domain => hostname.includes(domain))) {
+      console.warn(`Skipping blocked image URL: ${trimmedUrl}`);
       return null;
     }
     
@@ -117,6 +119,13 @@ const normalizeImageUrl = (url) => {
       // Remove /api suffix if present, then append the relative path
       const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
       return `${baseUrl}${trimmedUrl}`;
+    }
+    
+    // For other invalid formats, try to fix common issues
+    if (trimmedUrl.startsWith('http') || trimmedUrl.startsWith('https')) {
+      // URL starts with http/https but failed to parse - might be malformed
+      console.warn(`Malformed image URL, attempting to fix: ${trimmedUrl}`);
+      return trimmedUrl; // Return as-is and let browser handle it
     }
     
     // Invalid URL format
@@ -168,6 +177,19 @@ const ProductImage = ({ product, refreshKey }) => {
       imageUrl = product.image_url;
     }
     
+    // Log the raw image URL for debugging
+    if (imageUrl) {
+      console.log(`🖼️ Processing image for product ${product.id} (${product.name}):`, {
+        rawImageUrl: imageUrl,
+        hasImagesArray: !!product.images,
+        hasImageField: !!product.image,
+        hasImageUrlField: !!product.image_url,
+        imagesArray: product.images,
+        imageField: product.image,
+        imageUrlField: product.image_url
+      });
+    }
+    
     // Normalize and validate the URL
     const normalizedUrl = normalizeImageUrl(imageUrl);
     
@@ -178,11 +200,21 @@ const ProductImage = ({ product, refreshKey }) => {
       const cacheBust = refreshKey || Date.now();
       const cacheBustUrl = `${normalizedUrl}${separator}_t=${cacheBust}`;
       setImageSrc(cacheBustUrl);
+      console.log(`✅ Image URL normalized successfully: ${cacheBustUrl}`);
     } else {
       setImageSrc(null);
       setImageLoading(false);
       if (product.id && imageUrl) {
-        console.warn(`⚠️ Product ${product.id} has invalid or test image URL: ${imageUrl}`);
+        console.warn(`⚠️ Product ${product.id} has invalid or blocked image URL: ${imageUrl}`, {
+          product: {
+            id: product.id,
+            name: product.name,
+            rawImageUrl: imageUrl,
+            normalizedUrl: normalizedUrl
+          }
+        });
+      } else if (!imageUrl) {
+        console.log(`ℹ️ Product ${product.id} (${product.name}) has no image URL`);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,21 +222,28 @@ const ProductImage = ({ product, refreshKey }) => {
 
   // Handle image load success
   const handleImageLoad = () => {
+    console.log(`✅ Product image loaded successfully:`, {
+      productId: product?.id,
+      productName: product?.name,
+      imageSrc
+    });
     setImageLoading(false);
     setImageError(false);
   };
 
   // Handle image load error
   const handleImageError = (e) => {
-    // Silently handle image errors - just show placeholder
-    // Only log in development mode
-    if (import.meta.env.DEV) {
-      console.warn('Product image failed to load:', {
-        imageSrc,
-        productId: product?.id,
-        productName: product?.name,
-      });
-    }
+    // Provide detailed error logging for debugging
+    console.error('❌ Product image failed to load:', {
+      imageSrc,
+      productId: product?.id,
+      productName: product?.name,
+      error: e,
+      imageElement: e.target,
+      naturalWidth: e.target?.naturalWidth,
+      naturalHeight: e.target?.naturalHeight,
+      complete: e.target?.complete
+    });
     
     setImageError(true);
     setImageLoading(false);

@@ -285,7 +285,19 @@ const BannerModal = ({ banner, onClose }) => {
     setLoading(true);
 
     try {
-      // Validate image for new banners (removed - now optional)
+      // Validate required fields
+      if (!formData.title || formData.title.trim() === '') {
+        toast.error('Title is required');
+        setLoading(false);
+        return;
+      }
+
+      // For new banners, image file is required
+      if (!banner && !imageFile) {
+        toast.error('Image file is required for new banners');
+        setLoading(false);
+        return;
+      }
 
       const submitData = new FormData();
 
@@ -307,15 +319,15 @@ const BannerModal = ({ banner, onClose }) => {
       }
 
       // Add all form fields
-      submitData.append('title', formData.title);
+      submitData.append('title', formData.title.trim());
       submitData.append('page_type', formData.page_type);
 
-      if (formData.link_url) {
-        submitData.append('link_url', formData.link_url);
-      }
-      if (formData.position) {
-        submitData.append('position', formData.position);
-      }
+      // Always send link_url (empty string if not provided)
+      submitData.append('link_url', formData.link_url || '');
+      
+      // Always send position (empty string if not provided)
+      submitData.append('position', formData.position || '');
+      
       // Validate sort_order is a number
       const sortOrder = parseInt(formData.sort_order, 10);
       if (isNaN(sortOrder) || sortOrder < 0) {
@@ -345,6 +357,10 @@ const BannerModal = ({ banner, onClose }) => {
       // Add image file if provided
       if (imageFile) {
         submitData.append('image', imageFile);
+      } else if (banner && banner.image_url) {
+        // For existing banners, if no new image is provided, don't send the image field
+        // The backend will keep the existing image
+        console.log('Updating banner without changing image');
       }
 
       let response;
@@ -392,11 +408,20 @@ const BannerModal = ({ banner, onClose }) => {
       } else if (error.response.status === 400 || error.response.status === 422) {
         // Validation errors - show detailed message
         const errorData = error.response?.data || {};
+        console.log('Validation error details:', errorData);
+        
         const errorMessage = errorData.message ||
           errorData.errors?.[0]?.msg ||
           errorData.errors?.[0]?.message ||
           (Array.isArray(errorData.errors) ? errorData.errors.join(', ') : 'Validation failed');
-        toast.error(errorMessage);
+        
+        // If there are multiple validation errors, show them all
+        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 1) {
+          const allErrors = errorData.errors.map(err => err.msg || err.message).join('; ');
+          toast.error(`Validation failed: ${allErrors}`);
+        } else {
+          toast.error(errorMessage);
+        }
       } else if (error.response.status === 413) {
         toast.error('File too large. Please select a smaller image file.');
       } else if (error.response.status === 415) {
@@ -463,6 +488,7 @@ const BannerModal = ({ banner, onClose }) => {
               name="title"
               value={formData.title}
               onChange={handleChange}
+              required
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="e.g., Welcome Banner"
             />
@@ -489,10 +515,11 @@ const BannerModal = ({ banner, onClose }) => {
               type="file"
               accept="image/*"
               onChange={handleImageChange}
+              required={!banner}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-2">
-              Supported formats: JPG, PNG, GIF, WEBP (Max 10MB)
+              Supported formats: JPG, PNG, GIF, WEBP (Max 10MB) {!banner && '- Required for new banners'}
             </p>
             {banner && !imageFile && (
               <p className="text-xs text-gray-500 mt-1">

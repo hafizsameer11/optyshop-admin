@@ -54,9 +54,10 @@ api.interceptors.response.use(
     }
     
     // Only redirect to login for actual 401 responses, not network errors
-    // But skip redirect if we're in demo mode OR if it's a frame size operation
+    // But skip redirect if we're in demo mode OR if it's a frame size operation OR lens options operation
     const isFrameSizeOperation = error.config?.url?.includes('/frame-sizes');
-    if (error.response?.status === 401 && !isDemoMode && !isFrameSizeOperation) {
+    const isLensOptionsOperation = error.config?.url?.includes('/lens-options');
+    if (error.response?.status === 401 && !isDemoMode && !isFrameSizeOperation && !isLensOptionsOperation) {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('refresh_token');
       window.location.href = '/login';
@@ -67,8 +68,8 @@ api.interceptors.response.use(
       console.warn('Network error - API server may be unavailable:', error.message);
     }
     
-    // Log 401 errors in demo mode or for frame size operations
-    if (error.response?.status === 401 && (isDemoMode || isFrameSizeOperation)) {
+    // Log 401 errors in demo mode or for frame size operations or lens options operations
+    if (error.response?.status === 401 && (isDemoMode || isFrameSizeOperation || isLensOptionsOperation)) {
       console.warn('API call blocked in demo mode - backend requires real authentication');
     }
     

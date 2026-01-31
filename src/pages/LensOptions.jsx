@@ -21,6 +21,8 @@ const LensOptions = () => {
   const fetchLensOptions = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Starting fetchLensOptions (no page refresh should occur)');
+      
       const params = {
         page: 1,
         limit: 1000,
@@ -155,17 +157,29 @@ const LensOptions = () => {
       } else {
         toast.success('Lens option deleted successfully');
       }
+      
       // Refresh the list without page reload
+      console.log('🔄 Deleting lens option and refreshing table (no page refresh)');
       fetchLensOptions();
     } catch (error) {
       console.error('Lens option delete error:', error);
-      if (!error.response) {
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete lens option');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchLensOptions();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens option';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchLensOptions();
       }
     }
   };
@@ -296,8 +310,10 @@ const LensOptions = () => {
             console.log('🔄 Current selectedLensOption:', selectedLensOption);
             setModalOpen(false);
             setSelectedLensOption(null);
+            
             if (shouldRefresh) {
               console.log('📋 Refreshing lens options list after modal save');
+              
               // For demo purposes, add a new lens option immediately if backend is not available
               if (!selectedLensOption) {
                 // Adding new lens option - simulate adding to the list
@@ -306,7 +322,7 @@ const LensOptions = () => {
                   name: 'New Lens Option',
                   slug: 'new-lens-option',
                   type: 'standard',
-                  price_adjustment: 20.00,
+                  base_price: 20.00,
                   description: 'Demo lens option',
                   is_active: true,
                   created_at: new Date().toISOString()
@@ -315,9 +331,11 @@ const LensOptions = () => {
                 setLensOptions(prev => [newLensOption, ...prev]);
                 toast.success('Lens option added to table (demo mode)');
               }
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching lens options from API');
+                console.log('🔄 Fetching lens options from API (no page refresh)');
                 fetchLensOptions();
               }, 100);
             } else {

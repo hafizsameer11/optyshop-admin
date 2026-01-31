@@ -100,6 +100,10 @@ const LensOptionModal = ({ lensOption, onClose }) => {
         console.log('✅ Lens option created successfully:', response.data);
         toast.success('Lens option created successfully');
       }
+      
+      // Always close modal and refresh, regardless of API response
+      // This ensures no page refresh happens
+      console.log('🔄 Closing modal and triggering table refresh');
       onClose(true);
     } catch (error) {
       console.error('❌ Lens option save error:', error);
@@ -110,20 +114,24 @@ const LensOptionModal = ({ lensOption, onClose }) => {
       const isAuthError = error.response?.status === 401;
       const isServerError = error.response?.status >= 500;
       const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
       
-      // For any error, still close modal and try to refresh
-      // This ensures the UI doesn't get stuck
       if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error occurred, but still closing modal and refreshing');
+        // For backend errors, still close modal and refresh
+        // This prevents the page from getting stuck
+        console.log('🔄 Backend error - closing modal and refreshing table');
         toast.error('Backend error - Changes may not be saved');
-        setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to refresh table');
-          onClose(true);
-        }, 1000);
+        onClose(true);
+      } else if (isValidationError) {
+        // For validation errors, show error but don't close modal
+        const errorMessage = error.response?.data?.message || 'Validation failed';
+        toast.error(errorMessage);
       } else {
-        // For validation errors, don't close modal
+        // For other errors, still close modal to prevent UI lock
+        console.log('🔄 Unknown error - closing modal and refreshing table');
         const errorMessage = error.response?.data?.message || 'Failed to save lens option';
         toast.error(errorMessage);
+        onClose(true);
       }
     } finally {
       setLoading(false);

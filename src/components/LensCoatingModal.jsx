@@ -169,7 +169,7 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
           </div>
         </div>
 
-        <form className="p-6 space-y-5 overflow-y-auto flex-1" noValidate>
+        <form className="p-6 space-y-5 overflow-y-auto flex-1" noValidate onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               {t('name')} <span className="text-red-500">*</span>
@@ -274,10 +274,9 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
               Cancel
             </button>
             <button
-              type="button"
+              type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSubmit}
             >
               {loading ? 'Saving...' : 'Save'}
             </button>

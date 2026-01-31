@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Products Page State</title>
+</head>
+<body>
+    <h1>Products Page State Debug</h1>
+    <button onclick="checkState()">Check Current State</button>
+    <button onclick="clearState()">Clear State</button>
+    <button onclick="setStateToAll()">Set to All Products</button>
+    <div id="output"></div>
+
+    <script>
+        function checkState() {
+            const state = localStorage.getItem('products_page_state');
+            document.getElementById('output').innerHTML = 
+                '<h3>Current State:</h3><pre>' + JSON.stringify(JSON.parse(state || '{}'), null, 2) + '</pre>';
+        }
+
+        function clearState() {
+            localStorage.removeItem('products_page_state');
+            document.getElementById('output').innerHTML = '<h3>State cleared!</h3>';
+        }
+
+        function setStateToAll() {
+            const defaultState = {
+                searchTerm: '',
+                categoryFilter: '',
+                subCategoryFilter: '',
+                selectedSection: 'all',
+                page: 1
+            };
+            localStorage.setItem('products_page_state', JSON.stringify(defaultState));
+            document.getElementById('output').innerHTML = 
+                '<h3>State set to All Products:</h3><pre>' + JSON.stringify(defaultState, null, 2) + '</pre>';
+        }
+
+        // Check state on load
+        checkState();
+    </script>
+</body>
+</html>

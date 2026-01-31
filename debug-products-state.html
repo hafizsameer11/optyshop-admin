@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Products State</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 10px; padding: 10px 20px; cursor: pointer; }
+        .output { margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Products Page State Management</h1>
+    <p>This tool helps debug and fix the issue where "All Products" shows only eyeglasses.</p>
+    
+    <button onclick="checkState()">Check Current State</button>
+    <button onclick="clearState()">Clear All State</button>
+    <button onclick="resetToAll()">Reset to "All Products"</button>
+    
+    <div id="output" class="output"></div>
+
+    <script>
+        function checkState() {
+            const state = localStorage.getItem('products_page_state');
+            const output = document.getElementById('output');
+            
+            if (state) {
+                const parsed = JSON.parse(state);
+                output.innerHTML = `
+                    <h3>Current localStorage State:</h3>
+                    <pre>${JSON.stringify(parsed, null, 2)}</pre>
+                    <p><strong>Issue:</strong> If selectedSection is not 'all' or if there are filters set, this could cause only specific products to show.</p>
+                `;
+            } else {
+                output.innerHTML = '<p>No state found in localStorage.</p>';
+            }
+        }
+
+        function clearState() {
+            localStorage.removeItem('products_page_state');
+            document.getElementById('output').innerHTML = '<h3>✅ State cleared!</h3><p>Refresh the admin panel to see the fix.</p>';
+        }
+
+        function resetToAll() {
+            const defaultState = {
+                searchTerm: '',
+                categoryFilter: '',
+                subCategoryFilter: '',
+                selectedSection: 'all',
+                page: 1
+            };
+            localStorage.setItem('products_page_state', JSON.stringify(defaultState));
+            document.getElementById('output').innerHTML = `
+                <h3>✅ Reset to "All Products"</h3>
+                <pre>${JSON.stringify(defaultState, null, 2)}</pre>
+                <p>Refresh the admin panel to see all products.</p>
+            `;
+        }
+
+        // Auto-check on load
+        checkState();
+    </script>
+</body>
+</html>

@@ -656,7 +656,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
           </div>
         </div>
 
-        <form className="p-6 space-y-5" noValidate>
+        <form className="p-6 space-y-5" noValidate onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Parent Type <span className="text-red-500">*</span>
@@ -1002,10 +1002,9 @@ const LensColorModal = ({ lensColor, onClose }) => {
               {t('cancel')}
             </button>
             <button
-              type="button"
+              type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSubmit}
             >
               {loading ? t('saving') : t('save')}
             </button>

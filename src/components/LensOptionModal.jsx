@@ -73,7 +73,22 @@ const LensOptionModal = ({ lensOption, onClose }) => {
   };
 
   const handleSubmit = async (e) => {
+    // Prevent default form submission AND any bubbling/propagation
     e.preventDefault();
+    e.stopPropagation();
+    e.nativeEvent?.preventDefault();
+    
+    // Also prevent any form submission that might happen due to browser validation
+    const form = e.target;
+    if (form) {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }, { once: true });
+    }
+    
+    console.log('🚫 Form submission prevented - starting save process');
     setLoading(true);
 
     try {
@@ -104,7 +119,13 @@ const LensOptionModal = ({ lensOption, onClose }) => {
       // Always close modal and refresh, regardless of API response
       // This ensures no page refresh happens
       console.log('🔄 Closing modal and triggering table refresh');
-      onClose(true);
+      console.log('🔄 About to call onClose(true) - this should NOT cause page refresh');
+      
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
+        onClose(true);
+      }, 50);
     } catch (error) {
       console.error('❌ Lens option save error:', error);
       console.error('Error response:', error.response?.data);
@@ -114,7 +135,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
       toast.error('Backend unavailable - Simulating save for demo');
       setTimeout(() => {
         toast.success('Demo: Lens option saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
+        console.log('🔄 Calling onClose(true) after simulation - this should NOT cause page refresh');
         onClose(true);
       }, 1000);
     } finally {
@@ -141,7 +162,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5" noValidate>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Name <span className="text-red-500">*</span></label>
@@ -241,6 +262,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
             </button>
             <button
               type="submit"
+              formNoValidate
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >

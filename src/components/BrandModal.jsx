@@ -101,13 +101,35 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
       return;
     }
 
-    setLogoFile(file);
+    // Upload to server immediately to get HTTPS URL
+    const formData = new FormData();
+    formData.append('image', file);
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setLogoPreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
+    // Show loading state
+    toast.loading('Uploading logo...');
+    
+    // Upload to server
+    fetch('/api/admin/upload/image', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.url) {
+        setLogoFile(file);
+        setLogoPreview(data.url);
+        toast.success('Logo uploaded successfully');
+      } else {
+        toast.error('Failed to upload logo');
+      }
+    })
+    .catch(error => {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload logo');
+    })
+    .finally(() => {
+      toast.dismiss();
+    });
   };
 
   const handleRemoveLogo = () => {

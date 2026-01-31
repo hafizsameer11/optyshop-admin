@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lens Options No-Refresh Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+        .section { background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .code { background: #f1f3f4; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+        .step { margin: 10px 0; padding: 10px; background: white; border-radius: 5px; border: 1px solid #dee2e6; }
+        .checklist li { margin: 5px 0; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Lens Options No-Refresh Implementation Test</h1>
+    
+    <div class="section success">
+        <h2>✅ Implementation Status</h2>
+        <p>The Lens Options system has been updated with enhanced no-refresh functionality:</p>
+        <ul>
+            <li><strong>Form Prevention:</strong> Added multiple layers of form submission prevention</li>
+            <li><strong>Event Handling:</strong> Enhanced event propagation stopping</li>
+            <li><strong>Debug Logging:</strong> Added comprehensive console logging</li>
+            <li><strong>API Integration:</strong> Proper async handling with error fallbacks</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔍 What Was Fixed</h2>
+        <div class="code">
+// Enhanced form submission prevention
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  e.nativeEvent?.preventDefault();
+  
+  // Additional form submission prevention
+  const form = e.target;
+  if (form) {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }, { once: true });
+  }
+  
+  // ... rest of save logic
+};
+        </div>
+        
+        <div class="code">
+// Form attributes added
+&lt;form onSubmit={handleSubmit} className="p-6 space-y-5" noValidate&gt;
+&lt;button type="submit" formNoValidate disabled={loading}&gt;Save&lt;/button&gt;
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🧪 Test Steps</h2>
+        <div class="step">
+            <strong>Step 1:</strong> Open browser console (F12) and clear it
+        </div>
+        <div class="step">
+            <strong>Step 2:</strong> Navigate to Lens Options page in your admin panel
+        </div>
+        <div class="step">
+            <strong>Step 3:</strong> Click "Add Lens Option" button
+        </div>
+        <div class="step">
+            <strong>Step 4:</strong> Fill in the form fields (Name, Type, etc.)
+        </div>
+        <div class="step">
+            <strong>Step 5:</strong> Click "Save" button
+        </div>
+        <div class="step">
+            <strong>Step 6:</strong> Observe the behavior - page should NOT refresh
+        </div>
+    </div>
+
+    <div class="section warning">
+        <h2>📋 Expected Console Logs</h2>
+        <div class="checklist">
+            <p>You should see these messages in order:</p>
+            <ol>
+                <li>☐ "🚫 Form submission prevented - starting save process"</li>
+                <li>☐ "✅ Lens option created successfully" OR "Backend unavailable - Simulating save for demo"</li>
+                <li>☐ "🔄 Closing modal and triggering table refresh"</li>
+                <li>☐ "🔄 About to call onClose(true) - this should NOT cause page refresh"</li>
+                <li>☐ "🔄 Calling onClose(true) now"</li>
+                <li>☐ "🔄 LensOptionModal onClose called with shouldRefresh: true"</li>
+                <li>☐ "🔄 About to set modalOpen to false - this should NOT cause page refresh"</li>
+                <li>☐ "🔄 Fetching lens options from API (no page refresh should occur)"</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="section error">
+        <h2>🚨 If Page Still Refreshes</h2>
+        <p>If the page is still refreshing, check for these issues in console:</p>
+        <ul>
+            <li><strong>Form submission warnings:</strong> Any "🚨 Form submission detected!" messages</li>
+            <li><strong>Navigation warnings:</strong> Any "🚨 Navigation detected" messages</li>
+            <li><strong>API redirects:</strong> Any "window.location.href = '/login'" messages</li>
+            <li><strong>JavaScript errors:</strong> Any red error messages that might interrupt the flow</li>
+        </ul>
+        
+        <p><strong>Possible causes:</strong></p>
+        <ul>
+            <li>Browser extension interfering with form submission</li>
+            <li>React Router navigation triggered by error</li>
+            <li>API interceptor redirecting on authentication error</li>
+            <li>JavaScript error preventing preventDefault from working</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔧 Additional Debug Tools</h2>
+        <p>Copy and paste this code in your browser console to monitor issues:</p>
+        <div class="code">
+// Monitor form submissions
+document.addEventListener('submit', (e) => {
+  console.log('🚨 Form submission detected!', e.target);
+  e.preventDefault();
+  e.stopPropagation();
+}, true);
+
+// Monitor navigation
+window.addEventListener('beforeunload', () => {
+  console.log('🚨 Page unload detected!');
+});
+        </div>
+    </div>
+
+    <button onclick="window.open('http://localhost:5173/admin/lens-options', '_blank')">
+        🚀 Open Lens Options Page
+    </button>
+
+    <div class="section">
+        <h2>📞 Support</h2>
+        <p>If the issue persists after these fixes:</p>
+        <ol>
+            <li>Take screenshots of the console logs</li>
+            <li>Note exactly when the refresh happens (during save, after modal close, etc.)</li>
+            <li>Check if it happens in both "Add" and "Edit" modes</li>
+            <li>Test in an incognito/private browser window</li>
+        </ol>
+    </div>
+
+    <script>
+        console.log('🔧 Lens Options No-Refresh Test Loaded');
+        console.log('Please follow the test steps and check console logs');
+    </script>
+</body>
+</html>

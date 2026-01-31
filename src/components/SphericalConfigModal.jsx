@@ -25,7 +25,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
   const [unitPrices, setUnitPrices] = useState({}); // { "30": 990.00, "60": 1500.00 }
   const [unitImages, setUnitImages] = useState({}); // { "30": ["url1", "url2"], "60": ["url3"] } - existing URLs
   const [unitImageFiles, setUnitImageFiles] = useState({}); // { "30": [File, File], "60": [File] } - new files to upload
-  const [unitImagePreviews, setUnitImagePreviews] = useState({}); // { "30": ["data:image/...", ...], "60": [...] } - preview URLs
+  const [unitImagePreviews, setUnitImagePreviews] = useState({}); // { "30": ["https://...", ...], "60": [...] } - HTTPS preview URLs
   const [loading, setLoading] = useState(false);
   const [subCategories, setSubCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -961,22 +961,43 @@ const SphericalConfigModal = ({ config, onClose }) => {
                                   onChange={(e) => {
                                     const files = Array.from(e.target.files || []);
                                     if (files.length > 0) {
-                                      const newFiles = [...(unitImageFiles[unitKey] || []), ...files];
-                                      setUnitImageFiles(prev => ({
-                                        ...prev,
-                                        [unitKey]: newFiles
-                                      }));
-
-                                      // Create previews
+                                      // Upload files immediately to get HTTPS URLs
                                       files.forEach(file => {
-                                        const reader = new FileReader();
-                                        reader.onloadend = () => {
-                                          setUnitImagePreviews(prev => ({
-                                            ...prev,
-                                            [unitKey]: [...(prev[unitKey] || []), reader.result]
-                                          }));
-                                        };
-                                        reader.readAsDataURL(file);
+                                        const formData = new FormData();
+                                        formData.append('image', file);
+                                        
+                                        // Show loading state
+                                        toast.loading('Uploading image...');
+                                        
+                                        // Upload to server
+                                        fetch('/api/admin/upload/image', {
+                                          method: 'POST',
+                                          body: formData
+                                        })
+                                        .then(response => response.json())
+                                        .then(data => {
+                                          if (data.success && data.url) {
+                                            // Add file to files array and HTTPS URL to previews
+                                            setUnitImageFiles(prev => ({
+                                              ...prev,
+                                              [unitKey]: [...(prev[unitKey] || []), file]
+                                            }));
+                                            setUnitImagePreviews(prev => ({
+                                              ...prev,
+                                              [unitKey]: [...(prev[unitKey] || []), data.url]
+                                            }));
+                                            toast.success('Image uploaded successfully');
+                                          } else {
+                                            toast.error('Failed to upload image');
+                                          }
+                                        })
+                                        .catch(error => {
+                                          console.error('Upload error:', error);
+                                          toast.error('Failed to upload image');
+                                        })
+                                        .finally(() => {
+                                          toast.dismiss();
+                                        });
                                       });
                                     }
                                     // Reset input

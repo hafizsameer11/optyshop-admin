@@ -1141,8 +1141,12 @@ const Products = () => {
   };
 
   const handleModalClose = (shouldRefresh = false) => {
+    console.log('🔄 Products.handleModalClose called with shouldRefresh:', shouldRefresh);
+    console.log('🔄 About to close modal and refresh table - this should NOT cause page refresh');
+    
     setModalOpen(false);
     setEditingProduct(null);
+    
     // Only refresh products list if the modal indicates a successful save
     // Flow: User saves product → Backend saves product with category_id → 
     //       Modal closes with shouldRefresh=true → We fetch updated products → Table shows updated data
@@ -1151,10 +1155,14 @@ const Products = () => {
     //       2. Their specific category section (filtered by category_id)
     // The backend has already processed the save, so we can refresh right away
     if (shouldRefresh) {
+      console.log('📋 Refreshing products list after modal save');
+      console.log('🔄 This should only update the table, NOT refresh the page');
       fetchProducts();
       // Force image refresh by updating the refresh key to ensure removed images disappear from table
       // This cache-busts the ProductImage component so it loads fresh images
       setImageRefreshKey(Date.now());
+    } else {
+      console.log('❌ Modal closed without refresh (cancelled or failed)');
     }
   };
 

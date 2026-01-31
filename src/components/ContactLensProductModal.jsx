@@ -287,16 +287,32 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
       const newFiles = product ? validFiles : [...imageFiles, ...validFiles];
       setImageFiles(newFiles);
 
-      const previewPromises = validFiles.map((file) => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
+      // Upload files immediately to get HTTPS URLs
+      const uploadPromises = validFiles.map((file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        return fetch('/api/admin/upload/image', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.url) {
+            return data.url;
+          } else {
+            toast.error('Failed to upload image');
+            return null;
+          }
+        })
+        .catch(error => {
+          console.error('Upload error:', error);
+          toast.error('Failed to upload image');
+          return null;
         });
       });
 
-      Promise.all(previewPromises).then((previews) => {
+      Promise.all(uploadPromises).then((previews) => {
         const validPreviews = previews.filter(Boolean);
         const newPreviews = product ? [...imagePreviews, ...validPreviews] : [...imagePreviews, ...validPreviews];
         setImagePreviews(newPreviews);

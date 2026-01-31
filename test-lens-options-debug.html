@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lens Options Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-info { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .test-button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .test-button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Lens Options No-Refresh Debug Test</h1>
+    
+    <div class="debug-info">
+        <h3>Current Implementation Status:</h3>
+        <ul>
+            <li>✅ API Service (lensOptions.js) - Complete CRUD operations</li>
+            <li>✅ Modal Component (LensOptionModal.jsx) - Uses API calls with onClose(true)</li>
+            <li>✅ Main Component (LensOptions.jsx) - Handles modal close with refresh</li>
+        </ul>
+    </div>
+
+    <div class="debug-info">
+        <h3>Expected Behavior:</h3>
+        <ol>
+            <li>Open Lens Options page</li>
+            <li>Click "Add Lens Option"</li>
+            <li>Fill form and click "Save"</li>
+            <li>Modal should close WITHOUT page refresh</li>
+            <li>Table should update automatically</li>
+        </ol>
+    </div>
+
+    <div class="debug-info">
+        <h3>If Page Refresh is Happening:</h3>
+        <p>Possible causes:</p>
+        <ul>
+            <li>Form submission not properly prevented</li>
+            <li>API interceptor redirecting on 401 error</li>
+            <li>Router navigation triggered</li>
+            <li>Browser back/forward interference</li>
+        </ul>
+    </div>
+
+    <div class="debug-info">
+        <h3>Test Steps:</h3>
+        <ol>
+            <li>Open browser console (F12)</li>
+            <li>Navigate to Lens Options page</li>
+            <li>Try adding/editing a lens option</li>
+            <li>Watch console logs for:</li>
+            <ul>
+                <li>"🔄 Closing modal and triggering table refresh"</li>
+                <li>"🔄 LensOptionModal onClose called with shouldRefresh: true"</li>
+                <li>"🔄 Fetching lens options from API (no page refresh)"</li>
+            </ul>
+        </ol>
+    </div>
+
+    <button class="test-button" onclick="window.open('http://localhost:5173/admin/lens-options', '_blank')">
+        Open Lens Options Page
+    </button>
+
+    <div class="debug-info">
+        <h3>Console Log Checklist:</h3>
+        <ul>
+            <li>☐ "🔄 Closing modal and triggering table refresh"</li>
+            <li>☐ "🔄 LensOptionModal onClose called with shouldRefresh: true"</li>
+            <li>☐ "📋 Refreshing lens options list after modal save"</li>
+            <li>☐ "🔄 Fetching lens options from API (no page refresh)"</li>
+            <li>☐ No "window.location.href = '/login'" in console</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('Lens Options Debug Test Loaded');
+        console.log('Please follow the test steps above to identify the issue');
+    </script>
+</body>
+</html>

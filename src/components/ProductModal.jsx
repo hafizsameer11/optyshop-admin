@@ -1028,17 +1028,32 @@ const ProductModal = ({ product, onClose }) => {
     }
 
     if (validFiles.length > 0) {
-      // Create previews and add to imagesWithColors (without hex code initially)
-      const previewPromises = validFiles.map((file) => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve({ file, preview: reader.result });
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
+      // Upload files immediately to get HTTPS URLs
+      const uploadPromises = validFiles.map((file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        return fetch('/api/admin/upload/image', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.url) {
+            return { file, preview: data.url };
+          } else {
+            toast.error('Failed to upload image');
+            return null;
+          }
+        })
+        .catch(error => {
+          console.error('Upload error:', error);
+          toast.error('Failed to upload image');
+          return null;
         });
       });
 
-      Promise.all(previewPromises).then((results) => {
+      Promise.all(uploadPromises).then((results) => {
         const validResults = results.filter(Boolean);
         const newImages = validResults.map((result, index) => ({
           id: `new-${Date.now()}-${index}`,
@@ -1078,16 +1093,32 @@ const ProductModal = ({ product, onClose }) => {
       const newFiles = product ? validFiles : [...imageFiles, ...validFiles];
       setImageFiles(newFiles);
 
-      const previewPromises = validFiles.map((file) => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
+      // Upload files immediately to get HTTPS URLs
+      const uploadPromises = validFiles.map((file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        return fetch('/api/admin/upload/image', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.url) {
+            return data.url;
+          } else {
+            toast.error('Failed to upload image');
+            return null;
+          }
+        })
+        .catch(error => {
+          console.error('Upload error:', error);
+          toast.error('Failed to upload image');
+          return null;
         });
       });
 
-      Promise.all(previewPromises).then((previews) => {
+      Promise.all(uploadPromises).then((previews) => {
         const validPreviews = previews.filter(Boolean);
         // When editing, append new previews to existing ones
         // When creating, append to current previews
@@ -1103,15 +1134,15 @@ const ProductModal = ({ product, onClose }) => {
   const removeImage = (index) => {
     const previewToRemove = imagePreviews[index];
 
-    // Check if it's an existing image (URL string) or a new file preview (Base64)
-    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('data:') && !previewToRemove.startsWith('blob:')) {
+    // Check if it's an existing image (HTTPS URL string) or a new file preview (Base64)
+    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('data:') && previewToRemove.startsWith('https://')) {
       // It's an existing image URL - remove from existingImages
       setExistingImages(prev => prev.filter(img => img !== previewToRemove));
     } else {
       // It's a new file preview - find and remove from imageFiles
       // Count how many existing images come before this index
       const existingCount = imagePreviews.slice(0, index).filter(preview =>
-        typeof preview === 'string' && !preview.startsWith('data:') && !preview.startsWith('blob:')
+        typeof preview === 'string' && !preview.startsWith('data:') && preview.startsWith('https://')
       ).length;
       // The file index in imageFiles array
       const fileIndex = index - existingCount;
@@ -1179,22 +1210,35 @@ const ProductModal = ({ product, onClose }) => {
       return;
     }
 
-    // Validate file size (max 50MB for 3D models)
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error('3D model file size exceeds 50MB limit');
-      e.target.value = '';
-      return;
-    }
-
     setModel3DFile(file);
-    // Convert to Base64 for preview (no blob usage)
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Url = event.target.result;
-      setModel3DPreview(base64Url);
-      toast.success('3D model selected');
-    };
-    reader.readAsDataURL(file);
+    // Upload to server immediately to get HTTPS URL
+    const formData = new FormData();
+    formData.append('model', file);
+    
+    // Show loading state
+    toast.loading('Uploading 3D model...');
+    
+    // Upload to server
+    fetch('/api/admin/upload/model3d', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.url) {
+        setModel3DPreview(data.url);
+        toast.success('3D model uploaded successfully');
+      } else {
+        toast.error('Failed to upload 3D model');
+      }
+    })
+    .catch(error => {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload 3D model');
+    })
+    .finally(() => {
+      toast.dismiss();
+    });
     e.target.value = '';
   };
 
@@ -1439,7 +1483,22 @@ const ProductModal = ({ product, onClose }) => {
   }, [product?.id, isEyeHygieneForEffect]);
 
   const handleSubmit = async (e) => {
+    // Prevent default form submission AND any bubbling/propagation
     e.preventDefault();
+    e.stopPropagation();
+    e.nativeEvent?.preventDefault();
+    
+    // Also prevent any form submission that might happen due to browser validation
+    const form = e.target;
+    if (form) {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }, { once: true });
+    }
+    
+    console.log('🚫 Product form submission prevented - starting save process');
     setLoading(true);
 
     try {
@@ -1743,7 +1802,7 @@ const ProductModal = ({ product, onClose }) => {
             const imagesToKeep = imagePreviews.filter(preview =>
               typeof preview === 'string' &&
               !preview.startsWith('data:') &&
-              !preview.startsWith('blob:') &&
+              preview.startsWith('https://') &&
               existingImages.includes(preview)
             );
 
@@ -1802,7 +1861,7 @@ const ProductModal = ({ product, onClose }) => {
             const existingImagesByColor = {};
             imagesWithColors.forEach(img => {
               if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
-                img.preview && typeof img.preview === 'string' && !img.preview.startsWith('data:') && !img.preview.startsWith('blob:')) {
+                img.preview && typeof img.preview === 'string' && !img.preview.startsWith('data:') && img.preview.startsWith('https://')) {
                 if (!existingImagesByColor[img.hexCode]) {
                   existingImagesByColor[img.hexCode] = [];
                 }
@@ -1931,7 +1990,7 @@ const ProductModal = ({ product, onClose }) => {
           const imagesToKeep = imagePreviews.filter(preview =>
             typeof preview === 'string' &&
             !preview.startsWith('data:') &&
-            !preview.startsWith('blob:') &&
+            preview.startsWith('https://') &&
             existingImages.includes(preview)
           );
 
@@ -1949,7 +2008,7 @@ const ProductModal = ({ product, onClose }) => {
           // These are images that are still in the UI (not removed by user)
           imagesWithColors.forEach(img => {
             if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
-              img.preview && typeof img.preview === 'string' && !img.preview.startsWith('data:') && !img.preview.startsWith('blob:')) {
+              img.preview && typeof img.preview === 'string' && !img.preview.startsWith('data:') && img.preview.startsWith('https://')) {
               if (!existingImagesByColor[img.hexCode]) {
                 existingImagesByColor[img.hexCode] = [];
               }
@@ -2043,6 +2102,8 @@ const ProductModal = ({ product, onClose }) => {
       setExistingColorImages([]);
 
       // Close modal - parent component will refresh the products list
+      console.log('🔄 Product saved successfully - calling onClose(true) to refresh table');
+      console.log('🔄 This should NOT cause page refresh - only table update');
       onClose(true);
     } catch (error) {
       // Log full error details for debugging
@@ -3115,7 +3176,7 @@ const ProductModal = ({ product, onClose }) => {
         </div>
 
         {/* Scrollable Form Content */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(90vh - 200px)' }} noValidate>
           <div className="p-6 space-y-6">
             {/* General Tab */}
             {activeTab === 'general' && (
@@ -5050,6 +5111,7 @@ const ProductModal = ({ product, onClose }) => {
             </button>
             <button
               type="submit"
+              formNoValidate
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >

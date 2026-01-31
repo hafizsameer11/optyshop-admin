@@ -308,11 +308,14 @@ const LensOptions = () => {
           onClose={(shouldRefresh = false) => {
             console.log('🔄 LensOptionModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedLensOption:', selectedLensOption);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
             setModalOpen(false);
             setSelectedLensOption(null);
             
             if (shouldRefresh) {
               console.log('📋 Refreshing lens options list after modal save');
+              console.log('🔄 This should only update the table, NOT refresh the page');
               
               // For demo purposes, add a new lens option immediately if backend is not available
               if (!selectedLensOption) {
@@ -336,7 +339,7 @@ const LensOptions = () => {
               // Use setTimeout to ensure modal is fully closed before refresh
               // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching lens options from API (no page refresh)');
+                console.log('🔄 Fetching lens options from API (no page refresh should occur)');
                 fetchLensOptions();
               }, 100);
             } else {

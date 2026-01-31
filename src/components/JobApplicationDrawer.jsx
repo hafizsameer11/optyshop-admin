@@ -39,21 +39,14 @@ const JobApplicationDrawer = ({ isOpen, onClose, application, onAccept, onReject
             return;
         }
         try {
-            const byteCharacters = atob(application.resume_cv);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
+            // Convert base64 to data URL (HTTPS-compatible)
+            const dataUrl = `data:application/pdf;base64,${application.resume_cv}`;
             const link = document.createElement('a');
-            link.href = url;
+            link.href = dataUrl;
             link.download = `${application.first_name}_${application.last_name}_resume.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
             toast.success('Resume downloaded successfully');
         } catch (error) {
             console.error('Failed to download resume', error);
@@ -67,21 +60,14 @@ const JobApplicationDrawer = ({ isOpen, onClose, application, onAccept, onReject
             return;
         }
         try {
-            const byteCharacters = atob(application.cover_letter_file);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
+            // Convert base64 to data URL (HTTPS-compatible)
+            const dataUrl = `data:application/pdf;base64,${application.cover_letter_file}`;
             const link = document.createElement('a');
-            link.href = url;
+            link.href = dataUrl;
             link.download = `${application.first_name}_${application.last_name}_cover_letter.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
             toast.success('Cover letter downloaded successfully');
         } catch (error) {
             console.error('Failed to download cover letter', error);

@@ -183,14 +183,34 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Convert to Base64 for preview (no blob usage)
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Url = event.target.result;
-        setFormData(prev => ({ ...prev, image_url: base64Url }));
-        toast.success('Image uploaded (Base64 preview)');
-      };
-      reader.readAsDataURL(file);
+      // Upload to server immediately to get HTTPS URL
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Show loading state
+      toast.loading('Uploading image...');
+      
+      // Upload to server
+      fetch('/api/admin/upload/image', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.url) {
+          setFormData(prev => ({ ...prev, image_url: data.url }));
+          toast.success('Image uploaded successfully');
+        } else {
+          toast.error('Failed to upload image');
+        }
+      })
+      .catch(error => {
+        console.error('Upload error:', error);
+        toast.error('Failed to upload image');
+      })
+      .finally(() => {
+        toast.dismiss();
+      });
     }
   };
 

@@ -137,22 +137,14 @@ const JobApplications = () => {
             return;
         }
         try {
-            // Decode base64 and create download
-            const byteCharacters = atob(resumeCv);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
+            // Convert base64 to data URL (HTTPS-compatible)
+            const dataUrl = `data:application/pdf;base64,${resumeCv}`;
             const link = document.createElement('a');
-            link.href = url;
+            link.href = dataUrl;
             link.download = `${firstName}_${lastName}_resume.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Failed to download resume', error);
             toast.error('Failed to download resume');

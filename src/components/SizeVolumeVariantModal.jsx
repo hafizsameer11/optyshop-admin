@@ -90,11 +90,14 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // In a real implementation, you would upload the file to a server
-      // For now, we'll create a temporary URL
-      const tempUrl = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, image_url: tempUrl }));
-      toast.success('Image uploaded (temporary URL for demo)');
+      // Convert to Base64 for preview (no blob usage)
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Url = event.target.result;
+        setFormData(prev => ({ ...prev, image_url: base64Url }));
+        toast.success('Image uploaded (Base64 preview)');
+      };
+      reader.readAsDataURL(file);
     }
   };
 

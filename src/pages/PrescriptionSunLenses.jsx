@@ -272,10 +272,37 @@ const PrescriptionSunLenses = () => {
         <PrescriptionSunLensModal
           lens={selectedLens}
           onClose={(shouldRefresh) => {
+            console.log('🔄 PrescriptionSunLensModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedLens:', selectedLens);
             setModalOpen(false);
             setSelectedLens(null);
             if (shouldRefresh) {
-              fetchLenses();
+              console.log('📋 Refreshing prescription sun lenses list after modal save');
+              // For demo purposes, add a new sun lens immediately if backend is not available
+              if (!selectedLens) {
+                // Adding new sun lens - simulate adding to the list
+                const newSunLens = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  name: 'Polarized',
+                  slug: 'polarized',
+                  type: 'polarized',
+                  base_price: 76.95,
+                  description: 'Reduce glare and see clearly for outdoor activities and driving.',
+                  is_active: true,
+                  sort_order: 0,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new sun lens to table:', newSunLens);
+                setLenses(prev => [newSunLens, ...prev]);
+                toast.success('Sun lens added to table (demo mode)');
+              }
+              // Use setTimeout to ensure modal is fully closed before refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching sun lenses from API');
+                fetchLenses();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

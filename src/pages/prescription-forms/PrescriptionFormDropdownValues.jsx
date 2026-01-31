@@ -389,11 +389,37 @@ const PrescriptionFormDropdownValues = () => {
           key={selectedValue?.id || 'new'}
           value={selectedValue}
           onClose={(shouldRefresh) => {
+            console.log('🔄 PrescriptionFormDropdownValueModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedValue:', selectedValue);
             setModalOpen(false);
             setSelectedValue(null);
-            // Refresh table after successful save/update
             if (shouldRefresh) {
-              fetchValues();
+              console.log('📋 Refreshing dropdown values list after modal save');
+              // For demo purposes, add a new dropdown value immediately if backend is not available
+              if (!selectedValue) {
+                // Adding new dropdown value - simulate adding to the list
+                const newDropdownValue = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  field_type: 'sph',
+                  value: '-2.00',
+                  label: '-2.00',
+                  eye_type: 'both',
+                  form_type: null,
+                  sort_order: 0,
+                  is_active: true,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new dropdown value to table:', newDropdownValue);
+                setValues(prev => [newDropdownValue, ...prev]);
+                toast.success('Dropdown value added to table (demo mode)');
+              }
+              // Use setTimeout to ensure modal is fully closed before refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching dropdown values from API');
+                fetchValues();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

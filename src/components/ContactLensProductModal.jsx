@@ -308,11 +308,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
 
   const removeImage = (index) => {
     const previewToRemove = imagePreviews[index];
-    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('blob:') && !previewToRemove.startsWith('data:')) {
+    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('data:') && !previewToRemove.startsWith('blob:')) {
       setExistingImages(prev => prev.filter(img => img !== previewToRemove));
     } else {
       const existingCount = imagePreviews.slice(0, index).filter(preview => 
-        typeof preview === 'string' && !preview.startsWith('blob:') && !preview.startsWith('data:')
+        typeof preview === 'string' && !preview.startsWith('data:') && !preview.startsWith('blob:')
       ).length;
       const fileIndex = index - existingCount;
       if (fileIndex >= 0 && fileIndex < imageFiles.length) {
@@ -321,8 +321,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         setImageFiles(newFiles);
       }
     }
-    const newPreviews = [...imagePreviews];
-    newPreviews.splice(index, 1);
+
+    // Update preview array
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
     setImagePreviews(newPreviews);
   };
 
@@ -734,8 +735,8 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         if (product) {
           const imagesToKeep = imagePreviews.filter(preview => 
             typeof preview === 'string' && 
-            !preview.startsWith('blob:') && 
-            !preview.startsWith('data:') &&
+            !preview.startsWith('data:') && 
+            !preview.startsWith('blob:') &&
             existingImages.includes(preview)
           );
           submitData.append('images', JSON.stringify(imagesToKeep));
@@ -754,8 +755,8 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         if (product) {
           const imagesToKeep = imagePreviews.filter(preview => 
             typeof preview === 'string' && 
-            !preview.startsWith('blob:') && 
-            !preview.startsWith('data:') &&
+            !preview.startsWith('data:') && 
+            !preview.startsWith('blob:') &&
             existingImages.includes(preview)
           );
           dataToSend.images = imagesToKeep;

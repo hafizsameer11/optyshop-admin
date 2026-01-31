@@ -44,17 +44,17 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
           : (brand.isActive !== undefined ? brand.isActive : true),
       });
       
-      // Handle logo preview with error handling for invalid blob URLs
+      // Handle logo preview with error handling for invalid data URLs
       const logoUrl = brand.logo_url || brand.logoUrl;
       if (logoUrl) {
-        // Check if it's a blob URL and validate it
-        if (logoUrl.startsWith('blob:')) {
+        // Check if it's a data URL and validate it
+        if (logoUrl.startsWith('data:')) {
           const img = new Image();
           img.onload = () => {
             setLogoPreview(logoUrl);
           };
           img.onerror = () => {
-            console.warn('Invalid blob URL, clearing logo preview');
+            console.warn('Invalid data URL, clearing logo preview');
             setLogoPreview(null);
           };
           img.src = logoUrl;

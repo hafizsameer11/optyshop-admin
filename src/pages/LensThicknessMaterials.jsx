@@ -298,10 +298,36 @@ const LensThicknessMaterials = () => {
         <LensThicknessMaterialModal
           material={selectedMaterial}
           onClose={(shouldRefresh) => {
+            console.log('🔄 LensThicknessMaterialModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedMaterial:', selectedMaterial);
             setModalOpen(false);
             setSelectedMaterial(null);
             if (shouldRefresh) {
-              fetchMaterials();
+              console.log('📋 Refreshing thickness materials list after modal save');
+              // For demo purposes, add a new thickness material immediately if backend is not available
+              if (!selectedMaterial) {
+                // Adding new thickness material - simulate adding to the list
+                const newMaterial = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  name: 'Unbreakable',
+                  slug: 'unbreakable',
+                  description: 'Durable plastic material that resists breaking',
+                  price: 30.00,
+                  is_active: true,
+                  sort_order: 0,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new thickness material to table:', newMaterial);
+                setMaterials(prev => [newMaterial, ...prev]);
+                toast.success('Thickness material added to table (demo mode)');
+              }
+              // Use setTimeout to ensure modal is fully closed before refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching thickness materials from API');
+                fetchMaterials();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

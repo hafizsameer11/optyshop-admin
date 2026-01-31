@@ -42,16 +42,16 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
         link_url: campaign.link_url || '',
       });
       
-      // Handle image preview with error handling for invalid blob URLs
+      // Handle image preview with error handling for invalid data URLs
       if (campaign.image_url) {
-        // Check if it's a blob URL and validate it
-        if (campaign.image_url.startsWith('blob:')) {
+        // Check if it's a data URL and validate it
+        if (campaign.image_url.startsWith('data:')) {
           const img = new Image();
           img.onload = () => {
             setImagePreview(campaign.image_url);
           };
           img.onerror = () => {
-            console.warn('Invalid blob URL, clearing image preview');
+            console.warn('Invalid data URL, clearing image preview');
             setImagePreview(null);
           };
           img.src = campaign.image_url;

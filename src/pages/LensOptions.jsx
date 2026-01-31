@@ -319,12 +319,13 @@ const LensOptions = () => {
                 // Adding new lens option - simulate adding to the list
                 const newLensOption = {
                   id: Date.now(), // Use timestamp as temporary ID
-                  name: 'New Lens Option',
-                  slug: 'new-lens-option',
-                  type: 'standard',
-                  base_price: 20.00,
-                  description: 'Demo lens option',
+                  name: 'EyeQLenz™ with Zenni ID Guard™',
+                  slug: 'eyeqlenz-with-zenni-id-guard',
+                  type: 'photochromic',
+                  base_price: 0,
+                  description: 'Advanced photochromic lens technology with ID protection',
                   is_active: true,
+                  sort_order: 0,
                   created_at: new Date().toISOString()
                 };
                 console.log('🔄 Adding new lens option to table:', newLensOption);

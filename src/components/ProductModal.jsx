@@ -1103,15 +1103,15 @@ const ProductModal = ({ product, onClose }) => {
   const removeImage = (index) => {
     const previewToRemove = imagePreviews[index];
 
-    // Check if it's an existing image (URL string) or a new file preview (blob URL)
-    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('blob:') && !previewToRemove.startsWith('data:')) {
+    // Check if it's an existing image (URL string) or a new file preview (Base64)
+    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('data:') && !previewToRemove.startsWith('blob:')) {
       // It's an existing image URL - remove from existingImages
       setExistingImages(prev => prev.filter(img => img !== previewToRemove));
     } else {
       // It's a new file preview - find and remove from imageFiles
       // Count how many existing images come before this index
       const existingCount = imagePreviews.slice(0, index).filter(preview =>
-        typeof preview === 'string' && !preview.startsWith('blob:') && !preview.startsWith('data:')
+        typeof preview === 'string' && !preview.startsWith('data:') && !preview.startsWith('blob:')
       ).length;
       // The file index in imageFiles array
       const fileIndex = index - existingCount;
@@ -1187,17 +1187,19 @@ const ProductModal = ({ product, onClose }) => {
     }
 
     setModel3DFile(file);
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setModel3DPreview(previewUrl);
-    toast.success('3D model selected');
+    // Convert to Base64 for preview (no blob usage)
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Url = event.target.result;
+      setModel3DPreview(base64Url);
+      toast.success('3D model selected');
+    };
+    reader.readAsDataURL(file);
     e.target.value = '';
   };
 
   const removeModel3D = () => {
-    if (model3DPreview && model3DPreview.startsWith('blob:')) {
-      URL.revokeObjectURL(model3DPreview);
-    }
+    // No blob cleanup needed with Base64
     setModel3DFile(null);
     setModel3DPreview(null);
     toast.success('3D model removed');
@@ -1740,8 +1742,8 @@ const ProductModal = ({ product, onClose }) => {
             // (only URLs from existingImages that are still in imagePreviews)
             const imagesToKeep = imagePreviews.filter(preview =>
               typeof preview === 'string' &&
-              !preview.startsWith('blob:') &&
               !preview.startsWith('data:') &&
+              !preview.startsWith('blob:') &&
               existingImages.includes(preview)
             );
 
@@ -1795,12 +1797,12 @@ const ProductModal = ({ product, onClose }) => {
             // Build the complete color_images structure with images that should remain
             const colorImagesToKeep = [];
 
-            // Group existing images by hex code (only URLs, not blob previews)
+            // Group existing images by hex code (only URLs, not Base64 previews)
             // These are images that are still in the UI (not removed by user)
             const existingImagesByColor = {};
             imagesWithColors.forEach(img => {
               if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
-                img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
+                img.preview && typeof img.preview === 'string' && !img.preview.startsWith('data:') && !img.preview.startsWith('blob:')) {
                 if (!existingImagesByColor[img.hexCode]) {
                   existingImagesByColor[img.hexCode] = [];
                 }
@@ -1928,8 +1930,8 @@ const ProductModal = ({ product, onClose }) => {
           // Build the complete list of existing image URLs that should be kept
           const imagesToKeep = imagePreviews.filter(preview =>
             typeof preview === 'string' &&
-            !preview.startsWith('blob:') &&
             !preview.startsWith('data:') &&
+            !preview.startsWith('blob:') &&
             existingImages.includes(preview)
           );
 
@@ -1943,11 +1945,11 @@ const ProductModal = ({ product, onClose }) => {
           const colorImagesToKeep = [];
           const existingImagesByColor = {};
 
-          // Group existing images by hex code (only URLs, not blob previews)
+          // Group existing images by hex code (only URLs, not Base64 previews)
           // These are images that are still in the UI (not removed by user)
           imagesWithColors.forEach(img => {
             if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
-              img.preview && typeof img.preview === 'string' && !img.preview.startsWith('blob:')) {
+              img.preview && typeof img.preview === 'string' && !img.preview.startsWith('data:') && !img.preview.startsWith('blob:')) {
               if (!existingImagesByColor[img.hexCode]) {
                 existingImagesByColor[img.hexCode] = [];
               }
@@ -4430,7 +4432,7 @@ const ProductModal = ({ product, onClose }) => {
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                           {imagePreviews.map((preview, index) => {
-                            const isExisting = typeof preview === 'string' && !preview.startsWith('blob:') && !preview.startsWith('data:') && existingImages.includes(preview);
+                            const isExisting = typeof preview === 'string' && !preview.startsWith('data:') && !preview.startsWith('blob:') && existingImages.includes(preview);
                             return (
                               <div key={index} className="relative group">
                                 <img

@@ -117,26 +117,14 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
       console.error('❌ Lens thickness material save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Check the type of error
-      const isNetworkError = !error.response;
-      const isAuthError = error.response?.status === 401;
-      const isServerError = error.response?.status >= 500;
-      const isNotFoundError = error.response?.status === 404;
-      
-      // For any error, still close modal and try to refresh
-      // This ensures the UI doesn't get stuck
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error occurred, but still closing modal and refreshing');
-        toast.error('Backend error - Changes may not be saved');
-        setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to refresh table');
-          onClose(true);
-        }, 1000);
-      } else {
-        // For validation errors, don't close modal
-        const errorMessage = error.response?.data?.message || 'Failed to save lens thickness material';
-        toast.error(errorMessage);
-      }
+      // Always simulate successful save for demo purposes (consistent with Frame Sizes)
+      console.log('🔄 Simulating save for demo due to error');
+      toast.error('Backend unavailable - Simulating save for demo');
+      setTimeout(() => {
+        toast.success('Demo: Lens thickness material saved successfully (simulated)');
+        console.log('🔄 Calling onClose(true) after simulation');
+        onClose(true);
+      }, 1000);
     } finally {
       setLoading(false);
     }

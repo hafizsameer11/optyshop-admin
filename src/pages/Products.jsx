@@ -339,28 +339,56 @@ const Products = () => {
   // Load initial state from localStorage
   const initialState = loadStateFromStorage();
   
+  // Debug: Log initial state
+  console.log('🔍 Initial state from localStorage:', initialState);
+  
+  // Safeguard: If there are any filters set but section is not 'all', reset to 'all'
+  // This prevents the issue where filters persist but show wrong category
+  const safeInitialState = {
+    ...initialState,
+    selectedSection: (initialState.categoryFilter || initialState.subCategoryFilter || initialState.brandFilter || initialState.searchTerm) 
+      ? 'all' 
+      : initialState.selectedSection
+  };
+  
+  if (safeInitialState.selectedSection !== initialState.selectedSection) {
+    console.log('🛡️ Safeguard activated: Reset to All Products due to detected filters');
+    // Save the corrected state back to localStorage
+    saveStateToStorage(safeInitialState);
+  }
+  
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(initialState.searchTerm);
-  const [categoryFilter, setCategoryFilter] = useState(initialState.categoryFilter);
-  const [subCategoryFilter, setSubCategoryFilter] = useState(initialState.subCategoryFilter);
+  const [searchTerm, setSearchTerm] = useState(safeInitialState.searchTerm);
+  const [categoryFilter, setCategoryFilter] = useState(safeInitialState.categoryFilter);
+  const [subCategoryFilter, setSubCategoryFilter] = useState(safeInitialState.subCategoryFilter);
   const [brandFilter, setBrandFilter] = useState('');
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [page, setPage] = useState(initialState.page);
+  const [page, setPage] = useState(safeInitialState.page);
   const [totalPages, setTotalPages] = useState(1);
   const [subCategoriesMap, setSubCategoriesMap] = useState({});
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
-  const [selectedSection, setSelectedSection] = useState(initialState.selectedSection); // 'all', 'sunglasses', 'eyeglasses', 'contact-lenses', 'eye-hygiene'
+  const [selectedSection, setSelectedSection] = useState(safeInitialState.selectedSection); // 'all', 'sunglasses', 'eyeglasses', 'contact-lenses', 'eye-hygiene'
   const [sectionCategoryIds, setSectionCategoryIds] = useState([]); // All category IDs for the selected section
   const [sectionSubCategoryIds, setSectionSubCategoryIds] = useState([]); // All subcategory IDs (including nested) for the selected section
   // Track if this is the initial mount to prevent clearing restored subcategory filter
   const [isInitialMount, setIsInitialMount] = useState(true);
   const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger search on Enter
   const [expandedProducts, setExpandedProducts] = useState(new Set()); // Track which products have expanded details
+
+  // Debug: Log the initial selected section and any filters
+  console.log('🔍 Initial component state:', {
+    selectedSection: safeInitialState.selectedSection,
+    categoryFilter: safeInitialState.categoryFilter,
+    subCategoryFilter: safeInitialState.subCategoryFilter,
+    searchTerm: safeInitialState.searchTerm,
+    page: safeInitialState.page,
+    safeguardApplied: safeInitialState.selectedSection !== initialState.selectedSection
+  });
 
   // Save state to localStorage whenever relevant state changes
   useEffect(() => {
@@ -668,9 +696,22 @@ const Products = () => {
         page: page,
         limit: 12,
         search: trimmedSearch || undefined,
-        category_id: sectionCategoryIds.length > 0 ? sectionCategoryIds : undefined,
-        sub_category_id: subCategoryFilter || undefined,
+        // CRITICAL FIX: Only send category_id if NOT "All Products" and we have valid category IDs
+        category_id: selectedSection === 'all' ? undefined : (sectionCategoryIds.length > 0 ? sectionCategoryIds : undefined),
+        sub_category_id: selectedSection === 'all' ? undefined : (subCategoryFilter || undefined),
         brand_id: brandFilter || undefined
+      });
+      
+      // Debug: Log what was actually sent to the API
+      console.log('🔍 API Call Parameters:', {
+        page,
+        limit: 12,
+        search: trimmedSearch || undefined,
+        category_id: selectedSection === 'all' ? undefined : (sectionCategoryIds.length > 0 ? sectionCategoryIds : undefined),
+        sub_category_id: selectedSection === 'all' ? undefined : (subCategoryFilter || undefined),
+        brand_id: brandFilter || undefined,
+        selectedSection,
+        note: selectedSection === 'all' ? 'All Products selected - NO category filters sent' : 'Section-specific filters applied'
       });
       
       // Handle the nested data structure from the API
@@ -1858,30 +1899,11 @@ const Products = () => {
     setCategoryFilter('');
     setSubCategoryFilter('');
     
-    // ========================================================================
-    // CATEGORY-ONLY FILTERING: Category, Subcategory, Sub-Subcategory
-    // ========================================================================
-    // When a category button is clicked, products are filtered STRICTLY by categories ONLY:
-    // 1. Category ID - finds matching categories like "sun glasses", "eye glasses", "eye hygiene", etc.
-    // 2. Subcategory ID - includes all subcategories for those categories
-    // 3. Sub-Subcategory ID - includes nested subcategories (sub-subcategories) for those subcategories
-    // 
-    // IMPORTANT: NO product_type filtering, NO product_id filtering, NO product-by-product logic
-    // 
-    // Products in matching categories/subcategories will be displayed:
-    // - Products in matching categories (by category_id)
-    // - Products in matching subcategories (by sub_category_id, including nested)
-    // 
-    // Example: When clicking "Eye Hygiene":
-    // - Finds category "eye hygiene" (ID: 30)
-    // - Includes all subcategories under "eye hygiene" (e.g., ID: 70, 71, 72, etc.)
-    // - Includes nested sub-subcategories recursively
-    // - Shows ALL products with category_id=30 OR sub_category_id in the list
-    // - NO filtering by product_type or product_id
-    // ========================================================================
-    
+    // Clear all filters when switching to "All Products"
     if (section === 'all') {
-      console.log(`✅ Showing ALL products (no category filter)`);
+      setBrandFilter('');
+      setSearchTerm('');
+      console.log(`✅ Showing ALL products (cleared all filters including brand and search)`);
     } else {
       const sectionLabel = sections.find(s => s.value === section)?.label || section;
       console.log(`✅ Filtering products for "${sectionLabel}" by CATEGORY (category_id), NOT by product_type or product_id`);

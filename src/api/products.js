@@ -19,8 +19,10 @@ import api from '../utils/api';
  * @param {number} params.limit - Items per page (default: 50)
  * @param {string} params.sortBy - Sort field (default: created_at)
  * @param {string} params.sortOrder - Sort order (asc/desc, default: desc)
- * @param {string} params.category - Filter by category
- * @param {string} params.brand - Filter by brand
+ * @param {string} params.search - Search query
+ * @param {string|number|Array} params.category_id - Filter by category ID(s)
+ * @param {string|number|Array} params.sub_category_id - Filter by subcategory ID(s)
+ * @param {string|number|Array} params.brand_id - Filter by brand ID(s)
  * @param {boolean} params.is_active - Filter by active status
  * @returns {Promise} Response with products data
  */
@@ -30,8 +32,10 @@ export const getProducts = async (params = {}) => {
     limit = 50,
     sortBy = 'created_at',
     sortOrder = 'desc',
-    category,
-    brand,
+    search,
+    category_id,
+    sub_category_id,
+    brand_id,
     is_active
   } = params;
 
@@ -42,8 +46,28 @@ export const getProducts = async (params = {}) => {
     sortOrder
   });
 
-  if (category) queryParams.append('category', category);
-  if (brand) queryParams.append('brand', brand);
+  if (search) queryParams.append('search', search);
+  if (category_id) {
+    if (Array.isArray(category_id)) {
+      category_id.forEach(id => queryParams.append('category_id', id.toString()));
+    } else {
+      queryParams.append('category_id', category_id.toString());
+    }
+  }
+  if (sub_category_id) {
+    if (Array.isArray(sub_category_id)) {
+      sub_category_id.forEach(id => queryParams.append('sub_category_id', id.toString()));
+    } else {
+      queryParams.append('sub_category_id', sub_category_id.toString());
+    }
+  }
+  if (brand_id) {
+    if (Array.isArray(brand_id)) {
+      brand_id.forEach(id => queryParams.append('brand_id', id.toString()));
+    } else {
+      queryParams.append('brand_id', brand_id.toString());
+    }
+  }
   if (is_active !== undefined) {
     queryParams.append('is_active', is_active.toString());
   }

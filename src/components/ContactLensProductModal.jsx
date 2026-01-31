@@ -308,11 +308,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
 
   const removeImage = (index) => {
     const previewToRemove = imagePreviews[index];
-    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('data:') && !previewToRemove.startsWith('blob:')) {
+    if (typeof previewToRemove === 'string' && previewToRemove.startsWith('https://')) {
       setExistingImages(prev => prev.filter(img => img !== previewToRemove));
     } else {
       const existingCount = imagePreviews.slice(0, index).filter(preview => 
-        typeof preview === 'string' && !preview.startsWith('data:') && !preview.startsWith('blob:')
+        typeof preview === 'string' && preview.startsWith('https://')
       ).length;
       const fileIndex = index - existingCount;
       if (fileIndex >= 0 && fileIndex < imageFiles.length) {
@@ -735,8 +735,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         if (product) {
           const imagesToKeep = imagePreviews.filter(preview => 
             typeof preview === 'string' && 
-            !preview.startsWith('data:') && 
-            !preview.startsWith('blob:') &&
+            preview.startsWith('https://') &&
             existingImages.includes(preview)
           );
           submitData.append('images', JSON.stringify(imagesToKeep));
@@ -755,8 +754,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         if (product) {
           const imagesToKeep = imagePreviews.filter(preview => 
             typeof preview === 'string' && 
-            !preview.startsWith('data:') && 
-            !preview.startsWith('blob:') &&
+            preview.startsWith('https://') &&
             existingImages.includes(preview)
           );
           dataToSend.images = imagesToKeep;

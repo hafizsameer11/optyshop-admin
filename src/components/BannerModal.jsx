@@ -245,38 +245,69 @@ const BannerModal = ({ banner, onClose }) => {
     setFormData(newFormData);
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        toast.error('Please select a valid image file (JPG, PNG, GIF, or WEBP)');
-        e.target.value = ''; // Clear the input
-        return;
-      }
+  // Reset dependent fields when page_type changes
+  if (name === 'page_type') {
+    if (value === 'home') {
+      newFormData.category_id = '';
+      newFormData.sub_category_id = '';
+      setSubCategories([]);
+      setNestedSubCategories([]);
+    } else if (value === 'category') {
+      newFormData.sub_category_id = '';
+      setNestedSubCategories([]);
+      // Keep category_id if already selected
+    }
+    // For subcategory and sub_subcategory, keep category_id and sub_category_id if selected
+  }
 
-      // Validate file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-      if (file.size > maxSize) {
-        toast.error('Image file is too large. Please select a file smaller than 10MB.');
-        e.target.value = ''; // Clear the input
-        return;
-      }
+  // Reset sub_category_id when category_id changes
+  if (name === 'category_id') {
+    newFormData.sub_category_id = '';
+    setNestedSubCategories([]);
+    setParentSubCategoryId('');
+  }
 
-      // Image dimensions validation removed
-      const reader = new FileReader();
-      reader.onload = (event) => {
+  // Reset parent subcategory when page_type changes
+  if (name === 'page_type' && value !== 'sub_subcategory') {
+    setParentSubCategoryId('');
+    setNestedSubCategories([]);
+  }
+
+  setFormData(newFormData);
+};
+
+const handleImageChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    // Upload to server immediately to get HTTPS URL
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    // Show loading state
+    toast.loading('Uploading image...');
+    
+    // Upload to server
+    fetch('/api/admin/upload/image', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.url) {
         setImageFile(file);
-        setImagePreview(event.target.result);
-      };
-      reader.onerror = () => {
-        toast.error('Failed to read image file. Please try again.');
-        e.target.value = '';
-        setImageFile(null);
-        setImagePreview(null);
-      };
-      reader.readAsDataURL(file);
+        setImagePreview(data.url);
+        toast.success('Image uploaded successfully');
+      } else {
+        toast.error('Failed to upload image');
+      }
+    })
+    .catch(error => {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image');
+    })
+    .finally(() => {
+      toast.dismiss();
+    });
     }
   };
 

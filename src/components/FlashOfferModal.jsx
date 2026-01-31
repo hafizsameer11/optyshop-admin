@@ -144,12 +144,35 @@ const FlashOfferModal = ({ offer, onClose, onSuccess }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      // Upload to server immediately to get HTTPS URL
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Show loading state
+      toast.loading('Uploading image...');
+      
+      // Upload to server
+      fetch('/api/admin/upload/image', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.url) {
+          setImageFile(file);
+          setImagePreview(data.url);
+          toast.success('Image uploaded successfully');
+        } else {
+          toast.error('Failed to upload image');
+        }
+      })
+      .catch(error => {
+        console.error('Upload error:', error);
+        toast.error('Failed to upload image');
+      })
+      .finally(() => {
+        toast.dismiss();
+      });
     }
   };
 

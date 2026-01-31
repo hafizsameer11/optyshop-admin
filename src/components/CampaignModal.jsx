@@ -85,28 +85,38 @@ const CampaignModal = ({ campaign, onClose, onSuccess }) => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      toast.error('Invalid file type. Please upload JPG, PNG, GIF, or WEBP images.');
-      return;
+    const file = e.target.files[0];
+    if (file) {
+      // Upload to server immediately to get HTTPS URL
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Show loading state
+      toast.loading('Uploading image...');
+      
+      // Upload to server
+      fetch('/api/admin/upload/image', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.url) {
+          setImageFile(file);
+          setImagePreview(data.url);
+          toast.success('Image uploaded successfully');
+        } else {
+          toast.error('Failed to upload image');
+        }
+      })
+      .catch(error => {
+        console.error('Upload error:', error);
+        toast.error('Failed to upload image');
+      })
+      .finally(() => {
+        toast.dismiss();
+      });
     }
-
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('Image size must be less than 10MB.');
-      return;
-    }
-
-    setImageFile(file);
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleRemoveImage = () => {

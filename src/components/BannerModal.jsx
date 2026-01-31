@@ -480,9 +480,12 @@ const BannerModal = ({ banner, onClose }) => {
         const attemptedUrl = error.config?.baseURL + error.config?.url;
         toast.error(`API endpoint not found (404). Attempted URL: ${attemptedUrl}. Please verify the backend server is running and the route exists.`);
       } else if (error.response.status === 401) {
+        console.log('🔄 401 error in BannerModal - closing modal and refreshing table');
         toast.error('❌ Demo mode - Please log in with real credentials to save banners');
+        // Still close modal to prevent UI lock
+        onClose(true);
       } else if (error.response.status === 422) {
-        // Validation errors - show detailed message
+        // Validation errors - show detailed message but don't close modal
         const errorData = error.response?.data || {};
         console.log('Validation error details:', errorData);
         
@@ -517,7 +520,10 @@ const BannerModal = ({ banner, onClose }) => {
           errorMessage = errorData.message || 'File upload failed. Please try again or contact administrator.';
         }
 
+        console.log('🔄 Unknown error in BannerModal - closing modal and refreshing table');
         toast.error(errorMessage);
+        // Still close modal to prevent UI lock
+        onClose(true);
       }
     } finally {
       setLoading(false);

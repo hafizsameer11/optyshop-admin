@@ -221,16 +221,27 @@ const Banners = () => {
     try {
       await bannerAPI.delete(id);
       toast.success('Banner deleted successfully');
+      console.log('🔄 Deleting banner and refreshing table (no page refresh)');
       fetchBanners();
     } catch (error) {
       console.error('Banner delete error:', error);
-      if (!error.response) {
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete banner');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchBanners();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete banner';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchBanners();
       }
     }
   };
@@ -565,10 +576,14 @@ const Banners = () => {
         <BannerModal
           banner={selectedBanner}
           onClose={(shouldRefresh) => {
+            console.log('🔄 BannerModal onClose called with shouldRefresh:', shouldRefresh);
             setModalOpen(false);
             setSelectedBanner(null);
             if (shouldRefresh) {
+              console.log('📋 Refreshing banners list after modal save (no page refresh)');
               fetchBanners();
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

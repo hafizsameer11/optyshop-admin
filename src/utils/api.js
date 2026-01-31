@@ -54,10 +54,43 @@ api.interceptors.response.use(
     }
     
     // Only redirect to login for actual 401 responses, not network errors
-    // But skip redirect if we're in demo mode OR if it's a frame size operation OR lens options operation
-    const isFrameSizeOperation = error.config?.url?.includes('/frame-sizes');
-    const isLensOptionsOperation = error.config?.url?.includes('/lens-options');
-    if (error.response?.status === 401 && !isDemoMode && !isFrameSizeOperation && !isLensOptionsOperation) {
+    // But skip redirect if we're in demo mode OR if it's any admin CRUD operation
+    const isAdminCRUDOperation = error.config?.url?.includes('/admin/') && (
+      error.config?.url?.includes('/frame-sizes') ||
+      error.config?.url?.includes('/lens-options') ||
+      error.config?.url?.includes('/lens-coatings') ||
+      error.config?.url?.includes('/lens-colors') ||
+      error.config?.url?.includes('/lens-finishes') ||
+      error.config?.url?.includes('/lens-thickness-materials') ||
+      error.config?.url?.includes('/lens-thickness-options') ||
+      error.config?.url?.includes('/lens-treatments') ||
+      error.config?.url?.includes('/lens-types') ||
+      error.config?.url?.includes('/photochromic-lenses') ||
+      error.config?.url?.includes('/prescription-form-dropdown-values') ||
+      error.config?.url?.includes('/prescription-lens-types') ||
+      error.config?.url?.includes('/prescription-lens-variants') ||
+      error.config?.url?.includes('/prescription-sun-lenses') ||
+      error.config?.url?.includes('/mm-calibers') ||
+      error.config?.url?.includes('/banners') ||
+      error.config?.url?.includes('/brands') ||
+      error.config?.url?.includes('/categories') ||
+      error.config?.url?.includes('/subcategories') ||
+      error.config?.url?.includes('/coupons') ||
+      error.config?.url?.includes('/campaigns') ||
+      error.config?.url?.includes('/flash-offers') ||
+      error.config?.url?.includes('/free-gifts') ||
+      error.config?.url?.includes('/jobs') ||
+      error.config?.url?.includes('/menu-items') ||
+      error.config?.url?.includes('/menus') ||
+      error.config?.url?.includes('/pages') ||
+      error.config?.url?.includes('/testimonials') ||
+      error.config?.url?.includes('/users') ||
+      error.config?.url?.includes('/shipping-methods') ||
+      error.config?.url?.includes('/blog-posts') ||
+      error.config?.url?.includes('/faqs')
+    );
+    
+    if (error.response?.status === 401 && !isDemoMode && !isAdminCRUDOperation) {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('refresh_token');
       window.location.href = '/login';
@@ -68,8 +101,8 @@ api.interceptors.response.use(
       console.warn('Network error - API server may be unavailable:', error.message);
     }
     
-    // Log 401 errors in demo mode or for frame size operations or lens options operations
-    if (error.response?.status === 401 && (isDemoMode || isFrameSizeOperation || isLensOptionsOperation)) {
+    // Log 401 errors in demo mode or for admin CRUD operations
+    if (error.response?.status === 401 && (isDemoMode || isAdminCRUDOperation)) {
       console.warn('API call blocked in demo mode - backend requires real authentication');
     }
     

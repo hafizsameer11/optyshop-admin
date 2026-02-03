@@ -98,26 +98,9 @@ const PrescriptionLensTypeModal = ({ lensType, onClose }) => {
       console.error('❌ Prescription lens type save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Check the type of error
-      const isNetworkError = !error.response;
-      const isAuthError = error.response?.status === 401;
-      const isServerError = error.response?.status >= 500;
-      const isNotFoundError = error.response?.status === 404;
-      
-      // For any error, still close modal and try to refresh
-      // This ensures the UI doesn't get stuck
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error occurred, but still closing modal and refreshing');
-        toast.error('Backend error - Changes may not be saved');
-        setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to refresh table');
-          onClose(true);
-        }, 1000);
-      } else {
-        // For validation errors, don't close modal
-        const errorMessage = error.response?.data?.message || 'Failed to save prescription lens type';
-        toast.error(errorMessage);
-      }
+      // Show actual error message from live server
+      const errorMessage = error.response?.data?.message || 'Failed to save prescription lens type';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

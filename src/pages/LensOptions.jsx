@@ -317,25 +317,6 @@ const LensOptions = () => {
               console.log('📋 Refreshing lens options list after modal save');
               console.log('🔄 This should only update the table, NOT refresh the page');
               
-              // For demo purposes, add a new lens option immediately if backend is not available
-              if (!selectedLensOption) {
-                // Adding new lens option - simulate adding to the list
-                const newLensOption = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'EyeQLenz™ with Zenni ID Guard™',
-                  slug: 'eyeqlenz-with-zenni-id-guard',
-                  type: 'photochromic',
-                  base_price: 0,
-                  description: 'Advanced photochromic lens technology with ID protection',
-                  is_active: true,
-                  sort_order: 0,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new lens option to table:', newLensOption);
-                setLensOptions(prev => [newLensOption, ...prev]);
-                toast.success('Lens option added to table (demo mode)');
-              }
-              
               // Use setTimeout to ensure modal is fully closed before refresh
               // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {

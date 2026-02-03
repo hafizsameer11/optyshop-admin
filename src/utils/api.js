@@ -95,14 +95,12 @@ api.interceptors.response.use(
     
     // Only redirect for 401 errors if:
     // 1. Not in demo mode
-    // 2. Not an admin CRUD operation
-    // 3. Not any admin endpoint (broader protection)
-    // 4. Not a network error (backend unavailable)
+    // 2. Not an admin CRUD operation (these should handle their own auth)
+    // 3. Not a network error (backend unavailable)
     const isNetworkError = !error.response;
     const shouldRedirect = error.response?.status === 401 && 
                          !isDemoMode && 
-                         !isAdminCRUDOperation && 
-                         !isAdminEndpoint &&
+                         !isAdminCRUDOperation &&
                          !isNetworkError;
     
     if (shouldRedirect) {

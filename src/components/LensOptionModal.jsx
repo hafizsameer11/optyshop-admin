@@ -130,14 +130,9 @@ const LensOptionModal = ({ lensOption, onClose }) => {
       console.error('❌ Lens option save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Always simulate successful save for demo purposes (consistent with Frame Sizes)
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Lens option saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation - this should NOT cause page refresh');
-        onClose(true);
-      }, 1000);
+      // Show actual error message from live server
+      const errorMessage = error.response?.data?.message || 'Failed to save lens option';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

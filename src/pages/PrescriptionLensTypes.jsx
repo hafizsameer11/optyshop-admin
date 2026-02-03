@@ -306,25 +306,6 @@ const PrescriptionLensTypes = () => {
               console.log('📋 Refreshing prescription lens types list after modal save');
               console.log('🔄 This should only update the table, NOT refresh the page');
               
-              // For demo purposes, add a new lens type immediately if backend is not available
-              if (!selectedLensType) {
-                // Adding new lens type - simulate adding to the list
-                const newLensType = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'Distance Vision',
-                  slug: 'distance-vision',
-                  prescription_type: 'single_vision',
-                  base_price: 60.00,
-                  description: 'For distance (Thin, anti-glare, blue-cut options)',
-                  is_active: true,
-                  sort_order: 0,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new lens type to table:', newLensType);
-                setLensTypes(prev => [newLensType, ...prev]);
-                toast.success('Lens type added to table (demo mode)');
-              }
-              
               // Use setTimeout to ensure modal is fully closed before refresh
               // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {

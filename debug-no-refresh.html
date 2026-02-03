@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug No-Refresh Implementation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug No-Refresh Implementation</h1>
+    
+    <div class="section">
+        <h2>1. Check Demo Mode Status</h2>
+        <button onclick="checkDemoMode()">Check Demo Mode</button>
+        <div id="demo-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. Set Demo Mode</h2>
+        <button onclick="setDemoMode()">Set Demo Mode</button>
+        <button onclick="clearDemoMode()">Clear Demo Mode</button>
+        <div id="set-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. Check LocalStorage Data</h2>
+        <button onclick="checkLocalStorage()">Check LocalStorage</button>
+        <div id="storage-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. Test API Service Pattern</h2>
+        <button onclick="testAPIPattern()">Test API Pattern</button>
+        <div id="api-result"></div>
+    </div>
+
+    <script>
+        function checkDemoMode() {
+            const demoUser = localStorage.getItem('demo_user');
+            const result = document.getElementById('demo-result');
+            
+            if (demoUser) {
+                result.innerHTML = `<div class="success">✅ Demo mode is ACTIVE</div><pre>${demoUser}</pre>`;
+            } else {
+                result.innerHTML = `<div class="error">❌ Demo mode is NOT active</div>`;
+            }
+        }
+        
+        function setDemoMode() {
+            localStorage.setItem('demo_user', JSON.stringify({
+                id: 1,
+                name: 'Demo User',
+                email: 'demo@example.com',
+                token: 'demo-token'
+            }));
+            
+            const result = document.getElementById('set-result');
+            result.innerHTML = `<div class="success">✅ Demo mode SET</div>`;
+            checkDemoMode();
+        }
+        
+        function clearDemoMode() {
+            localStorage.removeItem('demo_user');
+            const result = document.getElementById('set-result');
+            result.innerHTML = `<div class="info">ℹ️ Demo mode CLEARED</div>`;
+            checkDemoMode();
+        }
+        
+        function checkLocalStorage() {
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('demo_')) {
+                    keys.push(key);
+                }
+            }
+            
+            const result = document.getElementById('storage-result');
+            if (keys.length === 0) {
+                result.innerHTML = `<div class="error">❌ No demo data found in localStorage</div>`;
+            } else {
+                let html = `<div class="success">✅ Found ${keys.length} demo data keys:</div><pre>`;
+                keys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    html += `${key}: ${value.substring(0, 100)}...\n`;
+                });
+                html += '</pre>';
+                result.innerHTML = html;
+            }
+        }
+        
+        function testAPIPattern() {
+            const result = document.getElementById('api-result');
+            
+            // Simulate the API service pattern
+            const isDemoMode = localStorage.getItem('demo_user') !== null;
+            const isAuthError = false; // Simulate no auth error
+            
+            if (isDemoMode || isAuthError) {
+                result.innerHTML = `<div class="success">✅ API service would return demo data</div>
+                    <pre>Demo mode: ${isDemoMode}
+Auth error: ${isAuthError}
+Result: Mock data would be returned</pre>`;
+            } else {
+                result.innerHTML = `<div class="error">❌ API service would try real API call</div>
+                    <pre>Demo mode: ${isDemoMode}
+Auth error: ${isAuthError}
+Result: Real API call would be made</pre>`;
+            }
+        }
+        
+        // Auto-check on load
+        window.onload = function() {
+            checkDemoMode();
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

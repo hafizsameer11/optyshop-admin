@@ -167,6 +167,34 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Login error:', error);
       
+      // Check if backend is unavailable or auth error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      // If backend is unavailable, automatically enable demo mode for demo credentials
+      if (isNetworkError || isServerError || isNotFoundError) {
+        if (email === 'admin@test.com' && password === 'admin123') {
+          console.log('🔄 Backend unavailable, enabling demo mode');
+          
+          // Set demo mode
+          const demoUser = {
+            id: 1,
+            name: 'Demo Admin',
+            email: 'admin@test.com',
+            role: 'admin',
+            created_at: new Date().toISOString()
+          };
+          
+          localStorage.setItem('demo_user', JSON.stringify(demoUser));
+          localStorage.setItem('admin_token', 'demo-token');
+          setUser(demoUser);
+          toast.success('Demo mode enabled - Backend unavailable');
+          return true;
+        }
+      }
+      
       // Show actual error message for live server
       const errorMessage = error.response?.data?.message || error.message;
       toast.error(errorMessage || 'Login failed');

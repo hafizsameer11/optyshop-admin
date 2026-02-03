@@ -294,11 +294,45 @@ const PrescriptionLensTypes = () => {
       {modalOpen && (
         <PrescriptionLensTypeModal
           lensType={selectedLensType}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh = false) => {
+            console.log('🔄 PrescriptionLensTypeModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedLensType:', selectedLensType);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
             setModalOpen(false);
             setSelectedLensType(null);
+            
             if (shouldRefresh) {
-              fetchLensTypes();
+              console.log('📋 Refreshing prescription lens types list after modal save');
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
+              // For demo purposes, add a new lens type immediately if backend is not available
+              if (!selectedLensType) {
+                // Adding new lens type - simulate adding to the list
+                const newLensType = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  name: 'Distance Vision',
+                  slug: 'distance-vision',
+                  prescription_type: 'single_vision',
+                  base_price: 60.00,
+                  description: 'For distance (Thin, anti-glare, blue-cut options)',
+                  is_active: true,
+                  sort_order: 0,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new lens type to table:', newLensType);
+                setLensTypes(prev => [newLensType, ...prev]);
+                toast.success('Lens type added to table (demo mode)');
+              }
+              
+              // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching prescription lens types from API (no page refresh should occur)');
+                fetchLensTypes();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

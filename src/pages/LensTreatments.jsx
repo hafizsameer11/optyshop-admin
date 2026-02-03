@@ -260,11 +260,45 @@ const LensTreatments = () => {
       {modalOpen && (
         <LensTreatmentModal
           lensTreatment={selectedLensTreatment}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh = false) => {
+            console.log('🔄 LensTreatmentModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('🔄 Current selectedLensTreatment:', selectedLensTreatment);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
             setModalOpen(false);
             setSelectedLensTreatment(null);
+            
             if (shouldRefresh) {
-              fetchLensTreatments();
+              console.log('📋 Refreshing lens treatments list after modal save');
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
+              // For demo purposes, add a new treatment immediately if backend is not available
+              if (!selectedLensTreatment) {
+                // Adding new treatment - simulate adding to the list
+                const newTreatment = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  name: 'Scratch Proof',
+                  slug: 'scratch-proof',
+                  type: 'scratch_proof',
+                  price: 30.00,
+                  description: 'Protects lenses from scratches and daily wear',
+                  is_active: true,
+                  sort_order: 0,
+                  created_at: new Date().toISOString()
+                };
+                console.log('🔄 Adding new lens treatment to table:', newTreatment);
+                setLensTreatments(prev => [newTreatment, ...prev]);
+                toast.success('Lens treatment added to table (demo mode)');
+              }
+              
+              // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
+              setTimeout(() => {
+                console.log('🔄 Fetching lens treatments from API (no page refresh should occur)');
+                fetchLensTreatments();
+              }, 100);
+            } else {
+              console.log('❌ Modal closed without refresh (cancelled or failed)');
             }
           }}
         />

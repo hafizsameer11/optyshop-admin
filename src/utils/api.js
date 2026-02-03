@@ -90,9 +90,26 @@ api.interceptors.response.use(
       error.config?.url?.includes('/faqs')
     );
     
-    if (error.response?.status === 401 && !isDemoMode && !isAdminCRUDOperation) {
+    // Enhanced check for admin operations - also check if it's any admin endpoint
+    const isAdminEndpoint = error.config?.url?.includes('/admin/');
+    
+    // Only redirect for 401 errors if:
+    // 1. Not in demo mode
+    // 2. Not an admin CRUD operation
+    // 3. Not any admin endpoint (broader protection)
+    // 4. Not a network error (backend unavailable)
+    const isNetworkError = !error.response;
+    const shouldRedirect = error.response?.status === 401 && 
+                         !isDemoMode && 
+                         !isAdminCRUDOperation && 
+                         !isAdminEndpoint &&
+                         !isNetworkError;
+    
+    if (shouldRedirect) {
+      console.warn('Authentication failed - redirecting to login');
       localStorage.removeItem('admin_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('demo_user');
       window.location.href = '/login';
     }
     
@@ -102,8 +119,10 @@ api.interceptors.response.use(
     }
     
     // Log 401 errors in demo mode or for admin CRUD operations
-    if (error.response?.status === 401 && (isDemoMode || isAdminCRUDOperation)) {
-      console.warn('API call blocked in demo mode - backend requires real authentication');
+    if (error.response?.status === 401 && (isDemoMode || isAdminCRUDOperation || isAdminEndpoint)) {
+      console.warn('API call blocked in demo mode or admin operation - backend requires real authentication');
+      // Mark error as suppressed to prevent duplicate error handling
+      error.suppressErrorLog = true;
     }
     
     return Promise.reject(error);

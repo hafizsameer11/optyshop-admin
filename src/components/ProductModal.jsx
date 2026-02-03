@@ -117,16 +117,39 @@ const ProductModal = ({ product, onClose }) => {
       if (setModalOpen) setModalOpen(false);
       if (setSelected) setSelected(null);
 
-      // Always refresh data when modal closes (whether saved or cancelled)
-      // This ensures the table is up-to-date with the latest data and stays on the same page
+      // When saved successfully, navigate to the appropriate lens management page
+      // This ensures the user goes to the dedicated table page instead of staying in product modal
       if (saved) {
-        console.log(`🔄 Refreshing lens management data after ${modalType} form save`);
-        // Use setTimeout to ensure modal is fully closed before refreshing
-        setTimeout(() => {
-          fetchLensManagementData();
-        }, 100);
+        console.log(`🔄 Navigating to ${modalType} management page after form save`);
+        
+        // Mapping of modal types to their respective page routes
+        const pageRoutes = {
+          'frameSize': '/frame-sizes',
+          'lensType': '/lens-types',
+          'lensOption': '/lens-options',
+          'prescriptionSunLens': '/prescription-sun-lenses',
+          'photochromicLens': '/photochromic-lenses',
+          'lensCoating': '/lens-coatings',
+          'lensColor': '/lens-colors',
+          'lensFinish': '/lens-finishes',
+          'lensTreatment': '/lens-treatments',
+          'thicknessMaterial': '/lens-thickness-materials',
+          'thicknessOption': '/lens-thickness-options',
+          'prescriptionLensType': '/prescription-lens-types',
+          'prescriptionDropdown': '/prescription-form-dropdown-values',
+        };
+
+        const targetRoute = pageRoutes[modalType];
+        if (targetRoute) {
+          // Close the product modal first
+          setTimeout(() => {
+            console.log(`🔄 Navigating to ${targetRoute}`);
+            // Use window.location.href for full page navigation to ensure proper page load
+            window.location.href = targetRoute;
+          }, 100);
+        }
       } else {
-        console.log(`❌ ${modalType} modal closed without refresh (cancelled)`);
+        console.log(`❌ ${modalType} modal closed without navigation (cancelled)`);
       }
       // If cancelled, just close the modal and stay in product modal
     };

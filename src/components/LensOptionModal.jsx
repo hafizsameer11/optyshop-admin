@@ -27,8 +27,10 @@ const LensOptionModal = ({ lensOption, onClose }) => {
 
   useEffect(() => {
     if (lensOption) {
+      console.log('🔄 Populating edit form with lens option data:', lensOption);
+      
       // Handle both snake_case and camelCase field names
-      setFormData({
+      const populatedData = {
         name: lensOption.name || '',
         slug: lensOption.slug || '',
         type: lensOption.type || 'classic',
@@ -46,8 +48,12 @@ const LensOptionModal = ({ lensOption, onClose }) => {
           : (lensOption.sortOrder !== null && lensOption.sortOrder !== undefined
             ? lensOption.sortOrder
             : 0),
-      });
+      };
+      
+      console.log('🔄 Form data populated for lens option edit:', populatedData);
+      setFormData(populatedData);
     } else {
+      console.log('🔄 Resetting form for new lens option creation');
       setFormData({
         name: '',
         slug: '',
@@ -88,7 +94,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
       }, { once: true });
     }
     
-    console.log('🚫 Form submission prevented - starting save process');
+    console.log('🔍 Lens Option form submission started');
     setLoading(true);
 
     try {
@@ -105,34 +111,68 @@ const LensOptionModal = ({ lensOption, onClose }) => {
         sort_order: parseInt(formData.sort_order) || 0,
       };
 
+      console.log('🔄 Submitting lens option data:', {
+        isEdit: !!lensOption,
+        lensOptionId: lensOption?.id,
+        submitData
+      });
+
       let response;
       if (lensOption) {
+        console.log('🔄 Updating lens option with ID:', lensOption.id);
         response = await updateLensOption(lensOption.id, submitData);
         console.log('✅ Lens option updated successfully:', response.data);
         toast.success('Lens option updated successfully');
       } else {
+        console.log('🔄 Creating new lens option');
         response = await createLensOption(submitData);
         console.log('✅ Lens option created successfully:', response.data);
         toast.success('Lens option created successfully');
       }
       
-      // Always close modal and refresh, regardless of API response
-      // This ensures no page refresh happens
-      console.log('🔄 Closing modal and triggering table refresh');
-      console.log('🔄 About to call onClose(true) - this should NOT cause page refresh');
-      
-      // Use setTimeout to ensure all async operations complete before modal close
-      setTimeout(() => {
-        console.log('🔄 Calling onClose(true) now');
-        onClose(true);
-      }, 50);
+      // Verify the response contains the expected data
+      if (response.data && (response.data.id || response.data.success || response.data.data)) {
+        console.log('✅ API operation confirmed, closing modal and navigating');
+        // Use setTimeout to ensure all async operations complete before modal close
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) now');
+          onClose(true);
+        }, 50);
+      } else {
+        console.warn('⚠️ Unexpected API response format:', response.data);
+        toast.error('Unexpected response from server');
+      }
     } catch (error) {
       console.error('❌ Lens option save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Show actual error message from live server
-      const errorMessage = error.response?.data?.message || 'Failed to save lens option';
-      toast.error(errorMessage);
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
+      
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and navigate
+        console.log('🔄 API error occurred, but still closing modal and navigating');
+        toast.error('Backend error - Changes may not be saved');
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) to navigate to table');
+          onClose(true);
+        }, 1000);
+      } else {
+        // For other types of errors, don't close modal
+        const errorMessage = error.response?.data?.message || 'Failed to save lens option';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

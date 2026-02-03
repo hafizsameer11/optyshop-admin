@@ -28,8 +28,10 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
 
   useEffect(() => {
     if (lensTreatment) {
+      console.log('🔄 Populating edit form with lens treatment data:', lensTreatment);
+      
       // Handle both snake_case and camelCase field names
-      setFormData({
+      const populatedData = {
         name: lensTreatment.name || '',
         slug: lensTreatment.slug || '',
         type: lensTreatment.type || 'scratch_proof',
@@ -46,8 +48,12 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
           : (lensTreatment.sortOrder !== null && lensTreatment.sortOrder !== undefined
             ? lensTreatment.sortOrder
             : 0),
-      });
+      };
+      
+      console.log('🔄 Form data populated for lens treatment edit:', populatedData);
+      setFormData(populatedData);
     } else {
+      console.log('🔄 Resetting form for new lens treatment creation');
       setFormData({
         name: '',
         slug: '',
@@ -81,6 +87,7 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🔍 Lens Treatment form submission started');
     
     if (!formData.name) {
       toast.error('Please enter a name');
@@ -116,18 +123,34 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
         is_active: formData.is_active,
         sort_order: parseInt(formData.sort_order, 10) || 0,
       };
+
+      console.log('🔄 Submitting lens treatment data:', {
+        isEdit: !!lensTreatment,
+        lensTreatmentId: lensTreatment?.id,
+        submitData
+      });
       
       let response;
       if (lensTreatment) {
+        console.log('🔄 Updating lens treatment with ID:', lensTreatment.id);
         response = await updateLensTreatment(lensTreatment.id, submitData);
         console.log('✅ Lens treatment updated successfully:', response.data);
         toast.success('Lens treatment updated successfully');
       } else {
+        console.log('🔄 Creating new lens treatment');
         response = await createLensTreatment(submitData);
         console.log('✅ Lens treatment created successfully:', response.data);
         toast.success('Lens treatment created successfully');
       }
-      onClose(true);
+      
+      // Verify the response contains the expected data
+      if (response.data && (response.data.id || response.data.success || response.data.data)) {
+        console.log('✅ API operation confirmed, closing modal and navigating');
+        onClose(true);
+      } else {
+        console.warn('⚠️ Unexpected API response format:', response.data);
+        toast.error('Unexpected response from server');
+      }
     } catch (error) {
       console.error('❌ Lens treatment save error:', error);
       console.error('Error response:', error.response?.data);
@@ -137,18 +160,25 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
       const isAuthError = error.response?.status === 401;
       const isServerError = error.response?.status >= 500;
       const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
       
-      // For any error, still close modal and try to refresh
-      // This ensures the UI doesn't get stuck
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error occurred, but still closing modal and refreshing');
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and navigate
+        console.log('🔄 API error occurred, but still closing modal and navigating');
         toast.error('Backend error - Changes may not be saved');
         setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to refresh table');
+          console.log('🔄 Calling onClose(true) to navigate to table');
           onClose(true);
         }, 1000);
       } else {
-        // For validation errors, don't close modal
+        // For other types of errors, don't close modal
         const errorMessage = error.response?.data?.message || 'Failed to save lens treatment';
         toast.error(errorMessage);
       }

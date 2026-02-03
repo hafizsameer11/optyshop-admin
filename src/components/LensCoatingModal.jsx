@@ -26,8 +26,10 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
 
   useEffect(() => {
     if (lensCoating) {
+      console.log('🔄 Populating edit form with lens coating data:', lensCoating);
+      
       // Handle both snake_case and camelCase field names
-      setFormData({
+      const populatedData = {
         name: lensCoating.name || '',
         slug: lensCoating.slug || '',
         type: lensCoating.type || '',
@@ -40,8 +42,12 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
         is_active: lensCoating.is_active !== undefined 
           ? lensCoating.is_active 
           : (lensCoating.isActive !== undefined ? lensCoating.isActive : true),
-      });
+      };
+      
+      console.log('🔄 Form data populated for lens coating edit:', populatedData);
+      setFormData(populatedData);
     } else {
+      console.log('🔄 Resetting form for new lens coating creation');
       setFormData({
         name: '',
         slug: '',
@@ -68,7 +74,7 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🔍 Form submission started');
+    console.log('🔍 Lens Coating form submission started');
     
     // Validate required fields
     if (!formData.name) {
@@ -108,12 +114,17 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
         is_active: formData.is_active,
       };
 
-      console.log('🚀 Submitting lens coating data:', submitData);
+      console.log('🔄 Submitting lens coating data:', {
+        isEdit: !!lensCoating,
+        lensCoatingId: lensCoating?.id,
+        submitData
+      });
 
       let response;
       if (lensCoating) {
-        console.log('🔄 Updating lens coating:', lensCoating.id, submitData);
+        console.log('🔄 Updating lens coating with ID:', lensCoating.id);
         response = await updateLensCoating(lensCoating.id, submitData);
+        console.log('✅ Lens coating updated successfully:', response.data);
         // Handle response structure: { success, message, data: { lensCoating: {...} } }
         if (response.data?.success) {
           toast.success(response.data.message || 'Lens coating updated successfully');
@@ -121,8 +132,9 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
           toast.success('Lens coating updated successfully');
         }
       } else {
-        console.log('➕ Creating new lens coating:', submitData);
+        console.log('🔄 Creating new lens coating');
         response = await createLensCoating(submitData);
+        console.log('✅ Lens coating created successfully:', response.data);
         // Handle response structure: { success, message, data: { lensCoating: {...} } }
         if (response.data?.success) {
           toast.success(response.data.message || 'Lens coating created successfully');
@@ -131,21 +143,45 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
         }
       }
       
-      console.log('✅ Lens coating operation completed, calling onClose(true) to refresh table');
-      // Close modal and trigger parent refresh without page reload
-      onClose(true);
+      // Verify the response contains the expected data
+      if (response.data && (response.data.id || response.data.success || response.data.data)) {
+        console.log('✅ API operation confirmed, closing modal and navigating');
+        onClose(true);
+      } else {
+        console.warn('⚠️ Unexpected API response format:', response.data);
+        toast.error('Unexpected response from server');
+      }
     } catch (error) {
       console.error('❌ Lens coating save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Always simulate successful save for demo purposes
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Lens coating saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
-        onClose(true);
-      }, 1000);
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
+      
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and navigate
+        console.log('🔄 API error occurred, but still closing modal and navigating');
+        toast.error('Backend error - Changes may not be saved');
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) to navigate to table');
+          onClose(true);
+        }, 1000);
+      } else {
+        // For other types of errors, don't close modal
+        const errorMessage = error.response?.data?.message || 'Failed to save lens coating';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

@@ -26,8 +26,10 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
 
   useEffect(() => {
     if (lens) {
+      console.log('🔄 Populating edit form with photochromic lens data:', lens);
+      
       // Handle both snake_case and camelCase field names
-      setFormData({
+      const populatedData = {
         name: lens.name || '',
         slug: lens.slug || '',
         base_price: lens.base_price !== null && lens.base_price !== undefined
@@ -44,8 +46,12 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
           : (lens.sortOrder !== null && lens.sortOrder !== undefined
             ? lens.sortOrder
             : 0),
-      });
+      };
+      
+      console.log('🔄 Form data populated for photochromic lens edit:', populatedData);
+      setFormData(populatedData);
     } else {
+      console.log('🔄 Resetting form for new photochromic lens creation');
       setFormData({
         name: '',
         slug: '',
@@ -72,6 +78,7 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🔍 Photochromic Lens form submission started');
     setLoading(true);
 
     try {
@@ -84,17 +91,33 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
         sort_order: parseInt(formData.sort_order) || 0,
       };
 
+      console.log('🔄 Submitting photochromic lens data:', {
+        isEdit: !!lens,
+        lensId: lens?.id,
+        submitData
+      });
+
       let response;
       if (lens) {
+        console.log('🔄 Updating photochromic lens with ID:', lens.id);
         response = await updatePhotochromicLens(lens.id, submitData);
         console.log('✅ Photochromic lens updated successfully:', response.data);
         toast.success('Photochromic lens updated successfully');
       } else {
+        console.log('🔄 Creating new photochromic lens');
         response = await createPhotochromicLens(submitData);
         console.log('✅ Photochromic lens created successfully:', response.data);
         toast.success('Photochromic lens created successfully');
       }
-      onClose(true);
+      
+      // Verify the response contains the expected data
+      if (response.data && (response.data.id || response.data.success || response.data.data)) {
+        console.log('✅ API operation confirmed, closing modal and navigating');
+        onClose(true);
+      } else {
+        console.warn('⚠️ Unexpected API response format:', response.data);
+        toast.error('Unexpected response from server');
+      }
     } catch (error) {
       console.error('❌ Photochromic lens save error:', error);
       console.error('Error response:', error.response?.data);
@@ -104,18 +127,25 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
       const isAuthError = error.response?.status === 401;
       const isServerError = error.response?.status >= 500;
       const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
       
-      // For any error, still close modal and try to refresh
-      // This ensures the UI doesn't get stuck
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error occurred, but still closing modal and refreshing');
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and navigate
+        console.log('🔄 API error occurred, but still closing modal and navigating');
         toast.error('Backend error - Changes may not be saved');
         setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to refresh table');
+          console.log('🔄 Calling onClose(true) to navigate to table');
           onClose(true);
         }, 1000);
       } else {
-        // For validation errors, don't close modal
+        // For other types of errors, don't close modal
         const errorMessage = error.response?.data?.message || 'Failed to save photochromic lens';
         toast.error(errorMessage);
       }

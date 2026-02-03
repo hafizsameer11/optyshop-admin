@@ -27,8 +27,10 @@ const LensTypeModal = ({ lensType, onClose }) => {
 
   useEffect(() => {
     if (lensType) {
+      console.log('🔄 Populating edit form with lens type data:', lensType);
+      
       // Handle both snake_case and camelCase field names
-      setFormData({
+      const populatedData = {
         name: lensType.name || '',
         slug: lensType.slug || '',
         index: lensType.index || '',
@@ -46,8 +48,12 @@ const LensTypeModal = ({ lensType, onClose }) => {
         is_active: lensType.is_active !== undefined 
           ? lensType.is_active 
           : (lensType.isActive !== undefined ? lensType.isActive : true),
-      });
+      };
+      
+      console.log('🔄 Form data populated for lens type edit:', populatedData);
+      setFormData(populatedData);
     } else {
+      console.log('🔄 Resetting form for new lens type creation');
       setFormData({
         name: '',
         slug: '',
@@ -74,7 +80,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
   };
 
   const handleSubmit = async () => {
-    console.log('🔍 Form submission started');
+    console.log('🔍 Lens Type form submission started');
     
     // Validate required fields
     if (!formData.name) {
@@ -105,12 +111,17 @@ const LensTypeModal = ({ lensType, onClose }) => {
         price_adjustment: parseFloat(formData.price_adjustment),
       };
 
-      console.log('🚀 Submitting lens type data:', submitData);
+      console.log('🔄 Submitting lens type data:', {
+        isEdit: !!lensType,
+        lensTypeId: lensType?.id,
+        submitData
+      });
 
       let response;
       if (lensType) {
-        console.log('🔄 Updating lens type:', lensType.id, submitData);
+        console.log('🔄 Updating lens type with ID:', lensType.id);
         response = await updateLensType(lensType.id, submitData);
+        console.log('✅ Lens type updated successfully:', response.data);
         // Handle response structure: { success, message, data: { lensType: {...} } }
         if (response.data?.success) {
           toast.success(response.data.message || 'Lens type updated successfully');
@@ -118,8 +129,9 @@ const LensTypeModal = ({ lensType, onClose }) => {
           toast.success('Lens type updated successfully');
         }
       } else {
-        console.log('➕ Creating new lens type:', submitData);
+        console.log('🔄 Creating new lens type');
         response = await createLensType(submitData);
+        console.log('✅ Lens type created successfully:', response.data);
         // Handle response structure: { success, message, data: { lensType: {...} } }
         if (response.data?.success) {
           toast.success(response.data.message || 'Lens type created successfully');
@@ -128,21 +140,45 @@ const LensTypeModal = ({ lensType, onClose }) => {
         }
       }
       
-      console.log('✅ Lens type operation completed, calling onClose(true) to refresh table');
-      // Close modal and trigger parent refresh without page reload
-      onClose(true);
+      // Verify the response contains the expected data
+      if (response.data && (response.data.id || response.data.success || response.data.data)) {
+        console.log('✅ API operation confirmed, closing modal and navigating');
+        onClose(true);
+      } else {
+        console.warn('⚠️ Unexpected API response format:', response.data);
+        toast.error('Unexpected response from server');
+      }
     } catch (error) {
       console.error('❌ Lens type save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Always simulate successful save for demo purposes
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Lens type saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
-        onClose(true);
-      }, 1000);
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
+      
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and navigate
+        console.log('🔄 API error occurred, but still closing modal and navigating');
+        toast.error('Backend error - Changes may not be saved');
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) to navigate to table');
+          onClose(true);
+        }, 1000);
+      } else {
+        // For other types of errors, don't close modal
+        const errorMessage = error.response?.data?.message || 'Failed to save lens type';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

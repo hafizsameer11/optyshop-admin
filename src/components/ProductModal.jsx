@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -90,6 +91,7 @@ const getColorNameFromHex = (hexCode) => {
 
 const ProductModal = ({ product, onClose }) => {
   const { t } = useI18n();
+  const navigate = useNavigate();
 
   // Helper function to handle lens management modal close with refresh
   // saved: true if form was saved successfully, false/undefined if cancelled/closed
@@ -153,37 +155,24 @@ const ProductModal = ({ product, onClose }) => {
             // This prevents any interference from the Products component
             console.log('🔄 Bypassing parent onClose - navigating directly');
             
-            // Force navigation with multiple fallback methods
-            const navigate = () => {
+            // Navigate using React Router for SPA navigation (no page refresh)
+            const performNavigation = () => {
               try {
-                console.log('🔄 Method 1: window.location.href');
+                console.log(`🔄 Using React Router navigate to: ${targetRoute}`);
+                navigate(targetRoute);
+              } catch (error) {
+                console.error('❌ React Router navigation failed:', error);
+                // Fallback to window.location only if React Router fails
+                console.log('🔄 Fallback: window.location.href');
                 window.location.href = targetRoute;
-              } catch (error1) {
-                console.error('❌ Method 1 failed:', error1);
-                try {
-                  console.log('🔄 Method 2: window.location.assign');
-                  window.location.assign(targetRoute);
-                } catch (error2) {
-                  console.error('❌ Method 2 failed:', error2);
-                  try {
-                    console.log('🔄 Method 3: window.location.replace');
-                    window.location.replace(targetRoute);
-                  } catch (error3) {
-                    console.error('❌ Method 3 failed:', error3);
-                    // Last resort - full URL
-                    const fullUrl = `${window.location.origin}${targetRoute}`;
-                    console.log('🔄 Method 4: Full URL fallback');
-                    window.location.href = fullUrl;
-                  }
-                }
               }
             };
             
             // Call navigate immediately
-            navigate();
+            performNavigation();
             
             // Also try after a small delay as backup
-            setTimeout(navigate, 50);
+            setTimeout(performNavigation, 50);
             
           }, 100); // Reduced timeout for faster navigation
         } else {
@@ -327,7 +316,18 @@ const ProductModal = ({ product, onClose }) => {
   const [frameMaterials, setFrameMaterials] = useState([]);
   const [genders, setGenders] = useState([]);
   const [lensTypes, setLensTypes] = useState([]);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Try to restore active tab from localStorage for this specific product
+    if (product?.id) {
+      try {
+        const savedTab = localStorage.getItem(`product_modal_${product.id}_active_tab`);
+        return savedTab || 'general';
+      } catch (error) {
+        console.warn('Failed to load active tab from localStorage:', error);
+      }
+    }
+    return 'general';
+  });
   const [loading, setLoading] = useState(false);
   const [productTypeManuallySet, setProductTypeManuallySet] = useState(false); // Track if user manually set product_type
 
@@ -405,9 +405,26 @@ const ProductModal = ({ product, onClose }) => {
   const [model3DFile, setModel3DFile] = useState(null);
   const [model3DPreview, setModel3DPreview] = useState(null);
 
-  // Sync currentProduct with product prop
+  // Sync currentProduct with product prop and restore tab state
   useEffect(() => {
     setCurrentProduct(product);
+    
+    // When product changes, restore the appropriate tab state
+    if (product?.id) {
+      try {
+        const savedTab = localStorage.getItem(`product_modal_${product.id}_active_tab`);
+        if (savedTab) {
+          setActiveTab(savedTab);
+        } else {
+          setActiveTab('general');
+        }
+      } catch (error) {
+        console.warn('Failed to restore tab state for product:', error);
+        setActiveTab('general');
+      }
+    } else {
+      setActiveTab('general');
+    }
   }, [product]);
 
   // Helper function to check if a subcategory is a sub-subcategory and set form correctly
@@ -2336,6 +2353,17 @@ const ProductModal = ({ product, onClose }) => {
   if (isEyeHygiene && product) {
     console.log(`📋 Eye Hygiene product edit - Available tabs:`, tabs.map(t => t.label).join(', '));
   }
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    if (product?.id && activeTab) {
+      try {
+        localStorage.setItem(`product_modal_${product.id}_active_tab`, activeTab);
+      } catch (error) {
+        console.warn('Failed to save active tab to localStorage:', error);
+      }
+    }
+  }, [activeTab, product?.id]);
 
   // Fetch lens management data when tab changes
   useEffect(() => {

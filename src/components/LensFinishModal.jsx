@@ -341,7 +341,7 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
           </div>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Lens Option <span className="text-red-500">*</span>

@@ -79,21 +79,8 @@ const LensOptionModal = ({ lensOption, onClose }) => {
   };
 
   const handleSubmit = async (e) => {
-    // Prevent default form submission AND any bubbling/propagation
     e.preventDefault();
     e.stopPropagation();
-    e.nativeEvent?.preventDefault();
-    
-    // Also prevent any form submission that might happen due to browser validation
-    const form = e.target;
-    if (form) {
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        return false;
-      }, { once: true });
-    }
-    
     console.log('🔍 Lens Option form submission started');
     setLoading(true);
 
@@ -297,7 +284,6 @@ const LensOptionModal = ({ lensOption, onClose }) => {
             </button>
             <button
               type="submit"
-              formNoValidate
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >

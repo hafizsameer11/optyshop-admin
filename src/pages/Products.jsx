@@ -304,14 +304,33 @@ const Products = () => {
   
   const { searchTerm, categoryFilter, subCategoryFilter, selectedSection, page } = pageState;
   
+  // Modal state persistence across page refreshes
+  const [modalOpen, setModalOpen] = useState(() => {
+    try {
+      const savedModalState = localStorage.getItem('products_modal_open');
+      return savedModalState === 'true';
+    } catch (error) {
+      console.warn('Failed to load modal state from localStorage:', error);
+      return false;
+    }
+  });
+  
+  const [editingProduct, setEditingProduct] = useState(() => {
+    try {
+      const savedEditingProduct = localStorage.getItem('products_editing_product');
+      return savedEditingProduct ? JSON.parse(savedEditingProduct) : null;
+    } catch (error) {
+      console.warn('Failed to load editing product from localStorage:', error);
+      return null;
+    }
+  });
+  
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [brandFilter, setBrandFilter] = useState('');
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [brands, setBrands] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
   const [totalPages, setTotalPages] = useState(1);
   const [subCategoriesMap, setSubCategoriesMap] = useState({});
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
@@ -331,11 +350,41 @@ const Products = () => {
     page,
   });
 
+  // Save modal state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('products_modal_open', modalOpen.toString());
+    } catch (error) {
+      console.warn('Failed to save modal state to localStorage:', error);
+    }
+  }, [modalOpen]);
+
+  // Save editing product to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('products_editing_product', JSON.stringify(editingProduct));
+    } catch (error) {
+      console.warn('Failed to save editing product to localStorage:', error);
+    }
+  }, [editingProduct]);
+
   useEffect(() => {
     fetchCategories();
     fetchSubCategories();
     fetchBrands();
   }, []);
+
+  // Restore full product data when component mounts if there's a saved editing product
+  useEffect(() => {
+    if (editingProduct && editingProduct.id && products.length > 0) {
+      // Find the full product data from the products list
+      const fullProduct = products.find(p => p.id === editingProduct.id);
+      if (fullProduct) {
+        console.log('🔄 Restoring full product data for editing:', fullProduct.id);
+        setEditingProduct(fullProduct);
+      }
+    }
+  }, [products]);
 
   const fetchBrands = async () => {
     try {
@@ -1077,6 +1126,14 @@ const Products = () => {
     
     setModalOpen(false);
     setEditingProduct(null);
+    
+    // Clear localStorage state when modal is closed
+    try {
+      localStorage.removeItem('products_modal_open');
+      localStorage.removeItem('products_editing_product');
+    } catch (error) {
+      console.warn('Failed to clear modal state from localStorage:', error);
+    }
     
     if (shouldRefresh) {
       console.log('📋 Refreshing products list after modal save');

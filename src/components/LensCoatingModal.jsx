@@ -206,7 +206,7 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
           </div>
         </div>
 
-        <form className="p-6 space-y-5 overflow-y-auto flex-1" noValidate onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+        <form className="p-6 space-y-5 overflow-y-auto flex-1" onSubmit={handleSubmit}>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               {t('name')} <span className="text-red-500">*</span>

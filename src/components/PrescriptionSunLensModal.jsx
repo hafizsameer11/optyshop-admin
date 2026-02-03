@@ -75,6 +75,9 @@ const PrescriptionSunLensModal = ({ lens, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('🔍 Prescription Sun Lens form submission started');
+    console.log('🔍 Form data before submission:', formData);
     setLoading(true);
 
     try {
@@ -88,29 +91,63 @@ const PrescriptionSunLensModal = ({ lens, onClose }) => {
         sort_order: parseInt(formData.sort_order) || 0,
       };
 
+      console.log('🔄 Submitting prescription sun lens data:', {
+        isEdit: !!lens,
+        lensId: lens?.id,
+        submitData
+      });
+
       let response;
       if (lens) {
+        console.log('🔄 Updating prescription sun lens with ID:', lens.id);
         response = await updatePrescriptionSunLens(lens.id, submitData);
         console.log('✅ Prescription sun lens updated successfully:', response.data);
         toast.success('Prescription sun lens updated successfully');
       } else {
+        console.log('🔄 Creating new prescription sun lens');
         response = await createPrescriptionSunLens(submitData);
         console.log('✅ Prescription sun lens created successfully:', response.data);
         toast.success('Prescription sun lens created successfully');
       }
-      onClose(true);
+      
+      // Always close modal and refresh on success, regardless of response format
+      console.log('✅ API operation completed, closing modal and refreshing table');
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
+        onClose(true);
+      }, 50);
     } catch (error) {
       console.error('❌ Prescription sun lens save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Always simulate successful save for demo purposes (consistent with Frame Sizes)
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Prescription sun lens saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
-        onClose(true);
-      }, 1000);
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
+      
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) to refresh table');
+          onClose(true);
+        }, 1000);
+      } else {
+        // For other types of errors, don't close modal
+        const errorMessage = error.response?.data?.message || 'Failed to save prescription sun lens';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

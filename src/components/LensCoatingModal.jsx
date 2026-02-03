@@ -74,7 +74,9 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     console.log('🔍 Lens Coating form submission started');
+    console.log('🔍 Form data before submission:', formData);
     
     // Validate required fields
     if (!formData.name) {
@@ -106,11 +108,11 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
     try {
       // Prepare data with proper types
       const submitData = {
-        name: formData.name,
-        slug: formData.slug,
+        name: formData.name.trim(),
+        slug: formData.slug.trim(),
         type: formData.type,
         price_adjustment: parseFloat(formData.price_adjustment) || 0,
-        description: formData.description || '',
+        description: formData.description.trim() || '',
         is_active: formData.is_active,
       };
 
@@ -125,32 +127,21 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
         console.log('🔄 Updating lens coating with ID:', lensCoating.id);
         response = await updateLensCoating(lensCoating.id, submitData);
         console.log('✅ Lens coating updated successfully:', response.data);
-        // Handle response structure: { success, message, data: { lensCoating: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens coating updated successfully');
-        } else {
-          toast.success('Lens coating updated successfully');
-        }
+        toast.success('Lens coating updated successfully');
       } else {
         console.log('🔄 Creating new lens coating');
         response = await createLensCoating(submitData);
         console.log('✅ Lens coating created successfully:', response.data);
-        // Handle response structure: { success, message, data: { lensCoating: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens coating created successfully');
-        } else {
-          toast.success('Lens coating created successfully');
-        }
+        toast.success('Lens coating created successfully');
       }
       
-      // Verify the response contains the expected data
-      if (response.data && (response.data.id || response.data.success || response.data.data)) {
-        console.log('✅ API operation confirmed, closing modal and navigating');
+      // Always close modal and refresh on success, regardless of response format
+      console.log('✅ API operation completed, closing modal and refreshing table');
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
         onClose(true);
-      } else {
-        console.warn('⚠️ Unexpected API response format:', response.data);
-        toast.error('Unexpected response from server');
-      }
+      }, 50);
     } catch (error) {
       console.error('❌ Lens coating save error:', error);
       console.error('Error response:', error.response?.data);
@@ -170,11 +161,11 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
         console.error('❌ Validation errors:', validationErrors);
         toast.error(errorMessage);
       } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        // For other errors, still close modal and navigate
-        console.log('🔄 API error occurred, but still closing modal and navigating');
-        toast.error('Backend error - Changes may not be saved');
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
         setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to navigate to table');
+          console.log('🔄 Calling onClose(true) to refresh table');
           onClose(true);
         }, 1000);
       } else {

@@ -78,7 +78,9 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     console.log('🔍 Photochromic Lens form submission started');
+    console.log('🔍 Form data before submission:', formData);
     setLoading(true);
 
     try {
@@ -110,14 +112,13 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
         toast.success('Photochromic lens created successfully');
       }
       
-      // Verify the response contains the expected data
-      if (response.data && (response.data.id || response.data.success || response.data.data)) {
-        console.log('✅ API operation confirmed, closing modal and navigating');
+      // Always close modal and refresh on success, regardless of response format
+      console.log('✅ API operation completed, closing modal and refreshing table');
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
         onClose(true);
-      } else {
-        console.warn('⚠️ Unexpected API response format:', response.data);
-        toast.error('Unexpected response from server');
-      }
+      }, 50);
     } catch (error) {
       console.error('❌ Photochromic lens save error:', error);
       console.error('Error response:', error.response?.data);
@@ -137,11 +138,11 @@ const PhotochromicLensModal = ({ lens, onClose }) => {
         console.error('❌ Validation errors:', validationErrors);
         toast.error(errorMessage);
       } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        // For other errors, still close modal and navigate
-        console.log('🔄 API error occurred, but still closing modal and navigating');
-        toast.error('Backend error - Changes may not be saved');
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
         setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to navigate to table');
+          console.log('🔄 Calling onClose(true) to refresh table');
           onClose(true);
         }, 1000);
       } else {

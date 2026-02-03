@@ -18,7 +18,6 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
     name: '',
     slug: '',
     description: '',
-    price: '',
     is_active: true,
     sort_order: 0,
   });
@@ -30,7 +29,6 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
         name: material.name || '',
         slug: material.slug || '',
         description: material.description || '',
-        price: material.price || '',
         is_active: material.isActive !== undefined ? material.isActive : (material.is_active !== undefined ? material.is_active : true),
         sort_order: material.sortOrder !== null && material.sortOrder !== undefined 
           ? material.sortOrder 
@@ -41,7 +39,6 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
         name: '',
         slug: '',
         description: '',
-        price: '',
         is_active: true,
         sort_order: 0,
       });
@@ -68,6 +65,9 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('🔍 Lens Thickness Material form submission started');
+    console.log('🔍 Form data before submission:', formData);
     
     if (!formData.name) {
       toast.error('Please enter a name');
@@ -94,37 +94,70 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
       
       // Prepare data with proper types - API expects snake_case
       const submitData = {
-        name: formData.name,
-        slug: slug,
-        description: formData.description || null,
-        price: parseFloat(formData.price) || 0,
+        name: formData.name.trim(),
+        slug: slug.trim(),
+        description: formData.description.trim() || '',
         is_active: formData.is_active,
         sort_order: parseInt(formData.sort_order, 10) || 0,
       };
       
+      console.log('🔄 Submitting lens thickness material data:', {
+        isEdit: !!material,
+        materialId: material?.id,
+        submitData
+      });
+      
       let response;
       if (material) {
+        console.log('🔄 Updating lens thickness material with ID:', material.id);
         response = await updateLensThicknessMaterial(material.id, submitData);
         console.log('✅ Lens thickness material updated successfully:', response.data);
         toast.success('Lens thickness material updated successfully');
       } else {
+        console.log('🔄 Creating new lens thickness material');
         response = await createLensThicknessMaterial(submitData);
         console.log('✅ Lens thickness material created successfully:', response.data);
         toast.success('Lens thickness material created successfully');
       }
-      onClose(true);
+      
+      // Always close modal and refresh on success, regardless of response format
+      console.log('✅ API operation completed, closing modal and refreshing table');
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
+        onClose(true);
+      }, 50);
     } catch (error) {
       console.error('❌ Lens thickness material save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Always simulate successful save for demo purposes (consistent with Frame Sizes)
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Lens thickness material saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
-        onClose(true);
-      }, 1000);
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
+      
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) to refresh table');
+          onClose(true);
+        }, 1000);
+      } else {
+        // For other types of errors, don't close modal
+        const errorMessage = error.response?.data?.message || 'Failed to save lens thickness material';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -179,22 +212,6 @@ const LensThicknessMaterialModal = ({ material, onClose }) => {
               required
             />
             <p className="text-xs text-gray-500 mt-1">URL-friendly identifier (auto-generated if left empty)</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Price <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              step="0.01"
-              className="input-modern"
-              required
-              placeholder="e.g., 30.00"
-            />
           </div>
 
           <div>

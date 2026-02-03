@@ -101,17 +101,29 @@ const LensCoatings = () => {
       } else {
         toast.success('Lens coating deleted successfully');
       }
+      
       // Refresh the list without page reload
+      console.log('🔄 Deleting lens coating and refreshing table (no page refresh)');
       fetchLensCoatings();
     } catch (error) {
-      console.error('Lens coating delete error:', error);
-      if (!error.response) {
+      console.error('❌ Lens coating delete error:', error);
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete lens coating');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchLensCoatings();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens coating';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchLensCoatings();
       }
     }
   };
@@ -155,7 +167,7 @@ const LensCoatings = () => {
                   Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price Adjustment
+                  Base Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Description
@@ -196,7 +208,7 @@ const LensCoatings = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${coating.price_adjustment}
+                      ${coating.price_adjustment ? coating.price_adjustment.toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {coating.description || 'N/A'}
@@ -245,30 +257,20 @@ const LensCoatings = () => {
           onClose={(shouldRefresh = false) => {
             console.log('🔄 LensCoatingModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedLensCoating:', selectedLensCoating);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
+            // First close the modal
             setModalOpen(false);
             setSelectedLensCoating(null);
+            
             if (shouldRefresh) {
               console.log('📋 Refreshing lens coatings list after modal save');
-              // For demo purposes, add a new lens coating immediately if backend is not available
-              if (!selectedLensCoating) {
-                // Adding new lens coating - simulate adding to the list
-                const newLensCoating = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'New Lens Coating',
-                  slug: 'new-lens-coating',
-                  type: 'ar',
-                  price_adjustment: 30.00,
-                  description: 'Demo lens coating',
-                  is_active: true,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new lens coating to table:', newLensCoating);
-                setLensCoatings(prev => [newLensCoating, ...prev]);
-                toast.success('Lens coating added to table (demo mode)');
-              }
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching lens coatings from API');
+                console.log('🔄 Fetching lens coatings from API (no page refresh should occur)');
                 fetchLensCoatings();
               }, 100);
             } else {

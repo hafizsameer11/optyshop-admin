@@ -246,17 +246,29 @@ const LensFinishes = () => {
       } else {
         toast.success('Lens finish deleted successfully');
       }
+      
       // Refresh the list without page reload
+      console.log('🔄 Deleting lens finish and refreshing table (no page refresh)');
       fetchLensFinishes();
     } catch (error) {
-      console.error('Lens finish delete error:', error);
-      if (!error.response) {
+      console.error('❌ Lens finish delete error:', error);
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete lens finish');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchLensFinishes();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens finish';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchLensFinishes();
       }
     }
   };
@@ -429,7 +441,7 @@ const LensFinishes = () => {
                       {finish.description || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${finish.price_adjustment || finish.priceAdjustment || '0.00'}
+                      ${finish.price_adjustment ? finish.price_adjustment.toFixed(2) : (finish.priceAdjustment ? finish.priceAdjustment.toFixed(2) : '0.00')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -479,29 +491,20 @@ const LensFinishes = () => {
           onClose={(shouldRefresh = false) => {
             console.log('🔄 LensFinishModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedLensFinish:', selectedLensFinish);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
+            // First close the modal
             setModalOpen(false);
             setSelectedLensFinish(null);
+            
             if (shouldRefresh) {
               console.log('📋 Refreshing lens finishes list after modal save');
-              // For demo purposes, add a new lens finish immediately if backend is not available
-              if (!selectedLensFinish) {
-                // Adding new lens finish - simulate adding to the list
-                const newLensFinish = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'New Lens Finish',
-                  slug: 'new-lens-finish',
-                  price_adjustment: 15.00,
-                  description: 'Demo lens finish',
-                  is_active: true,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new lens finish to table:', newLensFinish);
-                setLensFinishes(prev => [newLensFinish, ...prev]);
-                toast.success('Lens finish added to table (demo mode)');
-              }
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching lens finishes from API');
+                console.log('🔄 Fetching lens finishes from API (no page refresh should occur)');
                 fetchLensFinishes();
               }, 100);
             } else {

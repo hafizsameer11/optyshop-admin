@@ -79,8 +79,11 @@ const LensTypeModal = ({ lensType, onClose }) => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log('🔍 Lens Type form submission started');
+    console.log('🔍 Form data before submission:', formData);
     
     // Validate required fields
     if (!formData.name) {
@@ -105,10 +108,13 @@ const LensTypeModal = ({ lensType, onClose }) => {
     try {
       // Prepare data - convert empty strings to null for optional fields
       const submitData = {
-        ...formData,
-        thickness_factor: formData.thickness_factor === '' ? null : formData.thickness_factor,
+        name: formData.name.trim(),
+        slug: formData.slug.trim(),
         index: parseFloat(formData.index),
+        thickness_factor: formData.thickness_factor === '' ? null : parseFloat(formData.thickness_factor),
         price_adjustment: parseFloat(formData.price_adjustment),
+        description: formData.description.trim() || '',
+        is_active: formData.is_active,
       };
 
       console.log('🔄 Submitting lens type data:', {
@@ -122,32 +128,21 @@ const LensTypeModal = ({ lensType, onClose }) => {
         console.log('🔄 Updating lens type with ID:', lensType.id);
         response = await updateLensType(lensType.id, submitData);
         console.log('✅ Lens type updated successfully:', response.data);
-        // Handle response structure: { success, message, data: { lensType: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens type updated successfully');
-        } else {
-          toast.success('Lens type updated successfully');
-        }
+        toast.success('Lens type updated successfully');
       } else {
         console.log('🔄 Creating new lens type');
         response = await createLensType(submitData);
         console.log('✅ Lens type created successfully:', response.data);
-        // Handle response structure: { success, message, data: { lensType: {...} } }
-        if (response.data?.success) {
-          toast.success(response.data.message || 'Lens type created successfully');
-        } else {
-          toast.success('Lens type created successfully');
-        }
+        toast.success('Lens type created successfully');
       }
       
-      // Verify the response contains the expected data
-      if (response.data && (response.data.id || response.data.success || response.data.data)) {
-        console.log('✅ API operation confirmed, closing modal and navigating');
+      // Always close modal and refresh on success, regardless of response format
+      console.log('✅ API operation completed, closing modal and refreshing table');
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
         onClose(true);
-      } else {
-        console.warn('⚠️ Unexpected API response format:', response.data);
-        toast.error('Unexpected response from server');
-      }
+      }, 50);
     } catch (error) {
       console.error('❌ Lens type save error:', error);
       console.error('Error response:', error.response?.data);
@@ -167,11 +162,11 @@ const LensTypeModal = ({ lensType, onClose }) => {
         console.error('❌ Validation errors:', validationErrors);
         toast.error(errorMessage);
       } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        // For other errors, still close modal and navigate
-        console.log('🔄 API error occurred, but still closing modal and navigating');
-        toast.error('Backend error - Changes may not be saved');
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
         setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to navigate to table');
+          console.log('🔄 Calling onClose(true) to refresh table');
           onClose(true);
         }, 1000);
       } else {
@@ -203,7 +198,7 @@ const LensTypeModal = ({ lensType, onClose }) => {
           </div>
         </div>
 
-        <form className="p-6 space-y-5 overflow-y-auto flex-1" noValidate>
+        <form className="p-6 space-y-5 overflow-y-auto flex-1" onSubmit={handleSubmit} noValidate>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Name <span className="text-red-500">*</span>
@@ -320,12 +315,11 @@ const LensTypeModal = ({ lensType, onClose }) => {
               {t('cancel')}
             </button>
             <button
-              type="button"
+              type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSubmit}
             >
-              {loading ? t('saving') : t('save')}
+              {loading ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>

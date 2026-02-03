@@ -118,18 +118,35 @@ const PrescriptionSunLenses = () => {
 
     try {
       const response = await deletePrescriptionSunLens(id);
-      console.log('✅ Prescription sun lens deleted successfully:', response.data);
-      toast.success('Prescription sun lens deleted successfully');
+      // Handle response structure: { success, message }
+      if (response.data?.success) {
+        toast.success(response.data.message || 'Prescription sun lens deleted successfully');
+      } else {
+        toast.success('Prescription sun lens deleted successfully');
+      }
+      
+      // Refresh the list without page reload
+      console.log('🔄 Deleting prescription sun lens and refreshing table (no page refresh)');
       fetchLenses();
     } catch (error) {
       console.error('❌ Prescription sun lens delete error:', error);
-      if (!error.response) {
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete prescription sun lens');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchLenses();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete prescription sun lens';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchLenses();
       }
     }
   };
@@ -271,34 +288,23 @@ const PrescriptionSunLenses = () => {
       {modalOpen && (
         <PrescriptionSunLensModal
           lens={selectedLens}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh = false) => {
             console.log('🔄 PrescriptionSunLensModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedLens:', selectedLens);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
+            // First close the modal
             setModalOpen(false);
             setSelectedLens(null);
+            
             if (shouldRefresh) {
               console.log('📋 Refreshing prescription sun lenses list after modal save');
-              // For demo purposes, add a new sun lens immediately if backend is not available
-              if (!selectedLens) {
-                // Adding new sun lens - simulate adding to the list
-                const newSunLens = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'Polarized',
-                  slug: 'polarized',
-                  type: 'polarized',
-                  base_price: 76.95,
-                  description: 'Reduce glare and see clearly for outdoor activities and driving.',
-                  is_active: true,
-                  sort_order: 0,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new sun lens to table:', newSunLens);
-                setLenses(prev => [newSunLens, ...prev]);
-                toast.success('Sun lens added to table (demo mode)');
-              }
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching sun lenses from API');
+                console.log('🔄 Fetching prescription sun lenses from API (no page refresh should occur)');
                 fetchLenses();
               }, 100);
             } else {

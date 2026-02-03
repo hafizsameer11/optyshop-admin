@@ -103,17 +103,29 @@ const LensTypes = () => {
       } else {
         toast.success('Lens type deleted successfully');
       }
+      
       // Refresh the list without page reload
+      console.log('🔄 Deleting lens type and refreshing table (no page refresh)');
       fetchLensTypes();
     } catch (error) {
-      console.error('Lens type delete error:', error);
-      if (!error.response) {
+      console.error('❌ Lens type delete error:', error);
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete lens type');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchLensTypes();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens type';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchLensTypes();
       }
     }
   };
@@ -202,7 +214,7 @@ const LensTypes = () => {
                       {type.thickness_factor || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${type.price_adjustment}
+                      ${type.price_adjustment ? type.price_adjustment.toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {type.description || 'N/A'}
@@ -251,31 +263,20 @@ const LensTypes = () => {
           onClose={(shouldRefresh = false) => {
             console.log('🔄 LensTypeModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedLensType:', selectedLensType);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
+            // First close the modal
             setModalOpen(false);
             setSelectedLensType(null);
+            
             if (shouldRefresh) {
               console.log('📋 Refreshing lens types list after modal save');
-              // For demo purposes, add a new lens type immediately if backend is not available
-              if (!selectedLensType) {
-                // Adding new lens type - simulate adding to the list
-                const newLensType = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'New Lens Type',
-                  slug: 'new-lens-type',
-                  index: '1.67',
-                  thickness_factor: 0.8,
-                  price_adjustment: 50.00,
-                  description: 'Demo lens type',
-                  is_active: true,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new lens type to table:', newLensType);
-                setLensTypes(prev => [newLensType, ...prev]);
-                toast.success('Lens type added to table (demo mode)');
-              }
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching lens types from API');
+                console.log('🔄 Fetching lens types from API (no page refresh should occur)');
                 fetchLensTypes();
               }, 100);
             } else {

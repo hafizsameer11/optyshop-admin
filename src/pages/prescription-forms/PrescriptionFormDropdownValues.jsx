@@ -126,16 +126,29 @@ const PrescriptionFormDropdownValues = () => {
       const response = await deletePrescriptionFormDropdownValue(id);
       console.log('✅ Dropdown value deleted successfully:', response.data);
       toast.success('Dropdown value deleted successfully');
+      
+      // Refresh the list without page reload
+      console.log('🔄 Deleting dropdown value and refreshing table (no page refresh)');
       fetchValues();
     } catch (error) {
       console.error('❌ Dropdown value delete error:', error);
-      if (!error.response) {
-        toast.error('Backend unavailable - Cannot delete value');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
+        toast.error('Backend unavailable - Cannot delete dropdown value');
+        // Still refresh to show current state
+        fetchValues();
       } else {
-        const errorMessage = error.response?.data?.message || 'Failed to delete value';
+        const errorMessage = error.response?.data?.message || 'Failed to delete dropdown value';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchValues();
       }
     }
   };
@@ -391,31 +404,20 @@ const PrescriptionFormDropdownValues = () => {
           onClose={(shouldRefresh) => {
             console.log('🔄 PrescriptionFormDropdownValueModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedValue:', selectedValue);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
+            // First close the modal
             setModalOpen(false);
             setSelectedValue(null);
+            
             if (shouldRefresh) {
               console.log('📋 Refreshing dropdown values list after modal save');
-              // For demo purposes, add a new dropdown value immediately if backend is not available
-              if (!selectedValue) {
-                // Adding new dropdown value - simulate adding to the list
-                const newDropdownValue = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  field_type: 'sph',
-                  value: '-2.00',
-                  label: '-2.00',
-                  eye_type: 'both',
-                  form_type: null,
-                  sort_order: 0,
-                  is_active: true,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new dropdown value to table:', newDropdownValue);
-                setValues(prev => [newDropdownValue, ...prev]);
-                toast.success('Dropdown value added to table (demo mode)');
-              }
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching dropdown values from API');
+                console.log('🔄 Fetching dropdown values from API (no page refresh should occur)');
                 fetchValues();
               }, 100);
             } else {

@@ -366,8 +366,10 @@ const LensColorModal = ({ lensColor, onClose }) => {
     }
   };
 
-  const handleSubmit = async () => {
-    console.log('🔍 Form submission started');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🔍 Lens Color form submission started');
     
     // Validate that at least one parent is selected
     let parentId = null;
@@ -465,7 +467,14 @@ const LensColorModal = ({ lensColor, onClose }) => {
           toast.success('Lens color updated successfully');
         }
         console.log('✅ Lens color updated successfully:', response.data);
-        onClose(true);
+        
+        // Always close modal and refresh on success, regardless of response format
+        console.log('✅ API operation completed, closing modal and refreshing table');
+        // Use setTimeout to ensure all async operations complete before modal close
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) now');
+          onClose(true);
+        }, 50);
       } else {
         // Create multiple colors
         let successCount = 0;
@@ -619,21 +628,46 @@ const LensColorModal = ({ lensColor, onClose }) => {
           toast.error(`Failed to create ${errorCount} color(s)`);
         }
         if (successCount > 0) {
-          onClose(true); // Pass true to indicate successful save
+          // Always close modal and refresh on success, regardless of response format
+          console.log('✅ API operation completed, closing modal and refreshing table');
+          // Use setTimeout to ensure all async operations complete before modal close
+          setTimeout(() => {
+            console.log('🔄 Calling onClose(true) now');
+            onClose(true);
+          }, 50);
         }
       }
     } catch (error) {
       console.error('❌ Lens color save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Always simulate successful save for demo purposes
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Lens color saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
-        onClose(true);
-      }, 1000);
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
+      
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) to refresh table');
+          onClose(true);
+        }, 1000);
+      } else {
+        // For other types of errors, don't close modal
+        const errorMessage = error.response?.data?.message || 'Failed to save lens color';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

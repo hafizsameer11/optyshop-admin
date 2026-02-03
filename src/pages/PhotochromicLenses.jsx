@@ -113,18 +113,35 @@ const PhotochromicLenses = () => {
 
     try {
       const response = await deletePhotochromicLens(id);
-      console.log('✅ Photochromic lens deleted successfully:', response.data);
-      toast.success('Photochromic lens deleted successfully');
+      // Handle response structure: { success, message }
+      if (response.data?.success) {
+        toast.success(response.data.message || 'Photochromic lens deleted successfully');
+      } else {
+        toast.success('Photochromic lens deleted successfully');
+      }
+      
+      // Refresh the list without page reload
+      console.log('🔄 Deleting photochromic lens and refreshing table (no page refresh)');
       fetchLenses();
     } catch (error) {
       console.error('❌ Photochromic lens delete error:', error);
-      if (!error.response) {
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete photochromic lens');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchLenses();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete photochromic lens';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchLenses();
       }
     }
   };
@@ -257,30 +274,13 @@ const PhotochromicLenses = () => {
             console.log('🔄 Current selectedLens:', selectedLens);
             console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
             
+            // First close the modal
             setModalOpen(false);
             setSelectedLens(null);
             
             if (shouldRefresh) {
               console.log('📋 Refreshing photochromic lenses list after modal save');
               console.log('🔄 This should only update the table, NOT refresh the page');
-              
-              // For demo purposes, add a new lens immediately if backend is not available
-              if (!selectedLens) {
-                // Adding new lens - simulate adding to the list
-                const newLens = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'EyeQLenz™ with Zenni ID Guard™',
-                  slug: 'eyeqlenz-with-zenni-id-guard',
-                  base_price: 0,
-                  description: '4-in-1 lens that reflects infrared light...',
-                  is_active: true,
-                  sort_order: 0,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new photochromic lens to table:', newLens);
-                setLenses(prev => [newLens, ...prev]);
-                toast.success('Photochromic lens added to table (demo mode)');
-              }
               
               // Use setTimeout to ensure modal is fully closed before refresh
               // This prevents any UI conflicts and ensures no page refresh

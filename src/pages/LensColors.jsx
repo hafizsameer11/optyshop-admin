@@ -310,17 +310,29 @@ const LensColors = () => {
       } else {
         toast.success('Lens color deleted successfully');
       }
+      
       // Refresh the list without page reload
+      console.log('🔄 Deleting lens color and refreshing table (no page refresh)');
       fetchLensColors();
     } catch (error) {
-      console.error('Lens color delete error:', error);
-      if (!error.response) {
+      console.error('❌ Lens color delete error:', error);
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete lens color');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchLensColors();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens color';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchLensColors();
       }
     }
   };
@@ -493,31 +505,20 @@ const LensColors = () => {
           onClose={(shouldRefresh = false) => {
             console.log('🔄 LensColorModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedLensColor:', selectedLensColor);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
+            // First close the modal
             setModalOpen(false);
             setSelectedLensColor(null);
+            
             if (shouldRefresh) {
               console.log('📋 Refreshing lens colors list after modal save');
-              // For demo purposes, add a new lens color immediately if backend is not available
-              if (!selectedLensColor) {
-                // Adding new lens color - simulate adding to the list
-                const newLensColor = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  lens_option_id: 1,
-                  name: 'New Lens Color',
-                  color_code: 'NEW_COLOR',
-                  hex_code: '#FF0000',
-                  price_adjustment: 25.00,
-                  is_active: true,
-                  sort_order: 0,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new lens color to table:', newLensColor);
-                setLensColors(prev => [newLensColor, ...prev]);
-                toast.success('Lens color added to table (demo mode)');
-              }
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching lens colors from API');
+                console.log('🔄 Fetching lens colors from API (no page refresh should occur)');
                 fetchLensColors();
               }, 100);
             } else {

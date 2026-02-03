@@ -99,20 +99,40 @@ const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('🔍 Prescription Form Dropdown Value form submission started');
+    console.log('🔍 Form data before submission:', formData);
+    
+    if (!formData.value) {
+      toast.error('Please enter a value');
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const submitData = {
-        ...formData,
+        field_type: formData.field_type,
+        value: formData.value.trim(),
+        label: formData.label.trim() || formData.value.trim(),
         eye_type: formData.eye_type === 'both' ? null : formData.eye_type,
         form_type: formData.form_type === '' ? null : formData.form_type,
+        sort_order: parseInt(formData.sort_order, 10) || 0,
+        is_active: formData.is_active,
       };
 
+      console.log('🔄 Submitting prescription form dropdown value data:', {
+        isEdit: !!value,
+        valueId: value?.id,
+        submitData
+      });
+      
       let response;
       if (value) {
+        console.log('🔄 Updating prescription form dropdown value with ID:', value.id);
         response = await updatePrescriptionFormDropdownValue(value.id, submitData);
-        console.log('✅ Dropdown value updated successfully:', response.data);
-        toast.success('Dropdown value updated successfully');
+        console.log('✅ Prescription form dropdown value updated successfully:', response.data);
+        toast.success('Prescription form dropdown value updated successfully');
       } else {
         // Check for multiple values (comma-separated)
         const valuesToCreate = formData.value.toString().split(',').map(v => v.trim()).filter(v => v !== '');
@@ -132,24 +152,51 @@ const PrescriptionFormDropdownValueModal = ({ value, onClose }) => {
           toast.success(`${valuesToCreate.length} dropdown values created successfully`);
         } else {
           // Single creation
+          console.log('🔄 Creating new prescription form dropdown value');
           response = await createPrescriptionFormDropdownValue(submitData);
-          console.log('✅ Dropdown value created successfully:', response.data);
-          toast.success('Dropdown value created successfully');
+          console.log('✅ Prescription form dropdown value created successfully:', response.data);
+          toast.success('Prescription form dropdown value created successfully');
         }
       }
-      onClose(true);
+      
+      // Always close modal and refresh on success, regardless of response format
+      console.log('✅ API operation completed, closing modal and refreshing table');
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
+        onClose(true);
+      }, 50);
     } catch (error) {
       console.error('❌ Prescription Form Dropdown Value save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Always simulate successful save for demo purposes (consistent with Frame Sizes)
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Dropdown value saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
-        onClose(true);
-      }, 1000);
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
+      
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
+        setTimeout(() => {
+          console.log('🔄 Calling onClose(true) to refresh table');
+          onClose(true);
+        }, 1000);
+      } else {
+        // For other types of errors, don't close modal
+        const errorMessage = error.response?.data?.message || 'Failed to save prescription form dropdown value';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

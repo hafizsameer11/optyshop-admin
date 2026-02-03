@@ -104,16 +104,29 @@ const LensThicknessOptions = () => {
       const response = await deleteLensThicknessOption(id);
       console.log('✅ Lens thickness option deleted successfully:', response.data);
       toast.success('Lens thickness option deleted successfully');
+      
+      // Refresh the list without page reload
+      console.log('🔄 Deleting lens thickness option and refreshing table (no page refresh)');
       fetchOptions();
     } catch (error) {
       console.error('❌ Lens thickness option delete error:', error);
-      if (!error.response) {
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete lens thickness option');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchOptions();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens thickness option';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchOptions();
       }
     }
   };
@@ -191,9 +204,6 @@ const LensThicknessOptions = () => {
                   Slug
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thickness Value
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Description
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -241,13 +251,6 @@ const LensThicknessOptions = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
                       {option.slug || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {option.thicknessValue !== null && option.thicknessValue !== undefined
-                        ? option.thicknessValue
-                        : (option.thickness_value !== null && option.thickness_value !== undefined
-                          ? option.thickness_value
-                          : 'N/A')}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {option.description || 'N/A'}
@@ -306,30 +309,13 @@ const LensThicknessOptions = () => {
             console.log('🔄 Current selectedOption:', selectedOption);
             console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
             
+            // First close the modal
             setModalOpen(false);
             setSelectedOption(null);
             
             if (shouldRefresh) {
               console.log('📋 Refreshing lens thickness options list after modal save');
               console.log('🔄 This should only update the table, NOT refresh the page');
-              
-              // For demo purposes, add a new option immediately if backend is not available
-              if (!selectedOption) {
-                // Adding new option - simulate adding to the list
-                const newOption = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'Thin',
-                  slug: 'thin',
-                  thickness_value: 1.5,
-                  description: 'Thin lens option for lighter weight',
-                  is_active: true,
-                  sort_order: 0,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new lens thickness option to table:', newOption);
-                setOptions(prev => [newOption, ...prev]);
-                toast.success('Lens thickness option added to table (demo mode)');
-              }
               
               // Use setTimeout to ensure modal is fully closed before refresh
               // This prevents any UI conflicts and ensures no page refresh

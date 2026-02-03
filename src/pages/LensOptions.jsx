@@ -317,6 +317,7 @@ const LensOptions = () => {
             console.log('🔄 Current selectedLensOption:', selectedLensOption);
             console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
             
+            // First close the modal
             setModalOpen(false);
             setSelectedLensOption(null);
             

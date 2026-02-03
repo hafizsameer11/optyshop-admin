@@ -104,16 +104,29 @@ const LensThicknessMaterials = () => {
       const response = await deleteLensThicknessMaterial(id);
       console.log('✅ Lens thickness material deleted successfully:', response.data);
       toast.success('Lens thickness material deleted successfully');
+      
+      // Refresh the list without page reload
+      console.log('🔄 Deleting lens thickness material and refreshing table (no page refresh)');
       fetchMaterials();
     } catch (error) {
       console.error('❌ Lens thickness material delete error:', error);
-      if (!error.response) {
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete lens thickness material');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchMaterials();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens thickness material';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchMaterials();
       }
     }
   };
@@ -191,9 +204,6 @@ const LensThicknessMaterials = () => {
                   Slug
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Description
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -241,9 +251,6 @@ const LensThicknessMaterials = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
                       {material.slug || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${material.price || '0.00'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {material.description || 'N/A'}
@@ -300,30 +307,20 @@ const LensThicknessMaterials = () => {
           onClose={(shouldRefresh) => {
             console.log('🔄 LensThicknessMaterialModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedMaterial:', selectedMaterial);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
+            // First close the modal
             setModalOpen(false);
             setSelectedMaterial(null);
+            
             if (shouldRefresh) {
               console.log('📋 Refreshing thickness materials list after modal save');
-              // For demo purposes, add a new thickness material immediately if backend is not available
-              if (!selectedMaterial) {
-                // Adding new thickness material - simulate adding to the list
-                const newMaterial = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'Unbreakable',
-                  slug: 'unbreakable',
-                  description: 'Durable plastic material that resists breaking',
-                  price: 30.00,
-                  is_active: true,
-                  sort_order: 0,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new thickness material to table:', newMaterial);
-                setMaterials(prev => [newMaterial, ...prev]);
-                toast.success('Thickness material added to table (demo mode)');
-              }
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching thickness materials from API');
+                console.log('🔄 Fetching thickness materials from API (no page refresh should occur)');
                 fetchMaterials();
               }, 100);
             } else {

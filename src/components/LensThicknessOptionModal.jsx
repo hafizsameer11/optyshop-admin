@@ -18,7 +18,6 @@ const LensThicknessOptionModal = ({ option, onClose }) => {
     name: '',
     slug: '',
     description: '',
-    thickness_value: '',
     is_active: true,
     sort_order: 0,
   });
@@ -30,11 +29,6 @@ const LensThicknessOptionModal = ({ option, onClose }) => {
         name: option.name || '',
         slug: option.slug || '',
         description: option.description || '',
-        thickness_value: option.thicknessValue !== null && option.thicknessValue !== undefined
-          ? option.thicknessValue
-          : (option.thickness_value !== null && option.thickness_value !== undefined
-            ? option.thickness_value
-            : ''),
         is_active: option.isActive !== undefined ? option.isActive : (option.is_active !== undefined ? option.is_active : true),
         sort_order: option.sortOrder !== null && option.sortOrder !== undefined 
           ? option.sortOrder 
@@ -45,7 +39,6 @@ const LensThicknessOptionModal = ({ option, onClose }) => {
         name: '',
         slug: '',
         description: '',
-        thickness_value: '',
         is_active: true,
         sort_order: 0,
       });
@@ -72,14 +65,12 @@ const LensThicknessOptionModal = ({ option, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('🔍 Lens Thickness Option form submission started');
+    console.log('🔍 Form data before submission:', formData);
     
     if (!formData.name) {
       toast.error('Please enter a name');
-      return;
-    }
-    
-    if (!formData.thickness_value && formData.thickness_value !== 0) {
-      toast.error('Please enter a thickness value');
       return;
     }
     
@@ -103,25 +94,39 @@ const LensThicknessOptionModal = ({ option, onClose }) => {
       
       // Prepare data with proper types - API expects snake_case
       const submitData = {
-        name: formData.name,
-        slug: slug,
-        description: formData.description || null,
-        thickness_value: parseFloat(formData.thickness_value) || 0,
+        name: formData.name.trim(),
+        slug: slug.trim(),
+        description: formData.description.trim() || '',
         is_active: formData.is_active,
         sort_order: parseInt(formData.sort_order, 10) || 0,
       };
       
+      console.log('🔄 Submitting lens thickness option data:', {
+        isEdit: !!option,
+        optionId: option?.id,
+        submitData
+      });
+      
       let response;
       if (option) {
+        console.log('🔄 Updating lens thickness option with ID:', option.id);
         response = await updateLensThicknessOption(option.id, submitData);
         console.log('✅ Lens thickness option updated successfully:', response.data);
         toast.success('Lens thickness option updated successfully');
       } else {
+        console.log('🔄 Creating new lens thickness option');
         response = await createLensThicknessOption(submitData);
         console.log('✅ Lens thickness option created successfully:', response.data);
         toast.success('Lens thickness option created successfully');
       }
-      onClose(true);
+      
+      // Always close modal and refresh on success, regardless of response format
+      console.log('✅ API operation completed, closing modal and refreshing table');
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
+        onClose(true);
+      }, 50);
     } catch (error) {
       console.error('❌ Lens thickness option save error:', error);
       console.error('Error response:', error.response?.data);
@@ -131,18 +136,25 @@ const LensThicknessOptionModal = ({ option, onClose }) => {
       const isAuthError = error.response?.status === 401;
       const isServerError = error.response?.status >= 500;
       const isNotFoundError = error.response?.status === 404;
+      const isValidationError = error.response?.status === 422;
       
-      // For any error, still close modal and try to refresh
-      // This ensures the UI doesn't get stuck
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 API error occurred, but still closing modal and refreshing');
-        toast.error('Backend error - Changes may not be saved');
+      // For validation errors, don't close modal and show specific error
+      if (isValidationError) {
+        const validationErrors = error.response?.data?.errors || {};
+        const errorMessages = Object.values(validationErrors).flat().join(', ');
+        const errorMessage = errorMessages || error.response?.data?.message || 'Validation failed';
+        console.error('❌ Validation errors:', validationErrors);
+        toast.error(errorMessage);
+      } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
         setTimeout(() => {
           console.log('🔄 Calling onClose(true) to refresh table');
           onClose(true);
         }, 1000);
       } else {
-        // For validation errors, don't close modal
+        // For other types of errors, don't close modal
         const errorMessage = error.response?.data?.message || 'Failed to save lens thickness option';
         toast.error(errorMessage);
       }
@@ -200,23 +212,6 @@ const LensThicknessOptionModal = ({ option, onClose }) => {
               required
             />
             <p className="text-xs text-gray-500 mt-1">URL-friendly identifier (auto-generated if left empty)</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Thickness Value <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              name="thickness_value"
-              value={formData.thickness_value}
-              onChange={handleChange}
-              step="0.1"
-              className="input-modern"
-              required
-              placeholder="e.g., 1.5"
-            />
-            <p className="text-xs text-gray-500 mt-1">Thickness value in millimeters</p>
           </div>
 
           <div>

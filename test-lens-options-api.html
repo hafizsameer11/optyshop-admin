@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Lens Options API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Lens Options API Test</h1>
+    
+    <div class="test-section">
+        <h2>Test GET /api/admin/lens-options</h2>
+        <button onclick="testGetLensOptions()">Test GET</button>
+        <div id="getResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test POST /api/admin/lens-options</h2>
+        <button onclick="testCreateLensOption()">Test POST</button>
+        <div id="postResult"></div>
+    </div>
+
+    <script>
+        const baseURL = 'https://optyshop-frontend.hmstech.org/api';
+        
+        async function testGetLensOptions() {
+            const resultDiv = document.getElementById('getResult');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch(`${baseURL}/admin/lens-options`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Status: ${response.status}</div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Error: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function testCreateLensOption() {
+            const resultDiv = document.getElementById('postResult');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            const testData = {
+                name: "Test Lens Option",
+                slug: "test-lens-option",
+                type: "classic",
+                description: "Test description",
+                base_price: 10.00,
+                is_active: true,
+                sort_order: 0
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/admin/lens-options`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="${response.ok ? 'success' : 'error'}">
+                        ${response.ok ? '✅' : '❌'} Status: ${response.status}
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Error: ${error.message}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

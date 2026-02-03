@@ -234,6 +234,9 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('🔍 Lens Finish form submission started');
+    console.log('🔍 Form data before submission:', formData);
     
     if (!formData.lens_option_id) {
       toast.error('Please select a lens option');
@@ -248,12 +251,21 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
     setLoading(true);
 
     try {
+      // Auto-generate slug if not provided
+      let slug = formData.slug;
+      if (!slug && formData.name) {
+        slug = formData.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+      }
+      
       // Prepare data with proper types
       const submitData = {
         lens_option_id: parseInt(formData.lens_option_id, 10),
-        name: formData.name,
-        slug: formData.slug || null,
-        description: formData.description || null,
+        name: formData.name.trim(),
+        slug: slug.trim() || null,
+        description: formData.description.trim() || '',
         price_adjustment: parseFloat(formData.price_adjustment) || 0,
         is_active: formData.is_active,
         sort_order: parseInt(formData.sort_order, 10) || 0,
@@ -278,14 +290,13 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
         toast.success('Lens finish created successfully');
       }
       
-      // Verify the response contains the expected data
-      if (response.data && (response.data.id || response.data.success)) {
-        console.log('✅ API operation confirmed, closing modal and navigating');
+      // Always close modal and refresh on success, regardless of response format
+      console.log('✅ API operation completed, closing modal and refreshing table');
+      // Use setTimeout to ensure all async operations complete before modal close
+      setTimeout(() => {
+        console.log('🔄 Calling onClose(true) now');
         onClose(true);
-      } else {
-        console.warn('⚠️ Unexpected API response format:', response.data);
-        toast.error('Unexpected response from server');
-      }
+      }, 50);
     } catch (error) {
       console.error('❌ Lens finish save error:', error);
       console.error('Error response:', error.response?.data);
@@ -305,11 +316,11 @@ const LensFinishModal = ({ lensFinish, onClose }) => {
         console.error('❌ Validation errors:', validationErrors);
         toast.error(errorMessage);
       } else if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        // For other errors, still close modal and navigate
-        console.log('🔄 API error occurred, but still closing modal and navigating');
-        toast.error('Backend error - Changes may not be saved');
+        // For other errors, still close modal and refresh to show current state
+        console.log('🔄 API error occurred, but still closing modal and refreshing table');
+        toast.error('Backend error - Showing current data');
         setTimeout(() => {
-          console.log('🔄 Calling onClose(true) to navigate to table');
+          console.log('🔄 Calling onClose(true) to refresh table');
           onClose(true);
         }, 1000);
       } else {

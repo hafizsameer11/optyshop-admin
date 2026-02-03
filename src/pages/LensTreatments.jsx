@@ -105,16 +105,29 @@ const LensTreatments = () => {
       const response = await deleteLensTreatment(id);
       console.log('✅ Lens treatment deleted successfully:', response.data);
       toast.success('Lens treatment deleted successfully');
+      
+      // Refresh the list without page reload
+      console.log('🔄 Deleting lens treatment and refreshing table (no page refresh)');
       fetchLensTreatments();
     } catch (error) {
       console.error('❌ Lens treatment delete error:', error);
-      if (!error.response) {
+      
+      // Check the type of error
+      const isNetworkError = !error.response;
+      const isAuthError = error.response?.status === 401;
+      const isServerError = error.response?.status >= 500;
+      const isNotFoundError = error.response?.status === 404;
+      
+      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
+        console.log('🔄 Backend error during delete - still refreshing table');
         toast.error('Backend unavailable - Cannot delete lens treatment');
-      } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials');
+        // Still refresh to show current state
+        fetchLensTreatments();
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete lens treatment';
         toast.error(errorMessage);
+        // Still refresh to show current state
+        fetchLensTreatments();
       }
     }
   };
@@ -214,7 +227,7 @@ const LensTreatments = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${treatment.price || '0.00'}
+                      ${treatment.price ? treatment.price.toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {treatment.description || 'N/A'}
@@ -265,31 +278,13 @@ const LensTreatments = () => {
             console.log('🔄 Current selectedLensTreatment:', selectedLensTreatment);
             console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
             
+            // First close the modal
             setModalOpen(false);
             setSelectedLensTreatment(null);
             
             if (shouldRefresh) {
               console.log('📋 Refreshing lens treatments list after modal save');
               console.log('🔄 This should only update the table, NOT refresh the page');
-              
-              // For demo purposes, add a new treatment immediately if backend is not available
-              if (!selectedLensTreatment) {
-                // Adding new treatment - simulate adding to the list
-                const newTreatment = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  name: 'Scratch Proof',
-                  slug: 'scratch-proof',
-                  type: 'scratch_proof',
-                  price: 30.00,
-                  description: 'Protects lenses from scratches and daily wear',
-                  is_active: true,
-                  sort_order: 0,
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new lens treatment to table:', newTreatment);
-                setLensTreatments(prev => [newTreatment, ...prev]);
-                toast.success('Lens treatment added to table (demo mode)');
-              }
               
               // Use setTimeout to ensure modal is fully closed before refresh
               // This prevents any UI conflicts and ensures no page refresh

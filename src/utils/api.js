@@ -104,11 +104,14 @@ api.interceptors.response.use(
                          !isNetworkError;
     
     if (shouldRedirect) {
-      console.warn('Authentication failed - redirecting to login');
+      console.warn('Authentication failed - clearing auth state');
       localStorage.removeItem('admin_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('demo_user');
-      window.location.href = '/login';
+      localStorage.removeItem('last_auth_check');
+      localStorage.removeItem('auth_check_cache');
+      // Don't force redirect - let AuthContext handle auth state change naturally
+      // The PrivateRoute component will handle navigation based on user state
     }
     
     // Log network errors for debugging

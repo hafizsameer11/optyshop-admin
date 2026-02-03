@@ -51,14 +51,11 @@ customerApi.interceptors.response.use(
       }
     }
     
-    // Redirect to login for 401 responses
+    // Clear auth for 401 responses but don't force redirect
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      // Redirect to customer login page
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/customer/login') {
-        window.location.href = '/login';
-      }
+      // Let the app handle auth state naturally through React Router
     }
     
     return Promise.reject(error);

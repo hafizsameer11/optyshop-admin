@@ -6,13 +6,20 @@ import {
   getLensOptions,
   deleteLensOption
 } from '../api/lensOptions';
+import { useFilterPersistence } from '../hooks/usePageStatePersistence';
 
 const LensOptions = () => {
+  // Use the persistence hook for filter state
+  const [filters, setFilters] = useFilterPersistence('lens_options', {
+    filterType: 'all',
+  });
+  
+  const { filterType } = filters;
+  
   const [lensOptions, setLensOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLensOption, setSelectedLensOption] = useState(null);
-  const [filterType, setFilterType] = useState('all'); // 'all', 'photochromic', 'prescription_sun', etc.
 
   useEffect(() => {
     fetchLensOptions();
@@ -212,7 +219,7 @@ const LensOptions = () => {
           {/* Type Filter */}
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => setFilters({ filterType: e.target.value })}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             {typeFilters.map((filter) => (

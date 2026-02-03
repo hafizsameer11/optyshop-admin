@@ -14,6 +14,7 @@ import {
 } from '../api/products';
 import { getBrands } from '../api/brands';
 import { getSubCategories } from '../api/subCategories';
+import { useCompletePageState } from '../hooks/usePageStatePersistence';
 
 // Debounce hook to delay API calls
 const useDebounce = (value, delay) => {
@@ -292,87 +293,28 @@ const ProductImage = ({ product, refreshKey }) => {
 const Products = () => {
   const { t } = useI18n();
   
-  // State persistence key
-  const STORAGE_KEY = 'products_page_state';
+  // Use the persistence hook for complete page state
+  const [pageState, setPageState] = useCompletePageState('products', {
+    searchTerm: '',
+    categoryFilter: '',
+    subCategoryFilter: '',
+    selectedSection: 'all',
+    page: 1,
+  });
   
-  // Helper function to load state from localStorage
-  const loadStateFromStorage = () => {
-    try {
-      const savedState = localStorage.getItem(STORAGE_KEY);
-      if (savedState) {
-        const parsed = JSON.parse(savedState);
-        return {
-          searchTerm: parsed.searchTerm || '',
-          categoryFilter: parsed.categoryFilter || '',
-          subCategoryFilter: parsed.subCategoryFilter || '',
-          selectedSection: parsed.selectedSection || 'all',
-          page: parsed.page || 1,
-        };
-      }
-    } catch (error) {
-      console.warn('Failed to load state from localStorage:', error);
-    }
-    return {
-      searchTerm: '',
-      categoryFilter: '',
-      subCategoryFilter: '',
-      selectedSection: 'all',
-      page: 1,
-    };
-  };
-  
-  // Helper function to save state to localStorage
-  const saveStateToStorage = (state) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        searchTerm: state.searchTerm,
-        categoryFilter: state.categoryFilter,
-        subCategoryFilter: state.subCategoryFilter,
-        selectedSection: state.selectedSection,
-        page: state.page,
-      }));
-    } catch (error) {
-      console.warn('Failed to save state to localStorage:', error);
-    }
-  };
-  
-  // Load initial state from localStorage
-  const initialState = loadStateFromStorage();
-  
-  // Debug: Log initial state
-  console.log('🔍 Initial state from localStorage:', initialState);
-  
-  // Safeguard: If there are any filters set but section is not 'all', reset to 'all'
-  // This prevents the issue where filters persist but show wrong category
-  const safeInitialState = {
-    ...initialState,
-    selectedSection: (initialState.categoryFilter || initialState.subCategoryFilter || initialState.brandFilter || initialState.searchTerm) 
-      ? 'all' 
-      : initialState.selectedSection
-  };
-  
-  if (safeInitialState.selectedSection !== initialState.selectedSection) {
-    console.log('🛡️ Safeguard activated: Reset to All Products due to detected filters');
-    // Save the corrected state back to localStorage
-    saveStateToStorage(safeInitialState);
-  }
+  const { searchTerm, categoryFilter, subCategoryFilter, selectedSection, page } = pageState;
   
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(safeInitialState.searchTerm);
-  const [categoryFilter, setCategoryFilter] = useState(safeInitialState.categoryFilter);
-  const [subCategoryFilter, setSubCategoryFilter] = useState(safeInitialState.subCategoryFilter);
   const [brandFilter, setBrandFilter] = useState('');
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [page, setPage] = useState(safeInitialState.page);
   const [totalPages, setTotalPages] = useState(1);
   const [subCategoriesMap, setSubCategoriesMap] = useState({});
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
-  const [selectedSection, setSelectedSection] = useState(safeInitialState.selectedSection); // 'all', 'sunglasses', 'eyeglasses', 'contact-lenses', 'eye-hygiene'
   const [sectionCategoryIds, setSectionCategoryIds] = useState([]); // All category IDs for the selected section
   const [sectionSubCategoryIds, setSectionSubCategoryIds] = useState([]); // All subcategory IDs (including nested) for the selected section
   // Track if this is the initial mount to prevent clearing restored subcategory filter
@@ -380,26 +322,14 @@ const Products = () => {
   const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger search on Enter
   const [expandedProducts, setExpandedProducts] = useState(new Set()); // Track which products have expanded details
 
-  // Debug: Log the initial selected section and any filters
+  // Debug: Log the initial component state
   console.log('🔍 Initial component state:', {
-    selectedSection: safeInitialState.selectedSection,
-    categoryFilter: safeInitialState.categoryFilter,
-    subCategoryFilter: safeInitialState.subCategoryFilter,
-    searchTerm: safeInitialState.searchTerm,
-    page: safeInitialState.page,
-    safeguardApplied: safeInitialState.selectedSection !== initialState.selectedSection
+    selectedSection,
+    categoryFilter,
+    subCategoryFilter,
+    searchTerm,
+    page,
   });
-
-  // Save state to localStorage whenever relevant state changes
-  useEffect(() => {
-    saveStateToStorage({
-      searchTerm,
-      categoryFilter,
-      subCategoryFilter,
-      selectedSection,
-      page,
-    });
-  }, [searchTerm, categoryFilter, subCategoryFilter, selectedSection, page]);
 
   useEffect(() => {
     fetchCategories();
@@ -447,7 +377,7 @@ const Products = () => {
       setSubCategories([]);
       // Only reset subcategory filter if category filter is being cleared (not on initial mount)
       if (!isInitialMount) {
-        setSubCategoryFilter('');
+        setPageState({ subCategoryFilter: '' });
       }
     }
     // After first render, mark that initial mount is complete
@@ -1896,20 +1826,14 @@ const Products = () => {
     console.log(`📦 Current section: ${selectedSection} → New section: ${section}`);
     
     // Update selected section
-    setSelectedSection(section);
+    setPageState({ selectedSection: section });
     
     // Reset to first page when section changes
-    setPage(1);
-    
-    // Clear category and subcategory filters when changing sections
-    // This ensures that when a section is selected, we show ALL products belonging to that section's categories
-    setCategoryFilter('');
-    setSubCategoryFilter('');
+    setPageState({ page: 1, categoryFilter: '', subCategoryFilter: '' });
     
     // Clear all filters when switching to "All Products"
     if (section === 'all') {
-      setBrandFilter('');
-      setSearchTerm('');
+      setPageState({ brandFilter: '', searchTerm: '' });
       console.log(`✅ Showing ALL products (cleared all filters including brand and search)`);
     } else {
       const sectionLabel = sections.find(s => s.value === section)?.label || section;
@@ -1982,13 +1906,13 @@ const Products = () => {
                 placeholder={t('searchProducts')}
                 value={searchTerm}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value);
+                  setPageState({ searchTerm: e.target.value });
                   // Only update the input value, don't trigger search
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     // Trigger search only on Enter key press
-                    setPage(1); // Reset to first page
+                    setPageState({ page: 1 }); // Reset to first page
                     setSearchTrigger(prev => prev + 1); // Trigger search
                   }
                 }}
@@ -2001,9 +1925,7 @@ const Products = () => {
               <select
                 value={categoryFilter}
                 onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setSubCategoryFilter(''); // Reset subcategory when category changes
-                  setPage(1); // Reset to first page on filter change
+                  setPageState({ categoryFilter: e.target.value, subCategoryFilter: '', page: 1 });
                 }}
                 className="input-modern w-full"
               >
@@ -2021,8 +1943,7 @@ const Products = () => {
               <select
                 value={subCategoryFilter}
                 onChange={(e) => {
-                  setSubCategoryFilter(e.target.value);
-                  setPage(1); // Reset to first page on filter change
+                  setPageState({ subCategoryFilter: e.target.value, page: 1 });
                 }}
                 disabled={!categoryFilter}
                 className="input-modern w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -2041,8 +1962,7 @@ const Products = () => {
               <select
                 value={brandFilter}
                 onChange={(e) => {
-                  setBrandFilter(e.target.value);
-                  setPage(1); // Reset to first page on filter change
+                  setPageState({ brandFilter: e.target.value, page: 1 });
                 }}
                 className="input-modern w-full"
               >
@@ -2060,18 +1980,7 @@ const Products = () => {
               <div>
                 <button
                   onClick={() => {
-                    setCategoryFilter('');
-                    setSubCategoryFilter('');
-                    setBrandFilter('');
-                    setSearchTerm('');
-                    setSelectedSection('all');
-                    setPage(1);
-                    // Clear saved state from localStorage
-                    try {
-                      localStorage.removeItem(STORAGE_KEY);
-                    } catch (error) {
-                      console.warn('Failed to clear state from localStorage:', error);
-                    }
+                    setPageState({ categoryFilter: '', subCategoryFilter: '', brandFilter: '', searchTerm: '', selectedSection: 'all', page: 1 });
                   }}
                   className="w-full px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
                 >
@@ -2157,14 +2066,14 @@ const Products = () => {
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setPage(Math.max(1, page - 1))}
+              onClick={() => setPageState({ page: Math.max(1, page - 1) })}
               disabled={page === 1}
               className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all duration-200"
             >
               Previous
             </button>
             <button
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              onClick={() => setPageState({ page: Math.min(totalPages, page + 1) })}
               disabled={page === totalPages}
               className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all duration-200"
             >

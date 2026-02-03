@@ -66,7 +66,8 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log('🔍 Form submission started');
     
     // Validate required fields

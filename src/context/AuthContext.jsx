@@ -12,6 +12,25 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAuth();
+    
+    // Listen for storage changes to handle auth state updates from other tabs or API interceptors
+    const handleStorageChange = (e) => {
+      if (e.key === 'admin_token' && e.newValue === null) {
+        // Token was removed, clear user state
+        console.log('Token removed from storage, clearing user state');
+        setUser(null);
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('demo_user');
+        localStorage.removeItem('last_auth_check');
+        localStorage.removeItem('auth_check_cache');
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const checkAuth = async () => {
@@ -161,9 +180,12 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Clear all auth-related storage
       localStorage.removeItem('admin_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('demo_user');
+      localStorage.removeItem('last_auth_check');
+      localStorage.removeItem('auth_check_cache');
       setUser(null);
       toast.success('Logged out successfully');
     }

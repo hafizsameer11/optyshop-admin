@@ -2120,12 +2120,12 @@ const ProductModal = ({ product, onClose }) => {
         if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
           toast.error('Request timeout - The server is taking too long to respond. Please try again.');
         } else if (error.message.includes('Network Error') || error.code === 'ERR_NETWORK') {
-          toast.error('Network error - Please check if the backend server is running at http://localhost:5000');
+          toast.error('Network error - Please check if the backend server is running');
         } else {
           toast.error('Backend unavailable - Cannot save product. Please ensure the server is running.');
         }
       } else if (error.response.status === 401) {
-        toast.error('❌ Demo mode - Please log in with real credentials to save products');
+        toast.error('Authentication failed - Please log in again');
       } else if (error.response.status === 429) {
         toast.error('Too many requests. Please wait a moment and try again.');
       } else if (error.response.status === 500) {
@@ -2147,54 +2147,34 @@ const ProductModal = ({ product, onClose }) => {
         }
 
         if (errorMessage.includes('Prisma') || errorMessage.includes('Invalid value provided')) {
-          // Try to extract more detailed Prisma error information
-          const prismaErrorMatch = errorMessage.match(/Invalid `prisma\.(\w+)\.(\w+)`/);
-          const fieldMatch = errorMessage.match(/Argument `(\w+)`:/);
-          const fieldName = fieldMatch ? fieldMatch[1] : (prismaErrorMatch ? prismaErrorMatch[2] : 'field');
-
-          // Try to extract the actual error reason
-          const reasonMatch = errorMessage.match(/Argument `\w+`:(.+?)(?:\.|$)/);
-          const reason = reasonMatch ? reasonMatch[1].trim() : 'has an invalid value';
-
-          toast.error(`Prisma validation error: ${fieldName} ${reason}. Please check the form data and console for details.`);
-          console.error('Prisma validation error details:', {
-            field: fieldName,
-            reason: reason,
-            fullMessage: errorMessage
-          });
-        } else if (errorMessage.includes('multer') || errorMessage.includes('file upload') || errorMessage.includes('Unexpected field')) {
-          // Multer "Unexpected field" error - usually means backend doesn't accept the field name
-          if (errorMessage.includes('Unexpected field')) {
-            toast.error('File upload error: Backend does not recognize one of the file field names. This may be due to color-specific image fields. Please try uploading without color-specific images, or contact the backend team to update Multer configuration.');
-          } else {
-            toast.error(`File upload error: ${errorMessage}. Please check file formats and sizes.`);
-          }
+          // Extract field name from Prisma error
+          const fieldMatch = errorMessage.match(/field: (\w+)/);
+          const fieldName = fieldMatch ? fieldMatch[1] : 'unknown field';
+          toast.error(`Validation error: Please check the ${fieldName} field`);
+        } else if (errorMessage.includes('Unique constraint')) {
+          toast.error('A product with this SKU or slug already exists');
+        } else if (errorMessage.includes('Foreign key constraint')) {
+          toast.error('Invalid category, brand, or subcategory selected');
         } else {
-          // Show more detailed error message
-          const detailedMessage = errorMessage || 'Server error occurred';
-          toast.error(`Server error: ${detailedMessage}. Check console for details.`);
+          toast.error('Server error: ' + errorMessage);
+        }
+      } else if (error.response.status === 422) {
+        // Validation errors
+        const errorData = error.response?.data || {};
+        const errorMessage = errorData.message || errorData.error || 'Validation failed';
+        
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          // Show specific field errors
+          errorData.errors.forEach(fieldError => {
+            toast.error(`${fieldError.field}: ${fieldError.message}`);
+          });
+        } else {
+          toast.error('Validation error: ' + errorMessage);
         }
       } else {
-        // Check for validation errors (400, 422, etc.)
-        const errorData = error.response?.data || {};
-
-        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
-          // Show validation errors
-          const validationErrors = errorData.errors.map(err => {
-            const field = err.path || err.field || 'field';
-            const message = err.msg || err.message || 'Invalid value';
-            return `${field}: ${message}`;
-          }).join(', ');
-          toast.error(`Validation failed: ${validationErrors}`);
-        } else {
-          const errorMessage = errorData.message ||
-            errorData.error ||
-            errorData.errors?.[0]?.msg ||
-            `Failed to save product (${error.response.status})`;
-
-          // Show error message
-          toast.error(errorMessage);
-        }
+        // Other errors
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to save product';
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);

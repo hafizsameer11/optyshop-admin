@@ -144,47 +144,48 @@ const ProductModal = ({ product, onClose }) => {
           console.log(`🔄 Target route found: ${targetRoute}`);
           console.log(`🔄 Current URL: ${window.location.href}`);
           
-          // Close the product modal first and then navigate
-          // We need to close the product modal without calling the parent onClose
+          // IMPORTANT: Close the product modal WITHOUT calling parent onClose
+          // This completely bypasses the Products.jsx handleModalClose function
           setTimeout(() => {
-            console.log(`🔄 Attempting navigation to ${targetRoute}`);
+            console.log(`🔄 Attempting direct navigation to ${targetRoute}`);
             
-            // Close product modal directly without calling parent onClose
-            // This prevents the Products page handleModalClose from being called
-            if (typeof onClose === 'function') {
-              // Call parent onClose with false to prevent refresh
-              console.log('🔄 Calling parent onClose with false to prevent products refresh');
-              onClose(false);
-            }
+            // Navigate directly without calling parent onClose
+            // This prevents any interference from the Products component
+            console.log('🔄 Bypassing parent onClose - navigating directly');
             
-            // Then navigate to the target route
-            setTimeout(() => {
-              console.log(`🔄 Navigating to ${targetRoute}`);
-              
-              // Try multiple navigation methods for better compatibility
+            // Force navigation with multiple fallback methods
+            const navigate = () => {
               try {
-                // Method 1: Direct window.location.href
-                console.log('🔄 Trying window.location.href');
+                console.log('🔄 Method 1: window.location.href');
                 window.location.href = targetRoute;
-              } catch (error) {
-                console.error('❌ window.location.href failed:', error);
-                
-                // Method 2: window.location.assign
+              } catch (error1) {
+                console.error('❌ Method 1 failed:', error1);
                 try {
-                  console.log('🔄 Trying window.location.assign');
+                  console.log('🔄 Method 2: window.location.assign');
                   window.location.assign(targetRoute);
                 } catch (error2) {
-                  console.error('❌ window.location.assign failed:', error2);
-                  
-                  // Method 3: Full URL fallback
-                  console.log('🔄 Trying fallback navigation');
-                  const fullUrl = `${window.location.origin}${targetRoute}`;
-                  console.log(`🔄 Full fallback URL: ${fullUrl}`);
-                  window.location.href = fullUrl;
+                  console.error('❌ Method 2 failed:', error2);
+                  try {
+                    console.log('🔄 Method 3: window.location.replace');
+                    window.location.replace(targetRoute);
+                  } catch (error3) {
+                    console.error('❌ Method 3 failed:', error3);
+                    // Last resort - full URL
+                    const fullUrl = `${window.location.origin}${targetRoute}`;
+                    console.log('🔄 Method 4: Full URL fallback');
+                    window.location.href = fullUrl;
+                  }
                 }
               }
-            }, 100); // Small delay after closing product modal
-          }, 200); // Increased timeout to ensure modal is fully closed
+            };
+            
+            // Call navigate immediately
+            navigate();
+            
+            // Also try after a small delay as backup
+            setTimeout(navigate, 50);
+            
+          }, 100); // Reduced timeout for faster navigation
         } else {
           console.error(`❌ No route found for modal type: ${modalType}`);
         }
@@ -192,6 +193,7 @@ const ProductModal = ({ product, onClose }) => {
         console.log(`❌ ${modalType} modal closed without navigation (cancelled)`);
         // For cancelled operations, call parent onClose normally
         if (typeof onClose === 'function') {
+          console.log('🔄 Calling parent onClose with false for cancelled operation');
           onClose(false);
         }
       }

@@ -136,22 +136,65 @@ const ProductModal = ({ product, onClose }) => {
           'thicknessMaterial': '/lens-thickness-materials',
           'thicknessOption': '/lens-thickness-options',
           'prescriptionLensType': '/prescription-lens-types',
-          'prescriptionDropdown': '/prescription-form-dropdown-values',
+          'prescriptionDropdown': '/prescription-forms/dropdown-values',
         };
 
         const targetRoute = pageRoutes[modalType];
         if (targetRoute) {
-          // Close the product modal first
+          console.log(`🔄 Target route found: ${targetRoute}`);
+          console.log(`🔄 Current URL: ${window.location.href}`);
+          
+          // Close the product modal first and then navigate
+          // We need to close the product modal without calling the parent onClose
           setTimeout(() => {
-            console.log(`🔄 Navigating to ${targetRoute}`);
-            // Use window.location.href for full page navigation to ensure proper page load
-            window.location.href = targetRoute;
-          }, 100);
+            console.log(`🔄 Attempting navigation to ${targetRoute}`);
+            
+            // Close product modal directly without calling parent onClose
+            // This prevents the Products page handleModalClose from being called
+            if (typeof onClose === 'function') {
+              // Call parent onClose with false to prevent refresh
+              console.log('🔄 Calling parent onClose with false to prevent products refresh');
+              onClose(false);
+            }
+            
+            // Then navigate to the target route
+            setTimeout(() => {
+              console.log(`🔄 Navigating to ${targetRoute}`);
+              
+              // Try multiple navigation methods for better compatibility
+              try {
+                // Method 1: Direct window.location.href
+                console.log('🔄 Trying window.location.href');
+                window.location.href = targetRoute;
+              } catch (error) {
+                console.error('❌ window.location.href failed:', error);
+                
+                // Method 2: window.location.assign
+                try {
+                  console.log('🔄 Trying window.location.assign');
+                  window.location.assign(targetRoute);
+                } catch (error2) {
+                  console.error('❌ window.location.assign failed:', error2);
+                  
+                  // Method 3: Full URL fallback
+                  console.log('🔄 Trying fallback navigation');
+                  const fullUrl = `${window.location.origin}${targetRoute}`;
+                  console.log(`🔄 Full fallback URL: ${fullUrl}`);
+                  window.location.href = fullUrl;
+                }
+              }
+            }, 100); // Small delay after closing product modal
+          }, 200); // Increased timeout to ensure modal is fully closed
+        } else {
+          console.error(`❌ No route found for modal type: ${modalType}`);
         }
       } else {
         console.log(`❌ ${modalType} modal closed without navigation (cancelled)`);
+        // For cancelled operations, call parent onClose normally
+        if (typeof onClose === 'function') {
+          onClose(false);
+        }
       }
-      // If cancelled, just close the modal and stay in product modal
     };
   };
 

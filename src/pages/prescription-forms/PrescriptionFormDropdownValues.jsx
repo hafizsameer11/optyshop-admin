@@ -374,31 +374,20 @@ const PrescriptionFormDropdownValues = () => {
           onClose={(shouldRefresh = false) => {
             console.log('🔄 PrescriptionFormDropdownValueModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedValue:', selectedValue);
+            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
+            
+            // First close the modal
             setModalOpen(false);
             setSelectedValue(null);
+            
             if (shouldRefresh) {
-              console.log('� Refreshing dropdown values list after modal save');
-              // For demo purposes, add a new dropdown value immediately if backend is not available
-              if (!selectedValue) {
-                // Adding new dropdown value - simulate adding to the list
-                const newValue = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  field_type: 'pd',
-                  value: '58.00',
-                  label: '58.00',
-                  eye_type: 'both',
-                  form_type: null,
-                  sort_order: 0,
-                  is_active: true,
-                  created_at: new Date().toISOString()
-                };
-                console.log('� Adding new dropdown value to table:', newValue);
-                setValues(prev => [newValue, ...prev]);
-                toast.success('Dropdown value added to table (demo mode)');
-              }
+              console.log('📋 Refreshing dropdown values list after modal save');
+              console.log('🔄 This should only update the table, NOT refresh the page');
+              
               // Use setTimeout to ensure modal is fully closed before refresh
+              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching dropdown values from API');
+                console.log('🔄 Fetching dropdown values from API (no page refresh should occur)');
                 fetchValues();
               }, 100);
             } else {

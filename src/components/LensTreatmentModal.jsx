@@ -187,7 +187,7 @@ const LensTreatmentModal = ({ lensTreatment, onClose }) => {
           </div>
         </div>
 
-        <form className="p-6 space-y-5" noValidate>
+        <form className="p-6 space-y-5" noValidate onSubmit={(e) => e.preventDefault()}>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Name <span className="text-red-500">*</span>

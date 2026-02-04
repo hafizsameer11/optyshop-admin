@@ -197,7 +197,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
           </div>
         </div>
 
-        <form className="p-6 space-y-5 overflow-y-auto flex-1" noValidate>
+        <form className="p-6 space-y-5 overflow-y-auto flex-1" noValidate onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">

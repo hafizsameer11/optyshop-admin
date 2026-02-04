@@ -76,9 +76,7 @@ const PrescriptionSunLensModal = ({ lens, onClose }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleSubmit = async () => {
     console.log('🔍 Prescription Sun Lens form submission started');
     console.log('🔍 Form data before submission:', formData);
     

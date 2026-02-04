@@ -78,8 +78,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent any form submission that could cause page refresh
+  const handleSubmit = async () => {
     console.log('🔍 Lens Option form submission started');
     console.log('🔍 Form data before submission:', formData);
     
@@ -190,7 +189,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form className="p-6 space-y-5" noValidate>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Name <span className="text-red-500">*</span></label>
@@ -289,9 +288,10 @@ const LensOptionModal = ({ lensOption, onClose }) => {
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleSubmit}
             >
               {loading ? 'Saving...' : 'Save'}
             </button>

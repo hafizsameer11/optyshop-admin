@@ -191,7 +191,7 @@ const LensColors = () => {
     }
     
     const optionId = color.lens_option_id || color.lensOptionId;
-    if (!optionId) return { name: 'N/A', type: 'unknown' };
+    if (!optionId) return { name: '', type: 'unknown' };
     const option = lensOptions.find(o => o.id === optionId || o.id === parseInt(optionId));
     return { name: option ? option.name : `ID: ${optionId}`, type: 'option' };
   };
@@ -464,7 +464,7 @@ const LensColors = () => {
                         {colorCode}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                        {hexCode || 'N/A'}
+                        {hexCode || ''}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {hexCode ? (
@@ -474,7 +474,7 @@ const LensColors = () => {
                             title={hexCode}
                           />
                         ) : (
-                          <span className="text-xs text-gray-400">N/A</span>
+                          <span className="text-xs text-gray-400"></span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

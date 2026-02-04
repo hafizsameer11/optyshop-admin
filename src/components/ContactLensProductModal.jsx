@@ -242,6 +242,22 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
   };
 
+  const fetchProductsForConfig = async (subCategoryId) => {
+    if (!subCategoryId) {
+      setProductsForConfig([]);
+      return;
+    }
+    try {
+      const response = await api.get(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.PRODUCTS);
+      const responseData = response.data?.data || response.data || {};
+      const productsData = responseData.products || response.data || [];
+      setProductsForConfig(Array.isArray(productsData) ? productsData : []);
+    } catch (error) {
+      console.warn('Failed to fetch products for config', error);
+      setProductsForConfig([]);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === 'category_id') {

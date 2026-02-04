@@ -247,7 +247,7 @@ const PhotochromicLenses = () => {
                     <tr key={lensId}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lensId}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lensName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{lensSlug}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{lensSlug || ''}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice.toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sortOrder}</td>
                       <td className="px-6 py-4 whitespace-nowrap">

@@ -178,14 +178,20 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
       console.error('❌ Frame size save error:', error);
       console.error('Error response:', error.response?.data);
       
-      // Always simulate successful save for demo purposes
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Frame size saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
-        onClose(true);
-      }, 1000);
+      // Check if it's a network/backend error
+      if (!error.response) {
+        console.log('🔄 Backend unavailable - Simulating save for demo');
+        toast.error('Backend unavailable - Simulating save for demo');
+        setTimeout(() => {
+          toast.success('Demo: Frame size saved successfully (simulated)');
+          console.log('🔄 Calling onClose(true) after simulation');
+          onClose(true);
+        }, 1000);
+      } else {
+        // Handle other API errors
+        const errorMessage = error.response?.data?.message || 'Failed to save frame size';
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

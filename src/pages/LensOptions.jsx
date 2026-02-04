@@ -263,7 +263,7 @@ const LensOptions = () => {
                   // Handle both snake_case and camelCase field names
                   const optionId = option.id;
                   const optionName = option.name || option.Name;
-                  const optionType = option.type || option.Type || 'N/A';
+                  const optionType = option.type || option.Type || '';
                   const basePrice = option.base_price !== undefined ? option.base_price : (option.basePrice !== undefined ? option.basePrice : 0);
                   const isActive = option.is_active !== undefined ? option.is_active : (option.isActive !== undefined ? option.isActive : false);
                   

@@ -221,36 +221,12 @@ const FrameSizes = () => {
           frameSize={selectedFrameSize}
           onClose={(shouldRefresh = false) => {
             console.log('🔄 FrameSizeModal onClose called with shouldRefresh:', shouldRefresh);
-            console.log('🔄 Current selectedFrameSize:', selectedFrameSize);
             setModalOpen(false);
             setSelectedFrameSize(null);
             if (shouldRefresh) {
               console.log('📋 Refreshing frame sizes list after modal save');
-              // For demo purposes, add a new frame size immediately if backend is not available
-              if (!selectedFrameSize) {
-                // Adding new frame size - simulate adding to the list
-                const newFrameSize = {
-                  id: Date.now(), // Use timestamp as temporary ID
-                  product_id: 1,
-                  lens_width: 52.0,
-                  bridge_width: 18.0,
-                  temple_length: 140.0,
-                  frame_width: 130.0,
-                  frame_height: 45.0,
-                  size_label: 'Small',
-                  created_at: new Date().toISOString()
-                };
-                console.log('🔄 Adding new frame size to table:', newFrameSize);
-                setFrameSizes(prev => [newFrameSize, ...prev]);
-                toast.success('Frame size added to table (demo mode)');
-              }
-              // Use setTimeout to ensure modal is fully closed before refresh
-              setTimeout(() => {
-                console.log('🔄 Fetching frame sizes from API');
-                fetchFrameSizes();
-              }, 100);
-            } else {
-              console.log('❌ Modal closed without refresh (cancelled or failed)');
+              // Immediately refresh the data from API
+              fetchFrameSizes();
             }
           }}
         />

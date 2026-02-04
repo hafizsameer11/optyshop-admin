@@ -235,7 +235,7 @@ const LensTreatments = () => {
                       {treatment.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                      {treatment.slug || 'N/A'}
+                      {treatment.slug || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {treatment.type ? (
@@ -243,14 +243,14 @@ const LensTreatments = () => {
                           {treatment.type.replace(/_/g, ' ')}
                         </span>
                       ) : (
-                        'N/A'
+                        ''
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       ${treatment.price ? treatment.price.toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                      {treatment.description || 'N/A'}
+                      {treatment.description || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

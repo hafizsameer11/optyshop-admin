@@ -231,7 +231,7 @@ const LensCoatings = () => {
                       ${coating.price_adjustment ? (parseFloat(coating.price_adjustment) || 0).toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                      {coating.description || 'N/A'}
+                      {coating.description || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -245,7 +245,7 @@ const LensCoatings = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {coating.created_at ? new Date(coating.created_at).toLocaleDateString() : 'N/A'}
+                      {coating.created_at ? new Date(coating.created_at).toLocaleDateString() : ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button 

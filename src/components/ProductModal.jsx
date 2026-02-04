@@ -121,78 +121,18 @@ const ProductModal = ({ product, onClose }) => {
       if (setModalOpen) setModalOpen(false);
       if (setSelected) setSelected(null);
 
-      // When saved successfully, navigate to the appropriate lens management page
-      // This ensures the user goes to the dedicated table page instead of staying in product modal
+      // When saved successfully, refresh the lens management data in place
+      // This keeps the user in the current product modal and updates the table
       if (saved) {
-        console.log(`🔄 Navigating to ${modalType} management page after form save`);
+        console.log(`🔄 Refreshing ${modalType} data in place after form save`);
         
-        // Mapping of modal types to their respective page routes
-        const pageRoutes = {
-          'frameSize': '/frame-sizes',
-          'lensType': '/lens-types',
-          'lensOption': '/lens-options',
-          'prescriptionSunLens': '/prescription-sun-lenses',
-          'photochromicLens': '/photochromic-lenses',
-          'lensCoating': '/lens-coatings',
-          'lensColor': '/lens-colors',
-          'lensFinish': '/lens-finishes',
-          'lensTreatment': '/lens-treatments',
-          'thicknessMaterial': '/lens-thickness-materials',
-          'thicknessOption': '/lens-thickness-options',
-          'prescriptionLensType': '/prescription-lens-types',
-          'prescriptionDropdown': '/prescription-forms/dropdown-values',
-        };
-
-        const targetRoute = pageRoutes[modalType];
-        if (targetRoute) {
-          console.log(`🔄 Target route found: ${targetRoute}`);
-          console.log(`🔄 Current URL: ${window.location.href}`);
-          
-          // Set product context before navigating so "Back to Lens Management" works correctly
-          if (product && product.id) {
-            console.log('📍 Setting product context for navigation:', product.id, product.name);
-            setProductContext(product.id, product.name);
-          }
-          
-          // IMPORTANT: Close the product modal WITHOUT calling parent onClose
-          // This completely bypasses the Products.jsx handleModalClose function
-          setTimeout(() => {
-            console.log(`🔄 Attempting direct navigation to ${targetRoute}`);
-            
-            // Navigate directly without calling parent onClose
-            // This prevents any interference from the Products component
-            console.log('🔄 Bypassing parent onClose - navigating directly');
-            
-            // Navigate using React Router for SPA navigation (no page refresh)
-            const performNavigation = () => {
-              try {
-                console.log(`🔄 Using React Router navigate to: ${targetRoute}`);
-                navigate(targetRoute);
-              } catch (error) {
-                console.error('❌ React Router navigation failed:', error);
-                // Fallback to window.location only if React Router fails
-                console.log('🔄 Fallback: window.location.href');
-                window.location.href = targetRoute;
-              }
-            };
-            
-            // Call navigate immediately
-            performNavigation();
-            
-            // Also try after a small delay as backup
-            setTimeout(performNavigation, 50);
-            
-          }, 100); // Reduced timeout for faster navigation
-        } else {
-          console.error(`❌ No route found for modal type: ${modalType}`);
-        }
+        // Refresh the lens management data to show the updated table
+        setTimeout(() => {
+          console.log('🔄 Fetching updated lens management data (no navigation)');
+          fetchLensManagementData();
+        }, 100);
       } else {
-        console.log(`❌ ${modalType} modal closed without navigation (cancelled)`);
-        // For cancelled operations, call parent onClose normally
-        if (typeof onClose === 'function') {
-          console.log('🔄 Calling parent onClose with false for cancelled operation');
-          onClose(false);
-        }
+        console.log(`❌ ${modalType} modal closed without refresh (cancelled)`);
       }
     };
   };

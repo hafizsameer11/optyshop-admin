@@ -3,14 +3,15 @@
  * Provides CRUD operations for prescription form dropdown values management
  * 
  * Endpoints:
- * - GET /api/admin/prescription-forms/dropdown-values - List all dropdown values
- * - POST /api/admin/prescription-forms/dropdown-values - Create new dropdown value
- * - GET /api/admin/prescription-forms/dropdown-values/:id - Get single dropdown value
- * - PUT /api/admin/prescription-forms/dropdown-values/:id - Update dropdown value
- * - DELETE /api/admin/prescription-forms/dropdown-values/:id - Delete dropdown value
+ * - GET /prescription-forms/admin/dropdown-values - List all dropdown values
+ * - POST /prescription-forms/admin/dropdown-values - Create new dropdown value
+ * - GET /prescription-forms/admin/dropdown-values/:id - Get single dropdown value
+ * - PUT /prescription-forms/admin/dropdown-values/:id - Update dropdown value
+ * - DELETE /prescription-forms/admin/dropdown-values/:id - Delete dropdown value
  */
 
 import api from '../utils/api';
+import { API_ROUTES } from '../config/apiRoutes';
 
 /**
  * Get all prescription form dropdown values with pagination and filtering
@@ -47,7 +48,7 @@ export const getPrescriptionFormDropdownValues = async (params = {}) => {
   if (form_type) queryParams.append('form_type', form_type);
 
   try {
-    const response = await api.get(`/admin/prescription-forms/dropdown-values?${queryParams}`);
+    const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.LIST}?${queryParams}`);
     return response;
   } catch (error) {
     console.log('🔄 Prescription form dropdown values fetch error in API service:', error);
@@ -169,7 +170,7 @@ export const getPrescriptionFormDropdownValues = async (params = {}) => {
  * @returns {Promise} Response with dropdown value data
  */
 export const getPrescriptionFormDropdownValueById = async (id) => {
-  const response = await api.get(`/admin/prescription-forms/dropdown-values/${id}`);
+  const response = await api.get(API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.UPDATE(id));
   return response;
 };
 
@@ -187,7 +188,7 @@ export const getPrescriptionFormDropdownValueById = async (id) => {
  */
 export const createPrescriptionFormDropdownValue = async (dropdownValueData) => {
   try {
-    const response = await api.post('/admin/prescription-forms/dropdown-values', dropdownValueData);
+    const response = await api.post(API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.CREATE, dropdownValueData);
     return response;
   } catch (error) {
     console.log('🔄 Prescription form dropdown value creation error in API service:', error);
@@ -236,7 +237,7 @@ export const createPrescriptionFormDropdownValue = async (dropdownValueData) => 
  */
 export const updatePrescriptionFormDropdownValue = async (id, dropdownValueData) => {
   try {
-    const response = await api.put(`/admin/prescription-forms/dropdown-values/${id}`, dropdownValueData);
+    const response = await api.put(API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.UPDATE(id), dropdownValueData);
     return response;
   } catch (error) {
     console.log('🔄 Prescription form dropdown value update error in API service:', error);
@@ -285,7 +286,7 @@ export const updatePrescriptionFormDropdownValue = async (id, dropdownValueData)
  */
 export const deletePrescriptionFormDropdownValue = async (id) => {
   try {
-    const response = await api.delete(`/admin/prescription-forms/dropdown-values/${id}`);
+    const response = await api.delete(API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.DELETE(id));
     return response;
   } catch (error) {
     console.log('🔄 Prescription form dropdown value delete error in API service:', error);
@@ -332,7 +333,7 @@ export const deletePrescriptionFormDropdownValue = async (id) => {
  * @returns {Promise} Response with dropdown values for the field type
  */
 export const getPrescriptionFormDropdownValuesByFieldType = async (fieldType) => {
-  const response = await api.get(`/admin/prescription-forms/dropdown-values?field_type=${fieldType}`);
+  const response = await api.get(`${API_ROUTES.ADMIN.PRESCRIPTION_FORMS.DROPDOWN_VALUES.LIST}?field_type=${fieldType}`);
   return response;
 };
 
@@ -342,7 +343,7 @@ export const getPrescriptionFormDropdownValuesByFieldType = async (fieldType) =>
  * @returns {Promise} Response with updated dropdown values
  */
 export const bulkUpdatePrescriptionFormDropdownValuesOrder = async (sortOrderData) => {
-  const response = await api.put('/admin/prescription-forms/dropdown-values/bulk-order', { values: sortOrderData });
+  const response = await api.put('/prescription-forms/admin/dropdown-values/bulk-order', { values: sortOrderData });
   return response;
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiEye, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
@@ -291,6 +291,7 @@ const ProductImage = ({ product, refreshKey }) => {
 };
 
 const Products = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useI18n();
   
   // Use the persistence hook for complete page state
@@ -373,6 +374,64 @@ const Products = () => {
     fetchSubCategories();
     fetchBrands();
   }, []);
+
+  // Handle URL parameters for editing products and setting active tab
+  useEffect(() => {
+    const editProductId = searchParams.get('edit');
+    const tab = searchParams.get('tab');
+    
+    if (editProductId) {
+      console.log('🔄 URL parameter detected: edit=', editProductId, 'tab=', tab);
+      
+      // Find the product in the products list
+      const productToEdit = products.find(p => p.id === parseInt(editProductId));
+      
+      if (productToEdit) {
+        console.log('🔄 Found product to edit:', productToEdit.name);
+        
+        // Set the editing product and open modal
+        const handleEdit = async (product) => {
+          console.log('📝 Editing product from URL parameter:', {
+            id: product.id,
+            name: product.name,
+            product_type: product.product_type,
+          });
+          
+          // For eye hygiene products, fetch full product details
+          if (product.product_type === 'eye_hygiene' || 
+              product.category?.name?.toLowerCase().includes('eye hygiene') ||
+              product.category_name?.toLowerCase().includes('eye hygiene')) {
+            try {
+              console.log('🔄 Fetching full eye hygiene product details');
+              const response = await api.get(`${API_ROUTES.PRODUCTS.DETAILS(product.id)}`);
+              const productData = response.data?.data || response.data;
+              
+              if (productData) {
+                console.log('✅ Full product details fetched, variants:', productData.sizeVolumeVariants || productData.size_volume_variants || 'none');
+                setEditingProduct(productData);
+              } else {
+                setEditingProduct(product);
+              }
+            } catch (error) {
+              console.warn('⚠️ Failed to fetch full product details, using list data:', error);
+              setEditingProduct(product);
+            }
+          } else {
+            setEditingProduct(product);
+          }
+          
+          setModalOpen(true);
+        };
+        
+        handleEdit(productToEdit);
+        
+        // Clear the URL parameters after handling
+        setSearchParams({});
+      } else {
+        console.warn('⚠️ Product not found for edit parameter:', editProductId);
+      }
+    }
+  }, [searchParams, products]);
 
   // Restore full product data when component mounts if there's a saved editing product
   useEffect(() => {
@@ -1666,13 +1725,6 @@ const Products = () => {
                 {String(product.contact_lens_type).replace('_', ' ')}
               </span>
             ) : '-'}
-          </td>
-        );
-      
-      case 'brand':
-        return (
-          <td className={`table-cell-responsive text-sm text-gray-500 ${responsiveClass}`}>
-            {product.contact_lens_brand || '-'}
           </td>
         );
       

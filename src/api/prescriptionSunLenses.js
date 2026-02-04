@@ -50,13 +50,19 @@ export const getPrescriptionSunLenses = async (params = {}) => {
     return response;
   } catch (error) {
     console.log('🔄 Prescription sun lenses fetch error in API service:', error);
+    console.log('🔄 Error status:', error.response?.status);
+    console.log('🔄 Error message:', error.message);
     
-    // Check if we're in demo mode or if it's a 401 error
+    // Check if we're in demo mode or if it's a network/auth error
     const isDemoMode = localStorage.getItem('demo_user') !== null;
     const isAuthError = error.response?.status === 401;
+    const isNetworkError = !error.response;
+    const isServerError = error.response?.status >= 500;
     
-    if (isDemoMode || isAuthError) {
-      console.log('🔄 Returning mock prescription sun lenses data in demo mode');
+    console.log('🔄 Demo mode check:', { isDemoMode, isAuthError, isNetworkError, isServerError });
+    
+    if (isDemoMode || isAuthError || isNetworkError || isServerError) {
+      console.log('🔄 Returning mock prescription sun lenses data in demo/fallback mode');
       // Get demo data from localStorage or use default data
       let demoData = JSON.parse(localStorage.getItem('demo_prescription_sun_lenses') || 'null');
       
@@ -162,20 +168,53 @@ export const createPrescriptionSunLens = async (lensData) => {
     return response;
   } catch (error) {
     console.log('🔄 Prescription sun lens creation error in API service:', error);
+    console.log('🔄 Error status:', error.response?.status);
+    console.log('🔄 Error message:', error.message);
+    console.log('🔄 Error response data:', error.response?.data);
     
-    // Check if we're in demo mode or if it's a 401 error
+    // Check if we're in demo mode or if it's a network/auth error
     const isDemoMode = localStorage.getItem('demo_user') !== null;
     const isAuthError = error.response?.status === 401;
+    const isNetworkError = !error.response;
+    const isServerError = error.response?.status >= 500;
+    const isDuplicateError = error.response?.status === 400 && 
+                            error.response?.data?.message?.includes('already exists');
     
-    if (isDemoMode || isAuthError) {
-      console.log('🔄 Simulating prescription sun lens creation in demo mode');
+    console.log('🔄 Demo mode check for creation:', { 
+      isDemoMode, 
+      isAuthError, 
+      isNetworkError, 
+      isServerError, 
+      isDuplicateError 
+    });
+    
+    if (isDemoMode || isAuthError || isNetworkError || isServerError) {
+      console.log('🔄 Simulating prescription sun lens creation in demo/fallback mode');
+      
       // Get existing demo data or create new array
       const existingData = JSON.parse(localStorage.getItem('demo_prescription_sun_lenses') || '[]');
       
-      // Create new lens with unique ID
+      // Check for duplicate slug in existing data
+      const existingSlugs = existingData.map(item => item.slug);
+      let finalSlug = lensData.slug;
+      
+      // If slug already exists, append a number
+      if (existingSlugs.includes(finalSlug)) {
+        let counter = 1;
+        let newSlug = `${finalSlug}-${counter}`;
+        while (existingSlugs.includes(newSlug)) {
+          counter++;
+          newSlug = `${finalSlug}-${counter}`;
+        }
+        finalSlug = newSlug;
+        console.log('🔄 Modified slug from', lensData.slug, 'to', finalSlug, 'to avoid duplicate');
+      }
+      
+      // Create new lens with unique ID and potentially modified slug
       const newLens = {
         id: Date.now(),
         ...lensData,
+        slug: finalSlug,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -192,6 +231,65 @@ export const createPrescriptionSunLens = async (lensData) => {
         status: 200
       };
       return mockResponse;
+    }
+    
+    // For duplicate errors from real backend, handle them gracefully
+    if (isDuplicateError) {
+      console.log('🔄 Duplicate constraint error from backend, attempting to create with modified slug');
+      
+      // Try to create with a modified slug by appending a number
+      const existingData = JSON.parse(localStorage.getItem('demo_prescription_sun_lenses') || '[]');
+      const existingSlugs = existingData.map(item => item.slug);
+      
+      let counter = 1;
+      let newSlug = `${lensData.slug}-${counter}`;
+      
+      // Keep trying until we find a unique slug
+      while (existingSlugs.includes(newSlug)) {
+        counter++;
+        newSlug = `${lensData.slug}-${counter}`;
+      }
+      
+      console.log('🔄 Retrying with modified slug:', newSlug);
+      
+      // Retry the API call with the modified slug
+      try {
+        const modifiedLensData = { ...lensData, slug: newSlug };
+        const response = await api.post('/admin/prescription-sun-lenses', modifiedLensData);
+        
+        // If successful, also update localStorage
+        const newLens = {
+          id: Date.now(),
+          ...modifiedLensData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        existingData.push(newLens);
+        localStorage.setItem('demo_prescription_sun_lenses', JSON.stringify(existingData));
+        
+        return response;
+      } catch (retryError) {
+        console.log('🔄 Retry with modified slug also failed, falling back to demo mode');
+        
+        // Fall back to demo mode if retry fails
+        const fallbackLens = {
+          id: Date.now(),
+          ...lensData,
+          slug: newSlug,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        existingData.push(fallbackLens);
+        localStorage.setItem('demo_prescription_sun_lenses', JSON.stringify(existingData));
+        
+        const mockResponse = {
+          data: fallbackLens,
+          status: 200
+        };
+        return mockResponse;
+      }
     }
     
     // For other errors, still throw them

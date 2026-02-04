@@ -245,69 +245,38 @@ const BannerModal = ({ banner, onClose }) => {
     setFormData(newFormData);
   };
 
-  // Reset dependent fields when page_type changes
-  if (name === 'page_type') {
-    if (value === 'home') {
-      newFormData.category_id = '';
-      newFormData.sub_category_id = '';
-      setSubCategories([]);
-      setNestedSubCategories([]);
-    } else if (value === 'category') {
-      newFormData.sub_category_id = '';
-      setNestedSubCategories([]);
-      // Keep category_id if already selected
-    }
-    // For subcategory and sub_subcategory, keep category_id and sub_category_id if selected
-  }
-
-  // Reset sub_category_id when category_id changes
-  if (name === 'category_id') {
-    newFormData.sub_category_id = '';
-    setNestedSubCategories([]);
-    setParentSubCategoryId('');
-  }
-
-  // Reset parent subcategory when page_type changes
-  if (name === 'page_type' && value !== 'sub_subcategory') {
-    setParentSubCategoryId('');
-    setNestedSubCategories([]);
-  }
-
-  setFormData(newFormData);
-};
-
-const handleImageChange = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    // Upload to server immediately to get HTTPS URL
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    // Show loading state
-    toast.loading('Uploading image...');
-    
-    // Upload to server
-    fetch('/api/admin/upload/image', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success && data.url) {
-        setImageFile(file);
-        setImagePreview(data.url);
-        toast.success('Image uploaded successfully');
-      } else {
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Upload to server immediately to get HTTPS URL
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Show loading state
+      toast.loading('Uploading image...');
+      
+      // Upload to server
+      fetch('/api/admin/upload/image', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.url) {
+          setImageFile(file);
+          setImagePreview(data.url);
+          toast.success('Image uploaded successfully');
+        } else {
+          toast.error('Failed to upload image');
+        }
+      })
+      .catch(error => {
+        console.error('Upload error:', error);
         toast.error('Failed to upload image');
-      }
-    })
-    .catch(error => {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload image');
-    })
-    .finally(() => {
-      toast.dismiss();
-    });
+      })
+      .finally(() => {
+        toast.dismiss();
+      });
     }
   };
 

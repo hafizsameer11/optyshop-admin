@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import PrescriptionLensTypeModal from '../components/PrescriptionLensTypeModal';
 import { 
   getPrescriptionLensTypes,
   deletePrescriptionLensType
 } from '../api/prescriptionLensTypes';
+import { useNavigationContext } from '../hooks/useNavigationContext';
 
 const PrescriptionLensTypes = () => {
+  const navigate = useNavigate();
+  const { getBackNavigationPath } = useNavigationContext();
   const [lensTypes, setLensTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -109,6 +113,12 @@ const PrescriptionLensTypes = () => {
     setModalOpen(true);
   };
 
+  const handleBackToLensManagement = () => {
+    const backPath = getBackNavigationPath();
+    console.log('📍 Navigating back to:', backPath);
+    navigate(backPath);
+  };
+
   const handleEdit = (lensType) => {
     setSelectedLensType(lensType);
     setModalOpen(true);
@@ -149,7 +159,17 @@ const PrescriptionLensTypes = () => {
     <div>
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">Prescription Lens Types</h1>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={handleBackToLensManagement}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              title="Back to Lens Management"
+            >
+              <FiArrowLeft />
+              <span>Back to Lens Management</span>
+            </button>
+            <h1 className="text-3xl font-bold text-gray-900">Prescription Lens Types</h1>
+          </div>
           <button
             onClick={handleAddLensType}
             className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"

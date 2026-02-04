@@ -69,7 +69,23 @@ const PrescriptionSunLensModal = ({ lens, onClose }) => {
     
     // Auto-generate slug from name (only when creating new lens)
     if (name === 'name' && !lens) {
-      const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      let slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      
+      // Check existing demo data to avoid duplicate slugs
+      const existingData = JSON.parse(localStorage.getItem('demo_prescription_sun_lenses') || '[]');
+      const existingSlugs = existingData.map(item => item.slug);
+      
+      // If slug already exists, append a number
+      if (existingSlugs.includes(slug) && slug) {
+        let counter = 1;
+        let newSlug = `${slug}-${counter}`;
+        while (existingSlugs.includes(newSlug)) {
+          counter++;
+          newSlug = `${slug}-${counter}`;
+        }
+        slug = newSlug;
+      }
+      
       setFormData({ ...formData, name: fieldValue, slug });
     } else {
       setFormData({ ...formData, [name]: fieldValue });
@@ -128,7 +144,13 @@ const PrescriptionSunLensModal = ({ lens, onClose }) => {
         console.log('🔄 Creating new prescription sun lens');
         response = await createPrescriptionSunLens(submitData);
         console.log('✅ Prescription sun lens created successfully:', response.data);
-        toast.success('Prescription sun lens created successfully');
+        
+        // Check if slug was modified to avoid duplicate
+        if (response.data.slug !== submitData.slug) {
+          toast.success(`Prescription sun lens created successfully (slug modified to "${response.data.slug}" to avoid duplicate)`);
+        } else {
+          toast.success('Prescription sun lens created successfully');
+        }
       }
       
       // Always close modal and refresh on success, regardless of response format
@@ -138,6 +160,16 @@ const PrescriptionSunLensModal = ({ lens, onClose }) => {
     } catch (error) {
       console.error('❌ Prescription sun lens save error:', error);
       console.error('Error response:', error.response?.data);
+      
+      // Check if it's a duplicate constraint error
+      const isDuplicateError = error.response?.status === 400 && 
+                              error.response?.data?.message?.includes('already exists');
+      
+      if (isDuplicateError) {
+        toast.error('A lens with this name or slug already exists. Please use a different name.');
+        setLoading(false); // Ensure loading state is reset
+        return; // Stop further execution, do not simulate success or close modal
+      }
       
       // Always simulate successful save for demo purposes (same as Frame Sizes)
       console.log('🔄 Simulating save for demo due to error');

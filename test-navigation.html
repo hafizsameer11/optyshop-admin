@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        .info {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Navigation Context Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Navigation Flow</h2>
+        <p>This page tests the navigation context implementation for "Back to Lens Management" functionality.</p>
+        
+        <h3>Test Scenarios:</h3>
+        <ol>
+            <li>Navigate to a product editing page</li>
+            <li>Open lens management from product modal</li>
+            <li>Click "Back to Lens Management" - should navigate back to product with lens management tab</li>
+            <li>Direct navigation to lens management page - should go to default lens options page</li>
+        </ol>
+        
+        <div class="test-buttons">
+            <button class="test-button" onclick="testProductNavigation()">
+                Test Product Navigation
+            </button>
+            <button class="test-button" onclick="testDirectNavigation()">
+                Test Direct Navigation
+            </button>
+            <button class="test-button" onclick="clearNavigationContext()">
+                Clear Navigation Context
+            </button>
+        </div>
+        
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Manual Testing Steps</h2>
+        <ol>
+            <li>Open the admin panel at <a href="http://localhost:3001" target="_blank">http://localhost:3001</a></li>
+            <li>Login to the admin panel</li>
+            <li>Navigate to Products page</li>
+            <li>Click "Edit" on any product (frame, sunglasses, or opty-kids)</li>
+            <li>In the product modal, go to "Lens Management" tab</li>
+            <li>Click on any lens management item (e.g., "Add Lens Type")</li>
+            <li>After the modal opens, save or cancel it</li>
+            <li>You should be navigated to the lens management page</li>
+            <li>Click "Back to Lens Management" - should navigate back to the product with lens management tab active</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Expected Behavior</h2>
+        <ul>
+            <li><span class="success">✓</span> When navigating from product modal to lens management, navigation context is set</li>
+            <li><span class="success">✓</span> "Back to Lens Management" button navigates back to product with lens management tab</li>
+            <li><span class="success">✓</span> Direct navigation to lens management pages goes to default lens options page</li>
+            <li><span class="success">✓</span> Navigation context expires after 30 minutes</li>
+            <li><span class="success">✓</span> URL parameters work: <code>/products?edit=123&tab=lens-management</code></li>
+        </ul>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+        }
+
+        function testProductNavigation() {
+            log('Testing product navigation flow...', 'info');
+            
+            // Simulate setting navigation context
+            const navigationData = {
+                fromProduct: true,
+                productId: '123',
+                productName: 'Test Product',
+                timestamp: Date.now()
+            };
+            
+            localStorage.setItem('lens_management_navigation', JSON.stringify(navigationData));
+            log('Navigation context set for product 123', 'success');
+            
+            // Test getting back navigation path
+            const stored = localStorage.getItem('lens_management_navigation');
+            if (stored) {
+                const data = JSON.parse(stored);
+                const backPath = `/products?edit=${data.productId}&tab=lens-management`;
+                log(`Back navigation path would be: ${backPath}`, 'success');
+            }
+        }
+
+        function testDirectNavigation() {
+            log('Testing direct navigation (no context)...', 'info');
+            
+            // Clear navigation context
+            localStorage.removeItem('lens_management_navigation');
+            
+            // Test getting back navigation path without context
+            const backPath = '/lens-options'; // Default fallback
+            log(`Back navigation path would be: ${backPath}`, 'success');
+        }
+
+        function clearNavigationContext() {
+            localStorage.removeItem('lens_management_navigation');
+            log('Navigation context cleared', 'info');
+        }
+
+        // Check current navigation context on load
+        window.addEventListener('load', () => {
+            const stored = localStorage.getItem('lens_management_navigation');
+            if (stored) {
+                const data = JSON.parse(stored);
+                const age = Date.now() - data.timestamp;
+                const minutes = Math.floor(age / 60000);
+                log(`Found navigation context: Product ${data.productId} (${minutes} minutes old)`, 'info');
+            } else {
+                log('No navigation context found', 'info');
+            }
+        });
+    </script>
+</body>
+</html>

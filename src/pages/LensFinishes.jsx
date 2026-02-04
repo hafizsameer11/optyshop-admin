@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import LensFinishModal from '../components/LensFinishModal';
@@ -8,8 +9,11 @@ import {
   getLensFinishes,
   deleteLensFinish
 } from '../api/lensFinishes';
+import { useNavigationContext } from '../hooks/useNavigationContext';
 
 const LensFinishes = () => {
+  const navigate = useNavigate();
+  const { getBackNavigationPath } = useNavigationContext();
   const [lensFinishes, setLensFinishes] = useState([]);
   const [lensOptions, setLensOptions] = useState([]);
   const [prescriptionSunLenses, setPrescriptionSunLenses] = useState([]);
@@ -228,6 +232,12 @@ const LensFinishes = () => {
     setModalOpen(true);
   };
 
+  const handleBackToLensManagement = () => {
+    const backPath = getBackNavigationPath();
+    console.log('📍 Navigating back to:', backPath);
+    navigate(backPath);
+  };
+
   const handleEdit = (lensFinish) => {
     setSelectedLensFinish(lensFinish);
     setModalOpen(true);
@@ -284,13 +294,23 @@ const LensFinishes = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Lens Finishes</h1>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleBackToLensManagement}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Back to Lens Management"
+          >
+            <FiArrowLeft />
+            <span>Back to Lens Management</span>
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Lens Finishes</h1>
+        </div>
         <button
           onClick={handleAddLensFinish}
           className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
         >
           <FiPlus />
-          <span>Add Lens Finish</span>
+          <span>Add Finish</span>
         </button>
       </div>
 

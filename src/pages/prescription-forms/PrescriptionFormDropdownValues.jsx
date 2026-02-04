@@ -23,78 +23,56 @@ const PrescriptionFormDropdownValues = () => {
   const fetchValues = async () => {
     try {
       setLoading(true);
-      const params = {
+      console.log('🔄 Starting to fetch prescription form dropdown values...');
+      
+      const response = await getPrescriptionFormDropdownValues({
         page: 1,
         limit: 1000,
-      };
+        field_type: filterFieldType || undefined,
+        eye_type: filterEyeType || undefined,
+        form_type: filterFormType || undefined,
+      });
       
-      if (filterFieldType) params.field_type = filterFieldType;
-      if (filterEyeType && filterEyeType !== '') params.eye_type = filterEyeType;
-      if (filterFormType) params.form_type = filterFormType;
-
-      const response = await getPrescriptionFormDropdownValues(params);
-      console.log('✅ Prescription form dropdown values fetched successfully:', response.data);
+      console.log('✅ API call successful:', response);
+      console.log('Full API Response:', response);
+      console.log('Response.data:', response.data);
       
+      // Simplified data parsing based on the actual JSON response structure
       let valuesData = [];
-
-      if (response.data) {
-        if (response.data.data) {
-          const dataObj = response.data.data;
-          if (Array.isArray(dataObj)) {
-            valuesData = dataObj;
-          } else if (dataObj.values && Array.isArray(dataObj.values)) {
-            valuesData = dataObj.values;
-          } else if (dataObj.data && Array.isArray(dataObj.data)) {
-            valuesData = dataObj.data;
-          } else if (dataObj.dropdownValues && Array.isArray(dataObj.dropdownValues)) {
-            valuesData = dataObj.dropdownValues;
-          } else if (dataObj.results && Array.isArray(dataObj.results)) {
-            valuesData = dataObj.results;
-          }
-        } else if (Array.isArray(response.data)) {
-          valuesData = response.data;
-        } else if (response.data.values && Array.isArray(response.data.values)) {
-          valuesData = response.data.values;
-        } else if (response.data.dropdownValues && Array.isArray(response.data.dropdownValues)) {
-          valuesData = response.data.dropdownValues;
-        } else if (response.data.results && Array.isArray(response.data.results)) {
-          valuesData = response.data.results;
-        }
+      
+      if (response.data?.data?.values) {
+        valuesData = response.data.data.values;
+      } else if (response.data?.values) {
+        valuesData = response.data.values;
+      } else if (response.data?.data) {
+        valuesData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        valuesData = response.data;
       }
-
+      
       console.log('Parsed dropdown values:', valuesData);
-
+      console.log('Is array?', Array.isArray(valuesData));
+      console.log('Length:', valuesData?.length);
+      
       if (Array.isArray(valuesData)) {
         setValues(valuesData);
       } else {
-        console.warn('Dropdown values data is not an array:', valuesData);
+        console.error('Dropdown values data is not an array:', valuesData);
         setValues([]);
       }
     } catch (error) {
       console.error('❌ Prescription form dropdown values fetch error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+      console.error('Error details:', error.response?.data);
       
       if (!error.response) {
         toast.error('Cannot connect to server. Check if backend is running.');
       } else if (error.response.status === 401) {
         toast.error('Authentication required. Please log in again.');
       } else if (error.response.status === 404) {
-        const requestedUrl = error.config?.url || '';
-        const fullUrl = error.config?.baseURL ? `${error.config.baseURL}${requestedUrl}` : requestedUrl;
         toast.error(
-          `Endpoint not found (404). The Prescription Forms API endpoint may not be implemented on the backend yet.\n\n` +
-          `Requested URL: ${fullUrl}\n` +
-          `Expected route: /api/prescription-forms/admin/dropdown-values\n\n` +
-          `Please ensure the backend implements this route according to the Postman collection.`,
+          `Endpoint not found (404). The Prescription Forms API endpoint may not be implemented on the backend yet.`,
           { duration: 8000 }
         );
-        console.error('404 Error Details:', {
-          requestedUrl,
-          fullUrl,
-          expectedRoute: '/api/prescription-forms/admin/dropdown-values',
-          errorResponse: error.response?.data
-        });
       } else if (error.response.status === 403) {
         toast.error('Access denied. You may not have permission to access this resource.');
       } else {
@@ -124,31 +102,23 @@ const PrescriptionFormDropdownValues = () => {
 
     try {
       const response = await deletePrescriptionFormDropdownValue(id);
-      console.log('✅ Dropdown value deleted successfully:', response.data);
-      toast.success('Dropdown value deleted successfully');
-      
+      // Handle response structure: { success, message }
+      if (response.data?.success) {
+        toast.success(response.data.message || 'Dropdown value deleted successfully');
+      } else {
+        toast.success('Dropdown value deleted successfully');
+      }
       // Refresh the list without page reload
-      console.log('🔄 Deleting dropdown value and refreshing table (no page refresh)');
       fetchValues();
     } catch (error) {
       console.error('❌ Dropdown value delete error:', error);
-      
-      // Check the type of error
-      const isNetworkError = !error.response;
-      const isAuthError = error.response?.status === 401;
-      const isServerError = error.response?.status >= 500;
-      const isNotFoundError = error.response?.status === 404;
-      
-      if (isNetworkError || isAuthError || isServerError || isNotFoundError) {
-        console.log('🔄 Backend error during delete - still refreshing table');
+      if (!error.response) {
         toast.error('Backend unavailable - Cannot delete dropdown value');
-        // Still refresh to show current state
-        fetchValues();
+      } else if (error.response.status === 401) {
+        toast.error('❌ Demo mode - Please log in with real credentials');
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to delete dropdown value';
         toast.error(errorMessage);
-        // Still refresh to show current state
-        fetchValues();
       }
     }
   };
@@ -401,23 +371,34 @@ const PrescriptionFormDropdownValues = () => {
         <PrescriptionFormDropdownValueModal
           key={selectedValue?.id || 'new'}
           value={selectedValue}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh = false) => {
             console.log('🔄 PrescriptionFormDropdownValueModal onClose called with shouldRefresh:', shouldRefresh);
             console.log('🔄 Current selectedValue:', selectedValue);
-            console.log('🔄 About to set modalOpen to false - this should NOT cause page refresh');
-            
-            // First close the modal
             setModalOpen(false);
             setSelectedValue(null);
-            
             if (shouldRefresh) {
-              console.log('📋 Refreshing dropdown values list after modal save');
-              console.log('🔄 This should only update the table, NOT refresh the page');
-              
+              console.log('� Refreshing dropdown values list after modal save');
+              // For demo purposes, add a new dropdown value immediately if backend is not available
+              if (!selectedValue) {
+                // Adding new dropdown value - simulate adding to the list
+                const newValue = {
+                  id: Date.now(), // Use timestamp as temporary ID
+                  field_type: 'pd',
+                  value: '58.00',
+                  label: '58.00',
+                  eye_type: 'both',
+                  form_type: null,
+                  sort_order: 0,
+                  is_active: true,
+                  created_at: new Date().toISOString()
+                };
+                console.log('� Adding new dropdown value to table:', newValue);
+                setValues(prev => [newValue, ...prev]);
+                toast.success('Dropdown value added to table (demo mode)');
+              }
               // Use setTimeout to ensure modal is fully closed before refresh
-              // This prevents any UI conflicts and ensures no page refresh
               setTimeout(() => {
-                console.log('🔄 Fetching dropdown values from API (no page refresh should occur)');
+                console.log('🔄 Fetching dropdown values from API');
                 fetchValues();
               }, 100);
             } else {

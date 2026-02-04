@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import LensCoatingModal from '../components/LensCoatingModal';
 import { 
   getLensCoatings,
   deleteLensCoating
 } from '../api/lensCoatings';
+import { useNavigationContext } from '../hooks/useNavigationContext';
 
 const LensCoatings = () => {
+  const navigate = useNavigate();
+  const { getBackNavigationPath } = useNavigationContext();
   const [lensCoatings, setLensCoatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -83,6 +87,12 @@ const LensCoatings = () => {
     setModalOpen(true);
   };
 
+  const handleBackToLensManagement = () => {
+    const backPath = getBackNavigationPath();
+    console.log('📍 Navigating back to:', backPath);
+    navigate(backPath);
+  };
+
   const handleEdit = (lensCoating) => {
     setSelectedLensCoating(lensCoating);
     setModalOpen(true);
@@ -139,7 +149,17 @@ const LensCoatings = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Lens Coatings</h1>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleBackToLensManagement}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Back to Lens Management"
+          >
+            <FiArrowLeft />
+            <span>Back to Lens Management</span>
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Lens Coatings</h1>
+        </div>
         <button
           onClick={handleAddLensCoating}
           className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
@@ -208,7 +228,7 @@ const LensCoatings = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${coating.price_adjustment ? coating.price_adjustment.toFixed(2) : '0.00'}
+                      ${coating.price_adjustment ? (parseFloat(coating.price_adjustment) || 0).toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {coating.description || 'N/A'}

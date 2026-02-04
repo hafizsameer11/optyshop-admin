@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
+import { FiX, FiPlus, FiUploadCloud } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -14,6 +15,7 @@ import {
 
 const LensColorModal = ({ lensColor, onClose }) => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     parent_type: 'lens_option', // 'lens_option', 'lens_finish', or 'prescription_lens_type'
     lens_option_id: '',
@@ -947,7 +949,7 @@ const LensColorModal = ({ lensColor, onClose }) => {
                       </div>
                     )}
                     <label className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
-                      <FiUpload className="w-5 h-5 text-gray-500" />
+                      <FiUploadCloud className="w-5 h-5 text-gray-500" />
                       <span className="text-sm text-gray-700">
                         {color.imagePreview ? 'Change Image' : 'Upload Image'}
                       </span>
@@ -1008,22 +1010,31 @@ const LensColorModal = ({ lensColor, onClose }) => {
             </label>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={() => onClose(false)}
-              className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
+              onClick={() => navigate('/lens-management')}
+              className="px-6 py-2.5 border border-indigo-300 rounded-xl hover:bg-indigo-50 transition-colors font-semibold text-indigo-700 flex items-center gap-2"
             >
-              {t('cancel')}
+              ← Return to Lens Management
             </button>
-            <button
-              type="button"
-              disabled={loading}
-              className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSubmit}
-            >
-              {loading ? t('saving') : t('save')}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => onClose(false)}
+                className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-gray-700"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSubmit}
+              >
+                {loading ? t('saving') : t('save')}
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -160,8 +160,8 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200/50 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10 flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
             {lensCoating ? 'Edit Lens Coating' : 'Add Lens Coating'}
           </h2>
@@ -273,7 +273,7 @@ const LensCoatingModal = ({ lensCoating, onClose }) => {
             </label>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white flex-shrink-0">
             <button
               type="button"
               onClick={() => onClose(false)}

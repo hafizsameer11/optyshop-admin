@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Prescription Sun Lenses Data</title>
+</head>
+<body>
+    <h1>Prescription Sun Lenses Data</h1>
+    <div id="output"></div>
+    
+    <script>
+        const data = localStorage.getItem('demo_prescription_sun_lenses');
+        const output = document.getElementById('output');
+        
+        if (data) {
+            output.innerHTML = '<h2>Existing Data:</h2><pre>' + JSON.stringify(JSON.parse(data), null, 2) + '</pre>';
+        } else {
+            output.innerHTML = '<h2>No existing data found</h2>';
+        }
+    </script>
+</body>
+</html>

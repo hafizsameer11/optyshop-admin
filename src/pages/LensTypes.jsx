@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import LensTypeModal from '../components/LensTypeModal';
 import { 
   getLensTypes,
   deleteLensType
 } from '../api/lensTypes';
+import { useNavigationContext } from '../hooks/useNavigationContext';
 
 const LensTypes = () => {
+  const navigate = useNavigate();
+  const { getBackNavigationPath } = useNavigationContext();
   const [lensTypes, setLensTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -85,6 +89,12 @@ const LensTypes = () => {
     setModalOpen(true);
   };
 
+  const handleBackToLensManagement = () => {
+    const backPath = getBackNavigationPath();
+    console.log('📍 Navigating back to:', backPath);
+    navigate(backPath);
+  };
+
   const handleEdit = (lensType) => {
     setSelectedLensType(lensType);
     setModalOpen(true);
@@ -141,13 +151,23 @@ const LensTypes = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Lens Types</h1>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleBackToLensManagement}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Back to Lens Management"
+          >
+            <FiArrowLeft />
+            <span>Back to Lens Management</span>
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Lens Types</h1>
+        </div>
         <button
           onClick={handleAddLensType}
           className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
         >
           <FiPlus />
-          <span>Add Lens Type</span>
+          <span>Add Type</span>
         </button>
       </div>
 

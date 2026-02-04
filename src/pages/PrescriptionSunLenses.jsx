@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import PrescriptionSunLensModal from '../components/PrescriptionSunLensModal';
 import { 
   getPrescriptionSunLenses,
   deletePrescriptionSunLens
 } from '../api/prescriptionSunLenses';
+import { useNavigationContext } from '../hooks/useNavigationContext';
 
 const PrescriptionSunLenses = () => {
+  const navigate = useNavigate();
+  const { getBackNavigationPath } = useNavigationContext();
   const [lenses, setLenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLens, setSelectedLens] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [filterActive, setFilterActive] = useState('all');
+
+  // Debug localStorage state
+  useEffect(() => {
+    const demoData = localStorage.getItem('demo_prescription_sun_lenses');
+    console.log('🔍 Current localStorage demo_prescription_sun_lenses:', demoData);
+    console.log('🔍 Parsed localStorage data:', JSON.parse(demoData || '[]'));
+  }, []);
 
   useEffect(() => {
     fetchLenses();
@@ -36,13 +47,30 @@ const PrescriptionSunLenses = () => {
 
       const response = await getPrescriptionSunLenses(params);
       console.log('✅ Prescription sun lenses fetched successfully:', response.data);
+      console.log('🔍 Full response structure:', JSON.stringify(response, null, 2));
+      console.log('🔍 Response data keys:', Object.keys(response.data || {}));
+      console.log('🔍 Looking for data in response.data.options:', response.data?.options);
+      console.log('🔍 Type of response.data.options:', typeof response.data?.options);
+      console.log('🔍 Is response.data.options an array?', Array.isArray(response.data?.options));
       
       let lensesData = [];
       
       if (response.data) {
         // Handle various response structures from the API
-        // Similar to Lens Finishes: { success: true, data: { prescriptionSunLenses: [...], pagination: {...} } }
-        if (response.data.data) {
+        // Check for various property names at root level first (direct response)
+        if (response.data.options && Array.isArray(response.data.options)) {
+          lensesData = response.data.options;
+        } else if (response.data.prescriptionSunLenses && Array.isArray(response.data.prescriptionSunLenses)) {
+          lensesData = response.data.prescriptionSunLenses;
+        } else if (response.data.lenses && Array.isArray(response.data.lenses)) {
+          lensesData = response.data.lenses;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          lensesData = response.data.data;
+        } else if (response.data.results && Array.isArray(response.data.results)) {
+          lensesData = response.data.results;
+        }
+        // Check for nested data structure
+        else if (response.data.data) {
           const dataObj = response.data.data;
           // If data is directly an array
           if (Array.isArray(dataObj)) {
@@ -57,30 +85,23 @@ const PrescriptionSunLenses = () => {
             lensesData = dataObj.data;
           } else if (dataObj.results && Array.isArray(dataObj.results)) {
             lensesData = dataObj.results;
+          } else if (dataObj.options && Array.isArray(dataObj.options)) {
+            lensesData = dataObj.options;
           }
         } 
         // Check if response.data is directly an array
         else if (Array.isArray(response.data)) {
           lensesData = response.data;
-        } 
-        // Check for various property names at root level
-        else {
-          if (response.data.prescriptionSunLenses && Array.isArray(response.data.prescriptionSunLenses)) {
-            lensesData = response.data.prescriptionSunLenses;
-          } else if (response.data.lenses && Array.isArray(response.data.lenses)) {
-            lensesData = response.data.lenses;
-          } else if (response.data.data && Array.isArray(response.data.data)) {
-            lensesData = response.data.data;
-          } else if (response.data.results && Array.isArray(response.data.results)) {
-            lensesData = response.data.results;
-          }
         }
       }
       
       if (Array.isArray(lensesData)) {
+        console.log('✅ Setting lenses data:', lensesData);
+        console.log('🔍 Lenses count:', lensesData.length);
         setLenses(lensesData);
       } else {
         console.error('❌ Prescription sun lenses data is not an array:', lensesData);
+        console.error('❌ Type of lensesData:', typeof lensesData);
         setLenses([]);
       }
     } catch (error) {
@@ -104,6 +125,12 @@ const PrescriptionSunLenses = () => {
   const handleAdd = () => {
     setSelectedLens(null);
     setModalOpen(true);
+  };
+
+  const handleBackToLensManagement = () => {
+    const backPath = getBackNavigationPath();
+    console.log('📍 Navigating back to:', backPath);
+    navigate(backPath);
   };
 
   const handleEdit = (lens) => {
@@ -163,7 +190,17 @@ const PrescriptionSunLenses = () => {
     <div>
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">Prescription Sun Lenses</h1>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={handleBackToLensManagement}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              title="Back to Lens Management"
+            >
+              <FiArrowLeft />
+              <span>Back to Lens Management</span>
+            </button>
+            <h1 className="text-3xl font-bold text-gray-900">Prescription Sun Lenses</h1>
+          </div>
           <div className="flex items-center gap-4">
           <select
             value={filterType}
@@ -300,6 +337,7 @@ const PrescriptionSunLenses = () => {
             if (shouldRefresh) {
               console.log('📋 Refreshing prescription sun lenses list after modal save');
               console.log('🔄 This should only update the table, NOT refresh the page');
+              console.log('🔄 Calling fetchLenses() now...');
               
               // Use setTimeout to ensure modal is fully closed before refresh
               // This prevents any UI conflicts and ensures no page refresh

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { I18nProvider } from './context/I18nContext';
+import { NavigationProvider } from './hooks/useNavigationContext';
 
 // Pages
 import Login from './pages/Login';
@@ -86,78 +87,80 @@ function App() {
   return (
     <I18nProvider>
       <AuthProvider>
-        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <Toaster position="top-right" />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/*"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
+        <NavigationProvider>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Toaster position="top-right" />
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/*"
+                element={
+                  <PrivateRoute>
+                    <Layout>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
 
-                      {/* Website Forms Module */}
-                      <Route path="/forms/contact" element={<ContactRequests />} />
-                      <Route path="/forms/demo" element={<DemoRequests />} />
-                      <Route path="/forms/pricing" element={<PricingRequests />} />
-                      <Route path="/forms/credentials" element={<CredentialsRequests />} />
-                      <Route path="/forms/support" element={<SupportRequests />} />
-                      <Route path="/forms/job-applications" element={<JobApplications />} />
+                        {/* Website Forms Module */}
+                        <Route path="/forms/contact" element={<ContactRequests />} />
+                        <Route path="/forms/demo" element={<DemoRequests />} />
+                        <Route path="/forms/pricing" element={<PricingRequests />} />
+                        <Route path="/forms/credentials" element={<CredentialsRequests />} />
+                        <Route path="/forms/support" element={<SupportRequests />} />
+                        <Route path="/forms/job-applications" element={<JobApplications />} />
 
-                      {/* Contact Lens Forms Module */}
-                      <Route path="/contact-lens-forms/spherical" element={<SphericalConfigurations />} />
-                      <Route path="/contact-lens-forms/astigmatism" element={<AstigmatismConfigurations />} />
-                      <Route path="/contact-lens-forms/dropdown-values" element={<AstigmatismDropdownValues />} />
+                        {/* Contact Lens Forms Module */}
+                        <Route path="/contact-lens-forms/spherical" element={<SphericalConfigurations />} />
+                        <Route path="/contact-lens-forms/astigmatism" element={<AstigmatismConfigurations />} />
+                        <Route path="/contact-lens-forms/dropdown-values" element={<AstigmatismDropdownValues />} />
 
-                      {/* Prescription Forms Module */}
-                      <Route path="/prescription-forms/dropdown-values" element={<PrescriptionFormDropdownValues />} />
+                        {/* Prescription Forms Module */}
+                        <Route path="/prescription-forms/dropdown-values" element={<PrescriptionFormDropdownValues />} />
 
-                      <Route path="/products" element={<Products />} />
-                      <Route path="/orders" element={<Orders />} />
-                      <Route path="/users" element={<Users />} />
-                      <Route path="/categories" element={<Categories />} />
-                      <Route path="/subcategories" element={<SubCategories />} />
-                      <Route path="/frame-sizes" element={<FrameSizes />} />
-                      <Route path="/lens-options" element={<LensOptions />} />
-                      <Route path="/lens-types" element={<LensTypes />} />
-                      <Route path="/lens-coatings" element={<LensCoatings />} />
-                      <Route path="/lens-colors" element={<LensColors />} />
-                      <Route path="/lens-finishes" element={<LensFinishes />} />
-                      <Route path="/lens-treatments" element={<LensTreatments />} />
-                      <Route path="/lens-thickness-materials" element={<LensThicknessMaterials />} />
-                      <Route path="/lens-thickness-options" element={<LensThicknessOptions />} />
-                      <Route path="/prescription-sun-lenses" element={<PrescriptionSunLenses />} />
-                      <Route path="/photochromic-lenses" element={<PhotochromicLenses />} />
-                      <Route path="/prescriptions" element={<Prescriptions />} />
-                      <Route path="/prescription-lens-types" element={<PrescriptionLensTypes />} />
-                      <Route path="/prescription-lens-variants" element={<PrescriptionLensVariants />} />
-                      <Route path="/coupons" element={<Coupons />} />
-                      <Route path="/campaigns" element={<Campaigns />} />
-                      <Route path="/banners" element={<Banners />} />
-                      <Route path="/brands" element={<Brands />} />
-                      <Route path="/flash-offers" element={<FlashOffers />} />
-                      <Route path="/free-gifts" element={<FreeGifts />} />
-                      <Route path="/blog" element={<BlogPosts />} />
-                      <Route path="/faqs" element={<FAQs />} />
-                      <Route path="/pages" element={<Pages />} />
-                      <Route path="/testimonials" element={<Testimonials />} />
-                      <Route path="/simulations" element={<Simulations />} />
-                      <Route path="/jobs" element={<Jobs />} />
-                      <Route path="/shipping-methods" element={<ShippingMethods />} />
-                      <Route path="/transactions" element={<Transactions />} />
-                      <Route path="/analytics" element={<Analytics />} />
-                      <Route path="/overview" element={<Overview />} />
-                      <Route path="/profile" element={<ProfileSettings />} />
-                      <Route path="/preferences" element={<Preferences />} />
-                    </Routes>
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </Router>
+                        <Route path="/products" element={<Products />} />
+                        <Route path="/orders" element={<Orders />} />
+                        <Route path="/users" element={<Users />} />
+                        <Route path="/categories" element={<Categories />} />
+                        <Route path="/subcategories" element={<SubCategories />} />
+                        <Route path="/frame-sizes" element={<FrameSizes />} />
+                        <Route path="/lens-options" element={<LensOptions />} />
+                        <Route path="/lens-types" element={<LensTypes />} />
+                        <Route path="/lens-coatings" element={<LensCoatings />} />
+                        <Route path="/lens-colors" element={<LensColors />} />
+                        <Route path="/lens-finishes" element={<LensFinishes />} />
+                        <Route path="/lens-treatments" element={<LensTreatments />} />
+                        <Route path="/lens-thickness-materials" element={<LensThicknessMaterials />} />
+                        <Route path="/lens-thickness-options" element={<LensThicknessOptions />} />
+                        <Route path="/prescription-sun-lenses" element={<PrescriptionSunLenses />} />
+                        <Route path="/photochromic-lenses" element={<PhotochromicLenses />} />
+                        <Route path="/prescriptions" element={<Prescriptions />} />
+                        <Route path="/prescription-lens-types" element={<PrescriptionLensTypes />} />
+                        <Route path="/prescription-lens-variants" element={<PrescriptionLensVariants />} />
+                        <Route path="/coupons" element={<Coupons />} />
+                        <Route path="/campaigns" element={<Campaigns />} />
+                        <Route path="/banners" element={<Banners />} />
+                        <Route path="/brands" element={<Brands />} />
+                        <Route path="/flash-offers" element={<FlashOffers />} />
+                        <Route path="/free-gifts" element={<FreeGifts />} />
+                        <Route path="/blog" element={<BlogPosts />} />
+                        <Route path="/faqs" element={<FAQs />} />
+                        <Route path="/pages" element={<Pages />} />
+                        <Route path="/testimonials" element={<Testimonials />} />
+                        <Route path="/simulations" element={<Simulations />} />
+                        <Route path="/jobs" element={<Jobs />} />
+                        <Route path="/shipping-methods" element={<ShippingMethods />} />
+                        <Route path="/transactions" element={<Transactions />} />
+                        <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/overview" element={<Overview />} />
+                        <Route path="/profile" element={<ProfileSettings />} />
+                        <Route path="/preferences" element={<Preferences />} />
+                      </Routes>
+                    </Layout>
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </Router>
+        </NavigationProvider>
       </AuthProvider>
     </I18nProvider>
   );

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
+import { useNavigationContext } from '../hooks/useNavigationContext';
 import FrameSizeModal from './FrameSizeModal';
 import LensTypeModal from './LensTypeModal';
 import LensOptionModal from './LensOptionModal';
@@ -92,6 +93,7 @@ const getColorNameFromHex = (hexCode) => {
 const ProductModal = ({ product, onClose }) => {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { setProductContext } = useNavigationContext();
 
   // Helper function to handle lens management modal close with refresh
   // saved: true if form was saved successfully, false/undefined if cancelled/closed
@@ -145,6 +147,12 @@ const ProductModal = ({ product, onClose }) => {
         if (targetRoute) {
           console.log(`🔄 Target route found: ${targetRoute}`);
           console.log(`🔄 Current URL: ${window.location.href}`);
+          
+          // Set product context before navigating so "Back to Lens Management" works correctly
+          if (product && product.id) {
+            console.log('📍 Setting product context for navigation:', product.id, product.name);
+            setProductContext(product.id, product.name);
+          }
           
           // IMPORTANT: Close the product modal WITHOUT calling parent onClose
           // This completely bypasses the Products.jsx handleModalClose function

@@ -20,7 +20,6 @@ export const AuthProvider = ({ children }) => {
         console.log('Token removed from storage, clearing user state');
         setUser(null);
         localStorage.removeItem('refresh_token');
-        localStorage.removeItem('demo_user');
         localStorage.removeItem('last_auth_check');
         localStorage.removeItem('auth_check_cache');
       }
@@ -43,7 +42,6 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('admin_token');
-      const demoUser = localStorage.getItem('demo_user');
       
       // Check if we have a cached auth check result (to prevent rate limiting)
       const lastAuthCheck = localStorage.getItem('last_auth_check');
@@ -60,13 +58,6 @@ export const AuthProvider = ({ children }) => {
         } catch (e) {
           // Cache invalid, continue with fresh check
         }
-      }
-      
-      if (token && demoUser) {
-        // Demo mode - use stored demo user
-        setUser(JSON.parse(demoUser));
-        setLoading(false);
-        return;
       }
       
       if (token) {
@@ -173,28 +164,6 @@ export const AuthProvider = ({ children }) => {
       const isServerError = error.response?.status >= 500;
       const isNotFoundError = error.response?.status === 404;
       
-      // If backend is unavailable, automatically enable demo mode for demo credentials
-      if (isNetworkError || isServerError || isNotFoundError) {
-        if (email === 'admin@test.com' && password === 'admin123') {
-          console.log('🔄 Backend unavailable, enabling demo mode');
-          
-          // Set demo mode
-          const demoUser = {
-            id: 1,
-            name: 'Demo Admin',
-            email: 'admin@test.com',
-            role: 'admin',
-            created_at: new Date().toISOString()
-          };
-          
-          localStorage.setItem('demo_user', JSON.stringify(demoUser));
-          localStorage.setItem('admin_token', 'demo-token');
-          setUser(demoUser);
-          toast.success('Demo mode enabled - Backend unavailable');
-          return true;
-        }
-      }
-      
       // Show actual error message for live server
       const errorMessage = error.response?.data?.message || error.message;
       toast.error(errorMessage || 'Login failed');
@@ -211,7 +180,6 @@ export const AuthProvider = ({ children }) => {
       // Clear all auth-related storage
       localStorage.removeItem('admin_token');
       localStorage.removeItem('refresh_token');
-      localStorage.removeItem('demo_user');
       localStorage.removeItem('last_auth_check');
       localStorage.removeItem('auth_check_cache');
       setUser(null);

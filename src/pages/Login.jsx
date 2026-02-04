@@ -73,12 +73,6 @@ const Login = () => {
             {loading ? t('signingIn') : t('signIn')}
           </button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>{t('demoCredentials')}</p>
-          <p>{t('email')}: admin@test.com</p>
-          <p>{t('password')}: admin123</p>
-        </div>
       </div>
     </div>
   );

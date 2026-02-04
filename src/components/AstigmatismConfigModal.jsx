@@ -345,6 +345,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             const submitData = {
                 ...formData,
                 // Convert available_units to array of numbers, filter out empty/invalid values
+                // Temporarily handle backend issue by making available_units optional
                 available_units: formData.available_units
                     .filter(v => v !== '' && v != null)
                     .map(v => {
@@ -366,6 +367,19 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 left_axis: formData.left_axis.filter(v => v !== ''),
             };
 
+            // Temporary workaround for backend available_units issue
+            // If available_units is causing issues, try alternative field names
+            if (submitData.available_units && submitData.available_units.length > 0) {
+                // Keep available_units for backward compatibility
+                // Also add alternative field names that backend might expect
+                submitData.availableUnits = submitData.available_units;
+                submitData.unit_options = submitData.available_units;
+                submitData.unit_types = submitData.available_units;
+            } else {
+                // Remove empty available_units to prevent backend errors
+                delete submitData.available_units;
+            }
+
             // Include product_id if selected (convert empty string to null for API)
             // But preserve product_id from config if it was passed
             if (submitData.product_id === '' || submitData.product_id === null) {
@@ -380,6 +394,12 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             }
 
             console.log('📤 Submitting astigmatism config with product_id:', submitData.product_id);
+            console.log('📤 Full submit data structure:', {
+                ...submitData,
+                unit_prices: Object.keys(validUnitPrices).length > 0 ? validUnitPrices : undefined,
+                unit_images: Object.keys(unitImages).some(unit => unitImages[unit]?.length > 0) ? unitImages : undefined
+            });
+            console.log('📤 available_units being sent:', submitData.available_units);
 
             // Add backend copy flag if user clicked copy button
             if (useBackendCopy) {
@@ -419,7 +439,14 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                         // Only send available_units if it has values
                         if (value.length > 0) {
                             formDataToSend.append(key, JSON.stringify(value));
+                            // Also send alternative field names for backend compatibility
+                            formDataToSend.append('availableUnits', JSON.stringify(value));
+                            formDataToSend.append('unit_options', JSON.stringify(value));
+                            formDataToSend.append('unit_types', JSON.stringify(value));
                         }
+                    } else if (key === 'availableUnits' || key === 'unit_options' || key === 'unit_types') {
+                        // Skip these as they're handled above
+                        continue;
                     } else if (typeof value === 'boolean') {
                         formDataToSend.append(key, value.toString());
                     } else if (typeof value === 'number') {
@@ -524,14 +551,29 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             onClose(true); // Pass true to indicate successful save
         } catch (error) {
             console.error('Save error:', error);
+            console.error('Request data that was sent:', {
+                available_units: submitData?.available_units,
+                hasUnitImageFiles: hasUnitImageFiles,
+                formDataKeys: Object.keys(submitData || {}),
+                product_id: submitData?.product_id
+            });
+            
             if (!error.response) {
                 toast.error('Backend unavailable - Cannot save configuration');
             } else if (error.response.status === 401) {
                 toast.error('❌ Demo mode - Please log in with real credentials');
             } else if (error.response.status === 500) {
                 const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Server error occurred. Please check the console for details.';
+                const errorStack = error.response?.data?.stack;
                 console.error('Server error details:', error.response?.data);
-                toast.error(`Server Error: ${errorMessage}`);
+                console.error('Error stack trace:', errorStack);
+                
+                // Specific handling for available_units error
+                if (errorMessage.includes('available_units is not defined') || errorStack?.includes('available_units is not defined')) {
+                    toast.error('Backend Error: available_units field issue. Please check backend controller at line 1207.');
+                } else {
+                    toast.error(`Server Error: ${errorMessage}`);
+                }
             } else {
                 const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to save configuration';
                 toast.error(errorMessage);

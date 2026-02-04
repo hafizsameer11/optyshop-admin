@@ -79,8 +79,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); // Prevent any form submission that could cause page refresh
     console.log('🔍 Lens Option form submission started');
     console.log('🔍 Form data before submission:', formData);
     
@@ -150,7 +149,9 @@ const LensOptionModal = ({ lensOption, onClose }) => {
       // Always close modal and refresh on success, regardless of response format
       console.log('✅ API operation completed, closing modal and refreshing table');
       // Close modal and trigger parent refresh without page reload (same as Frame Sizes)
-      onClose(true);
+      if (typeof onClose === 'function') {
+        onClose(true);
+      }
     } catch (error) {
       console.error('❌ Lens option save error:', error);
       console.error('Error response:', error.response?.data);
@@ -161,7 +162,9 @@ const LensOptionModal = ({ lensOption, onClose }) => {
       setTimeout(() => {
         toast.success('Demo: Lens option saved successfully (simulated)');
         console.log('🔄 Calling onClose(true) after simulation');
-        onClose(true);
+        if (typeof onClose === 'function') {
+          onClose(true);
+        }
       }, 1000);
     } finally {
       setLoading(false);
@@ -187,7 +190,7 @@ const LensOptionModal = ({ lensOption, onClose }) => {
           </div>
         </div>
 
-        <div className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Name <span className="text-red-500">*</span></label>
@@ -286,15 +289,14 @@ const LensOptionModal = ({ lensOption, onClose }) => {
               Cancel
             </button>
             <button
-              type="button"
+              type="submit"
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSubmit}
             >
               {loading ? 'Saving...' : 'Save'}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

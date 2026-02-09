@@ -3,6 +3,7 @@ import { FiX, FiPlus, FiTrash2, FiCopy } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
+import { astigmatismConfigs } from '../api/contactLensForms';
 
 const AstigmatismConfigModal = ({ config, onClose }) => {
     const [formData, setFormData] = useState({
@@ -496,17 +497,13 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
 
                 let response;
                 if (config) {
-                    response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.UPDATE(config.id), formDataToSend, {
-                        headers: { 'Content-Type': 'multipart/form-data' }
-                    });
+                    response = await astigmatismConfigs.update(config.id, formDataToSend);
                 } else {
-                    response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.CREATE, formDataToSend, {
-                        headers: { 'Content-Type': 'multipart/form-data' }
-                    });
+                    response = await astigmatismConfigs.create(formDataToSend);
                 }
 
-                if (response.data?.success) {
-                    toast.success(response.data.message || (config ? 'Astigmatism configuration updated successfully' : 'Astigmatism configuration created successfully'));
+                if (response.success) {
+                    toast.success(response.message || (config ? 'Astigmatism configuration updated successfully' : 'Astigmatism configuration created successfully'));
                 } else {
                     toast.success(config ? 'Astigmatism configuration updated successfully' : 'Astigmatism configuration created successfully');
                 }
@@ -532,16 +529,16 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
 
                 let response;
                 if (config) {
-                    response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.UPDATE(config.id), submitData);
-                    if (response.data?.success) {
-                        toast.success(response.data.message || 'Astigmatism configuration updated successfully');
+                    response = await astigmatismConfigs.update(config.id, submitData);
+                    if (response.success) {
+                        toast.success(response.message || 'Astigmatism configuration updated successfully');
                     } else {
                         toast.success('Astigmatism configuration updated successfully');
                     }
                 } else {
-                    response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.CREATE, submitData);
-                    if (response.data?.success) {
-                        toast.success(response.data.message || 'Astigmatism configuration created successfully');
+                    response = await astigmatismConfigs.create(submitData);
+                    if (response.success) {
+                        toast.success(response.message || 'Astigmatism configuration created successfully');
                     } else {
                         toast.success('Astigmatism configuration created successfully');
                     }

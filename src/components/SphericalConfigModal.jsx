@@ -3,6 +3,7 @@ import { FiX, FiPlus, FiTrash2, FiCopy } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
+import { sphericalConfigs } from '../api/contactLensForms';
 
 const SphericalConfigModal = ({ config, onClose }) => {
   const [formData, setFormData] = useState({
@@ -456,19 +457,19 @@ const SphericalConfigModal = ({ config, onClose }) => {
 
         let response;
         if (config) {
-          response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.UPDATE(config.id), formDataToSend, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
+          response = await sphericalConfigs.update(config.id, formDataToSend);
+          if (response.success) {
+            toast.success(response.message || 'Spherical configuration updated successfully');
+          } else {
+            toast.success('Spherical configuration updated successfully');
+          }
         } else {
-          response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.CREATE, formDataToSend, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        }
-
-        if (response.data?.success) {
-          toast.success(response.data.message || (config ? 'Spherical configuration updated successfully' : 'Spherical configuration created successfully'));
-        } else {
-          toast.success(config ? 'Spherical configuration updated successfully' : 'Spherical configuration created successfully');
+          response = await sphericalConfigs.create(formDataToSend);
+          if (response.success) {
+            toast.success(response.message || 'Spherical configuration created successfully');
+          } else {
+            toast.success('Spherical configuration created successfully');
+          }
         }
       } else {
         // No files, use JSON (existing URLs only)
@@ -492,16 +493,16 @@ const SphericalConfigModal = ({ config, onClose }) => {
 
         let response;
         if (config) {
-          response = await api.put(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.UPDATE(config.id), submitData);
-          if (response.data?.success) {
-            toast.success(response.data.message || 'Spherical configuration updated successfully');
+          response = await sphericalConfigs.update(config.id, submitData);
+          if (response.success) {
+            toast.success(response.message || 'Spherical configuration updated successfully');
           } else {
             toast.success('Spherical configuration updated successfully');
           }
         } else {
-          response = await api.post(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.CREATE, submitData);
-          if (response.data?.success) {
-            toast.success(response.data.message || 'Spherical configuration created successfully');
+          response = await sphericalConfigs.create(submitData);
+          if (response.success) {
+            toast.success(response.message || 'Spherical configuration created successfully');
           } else {
             toast.success('Spherical configuration created successfully');
           }

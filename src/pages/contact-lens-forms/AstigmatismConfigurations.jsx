@@ -4,6 +4,7 @@ import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../../config/apiRoutes';
 import AstigmatismConfigModal from '../../components/AstigmatismConfigModal';
+import { astigmatismConfigs } from '../../api/contactLensForms';
 
 const AstigmatismConfigurations = () => {
     const [configs, setConfigs] = useState([]);
@@ -51,12 +52,12 @@ const AstigmatismConfigurations = () => {
     const fetchConfigs = async () => {
         try {
             setLoading(true);
-            let url = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?page=${page}&limit=${limit}`;
+            const params = { page, limit };
             if (filterSubCategoryId) {
-                url += `&sub_category_id=${filterSubCategoryId}`;
+                params.sub_category_id = filterSubCategoryId;
             }
 
-            const response = await api.get(url);
+            const response = await astigmatismConfigs.getAll(params);
 
             let configsData = [];
             let pagination = null;
@@ -161,9 +162,9 @@ const AstigmatismConfigurations = () => {
         }
 
         try {
-            const response = await api.delete(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.DELETE(id));
-            if (response.data?.success) {
-                toast.success(response.data.message || 'Astigmatism configuration deleted successfully');
+            const response = await astigmatismConfigs.delete(id);
+            if (response.success) {
+                toast.success(response.message || 'Astigmatism configuration deleted successfully');
             } else {
                 toast.success('Astigmatism configuration deleted successfully');
             }

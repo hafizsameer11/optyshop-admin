@@ -89,16 +89,43 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Convert to Base64 for preview (no blob usage)
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Url = event.target.result;
-        setFormData(prev => ({ ...prev, image_url: base64Url }));
-        toast.success('Image uploaded (Base64 preview)');
-      };
-      reader.readAsDataURL(file);
+    console.log('📁 File selected:', file);
+    
+    if (!file) {
+      console.log('❌ No file selected');
+      return;
     }
+    
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      e.target.value = ''; // Clear the input
+      return;
+    }
+    
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size must be less than 10MB');
+      e.target.value = ''; // Clear the input
+      return;
+    }
+    
+    console.log('✅ File validation passed:', file.name, file.type, file.size);
+    
+    // Convert to Base64 for preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Url = event.target.result;
+      console.log('🖼️ Image converted to Base64');
+      setFormData(prev => ({ ...prev, image_url: base64Url }));
+      toast.success(`Image uploaded: ${file.name}`);
+    };
+    reader.onerror = (error) => {
+      console.error('❌ Error reading file:', error);
+      toast.error('Failed to read image file');
+      e.target.value = ''; // Clear the input
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
@@ -375,14 +402,17 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
               />
               <label className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-2">
                 <FiUpload className="w-4 h-4" />
+                <span>Upload</span>
                 <input
+                  key={formData.image_url || 'file-input'}
                   type="file"
-                  accept="image/*"
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
                   onChange={handleImageUpload}
                   className="hidden"
                 />
               </label>
             </div>
+            <p className="text-xs text-gray-500 mt-1">Supported formats: PNG, JPG, WEBP (Max 10MB)</p>
             {formData.image_url && (
               <div className="mt-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Image Preview</label>

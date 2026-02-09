@@ -4,6 +4,7 @@ import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../../config/apiRoutes';
 import SphericalConfigModal from '../../components/SphericalConfigModal';
+import { sphericalConfigs } from '../../api/contactLensForms';
 
 const SphericalConfigurations = () => {
   const [configs, setConfigs] = useState([]);
@@ -51,14 +52,14 @@ const SphericalConfigurations = () => {
   const fetchConfigs = async () => {
     try {
       setLoading(true);
-      let url = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?page=${page}&limit=${limit}`;
+      const params = { page, limit };
       if (filterSubCategoryId) {
-        url += `&sub_category_id=${filterSubCategoryId}`;
+        params.sub_category_id = filterSubCategoryId;
       }
-      console.log('Fetching spherical configs from:', url);
+      console.log('Fetching spherical configs with params:', params);
 
-      const response = await api.get(url);
-      console.log('Spherical configs API Response:', response.data);
+      const response = await sphericalConfigs.getAll(params);
+      console.log('Spherical configs API Response:', response);
 
       let configsData = [];
       let pagination = null;
@@ -188,9 +189,9 @@ const SphericalConfigurations = () => {
     }
 
     try {
-      const response = await api.delete(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.DELETE(id));
-      if (response.data?.success) {
-        toast.success(response.data.message || 'Spherical configuration deleted successfully');
+      const response = await sphericalConfigs.delete(id);
+      if (response.success) {
+        toast.success(response.message || 'Spherical configuration deleted successfully');
       } else {
         toast.success('Spherical configuration deleted successfully');
       }

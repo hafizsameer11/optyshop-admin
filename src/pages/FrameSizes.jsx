@@ -179,17 +179,17 @@ const FrameSizes = () => {
                       {size.product?.slug || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.lens_width ? `${size.lens_width} mm` : ''}
+                      {size.lens_width ? `${size.lens_width} mm` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.bridge_width ? `${size.bridge_width} mm` : ''}
+                      {size.bridge_width ? `${size.bridge_width} mm` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {size.temple_length ? `${size.temple_length} mm` : ''}
+                      {size.temple_length ? `${size.temple_length} mm` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        {size.status || 'Active'}
+                        {size.status || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

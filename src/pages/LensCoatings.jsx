@@ -220,18 +220,18 @@ const LensCoatings = () => {
                       {coating.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {coating.slug}
+                      {coating.slug || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-primary-100 text-primary-800">
-                        {coating.type}
+                        {coating.type || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${coating.price_adjustment ? (parseFloat(coating.price_adjustment) || 0).toFixed(2) : '0.00'}
+                      ${coating.price_adjustment ? (parseFloat(coating.price_adjustment) || 0).toFixed(2) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                      {coating.description || ''}
+                      {coating.description || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -245,7 +245,7 @@ const LensCoatings = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {coating.created_at ? new Date(coating.created_at).toLocaleDateString() : ''}
+                      {coating.created_at ? new Date(coating.created_at).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button 

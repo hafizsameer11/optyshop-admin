@@ -2292,9 +2292,6 @@ const ProductModal = ({ product, onClose }) => {
     ] : []),
     { id: 'images', label: 'Images' }, // Always shown - all products can have images
     { id: 'seo', label: 'SEO' }, // Always shown - all products can have SEO settings
-    { id: 'clip', label: 'clip' },
-    { id: 'auctions', label: 'Auctions' },
-    { id: 'progressive', label: 'Progressive' },
   ];
 
   // Log tabs for eye hygiene products to help with debugging
@@ -5096,32 +5093,6 @@ const ProductModal = ({ product, onClose }) => {
               </>
             )}
 
-            {/* Clip Tab */}
-            {activeTab === 'clip' && (
-              <>
-                <div className="p-6">
-                  <p className="text-gray-600">Clip configuration content goes here.</p>
-                </div>
-              </>
-            )}
-
-            {/* Auctions Tab */}
-            {activeTab === 'auctions' && (
-              <>
-                <div className="p-6">
-                  <p className="text-gray-600">Auctions configuration content goes here.</p>
-                </div>
-              </>
-            )}
-
-            {/* Progressive Tab */}
-            {activeTab === 'progressive' && (
-              <>
-                <div className="p-6">
-                  <p className="text-gray-600">Progressive configuration content goes here.</p>
-                </div>
-              </>
-            )}
           </div>
 
           {/* Fixed Footer with Action Buttons */}

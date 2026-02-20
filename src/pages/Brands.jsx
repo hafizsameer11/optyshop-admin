@@ -165,9 +165,7 @@ const Brands = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-500 max-w-xs truncate" title={brand.description}>
-                      {brand.description || (
-                        <span className="text-gray-400 italic">No description</span>
-                      )}
+                      {brand.description || 'N/A'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

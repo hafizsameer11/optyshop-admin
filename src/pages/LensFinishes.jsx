@@ -415,7 +415,7 @@ const LensFinishes = () => {
                         // If no lens option ID, show empty
                         return (
                           <span className="text-gray-400">
-                            <span className="block text-xs mt-1">Not linked</span>
+                            <span className="block text-xs mt-1">N/A</span>
                           </span>
                         );
                       })()}
@@ -447,20 +447,20 @@ const LensFinishes = () => {
                           }
                         }
                         
-                        return <span className="text-gray-400"></span>;
+                        return <span className="text-gray-400">N/A</span>;
                       })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {finish.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                      {finish.slug || ''}
+                      {finish.slug || 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                      {finish.description || ''}
+                      {finish.description || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${finish.price_adjustment ? finish.price_adjustment.toFixed(2) : (finish.priceAdjustment ? finish.priceAdjustment.toFixed(2) : '0.00')}
+                      ${finish.price_adjustment ? finish.price_adjustment.toFixed(2) : (finish.priceAdjustment ? finish.priceAdjustment.toFixed(2) : 'N/A')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

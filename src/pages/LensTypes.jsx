@@ -25,7 +25,7 @@ const LensTypes = () => {
     try {
       setLoading(true);
       console.log('🔄 Fetching lens types...');
-      const response = await getLensTypes({ page: 1, limit: 1000 });
+      const response = await getLensTypes({ page: 1, limit: 1000, sortBy: 'id', sortOrder: 'asc' });
       console.log('✅ Lens types fetched successfully:', response.data);
       
       // Handle various response structures from the API
@@ -225,16 +225,16 @@ const LensTypes = () => {
                       {type.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {type.slug}
+                      {type.slug || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {type.index}
+                      {type.index || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {type.thickness_factor || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${type.price_adjustment ? type.price_adjustment.toFixed(2) : '0.00'}
+                      ${type.price_adjustment ? type.price_adjustment.toFixed(2) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {type.description || 'N/A'}

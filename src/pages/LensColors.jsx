@@ -464,7 +464,7 @@ const LensColors = () => {
                         {colorCode}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                        {hexCode || ''}
+                        {hexCode || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {hexCode ? (
@@ -474,11 +474,11 @@ const LensColors = () => {
                             title={hexCode}
                           />
                         ) : (
-                          <span className="text-xs text-gray-400"></span>
+                          <span className="text-xs text-gray-400">N/A</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${priceAdjustment.toFixed(2)}
+                        ${priceAdjustment ? priceAdjustment.toFixed(2) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

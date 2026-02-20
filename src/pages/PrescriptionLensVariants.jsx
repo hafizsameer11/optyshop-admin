@@ -403,7 +403,7 @@ const PrescriptionLensVariants = () => {
                         {getLensTypeName(variant)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${variantPrice.toFixed(2)}
+                        ${variantPrice ? variantPrice.toFixed(2) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                         {variantDescription}

@@ -271,8 +271,8 @@ const PrescriptionSunLenses = () => {
               ) : (
                 lenses.map((lens) => {
                   const lensId = lens.id;
-                  const lensName = lens.name || '';
-                  const lensSlug = lens.slug || '';
+                  const lensName = lens.name || 'N/A';
+                  const lensSlug = lens.slug || 'N/A';
                   const lensType = lens.type || 'N/A';
                   const basePrice = lens.base_price !== undefined ? lens.base_price : (lens.basePrice !== undefined ? lens.basePrice : 0);
                   const sortOrder = lens.sort_order !== undefined ? lens.sort_order : (lens.sortOrder !== undefined ? lens.sortOrder : 0);
@@ -284,7 +284,7 @@ const PrescriptionSunLenses = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lensName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{lensSlug}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lensType}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice.toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice ? basePrice.toFixed(2) : 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sortOrder}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

@@ -180,19 +180,19 @@ const Categories = () => {
                   >
                     <td className="table-cell-responsive">
                       <div className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">
-                        {category.name || '-'}
+                        {category.name || 'N/A'}
                       </div>
                       {/* Show slug on mobile */}
                       <div className="md:hidden text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded-md inline-block mt-1">
-                        {category.slug || '-'}
+                        {category.slug || 'N/A'}
                       </div>
                     </td>
                     <td className="table-cell-responsive text-sm text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded-md hidden md:table-cell">
-                      {category.slug || '-'}
+                      {category.slug || 'N/A'}
                     </td>
                     <td className="table-cell-responsive hidden lg:table-cell">
                       <div className="text-sm text-gray-600 max-w-xs truncate" title={category.description || ''}>
-                        {category.description || '-'}
+                        {category.description || 'N/A'}
                       </div>
                     </td>
                     <td className="table-cell-responsive">

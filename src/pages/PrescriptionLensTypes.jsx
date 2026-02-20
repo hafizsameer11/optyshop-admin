@@ -229,7 +229,7 @@ const PrescriptionLensTypes = () => {
                   // Handle both snake_case and camelCase field names
                   const typeId = type.id;
                   const typeName = type.name || type.Name;
-                  const typeSlug = type.slug || type.Slug || '';
+                  const typeSlug = type.slug || type.Slug || 'N/A';
                   const prescriptionType = type.prescription_type || type.prescriptionType || type.prescription_type_id || type.prescriptionTypeId;
                   const basePrice = type.base_price !== undefined ? type.base_price : (type.basePrice !== undefined ? type.basePrice : 0);
                   const description = type.description || type.Description || 'N/A';
@@ -264,7 +264,7 @@ const PrescriptionLensTypes = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${basePrice.toFixed(2)}
+                        ${basePrice ? basePrice.toFixed(2) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                         {description}

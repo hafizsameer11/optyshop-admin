@@ -63,7 +63,14 @@ const LensThicknessOptions = () => {
       console.log('Parsed lens thickness options:', optionsData);
       
       if (Array.isArray(optionsData)) {
-        setOptions(optionsData);
+        // Sort by ID in ascending order for proper arrangement
+        const sortedData = optionsData.sort((a, b) => {
+          const idA = parseInt(a.id) || 0;
+          const idB = parseInt(b.id) || 0;
+          return idA - idB;
+        });
+        
+        setOptions(sortedData);
       } else {
         console.error('Lens thickness options data is not an array:', optionsData);
         setOptions([]);

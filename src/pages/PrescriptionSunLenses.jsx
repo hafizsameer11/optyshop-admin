@@ -96,9 +96,16 @@ const PrescriptionSunLenses = () => {
       }
       
       if (Array.isArray(lensesData)) {
-        console.log('✅ Setting lenses data:', lensesData);
-        console.log('🔍 Lenses count:', lensesData.length);
-        setLenses(lensesData);
+        // Sort by ID in ascending order for proper arrangement
+        const sortedData = lensesData.sort((a, b) => {
+          const idA = parseInt(a.id) || 0;
+          const idB = parseInt(b.id) || 0;
+          return idA - idB;
+        });
+        
+        console.log('✅ Setting lenses data:', sortedData);
+        console.log('🔍 Lenses count:', sortedData.length);
+        setLenses(sortedData);
       } else {
         console.error('❌ Prescription sun lenses data is not an array:', lensesData);
         console.error('❌ Type of lensesData:', typeof lensesData);
@@ -284,7 +291,7 @@ const PrescriptionSunLenses = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lensName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{lensSlug}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lensType}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice ? basePrice.toFixed(2) : 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice !== undefined && basePrice !== null ? (parseFloat(basePrice) || 0).toFixed(2) : 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sortOrder}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

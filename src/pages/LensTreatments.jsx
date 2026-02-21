@@ -72,8 +72,15 @@ const LensTreatments = () => {
       console.log('Parsed lens treatments count:', lensTreatmentsData.length);
       
       if (Array.isArray(lensTreatmentsData)) {
-        setLensTreatments(lensTreatmentsData);
-        if (lensTreatmentsData.length === 0) {
+        // Sort by ID in ascending order for proper arrangement
+        const sortedData = lensTreatmentsData.sort((a, b) => {
+          const idA = parseInt(a.id) || 0;
+          const idB = parseInt(b.id) || 0;
+          return idA - idB;
+        });
+        
+        setLensTreatments(sortedData);
+        if (sortedData.length === 0) {
           console.warn('Lens treatments array is empty. Check if data exists in database.');
         }
       } else {
@@ -247,7 +254,7 @@ const LensTreatments = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${treatment.price ? treatment.price.toFixed(2) : 'N/A'}
+                      ${treatment.price !== undefined && treatment.price !== null ? (parseFloat(treatment.price) || 0).toFixed(2) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {treatment.description || 'N/A'}

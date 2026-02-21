@@ -63,7 +63,14 @@ const LensThicknessMaterials = () => {
       console.log('Parsed lens thickness materials:', materialsData);
       
       if (Array.isArray(materialsData)) {
-        setMaterials(materialsData);
+        // Sort by ID in ascending order for proper arrangement
+        const sortedData = materialsData.sort((a, b) => {
+          const idA = parseInt(a.id) || 0;
+          const idB = parseInt(b.id) || 0;
+          return idA - idB;
+        });
+        
+        setMaterials(sortedData);
       } else {
         console.error('Lens thickness materials data is not an array:', materialsData);
         setMaterials([]);

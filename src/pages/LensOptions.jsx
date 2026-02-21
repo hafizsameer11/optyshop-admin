@@ -96,21 +96,22 @@ const LensOptions = () => {
                  option.name.trim().length > 0;
         });
         
-        console.log('Parsed lens options:', lensOptionsData);
-        console.log('Parsed lens options count:', lensOptionsData.length);
+        // Sort by ID in ascending order for proper arrangement
+        const sortedData = lensOptionsData.sort((a, b) => {
+          const idA = parseInt(a.id) || 0;
+          const idB = parseInt(b.id) || 0;
+          return idA - idB;
+        });
         
-        // Log first option structure for debugging
-        if (lensOptionsData.length > 0) {
-          console.log('First lens option structure:', JSON.stringify(lensOptionsData[0], null, 2));
-        }
+        console.log('Parsed lens options:', sortedData);
+        console.log('Parsed lens options count:', sortedData.length);
         
-        setLensOptions(lensOptionsData);
-        if (lensOptionsData.length === 0) {
-          console.warn('No lens options found. Check if lens options exist in the database.');
+        setLensOptions(sortedData);
+        if (sortedData.length === 0) {
+          console.warn('No lens options found. Check if lens options exist in database.');
         }
       } else {
         console.error('❌ Lens options data is not an array:', lensOptionsData);
-        console.error('Response structure:', JSON.stringify(response.data, null, 2));
         setLensOptions([]);
       }
     } catch (error) {
@@ -272,7 +273,7 @@ const LensOptions = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{optionId}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{optionName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{optionType}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice.toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice !== undefined && basePrice !== null ? (parseFloat(basePrice) || 0).toFixed(2) : 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${

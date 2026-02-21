@@ -78,11 +78,18 @@ const LensFinishes = () => {
       console.log('Parsed lens finishes count:', lensFinishesData.length);
       
       if (Array.isArray(lensFinishesData)) {
-        setLensFinishes(lensFinishesData);
-        console.log('Lens finishes loaded:', lensFinishesData.length);
-        console.log('Sample finish:', lensFinishesData[0]);
-        if (lensFinishesData.length === 0) {
-          console.warn('No lens finishes found. Check if lens finishes exist in the database.');
+        // Sort by ID in ascending order for proper arrangement
+        const sortedData = lensFinishesData.sort((a, b) => {
+          const idA = parseInt(a.id) || 0;
+          const idB = parseInt(b.id) || 0;
+          return idA - idB;
+        });
+        
+        setLensFinishes(sortedData);
+        console.log('Lens finishes loaded:', sortedData.length);
+        console.log('Sample finish:', sortedData[0]);
+        if (sortedData.length === 0) {
+          console.warn('No lens finishes found. Check if lens finishes exist in database.');
         }
       } else {
         console.error('Lens finishes data is not an array:', lensFinishesData);
@@ -460,7 +467,7 @@ const LensFinishes = () => {
                       {finish.description || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${finish.price_adjustment ? finish.price_adjustment.toFixed(2) : (finish.priceAdjustment ? finish.priceAdjustment.toFixed(2) : 'N/A')}
+                      ${finish.price_adjustment !== undefined && finish.price_adjustment !== null ? (parseFloat(finish.price_adjustment) || 0).toFixed(2) : (finish.priceAdjustment !== undefined && finish.priceAdjustment !== null ? (parseFloat(finish.priceAdjustment) || 0).toFixed(2) : 'N/A')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

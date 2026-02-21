@@ -256,16 +256,23 @@ const LensColors = () => {
                  color.name.trim().length > 0;
         });
         
-        console.log('Parsed lens colors:', lensColorsData);
-        console.log('Parsed lens colors count:', lensColorsData.length);
+        // Sort by ID in ascending order for proper arrangement
+        const sortedData = lensColorsData.sort((a, b) => {
+          const idA = parseInt(a.id) || 0;
+          const idB = parseInt(b.id) || 0;
+          return idA - idB;
+        });
+        
+        console.log('Parsed lens colors:', sortedData);
+        console.log('Parsed lens colors count:', sortedData.length);
         
         // Log first color structure for debugging
-        if (lensColorsData.length > 0) {
-          console.log('First lens color structure:', JSON.stringify(lensColorsData[0], null, 2));
+        if (sortedData.length > 0) {
+          console.log('First lens color structure:', JSON.stringify(sortedData[0], null, 2));
         }
         
-        setLensColors(lensColorsData);
-        if (lensColorsData.length === 0) {
+        setLensColors(sortedData);
+        if (sortedData.length === 0) {
           console.warn('No lens colors found. Check if lens colors exist in the database.');
         }
       } else {
@@ -478,7 +485,7 @@ const LensColors = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${priceAdjustment ? priceAdjustment.toFixed(2) : 'N/A'}
+                        ${priceAdjustment !== undefined && priceAdjustment !== null ? (parseFloat(priceAdjustment) || 0).toFixed(2) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

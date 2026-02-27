@@ -33,6 +33,8 @@ const LensOptions = () => {
       const params = {
         page: 1,
         limit: 1000,
+        sortBy: 'id',
+        sortOrder: 'asc'
       };
       
       if (filterType !== 'all') {

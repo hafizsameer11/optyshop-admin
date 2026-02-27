@@ -30,6 +30,8 @@ const LensThicknessOptions = () => {
       const params = {
         page: 1,
         limit: 1000,
+        sortBy: 'id',
+        sortOrder: 'asc'
       };
       
       if (filters.isActive !== '') {
@@ -64,11 +66,13 @@ const LensThicknessOptions = () => {
       
       if (Array.isArray(optionsData)) {
         // Sort by ID in ascending order for proper arrangement
-        const sortedData = optionsData.sort((a, b) => {
+        const sortedData = [...optionsData].sort((a, b) => {
           const idA = parseInt(a.id) || 0;
           const idB = parseInt(b.id) || 0;
           return idA - idB;
         });
+        
+        console.log('🔢 Lens thickness options sorted by ID (ascending):', sortedData.map(item => ({ id: item.id, name: item.name })));
         
         setOptions(sortedData);
       } else {

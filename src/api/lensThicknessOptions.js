@@ -17,8 +17,8 @@ import api from '../utils/api';
  * @param {Object} params - Query parameters
  * @param {number} params.page - Page number (default: 1)
  * @param {number} params.limit - Items per page (default: 50)
- * @param {string} params.sortBy - Sort field (default: created_at)
- * @param {string} params.sortOrder - Sort order (asc/desc, default: desc)
+ * @param {string} params.sortBy - Sort field (default: id)
+ * @param {string} params.sortOrder - Sort order (asc/desc, default: asc)
  * @param {boolean} params.is_active - Filter by active status
  * @returns {Promise} Response with thickness options data
  */
@@ -26,8 +26,8 @@ export const getLensThicknessOptions = async (params = {}) => {
   const {
     page = 1,
     limit = 50,
-    sortBy = 'created_at',
-    sortOrder = 'desc',
+    sortBy = 'id',
+    sortOrder = 'asc',
     is_active
   } = params;
 

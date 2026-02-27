@@ -24,7 +24,7 @@ const LensCoatings = () => {
   const fetchLensCoatings = async () => {
     try {
       setLoading(true);
-      const response = await getLensCoatings({ page: 1, limit: 1000 });
+      const response = await getLensCoatings({ page: 1, limit: 1000, sortBy: 'id', sortOrder: 'asc' });
       console.log('✅ Lens coatings fetched successfully:', response.data);
       
       // Handle various response structures from the API
@@ -50,11 +50,13 @@ const LensCoatings = () => {
       
       if (Array.isArray(lensCoatingsData)) {
         // Sort by ID in ascending order for proper arrangement
-        const sortedData = lensCoatingsData.sort((a, b) => {
+        const sortedData = [...lensCoatingsData].sort((a, b) => {
           const idA = parseInt(a.id) || 0;
           const idB = parseInt(b.id) || 0;
           return idA - idB;
         });
+        
+        console.log('🔢 Lens coatings sorted by ID (ascending):', sortedData.map(item => ({ id: item.id, name: item.name })));
         setLensCoatings(sortedData);
       } else {
         console.error('❌ Lens coatings data is not an array:', lensCoatingsData);

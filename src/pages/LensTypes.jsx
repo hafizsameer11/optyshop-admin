@@ -51,12 +51,13 @@ const LensTypes = () => {
       
       if (Array.isArray(lensTypesData)) {
         // Sort by ID in ascending order for proper arrangement
-        const sortedData = lensTypesData.sort((a, b) => {
+        const sortedData = [...lensTypesData].sort((a, b) => {
           const idA = parseInt(a.id) || 0;
           const idB = parseInt(b.id) || 0;
           return idA - idB;
         });
         
+        console.log('🔢 Lens types sorted by ID (ascending):', sortedData.map(item => ({ id: item.id, name: item.name })));
         setLensTypes(sortedData);
         console.log('✅ Lens types state updated with', sortedData.length, 'items');
       } else {

@@ -30,6 +30,8 @@ const LensThicknessMaterials = () => {
       const params = {
         page: 1,
         limit: 1000,
+        sortBy: 'id',
+        sortOrder: 'asc'
       };
       
       if (filters.isActive !== '') {
@@ -64,11 +66,13 @@ const LensThicknessMaterials = () => {
       
       if (Array.isArray(materialsData)) {
         // Sort by ID in ascending order for proper arrangement
-        const sortedData = materialsData.sort((a, b) => {
+        const sortedData = [...materialsData].sort((a, b) => {
           const idA = parseInt(a.id) || 0;
           const idB = parseInt(b.id) || 0;
           return idA - idB;
         });
+        
+        console.log('🔢 Lens thickness materials sorted by ID (ascending):', sortedData.map(item => ({ id: item.id, name: item.name })));
         
         setMaterials(sortedData);
       } else {

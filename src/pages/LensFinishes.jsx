@@ -30,7 +30,7 @@ const LensFinishes = () => {
   const fetchLensFinishes = async () => {
     try {
       setLoading(true);
-      const response = await getLensFinishes({ page: 1, limit: 1000 });
+      const response = await getLensFinishes({ page: 1, limit: 1000, sortBy: 'id', sortOrder: 'asc' });
       console.log('✅ Lens finishes fetched successfully:', response.data);
       
       // Handle various response structures from the API
@@ -79,11 +79,13 @@ const LensFinishes = () => {
       
       if (Array.isArray(lensFinishesData)) {
         // Sort by ID in ascending order for proper arrangement
-        const sortedData = lensFinishesData.sort((a, b) => {
+        const sortedData = [...lensFinishesData].sort((a, b) => {
           const idA = parseInt(a.id) || 0;
           const idB = parseInt(b.id) || 0;
           return idA - idB;
         });
+        
+        console.log('🔢 Lens finishes sorted by ID (ascending):', sortedData.map(item => ({ id: item.id, name: item.name })));
         
         setLensFinishes(sortedData);
         console.log('Lens finishes loaded:', sortedData.length);

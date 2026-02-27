@@ -24,7 +24,7 @@ const LensTreatments = () => {
   const fetchLensTreatments = async () => {
     try {
       setLoading(true);
-      const response = await getLensTreatments({ page: 1, limit: 1000 });
+      const response = await getLensTreatments({ page: 1, limit: 1000, sortBy: 'id', sortOrder: 'asc' });
       console.log('✅ Lens treatments fetched successfully:', response.data);
       
       // Handle various response structures from the API
@@ -73,11 +73,13 @@ const LensTreatments = () => {
       
       if (Array.isArray(lensTreatmentsData)) {
         // Sort by ID in ascending order for proper arrangement
-        const sortedData = lensTreatmentsData.sort((a, b) => {
+        const sortedData = [...lensTreatmentsData].sort((a, b) => {
           const idA = parseInt(a.id) || 0;
           const idB = parseInt(b.id) || 0;
           return idA - idB;
         });
+        
+        console.log('🔢 Lens treatments sorted by ID (ascending):', sortedData.map(item => ({ id: item.id, name: item.name })));
         
         setLensTreatments(sortedData);
         if (sortedData.length === 0) {

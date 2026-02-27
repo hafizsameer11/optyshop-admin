@@ -199,7 +199,7 @@ const LensColors = () => {
   const fetchLensColors = async () => {
     try {
       setLoading(true);
-      const response = await getLensColors({ page: 1, limit: 1000 });
+      const response = await getLensColors({ page: 1, limit: 1000, sortBy: 'id', sortOrder: 'asc' });
       console.log('✅ Lens colors fetched successfully:', response.data);
       
       // Handle various response structures from the API
@@ -257,11 +257,13 @@ const LensColors = () => {
         });
         
         // Sort by ID in ascending order for proper arrangement
-        const sortedData = lensColorsData.sort((a, b) => {
+        const sortedData = [...lensColorsData].sort((a, b) => {
           const idA = parseInt(a.id) || 0;
           const idB = parseInt(b.id) || 0;
           return idA - idB;
         });
+        
+        console.log('🔢 Lens colors sorted by ID (ascending):', sortedData.map(item => ({ id: item.id, name: item.name })));
         
         console.log('Parsed lens colors:', sortedData);
         console.log('Parsed lens colors count:', sortedData.length);

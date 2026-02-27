@@ -17,8 +17,8 @@ import api from '../utils/api';
  * @param {Object} params - Query parameters
  * @param {number} params.page - Page number (default: 1)
  * @param {number} params.limit - Items per page (default: 50)
- * @param {string} params.sortBy - Sort field (default: created_at)
- * @param {string} params.sortOrder - Sort order (asc/desc, default: desc)
+ * @param {string} params.sortBy - Sort field (default: id)
+ * @param {string} params.sortOrder - Sort order (asc/desc, default: asc)
  * @param {string} params.type - Filter by option type
  * @param {boolean} params.is_active - Filter by active status
  * @returns {Promise} Response with lens options data
@@ -27,8 +27,8 @@ export const getLensOptions = async (params = {}) => {
   const {
     page = 1,
     limit = 50,
-    sortBy = 'created_at',
-    sortOrder = 'desc',
+    sortBy = 'id',
+    sortOrder = 'asc',
     type,
     is_active
   } = params;
@@ -64,7 +64,7 @@ export const getLensOptions = async (params = {}) => {
       if (!demoData || demoData.length === 0) {
         demoData = [
           {
-            id: 8,
+            id: 1,
             name: "Polarized",
             slug: "polarized",
             type: "polarized",
@@ -76,7 +76,7 @@ export const getLensOptions = async (params = {}) => {
             updated_at: "2024-01-01T00:00:00Z"
           },
           {
-            id: 12,
+            id: 2,
             name: "EyeQLenz™ with Zenni ID Guard™",
             slug: "eyeqlenz-with-zenni-id-guard",
             type: "photochromic",
@@ -101,6 +101,13 @@ export const getLensOptions = async (params = {}) => {
       if (is_active !== undefined) {
         filteredData = filteredData.filter(item => item.is_active === is_active);
       }
+      
+      // Sort by ID in ascending order to ensure correct arrangement
+      filteredData.sort((a, b) => {
+        const idA = parseInt(a.id) || 0;
+        const idB = parseInt(b.id) || 0;
+        return idA - idB;
+      });
       
       // Return mock data that matches the expected structure
       const mockResponse = {

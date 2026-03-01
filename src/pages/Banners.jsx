@@ -119,6 +119,20 @@ const Banners = () => {
       
       const bannersData = await bannerAPI.getAll(filters);
       console.log('Fetched banners:', bannersData);
+      
+      // Debug is_active values
+      if (Array.isArray(bannersData)) {
+        bannersData.forEach((banner, index) => {
+          console.log(`Banner ${index + 1} is_active:`, {
+            id: banner.id,
+            title: banner.title,
+            is_active: banner.is_active,
+            type: typeof banner.is_active,
+            display: banner.is_active ? 'Active' : 'Inactive'
+          });
+        });
+      }
+      
       setBanners(Array.isArray(bannersData) ? bannersData : []);
     } catch (error) {
       console.error('Banners API error:', error);
@@ -581,7 +595,10 @@ const Banners = () => {
             setSelectedBanner(null);
             if (shouldRefresh) {
               console.log('📋 Refreshing banners list after modal save (no page refresh)');
-              fetchBanners();
+              // Add small delay to ensure backend processes the update
+              setTimeout(() => {
+                fetchBanners();
+              }, 500);
             } else {
               console.log('❌ Modal closed without refresh (cancelled or failed)');
             }

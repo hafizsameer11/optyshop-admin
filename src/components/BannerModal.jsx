@@ -25,6 +25,16 @@ const BannerModal = ({ banner, onClose }) => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Debug: Log imageFile state changes
+  useEffect(() => {
+    console.log('imageFile state changed:', {
+      imageFile: imageFile,
+      fileName: imageFile?.name,
+      fileSize: imageFile?.size,
+      hasFile: !!imageFile
+    });
+  }, [imageFile]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [nestedSubCategories, setNestedSubCategories] = useState([]);
@@ -210,10 +220,27 @@ const BannerModal = ({ banner, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Debug checkbox changes
+    if (name === 'is_active') {
+      console.log('Checkbox changed:', {
+        name,
+        value,
+        type,
+        checked,
+        currentFormData: formData.is_active
+      });
+    }
+    
     const newFormData = {
       ...formData,
       [name]: type === 'checkbox' ? checked : type === 'number' ? parseInt(value, 10) : value,
     };
+    
+    // Debug after state update
+    if (name === 'is_active') {
+      console.log('New formData.is_active:', newFormData.is_active);
+    }
 
     // Reset dependent fields when page_type changes
     if (name === 'page_type') {
@@ -268,6 +295,10 @@ const BannerModal = ({ banner, onClose }) => {
         return;
       }
 
+      // Set imageFile immediately regardless of upload status
+      setImageFile(file);
+      console.log('ImageFile set immediately:', file.name);
+
       // Create immediate preview for better UX
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -283,22 +314,16 @@ const BannerModal = ({ banner, onClose }) => {
         
         if (data.success && data.url) {
           console.log('Upload successful:', data);
-          setImageFile(file);
           setImagePreview(data.url);
           setFormData({ ...formData, image_url: data.url });
           // Only show success message, no loading message
           toast.success('Image uploaded successfully');
         } else {
           console.log('Upload failed - keeping local file:', data);
-          // Keep local preview and allow user to continue
-          setImageFile(file);
           toast.error('Upload failed, but image saved locally');
         }
       } catch (error) {
         console.error('Upload error:', error);
-        // Keep local preview even on upload failure so user can try again
-        // The image will be uploaded when the form is submitted
-        setImageFile(file);
         // Only show error if it's not a timeout
         if (!error.message.includes('timeout')) {
           toast.error('Upload failed, image saved locally');
@@ -325,7 +350,8 @@ const BannerModal = ({ banner, onClose }) => {
         hasImageFile: !!imageFile,
         imageFileName: imageFile?.name,
         imageFileSize: imageFile?.size,
-        imagePreview: !!imagePreview
+        imagePreview: !!imagePreview,
+        imageFileObject: imageFile
       });
       
       if (!banner && !imageFile) {
@@ -389,6 +415,11 @@ const BannerModal = ({ banner, onClose }) => {
       submitData.append('sort_order', sortOrder.toString());
       
       // Ensure is_active is sent as '1' or '0' instead of 'true'/'false'
+      console.log('is_active value before append:', {
+        formDataValue: formData.is_active,
+        typeof: typeof formData.is_active,
+        finalValue: formData.is_active ? '1' : '0'
+      });
       submitData.append('is_active', formData.is_active ? '1' : '0');
 
       // Add category_id and sub_category_id based on page_type

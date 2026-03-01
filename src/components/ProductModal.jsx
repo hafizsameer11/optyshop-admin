@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiX, FiUpload, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import uploadAPI from '../api/upload';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
@@ -1061,29 +1062,21 @@ const ProductModal = ({ product, onClose }) => {
     }
 
     if (validFiles.length > 0) {
-      // Upload files immediately to get HTTPS URLs
-      const uploadPromises = validFiles.map((file) => {
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        return fetch('/api/admin/upload/image', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
+      // Upload files immediately to get HTTPS URLs using proper API service
+      const uploadPromises = validFiles.map(async (file) => {
+        try {
+          const data = await uploadAPI.uploadImage(file);
           if (data.success && data.url) {
             return { file, preview: data.url };
           } else {
-            toast.error('Failed to upload image');
+            toast.error(`Failed to upload ${file.name}`);
             return null;
           }
-        })
-        .catch(error => {
+        } catch (error) {
           console.error('Upload error:', error);
-          toast.error('Failed to upload image');
+          toast.error(`Failed to upload ${file.name}: ${error.message}`);
           return null;
-        });
+        }
       });
 
       Promise.all(uploadPromises).then((results) => {
@@ -1126,29 +1119,21 @@ const ProductModal = ({ product, onClose }) => {
       const newFiles = product ? validFiles : [...imageFiles, ...validFiles];
       setImageFiles(newFiles);
 
-      // Upload files immediately to get HTTPS URLs
-      const uploadPromises = validFiles.map((file) => {
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        return fetch('/api/admin/upload/image', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
+      // Upload files immediately to get HTTPS URLs using proper API service
+      const uploadPromises = validFiles.map(async (file) => {
+        try {
+          const data = await uploadAPI.uploadImage(file);
           if (data.success && data.url) {
             return data.url;
           } else {
-            toast.error('Failed to upload image');
+            toast.error(`Failed to upload ${file.name}`);
             return null;
           }
-        })
-        .catch(error => {
+        } catch (error) {
           console.error('Upload error:', error);
-          toast.error('Failed to upload image');
+          toast.error(`Failed to upload ${file.name}: ${error.message}`);
           return null;
-        });
+        }
       });
 
       Promise.all(uploadPromises).then((previews) => {

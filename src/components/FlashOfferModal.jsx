@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiX, FiClock } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import uploadAPI from '../api/upload';
 import { API_ROUTES } from '../config/apiRoutes';
 import { useI18n } from '../context/I18nContext';
 
@@ -141,38 +142,39 @@ const FlashOfferModal = ({ offer, onClose, onSuccess }) => {
     });
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Upload to server immediately to get HTTPS URL
-      const formData = new FormData();
-      formData.append('image', file);
-      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select a valid image file');
+        return;
+      }
+
+      // Validate file size (max 10MB for flash offers)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Image size must be less than 10MB');
+        return;
+      }
+
       // Show loading state
-      toast.loading('Uploading image...');
+      const loadingToast = toast.loading('Uploading image...');
       
-      // Upload to server
-      fetch('/api/admin/upload/image', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
+      try {
+        // Upload to server using proper API service
+        const data = await uploadAPI.uploadImage(file);
+        
         if (data.success && data.url) {
           setImageFile(file);
           setImagePreview(data.url);
-          toast.success('Image uploaded successfully');
+          toast.success('Image uploaded successfully', { id: loadingToast });
         } else {
-          toast.error('Failed to upload image');
+          toast.error('Failed to upload image', { id: loadingToast });
         }
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Upload error:', error);
-        toast.error('Failed to upload image');
-      })
-      .finally(() => {
-        toast.dismiss();
-      });
+        toast.error(error.message || 'Failed to upload image', { id: loadingToast });
+      }
     }
   };
 

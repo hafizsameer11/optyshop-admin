@@ -479,7 +479,7 @@ const BannerModal = ({ banner, onClose }) => {
         console.warn('⚠️ Banner saved but response format unexpected:', response);
       }
       
-      onClose(true);
+      onClose(true, { ...formData, id: banner?.id || response?.id });
     } catch (error) {
       console.error('Banner save error:', error);
       console.error('Error details:', {

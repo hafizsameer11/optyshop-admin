@@ -119,10 +119,14 @@ const Banners = () => {
       
       const bannersData = await bannerAPI.getAll(filters);
       console.log('Fetched banners:', bannersData);
+      console.log('Type of bannersData:', typeof bannersData);
+      console.log('Is array?', Array.isArray(bannersData));
+      console.log('Length:', bannersData?.length);
       
       // Debug is_active values
-      if (Array.isArray(bannersData)) {
+      if (Array.isArray(bannersData) && bannersData.length > 0) {
         bannersData.forEach((banner, index) => {
+          console.log(`Banner ${index + 1} full object:`, banner);
           console.log(`Banner ${index + 1} is_active:`, {
             id: banner.id,
             title: banner.title,
@@ -131,6 +135,8 @@ const Banners = () => {
             display: banner.is_active ? 'Active' : 'Inactive'
           });
         });
+      } else {
+        console.log('No banners found or not an array');
       }
       
       setBanners(Array.isArray(bannersData) ? bannersData : []);
@@ -589,16 +595,33 @@ const Banners = () => {
       {modalOpen && (
         <BannerModal
           banner={selectedBanner}
-          onClose={(shouldRefresh) => {
+          onClose={(shouldRefresh, updatedFormData) => {
             console.log('🔄 BannerModal onClose called with shouldRefresh:', shouldRefresh);
+            console.log('📋 Updated form data:', updatedFormData);
             setModalOpen(false);
             setSelectedBanner(null);
             if (shouldRefresh) {
               console.log('📋 Refreshing banners list after modal save (no page refresh)');
-              // Add small delay to ensure backend processes the update
+              // Add small delay to ensure backend processes update
               setTimeout(() => {
                 fetchBanners();
               }, 500);
+              
+              // TEMPORARY WORKAROUND: Update local state immediately for better UX
+              // This ensures the UI reflects changes even if backend returns stale data
+              if (updatedFormData && updatedFormData.id) {
+                setBanners(prevBanners => 
+                  prevBanners.map(banner => 
+                    banner.id === updatedFormData.id 
+                      ? { ...banner, is_active: updatedFormData.is_active }
+                      : banner
+                  )
+                );
+                console.log('🔄 Updated banner status locally:', {
+                  id: updatedFormData.id,
+                  newStatus: updatedFormData.is_active
+                });
+              }
             } else {
               console.log('❌ Modal closed without refresh (cancelled or failed)');
             }

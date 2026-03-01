@@ -13,7 +13,7 @@ const uploadAPI = {
     try {
       console.log('Sending upload request...');
       const response = await api.post('/admin/upload/image', formData, {
-        timeout: 15000, // Reduced to 15 second timeout for better UX
+        timeout: 60000, // Increased to 60 second timeout for larger images
         onUploadProgress: (progressEvent) => {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           console.log(`Upload progress: ${progress}%`);

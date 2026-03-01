@@ -248,6 +248,13 @@ const BannerModal = ({ banner, onClose }) => {
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
+    console.log('Image file selected:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      hasFile: !!file
+    });
+    
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
@@ -270,16 +277,19 @@ const BannerModal = ({ banner, onClose }) => {
 
       // Upload silently in background without blocking UI
       try {
+        console.log('Starting image upload for file:', file.name);
         // Upload to server using proper API service
         const data = await uploadAPI.uploadImage(file);
         
         if (data.success && data.url) {
+          console.log('Upload successful:', data);
           setImageFile(file);
           setImagePreview(data.url);
           setFormData({ ...formData, image_url: data.url });
           // Only show success message, no loading message
           toast.success('Image uploaded successfully');
         } else {
+          console.log('Upload failed - keeping local file:', data);
           // Keep local preview and allow user to continue
           setImageFile(file);
           toast.error('Upload failed, but image saved locally');
@@ -310,6 +320,14 @@ const BannerModal = ({ banner, onClose }) => {
       }
 
       // For new banners, image file is required
+      console.log('Image validation debug:', {
+        isEditing: !!banner,
+        hasImageFile: !!imageFile,
+        imageFileName: imageFile?.name,
+        imageFileSize: imageFile?.size,
+        imagePreview: !!imagePreview
+      });
+      
       if (!banner && !imageFile) {
         toast.error('Image file is required for new banners');
         setLoading(false);

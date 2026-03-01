@@ -255,15 +255,20 @@ const BannerModal = ({ banner, onClose }) => {
         return;
       }
 
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('Image size must be less than 10MB');
+      // Validate file size (max 5MB for faster uploads)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size must be less than 5MB for faster uploads');
         return;
       }
 
-      // Show loading state
-      const loadingToast = toast.loading('Uploading image...');
-      
+      // Create immediate preview for better UX
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload silently in background without blocking UI
       try {
         // Upload to server using proper API service
         const data = await uploadAPI.uploadImage(file);
@@ -272,13 +277,22 @@ const BannerModal = ({ banner, onClose }) => {
           setImageFile(file);
           setImagePreview(data.url);
           setFormData({ ...formData, image_url: data.url });
-          toast.success('Image uploaded successfully', { id: loadingToast });
+          // Only show success message, no loading message
+          toast.success('Image uploaded successfully');
         } else {
-          toast.error('Failed to upload image', { id: loadingToast });
+          // Keep local preview and allow user to continue
+          setImageFile(file);
+          toast.error('Upload failed, but image saved locally');
         }
       } catch (error) {
         console.error('Upload error:', error);
-        toast.error(error.message || 'Failed to upload image', { id: loadingToast });
+        // Keep local preview even on upload failure so user can try again
+        // The image will be uploaded when the form is submitted
+        setImageFile(file);
+        // Only show error if it's not a timeout
+        if (!error.message.includes('timeout')) {
+          toast.error('Upload failed, image saved locally');
+        }
       }
     }
   };
@@ -604,7 +618,7 @@ const BannerModal = ({ banner, onClose }) => {
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-2">
-              Supported formats: JPG, PNG, GIF, WEBP (Max 10MB) {!banner && '- Required for new banners'}
+              Supported formats: JPG, PNG, GIF, WEBP (Max 5MB for faster uploads) {!banner && '- Required for new banners'}
             </p>
             {banner && !imageFile && (
               <p className="text-xs text-gray-500 mt-1">

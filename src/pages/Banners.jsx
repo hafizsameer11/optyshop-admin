@@ -6,6 +6,11 @@ import BannerModal from '../components/BannerModal';
 import bannerAPI from '../api/banners';
 import { API_ROUTES } from '../config/apiRoutes';
 
+// Helper function to normalize is_active values from backend
+const normalizeIsActive = (isActive) => {
+  return Boolean(isActive && isActive !== '0' && isActive !== 0);
+};
+
 // Banner Image Component with error handling
 const BannerImage = ({ banner }) => {
   const [imageError, setImageError] = useState(false);
@@ -131,8 +136,15 @@ const Banners = () => {
             id: banner.id,
             title: banner.title,
             is_active: banner.is_active,
-            type: typeof banner.is_active,
-            display: banner.is_active ? 'Active' : 'Inactive'
+            typeof: typeof banner.is_active,
+            booleanValue: Boolean(banner.is_active),
+            normalizedValue: normalizeIsActive(banner.is_active),
+            display: normalizeIsActive(banner.is_active) ? 'Active' : 'Inactive',
+            rawValue: JSON.stringify(banner.is_active),
+            isZero: banner.is_active === '0' || banner.is_active === 0,
+            isOne: banner.is_active === '1' || banner.is_active === 1,
+            isTrue: banner.is_active === true,
+            isFalse: banner.is_active === false
           });
         });
       } else {
@@ -556,12 +568,12 @@ const Banners = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          banner.is_active
+                          normalizeIsActive(banner.is_active)
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {banner.is_active ? 'Active' : 'Inactive'}
+                        {normalizeIsActive(banner.is_active) ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -602,26 +614,27 @@ const Banners = () => {
             setSelectedBanner(null);
             if (shouldRefresh) {
               console.log('📋 Refreshing banners list after modal save (no page refresh)');
-              // Add small delay to ensure backend processes update
-              setTimeout(() => {
-                fetchBanners();
-              }, 500);
               
-              // TEMPORARY WORKAROUND: Update local state immediately for better UX
-              // This ensures the UI reflects changes even if backend returns stale data
+              // Update local state immediately with the response data for better UX
               if (updatedFormData && updatedFormData.id) {
                 setBanners(prevBanners => 
                   prevBanners.map(banner => 
                     banner.id === updatedFormData.id 
-                      ? { ...banner, is_active: updatedFormData.is_active }
+                      ? { ...banner, ...updatedFormData }
                       : banner
                   )
                 );
-                console.log('🔄 Updated banner status locally:', {
+                console.log('🔄 Updated banner locally:', {
                   id: updatedFormData.id,
-                  newStatus: updatedFormData.is_active
+                  is_active: updatedFormData.is_active,
+                  title: updatedFormData.title
                 });
               }
+              
+              // Add small delay to ensure backend processes update, then refresh
+              setTimeout(() => {
+                fetchBanners();
+              }, 500);
             } else {
               console.log('❌ Modal closed without refresh (cancelled or failed)');
             }

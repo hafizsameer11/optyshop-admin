@@ -9,6 +9,11 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { API_ROUTES } from '../config/apiRoutes';
 
+// Helper function to normalize is_active values from backend
+const normalizeIsActive = (isActive) => {
+  return Boolean(isActive && isActive !== '0' && isActive !== 0);
+};
+
 const BannerModal = ({ banner, onClose }) => {
   const { t } = useI18n();
   const [formData, setFormData] = useState({
@@ -102,7 +107,7 @@ const BannerModal = ({ banner, onClose }) => {
         link_url: banner.link_url || '',
         position: banner.position || '',
         sort_order: banner.sort_order || 0,
-        is_active: banner.is_active !== undefined ? banner.is_active : true,
+        is_active: banner.is_active !== undefined ? normalizeIsActive(banner.is_active) : true,
         page_type: banner.page_type || banner.pageType || 'home',
         category_id: (banner.category_id || banner.categoryId) ? (banner.category_id || banner.categoryId).toString() : '',
         sub_category_id: (banner.sub_category_id || banner.subCategoryId || banner.subcategory_id) ? (banner.sub_category_id || banner.subCategoryId || banner.subcategory_id).toString() : '',
@@ -454,7 +459,7 @@ const BannerModal = ({ banner, onClose }) => {
       // Debug: Log FormData contents
       console.log('=== FormData Debug ===');
       for (let [key, value] of submitData.entries()) {
-        console.log(`${key}:`, value);
+        console.log(`${key}:`, value, `(type: ${typeof value})`);
       }
       console.log('=== End FormData Debug ===');
 
@@ -474,12 +479,46 @@ const BannerModal = ({ banner, onClose }) => {
       // Verify the response contains the saved data
       if (response && (response.id || response.data?.id)) {
         console.log('✅ Banner saved successfully with ID:', response.id || response.data?.id);
-        console.log('✅ Saved banner data:', response);
+        
+        // Debug the is_active value in detail
+        const savedData = response.data || response;
+        console.log('🔍 Backend response is_active:', {
+          is_active: savedData.is_active,
+          typeof: typeof savedData.is_active,
+          display: normalizeIsActive(savedData.is_active) ? 'Active' : 'Inactive'
+        });
+        
+        // Frontend fix: Ensure is_active reflects the form data if backend returns incorrect value
+        if (normalizeIsActive(savedData.is_active) !== formData.is_active) {
+          console.log('🔧 FIXING: Backend returned wrong is_active, using form value:', {
+            backendValue: savedData.is_active,
+            backendNormalized: normalizeIsActive(savedData.is_active),
+            formValue: formData.is_active,
+            corrected: formData.is_active
+          });
+          savedData.is_active = formData.is_active;
+        }
+        
+        // Create the final response data with the corrected is_active value
+        const finalResponseData = { ...savedData, ...formData, id: banner?.id || response?.id || savedData?.id };
+        
+        // Ensure the corrected is_active value is applied
+        finalResponseData.is_active = formData.is_active;
+        
+        // Pass the complete response data back to parent
+        onClose(true, finalResponseData);
       } else {
         console.warn('⚠️ Banner saved but response format unexpected:', response);
+        // Apply the same is_active fix for unexpected response formats
+        const correctedData = { ...response, ...formData, id: banner?.id || response?.id };
+        
+        // Ensure the corrected is_active value is applied
+        if (response && normalizeIsActive(response.is_active) !== formData.is_active) {
+          console.log('🔧 FIXING: Backend returned wrong is_active in unexpected response, using form value');
+          correctedData.is_active = formData.is_active;
+        }
+        onClose(true, correctedData);
       }
-      
-      onClose(true, { ...formData, id: banner?.id || response?.id });
     } catch (error) {
       console.error('Banner save error:', error);
       console.error('Error details:', {

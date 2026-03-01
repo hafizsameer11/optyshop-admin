@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload Endpoint</title>
+</head>
+<body>
+    <h1>Test Upload Endpoint</h1>
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="testUpload()">Test Upload</button>
+    <div id="result"></div>
+
+    <script>
+        async function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                document.getElementById('result').innerHTML = 'Please select a file first';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            console.log('Testing upload to:', 'https://optyshop-frontend.hmstech.org/api/admin/upload/image');
+            console.log('File:', file.name, file.size, file.type);
+
+            try {
+                const response = await fetch('https://optyshop-frontend.hmstech.org/api/admin/upload/image', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('admin_token')
+                    }
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                document.getElementById('result').innerHTML = `
+                    <h3>Upload Result:</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Response: ${JSON.stringify(data, null, 2)}</p>
+                `;
+            } catch (error) {
+                console.error('Upload error:', error);
+                document.getElementById('result').innerHTML = `
+                    <h3>Upload Error:</h3>
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

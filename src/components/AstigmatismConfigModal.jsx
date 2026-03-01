@@ -447,7 +447,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                         }
                     } else if (key === 'availableUnits' || key === 'unit_options' || key === 'unit_types') {
                         // Skip these as they're handled above
-                        continue;
+                        return;
                     } else if (typeof value === 'boolean') {
                         formDataToSend.append(key, value.toString());
                     } else if (typeof value === 'number') {

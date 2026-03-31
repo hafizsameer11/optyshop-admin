@@ -363,6 +363,8 @@ const ProductModal = ({ product, onClose }) => {
   const [imagesWithColors, setImagesWithColors] = useState([]); // [{ file, preview, hexCode, id, isExisting }]
   /** Hex rows added before any photo is uploaded (variant-first UX) */
   const [pendingVariantHexes, setPendingVariantHexes] = useState([]);
+  /** While uploading variant photos, which hex row is active (shows progress in UI). */
+  const [variantUploadHex, setVariantUploadHex] = useState(null);
   const [customVariantHexInput, setCustomVariantHexInput] = useState('');
   const [existingColorImages, setExistingColorImages] = useState([]); // Existing color images structure for deletion tracking
   const [model3DFile, setModel3DFile] = useState(null);
@@ -1097,14 +1099,11 @@ const ProductModal = ({ product, onClose }) => {
       return;
     }
 
+    setVariantUploadHex(H);
     const uploadPromises = validFiles.map(async (file) => {
       try {
         const data = await uploadAPI.uploadImage(file);
-        if (data.success && data.url) {
-          return { file, preview: data.url };
-        }
-        toast.error(`Failed to upload ${file.name}`);
-        return null;
+        return { file, preview: data.url };
       } catch (error) {
         console.error('Upload error:', error);
         toast.error(`Failed to upload ${file.name}: ${error.message}`);
@@ -1112,19 +1111,23 @@ const ProductModal = ({ product, onClose }) => {
       }
     });
 
-    Promise.all(uploadPromises).then((results) => {
-      const validResults = results.filter(Boolean);
-      const newImages = validResults.map((result, index) => ({
-        id: `new-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 9)}`,
-        file: result.file,
-        preview: result.preview,
-        hexCode: H,
-        isExisting: false,
-      }));
-      setImagesWithColors((prev) => [...prev, ...newImages]);
-      setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
-      toast.success(`${validFiles.length} photo(s) added for ${getColorNameFromHex(H)}`);
-    });
+    Promise.all(uploadPromises)
+      .then((results) => {
+        const validResults = results.filter(Boolean);
+        const newImages = validResults.map((result, index) => ({
+          id: `new-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 9)}`,
+          file: result.file,
+          preview: result.preview,
+          hexCode: H,
+          isExisting: false,
+        }));
+        setImagesWithColors((prev) => [...prev, ...newImages]);
+        setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
+        if (validResults.length > 0) {
+          toast.success(`${validResults.length} photo(s) added for ${getColorNameFromHex(H)}`);
+        }
+      })
+      .finally(() => setVariantUploadHex(null));
     e.target.value = '';
   };
 
@@ -1182,12 +1185,7 @@ const ProductModal = ({ product, onClose }) => {
       const uploadPromises = validFiles.map(async (file) => {
         try {
           const data = await uploadAPI.uploadImage(file);
-          if (data.success && data.url) {
-            return data.url;
-          } else {
-            toast.error(`Failed to upload ${file.name}`);
-            return null;
-          }
+          return data.url;
         } catch (error) {
           console.error('Upload error:', error);
           toast.error(`Failed to upload ${file.name}: ${error.message}`);
@@ -4808,23 +4806,33 @@ const ProductModal = ({ product, onClose }) => {
                               ) : (
                                 <p className="text-xs text-gray-500">No photos for this color yet.</p>
                               )}
-                              <label
-                                htmlFor={safeInputId}
-                                className="flex items-center justify-center gap-2 w-full py-3 px-3 border-2 border-dashed border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-50/60 transition-colors"
-                              >
-                                <FiUpload className="w-4 h-4 text-indigo-600" />
-                                <span className="text-sm font-medium text-indigo-800">
-                                  Add photos for {getColorNameFromHex(hex)}
-                                </span>
-                                <input
-                                  id={safeInputId}
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  className="hidden"
-                                  onChange={(e) => handleVariantImagesChange(hex, e)}
-                                />
-                              </label>
+                              {variantUploadHex === hex ? (
+                                <div
+                                  className="flex items-center justify-center gap-2 w-full py-3 px-3 border-2 border-dashed border-indigo-200 rounded-lg bg-indigo-50/40 text-indigo-800"
+                                  aria-busy="true"
+                                >
+                                  <span className="inline-block h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                  <span className="text-sm font-medium">Uploading…</span>
+                                </div>
+                              ) : (
+                                <label
+                                  htmlFor={safeInputId}
+                                  className="flex items-center justify-center gap-2 w-full py-3 px-3 border-2 border-dashed border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-50/60 transition-colors"
+                                >
+                                  <FiUpload className="w-4 h-4 text-indigo-600" />
+                                  <span className="text-sm font-medium text-indigo-800">
+                                    Add photos for {getColorNameFromHex(hex)}
+                                  </span>
+                                  <input
+                                    id={safeInputId}
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) => handleVariantImagesChange(hex, e)}
+                                  />
+                                </label>
+                              )}
                             </div>
                           </div>
                         );

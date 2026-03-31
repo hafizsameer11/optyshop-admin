@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPackage } from 'react-icons/fi';
+import { FiX, FiPackage, FiImage, FiLayers, FiAlignLeft, FiHash } from 'react-icons/fi';
 import api from '../utils/api';
 import { API_ROUTES } from '../config/apiRoutes';
 
@@ -16,6 +16,98 @@ function parseImagesField(images) {
     }
   }
   return [];
+}
+
+/** Normalize API color_images into rows for display */
+function parseColorVariants(p) {
+  const rows = [];
+  const seen = new Set();
+
+  const pushRow = (hex, name, imageCount, price) => {
+    const key = (hex || name || '').toString().toUpperCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    rows.push({
+      hex: hex && /^#?[0-9A-Fa-f]{6}$/.test(String(hex).replace('#', '')) ? (String(hex).startsWith('#') ? hex : `#${hex}`) : null,
+      name: name || 'Variant',
+      imageCount: imageCount ?? 0,
+      price: price != null ? price : null,
+    });
+  };
+
+  if (Array.isArray(p.colors)) {
+    p.colors.forEach((c) => {
+      const hex = c.hexCode || c.hex_code || c.value;
+      const name = c.display_name || c.name || c.value;
+      const imgs = c.images;
+      const count = Array.isArray(imgs) ? imgs.length : 0;
+      pushRow(hex, name, count, c.price);
+    });
+  }
+
+  let raw = p.color_images;
+  if (typeof raw === 'string') {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      raw = null;
+    }
+  }
+  if (Array.isArray(raw)) {
+    raw.forEach((entry) => {
+      if (!entry || typeof entry !== 'object') return;
+      const hex = entry.hexCode || entry.hex_code;
+      const name = entry.name;
+      const imgs = entry.images;
+      const count = Array.isArray(imgs) ? imgs.length : 0;
+      pushRow(hex, name, count, entry.price);
+    });
+  } else if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    Object.entries(raw).forEach(([key, val]) => {
+      if (!val) return;
+      const hex = typeof val === 'object' ? val.hexCode || val.hex_code || key : key;
+      const name = typeof val === 'object' ? val.name : null;
+      const imgs = typeof val === 'object' ? val.images : val;
+      let count = 0;
+      if (Array.isArray(imgs)) count = imgs.length;
+      else if (typeof imgs === 'string' && imgs) count = 1;
+      pushRow(hex, name || key, count, typeof val === 'object' ? val.price : null);
+    });
+  }
+
+  return rows;
+}
+
+function stockDisplay(p) {
+  const qty = p.stock_quantity;
+  const raw = p.stock_status != null ? String(p.stock_status).toLowerCase().replace(/-/g, '_') : '';
+
+  const labels = {
+    in_stock: 'Listed as in stock',
+    out_of_stock: 'Out of stock',
+    low_stock: 'Low stock',
+    on_backorder: 'On backorder',
+  };
+
+  const qtyNum = qty != null && qty !== '' ? Number(qty) : null;
+  const qtyLabel =
+    qtyNum != null && !Number.isNaN(qtyNum)
+      ? `${qtyNum} unit${qtyNum === 1 ? '' : 's'}`
+      : '—';
+
+  let statusBadge = labels[raw] || (raw ? raw.replace(/_/g, ' ') : null);
+  let badgeClass = 'bg-slate-100 text-slate-700';
+
+  if (raw === 'in_stock') {
+    badgeClass = qtyNum === 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-800';
+    if (qtyNum === 0) statusBadge = 'In stock (check quantity)';
+  } else if (raw === 'out_of_stock') {
+    badgeClass = 'bg-red-50 text-red-800';
+  } else if (raw === 'low_stock') {
+    badgeClass = 'bg-amber-100 text-amber-900';
+  }
+
+  return { qtyLabel, qtyNum, statusBadge, badgeClass, raw };
 }
 
 /**
@@ -40,8 +132,8 @@ export default function ProductViewModal({ product: initialProduct, onClose }) {
       try {
         setLoading(true);
         const res = await api.get(API_ROUTES.ADMIN.PRODUCTS.BY_ID(id));
-        const p = res.data?.data?.product || res.data?.product || res.data;
-        if (!cancelled && p) setProduct(p);
+        const fetched = res.data?.data?.product || res.data?.product || res.data;
+        if (!cancelled && fetched) setProduct(fetched);
       } catch (e) {
         console.warn('ProductViewModal: failed to load full product, using list row', e);
       } finally {
@@ -58,25 +150,16 @@ export default function ProductViewModal({ product: initialProduct, onClose }) {
 
   const images = parseImagesField(p.images);
   const thumb = images[0] || p.image || p.thumbnail || p.image_url;
-  const colors = Array.isArray(p.colors) ? p.colors : [];
-  let colorImagesKeys = [];
-  if (p.color_images) {
-    if (typeof p.color_images === 'object' && !Array.isArray(p.color_images)) {
-      colorImagesKeys = Object.keys(p.color_images);
-    } else if (typeof p.color_images === 'string') {
-      try {
-        const parsed = JSON.parse(p.color_images);
-        if (Array.isArray(parsed)) colorImagesKeys = parsed.map((x) => x.hexCode || x.name || '—');
-        else if (parsed && typeof parsed === 'object') colorImagesKeys = Object.keys(parsed);
-      } catch {
-        /* ignore */
-      }
-    }
-  }
+  const variantRows = parseColorVariants(p);
+  const stock = stockDisplay(p);
+
+  const priceNum = p.price != null ? parseFloat(p.price) : null;
+  const compareNum = p.compare_at_price != null ? parseFloat(p.compare_at_price) : null;
+  const hasDiscount = compareNum != null && priceNum != null && compareNum > priceNum;
 
   const modal = (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-labelledby="product-view-title"
@@ -84,178 +167,228 @@ export default function ProductViewModal({ product: initialProduct, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col border border-gray-200 overflow-hidden">
-        <div className="flex items-start justify-between gap-4 p-5 border-b border-gray-200 bg-gray-50">
-          <div className="flex gap-4 min-w-0">
-            <div className="w-20 h-20 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-[0_25px_80px_-12px_rgba(0,0,0,0.35)] max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden ring-1 ring-black/5">
+        {/* Hero */}
+        <div className="relative bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 text-white px-5 py-6 sm:px-8 sm:py-8">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.04\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-90" />
+          <div className="relative flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
+            <div className="w-full sm:w-44 sm:h-44 h-52 rounded-2xl overflow-hidden bg-white/10 ring-2 ring-white/20 shadow-2xl flex-shrink-0 mx-auto sm:mx-0">
               {thumb ? (
                 <img src={thumb} alt="" className="w-full h-full object-cover" />
               ) : (
-                <FiPackage className="w-8 h-8 text-gray-400" />
+                <div className="w-full h-full flex items-center justify-center">
+                  <FiPackage className="w-16 h-16 text-white/40" />
+                </div>
               )}
             </div>
-            <div className="min-w-0">
-              <h2 id="product-view-title" className="text-xl font-bold text-gray-900 truncate">
+            <div className="flex-1 min-w-0 text-center sm:text-left">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+                {p.is_active !== false ? (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+                    Active
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 text-white/80 border border-white/20">
+                    Inactive
+                  </span>
+                )}
+                {p.is_featured && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-400/20 text-amber-100 border border-amber-300/40">
+                    Featured
+                  </span>
+                )}
+                {loading && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 animate-pulse">Updating…</span>
+                )}
+              </div>
+              <h2 id="product-view-title" className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-sm">
                 {p.name || 'Product'}
               </h2>
-              <p className="text-sm text-gray-500 mt-0.5">ID {p.id}</p>
-              {loading && (
-                <p className="text-xs text-indigo-600 mt-1">Loading full details…</p>
-              )}
+              <p className="text-sm text-indigo-200/90 mt-1 font-mono">ID {p.id}</p>
+
+              <div className="mt-5 flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-6">
+                <div>
+                  <p className="text-xs font-medium text-indigo-200/80 uppercase tracking-wider mb-1">Price</p>
+                  <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
+                    <span className="text-3xl sm:text-4xl font-bold text-white tabular-nums">
+                      €{priceNum != null && !Number.isNaN(priceNum) ? priceNum.toFixed(2) : '—'}
+                    </span>
+                    {hasDiscount && (
+                      <span className="text-lg text-indigo-200/70 line-through tabular-nums">
+                        €{compareNum.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                  {hasDiscount && (
+                    <p className="text-xs text-emerald-300/90 mt-1 font-medium">
+                      On sale vs compare-at price
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-200/80 transition-colors"
+            className="absolute top-4 right-4 p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors ring-1 ring-white/20"
             aria-label="Close"
           >
-            <FiX className="w-6 h-6" />
+            <FiX className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-5 space-y-6">
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <div>
-              <dt className="text-gray-500 font-medium">SKU</dt>
-              <dd className="text-gray-900 mt-0.5">{p.sku ?? '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500 font-medium">Slug</dt>
-              <dd className="text-gray-900 mt-0.5 break-all">{p.slug ?? '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500 font-medium">Price</dt>
-              <dd className="text-gray-900 mt-0.5 font-semibold">
-                €{p.price != null ? parseFloat(p.price).toFixed(2) : '—'}
-                {p.compare_at_price != null && (
-                  <span className="ml-2 text-gray-400 line-through text-xs font-normal">
-                    €{parseFloat(p.compare_at_price).toFixed(2)}
+        <div className="overflow-y-auto flex-1 bg-slate-50/80">
+          <div className="p-5 sm:p-8 space-y-6">
+            {/* Quick facts */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="rounded-xl bg-white border border-gray-200/80 p-4 shadow-sm">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">SKU & slug</p>
+                <p className="text-sm font-semibold text-gray-900 font-mono">{p.sku ?? '—'}</p>
+                <p className="text-xs text-gray-500 mt-2 break-all">{p.slug ?? '—'}</p>
+              </div>
+              <div className="rounded-xl bg-white border border-gray-200/80 p-4 shadow-sm">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Inventory</p>
+                <p className="text-lg font-bold text-gray-900 tabular-nums">{stock.qtyLabel}</p>
+                {stock.statusBadge && (
+                  <span
+                    className={`inline-flex mt-2 px-2.5 py-1 rounded-lg text-xs font-semibold capitalize ${stock.badgeClass}`}
+                  >
+                    {stock.statusBadge}
                   </span>
                 )}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-gray-500 font-medium">Stock</dt>
-              <dd className="text-gray-900 mt-0.5">
-                {p.stock_quantity != null ? p.stock_quantity : '—'}{' '}
-                {p.stock_status && (
-                  <span className="text-xs text-gray-500">({String(p.stock_status).replace('_', ' ')})</span>
+                {stock.qtyNum === 0 && stock.raw === 'in_stock' && (
+                  <p className="text-xs text-amber-700 mt-2 leading-snug">
+                    Quantity is 0 but status is still “in stock” — update stock or status in the editor if needed.
+                  </p>
                 )}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-gray-500 font-medium">Type</dt>
-              <dd className="text-gray-900 mt-0.5 capitalize">
-                {p.product_type ? String(p.product_type).replace(/_/g, ' ') : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-gray-500 font-medium">Status</dt>
-              <dd className="mt-0.5">
-                <span
-                  className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${
-                    p.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {p.is_active !== false ? 'Active' : 'Inactive'}
-                </span>
-                {p.is_featured && (
-                  <span className="ml-2 inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
-                    Featured
-                  </span>
-                )}
-              </dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className="text-gray-500 font-medium">Category / Subcategory</dt>
-              <dd className="text-gray-900 mt-0.5">
-                {p.category?.name || p.category_name || '—'}
+              </div>
+              <div className="rounded-xl bg-white border border-gray-200/80 p-4 shadow-sm sm:col-span-2 lg:col-span-1">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Type & placement</p>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {p.product_type ? String(p.product_type).replace(/_/g, ' ') : '—'}
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  <span className="text-gray-500">Category:</span>{' '}
+                  {p.category?.name || p.category_name || '—'}
+                </p>
                 {(p.subcategory?.name || p.sub_category?.name) && (
-                  <span className="text-gray-600">
-                    {' '}
-                    · {p.subcategory?.name || p.sub_category?.name}
-                  </span>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="text-gray-500">Subcategory:</span>{' '}
+                    {p.subcategory?.name || p.sub_category?.name}
+                  </p>
                 )}
-              </dd>
+                <p className="text-sm text-gray-600 mt-2">
+                  <span className="text-gray-500">Brand:</span>{' '}
+                  <span className="font-medium text-gray-900">{p.brand?.name || p.brand_name || '—'}</span>
+                </p>
+              </div>
             </div>
-            <div className="sm:col-span-2">
-              <dt className="text-gray-500 font-medium">Brand</dt>
-              <dd className="text-gray-900 mt-0.5">
-                {p.brand?.name || p.brand_name || '—'}
-              </dd>
-            </div>
-          </dl>
 
-          {(colors.length > 0 || colorImagesKeys.length > 0) && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-800 mb-2">Color variants</h3>
-              {colors.length > 0 ? (
-                <ul className="flex flex-wrap gap-2">
-                  {colors.map((c, i) => (
-                    <li
-                      key={i}
-                      className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-gray-100 border border-gray-200 text-xs"
-                    >
-                      {c.hexCode && (
-                        <span
-                          className="w-4 h-4 rounded border border-gray-300"
-                          style={{ backgroundColor: c.hexCode }}
-                        />
-                      )}
-                      <span>{c.name || c.display_name || c.value || '—'}</span>
+            {/* Color variants */}
+            {variantRows.length > 0 && (
+              <section className="rounded-xl bg-white border border-gray-200/80 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-gray-100 flex items-center gap-2">
+                  <FiLayers className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-sm font-bold text-gray-900">Color variants</h3>
+                  <span className="text-xs text-gray-500">({variantRows.length})</span>
+                </div>
+                <ul className="divide-y divide-gray-100">
+                  {variantRows.map((row, i) => (
+                    <li key={i} className="px-4 py-3 flex items-center gap-4 hover:bg-gray-50/80 transition-colors">
+                      <div
+                        className="w-11 h-11 rounded-xl border-2 border-gray-200 shadow-inner shrink-0 ring-1 ring-black/5"
+                        style={{ backgroundColor: row.hex || '#e5e7eb' }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900">{row.name}</p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-xs text-gray-500">
+                          {row.hex && (
+                            <span className="inline-flex items-center gap-1 font-mono">
+                              <FiHash className="w-3 h-3" />
+                              {row.hex}
+                            </span>
+                          )}
+                          <span>
+                            {row.imageCount} image{row.imageCount === 1 ? '' : 's'}
+                          </span>
+                          {row.price != null && !Number.isNaN(Number(row.price)) && (
+                            <span className="text-indigo-600 font-medium">€{Number(row.price).toFixed(2)}</span>
+                          )}
+                        </div>
+                      </div>
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p className="text-sm text-gray-600">{colorImagesKeys.length} variant group(s) in data</p>
-              )}
-            </div>
-          )}
+              </section>
+            )}
 
-          {images.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-800 mb-2">Images ({images.length})</h3>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {images.slice(0, 12).map((url, i) => (
-                  <a
-                    key={i}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50 hover:ring-2 hover:ring-indigo-300"
-                  >
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                  </a>
-                ))}
-              </div>
-              {images.length > 12 && (
-                <p className="text-xs text-gray-500 mt-2">+{images.length - 12} more</p>
-              )}
-            </div>
-          )}
+            {/* Gallery */}
+            {images.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <FiImage className="w-4 h-4 text-gray-500" />
+                  <h3 className="text-sm font-bold text-gray-900">Gallery</h3>
+                  <span className="text-xs text-gray-500">· {images.length} image{images.length === 1 ? '' : 's'}</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {images.slice(0, 16).map((url, i) => (
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 hover:ring-2 hover:ring-indigo-200 transition-all"
+                    >
+                      <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform" />
+                      <span className="absolute bottom-0 inset-x-0 py-1.5 text-[10px] font-medium text-center text-white bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100">
+                        Open full size
+                      </span>
+                    </a>
+                  ))}
+                </div>
+                {images.length > 16 && (
+                  <p className="text-xs text-gray-500 mt-3 text-center">+{images.length - 16} more images in catalog</p>
+                )}
+              </section>
+            )}
 
-          {(p.short_description || p.description) && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-800 mb-2">Description</h3>
-              {p.short_description && (
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{p.short_description}</p>
-              )}
-              {p.description && (
-                <div
-                  className="text-sm text-gray-600 mt-2 max-w-none [&_a]:text-indigo-600"
-                  dangerouslySetInnerHTML={{ __html: String(p.description) }}
-                />
-              )}
-            </div>
-          )}
+            {/* Description */}
+            {(p.short_description || p.description) && (
+              <section className="rounded-xl bg-white border border-gray-200/80 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                  <FiAlignLeft className="w-4 h-4 text-gray-600" />
+                  <h3 className="text-sm font-bold text-gray-900">Description</h3>
+                </div>
+                <div className="p-4 sm:p-5 space-y-4">
+                  {p.short_description && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Short</p>
+                      <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{p.short_description}</p>
+                    </div>
+                  )}
+                  {p.description && (
+                    <div>
+                      {p.short_description && (
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Full</p>
+                      )}
+                      <div
+                        className="text-sm text-gray-700 leading-relaxed max-w-none prose-p:my-2 prose-headings:text-gray-900 [&_a]:text-indigo-600 [&_a]:underline"
+                        dangerouslySetInnerHTML={{ __html: String(p.description) }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+          </div>
         </div>
 
-        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+        <div className="px-5 py-4 sm:px-8 border-t border-gray-200 bg-white flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
+            className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 shadow-md shadow-indigo-500/25 transition-colors"
           >
             Close
           </button>

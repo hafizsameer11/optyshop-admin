@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPackage, FiImage, FiLayers, FiAlignLeft, FiHash } from 'react-icons/fi';
+import { FiX, FiPackage, FiImage, FiLayers, FiAlignLeft, FiHash, FiTag, FiBox, FiCpu, FiMapPin } from 'react-icons/fi';
 import api from '../utils/api';
 import { API_ROUTES } from '../config/apiRoutes';
 
@@ -18,30 +18,90 @@ function parseImagesField(images) {
   return [];
 }
 
-/** Normalize API color_images into rows for display */
-function parseColorVariants(p) {
-  const rows = [];
-  const seen = new Set();
+/** 6-char uppercase hex without #, or null */
+function normalizeHexKey(hex) {
+  if (hex == null || hex === '') return null;
+  const s = String(hex).trim().replace(/^#/, '').toUpperCase();
+  if (/^[0-9A-F]{6}$/.test(s)) return s;
+  return null;
+}
 
-  const pushRow = (hex, name, imageCount, price) => {
-    const key = (hex || name || '').toString().toUpperCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    rows.push({
-      hex: hex && /^#?[0-9A-Fa-f]{6}$/.test(String(hex).replace('#', '')) ? (String(hex).startsWith('#') ? hex : `#${hex}`) : null,
-      name: name || 'Variant',
-      imageCount: imageCount ?? 0,
-      price: price != null ? price : null,
-    });
+function parseImageColorsArray(imageColors) {
+  if (!imageColors) return null;
+  if (Array.isArray(imageColors)) return imageColors;
+  if (typeof imageColors === 'string') {
+    try {
+      const parsed = JSON.parse(imageColors);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Count images per color from parallel `images` + `image_colors` (same index = same file).
+ * This is how many admin saves store variant photos even when `colors[].images` is empty.
+ */
+function countImagesByHexFromParallelArrays(p) {
+  const imgs = parseImagesField(p.images);
+  const ic = parseImageColorsArray(p.image_colors ?? p.imageColors);
+  if (!ic || !Array.isArray(ic)) return new Map();
+  const map = new Map();
+  const n = Math.min(imgs.length, ic.length);
+  for (let i = 0; i < n; i++) {
+    const hex = ic[i];
+    if (hex == null || hex === '') continue;
+    const norm = normalizeHexKey(hex);
+    if (!norm) continue;
+    map.set(norm, (map.get(norm) || 0) + 1);
+  }
+  return map;
+}
+
+function hexDisplayFromNorm(norm) {
+  return norm ? `#${norm}` : null;
+}
+
+/** Normalize API color_images + colors + parallel image_colors into rows for display */
+function parseColorVariants(p) {
+  const parallelByHex = countImagesByHexFromParallelArrays(p);
+  /** @type {Map<string, { hex: string | null, name: string, imageCount: number, price: number | null }>} */
+  const merged = new Map();
+
+  const upsert = (hexRaw, nameRaw, structCount, price) => {
+    const norm = normalizeHexKey(hexRaw || '');
+    const nameStr = String(nameRaw ?? '').trim() || 'Variant';
+    const key = norm ? `hex:${norm}` : `name:${nameStr.toUpperCase()}`;
+    const fromParallel = norm ? parallelByHex.get(norm) || 0 : 0;
+    const count = Math.max(structCount ?? 0, fromParallel);
+    const hexOut = norm ? hexDisplayFromNorm(norm) : null;
+    const prev = merged.get(key);
+    if (prev) {
+      merged.set(key, {
+        hex: prev.hex || hexOut,
+        name: prev.name || nameStr,
+        imageCount: Math.max(prev.imageCount, count),
+        price: price != null ? price : prev.price,
+      });
+    } else {
+      merged.set(key, {
+        hex: hexOut,
+        name: nameStr,
+        imageCount: count,
+        price: price != null ? price : null,
+      });
+    }
   };
 
   if (Array.isArray(p.colors)) {
     p.colors.forEach((c) => {
       const hex = c.hexCode || c.hex_code || c.value;
-      const name = c.display_name || c.name || c.value;
+      const name = c.display_name || c.name || (normalizeHexKey(c.value) ? null : c.value);
       const imgs = c.images;
       const count = Array.isArray(imgs) ? imgs.length : 0;
-      pushRow(hex, name, count, c.price);
+      upsert(hex, name || 'Variant', count, c.price);
     });
   }
 
@@ -60,7 +120,7 @@ function parseColorVariants(p) {
       const name = entry.name;
       const imgs = entry.images;
       const count = Array.isArray(imgs) ? imgs.length : 0;
-      pushRow(hex, name, count, entry.price);
+      upsert(hex, name || 'Variant', count, entry.price);
     });
   } else if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
     Object.entries(raw).forEach(([key, val]) => {
@@ -71,11 +131,23 @@ function parseColorVariants(p) {
       let count = 0;
       if (Array.isArray(imgs)) count = imgs.length;
       else if (typeof imgs === 'string' && imgs) count = 1;
-      pushRow(hex, name || key, count, typeof val === 'object' ? val.price : null);
+      upsert(hex, name || key, count, typeof val === 'object' ? val.price : null);
     });
   }
 
-  return rows;
+  parallelByHex.forEach((count, norm) => {
+    const key = `hex:${norm}`;
+    if (!merged.has(key)) {
+      merged.set(key, {
+        hex: hexDisplayFromNorm(norm),
+        name: 'Variant',
+        imageCount: count,
+        price: null,
+      });
+    }
+  });
+
+  return Array.from(merged.values());
 }
 
 function stockDisplay(p) {
@@ -108,6 +180,72 @@ function stockDisplay(p) {
   }
 
   return { qtyLabel, qtyNum, statusBadge, badgeClass, raw };
+}
+
+function fmt(v) {
+  if (v === null || v === undefined || v === '') return '—';
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  return String(v);
+}
+
+function fmtMoney(v) {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = parseFloat(v);
+  if (Number.isNaN(n)) return '—';
+  return `€${n.toFixed(2)}`;
+}
+
+function fmtFrameShape(s) {
+  if (!s) return '—';
+  return String(s).replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+function frameColorHex(name) {
+  if (!name) return null;
+  const s = String(name).trim();
+  if (/^#?[0-9A-Fa-f]{6}$/.test(s.replace('#', ''))) {
+    return s.startsWith('#') ? s.toUpperCase() : `#${s.toUpperCase()}`;
+  }
+  const colorMap = {
+    black: '#000000',
+    white: '#FFFFFF',
+    brown: '#8B4513',
+    blue: '#0000FF',
+    red: '#FF0000',
+    green: '#008000',
+    gray: '#808080',
+    grey: '#808080',
+    gold: '#FFD700',
+    silver: '#C0C0C0',
+    tortoise: '#8B4513',
+    tortoiseshell: '#8B4513',
+    navy: '#000080',
+    burgundy: '#800020',
+    clear: '#FFFFFF',
+    transparent: '#FFFFFF',
+  };
+  return colorMap[s.toLowerCase()] || null;
+}
+
+function KV({ label, children, wide }) {
+  return (
+    <div className={wide ? 'sm:col-span-2' : ''}>
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
+      <div className="text-sm text-gray-900 mt-0.5 break-words">{children}</div>
+    </div>
+  );
+}
+
+function DetailCard({ title, icon: Icon, children }) {
+  return (
+    <section className="rounded-xl bg-white border border-gray-200/80 shadow-sm overflow-hidden">
+      <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+        {Icon && <Icon className="w-4 h-4 text-indigo-600 shrink-0" />}
+        <h3 className="text-sm font-bold text-gray-900">{title}</h3>
+      </div>
+      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">{children}</div>
+    </section>
+  );
 }
 
 /**
@@ -156,6 +294,42 @@ export default function ProductViewModal({ product: initialProduct, onClose }) {
   const priceNum = p.price != null ? parseFloat(p.price) : null;
   const compareNum = p.compare_at_price != null ? parseFloat(p.compare_at_price) : null;
   const hasDiscount = compareNum != null && priceNum != null && compareNum > priceNum;
+
+  const svVariants = Array.isArray(p.sizeVolumeVariants || p.size_volume_variants || p.variants)
+    ? p.sizeVolumeVariants || p.size_volume_variants || p.variants
+    : [];
+  const model3dUrl = p.model_3d || p.model3d || p.model3D;
+  const frameMat = p.frame_material;
+  const frameMaterialStr = Array.isArray(frameMat)
+    ? frameMat.filter(Boolean).map((x) => fmtFrameShape(String(x))).join(', ')
+    : frameMat
+      ? fmtFrameShape(String(frameMat))
+      : '';
+
+  const hasContactFields =
+    p.product_type === 'contact_lens' ||
+    p.contact_lens_type ||
+    p.contact_lens_material ||
+    (p.water_content != null && p.water_content !== '') ||
+    p.replacement_frequency ||
+    p.packaging ||
+    p.base_curve ||
+    p.diameter;
+
+  const hasEyeHygieneFields =
+    p.product_type === 'eye_hygiene' ||
+    p.size_volume ||
+    p.expiry_date ||
+    p.volume ||
+    svVariants.length > 0;
+
+  const hasFrameFields =
+    p.frame_shape ||
+    p.frame_color ||
+    (frameMat && (Array.isArray(frameMat) ? frameMat.length : String(frameMat).trim())) ||
+    p.gender ||
+    (p.lens_material && p.product_type !== 'contact_lens') ||
+    (p.lens_type && p.product_type !== 'contact_lens');
 
   const modal = (
     <div
@@ -285,6 +459,139 @@ export default function ProductViewModal({ product: initialProduct, onClose }) {
               </div>
             </div>
 
+            <DetailCard title="Category & taxonomy" icon={FiMapPin}>
+              <KV label="Product ID">{fmt(p.id)}</KV>
+              <KV label="Category ID">{fmt(p.category_id)}</KV>
+              <KV label="Category name">{fmt(p.category?.name || p.category_name)}</KV>
+              <KV label="Subcategory ID">{fmt(p.sub_category_id ?? p.subcategory_id)}</KV>
+              <KV label="Subcategory name">{fmt(p.subcategory?.name || p.sub_category?.name)}</KV>
+              <KV label="Parent subcategory ID">{fmt(p.parent_subcategory_id)}</KV>
+              <KV label="Brand ID">{fmt(p.brand_id)}</KV>
+              <KV label="Brand name">{fmt(p.brand?.name || p.brand_name || p.contact_lens_brand)}</KV>
+            </DetailCard>
+
+            {hasContactFields && (
+              <DetailCard title="Contact lens" icon={FiCpu}>
+                <KV label="Lens type">{fmt(p.lens_type)}</KV>
+                <KV label="Contact lens type">
+                  {p.contact_lens_type ? String(p.contact_lens_type).replace(/_/g, ' ') : '—'}
+                </KV>
+                <KV label="Material">{fmt(p.contact_lens_material)}</KV>
+                <KV label="Water content">
+                  {p.water_content != null && p.water_content !== '' ? `${p.water_content}%` : '—'}
+                </KV>
+                <KV label="Replacement">{fmt(p.replacement_frequency)}</KV>
+                <KV label="Packaging">{fmt(p.packaging)}</KV>
+                <KV label="Base curve">{fmt(p.base_curve)}</KV>
+                <KV label="Diameter">{fmt(p.diameter)}</KV>
+              </DetailCard>
+            )}
+
+            {hasEyeHygieneFields && (
+              <DetailCard title="Eye hygiene & size / volume" icon={FiBox}>
+                <KV label="Volume (product)">{fmt(p.volume)}</KV>
+                <KV label="Size / volume (legacy)">{fmt(p.size_volume)}</KV>
+                <KV label="Pack type">
+                  {svVariants.length > 0
+                    ? [...new Set(svVariants.map((v) => v.pack_type).filter(Boolean))].join(', ') || '—'
+                    : fmt(p.pack_type)}
+                </KV>
+                <KV label="Expiry date">
+                  {p.expiry_date ? new Date(p.expiry_date).toLocaleDateString() : '—'}
+                </KV>
+                <KV label="Size / volume variants" wide>
+                  {svVariants.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-800">
+                        {svVariants.length} variant{svVariants.length !== 1 ? 's' : ''}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {svVariants
+                          .map((v) => v.size_volume)
+                          .filter(Boolean)
+                          .join(', ') || '—'}
+                      </p>
+                    </div>
+                  ) : (
+                    '—'
+                  )}
+                </KV>
+              </DetailCard>
+            )}
+
+            {hasFrameFields && (
+              <DetailCard title="Frame & eyewear" icon={FiPackage}>
+                <KV label="Frame shape">{fmtFrameShape(p.frame_shape)}</KV>
+                <KV label="Frame material">{frameMaterialStr || '—'}</KV>
+                <KV label="Frame color">
+                  {p.frame_color ? (
+                    <span className="inline-flex items-center gap-2 flex-wrap">
+                      <span className="capitalize font-medium">{p.frame_color}</span>
+                      {frameColorHex(p.frame_color) && (
+                        <span
+                          className="w-5 h-5 rounded border border-gray-300 shadow-sm inline-block shrink-0"
+                          style={{ backgroundColor: frameColorHex(p.frame_color) }}
+                          title={p.frame_color}
+                        />
+                      )}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </KV>
+                <KV label="Lens type">{fmt(p.lens_type)}</KV>
+                <KV label="Lens material">{fmt(p.lens_material)}</KV>
+                <KV label="Gender">{fmt(p.gender)}</KV>
+              </DetailCard>
+            )}
+
+            {p.cost_price != null && p.cost_price !== '' && (
+              <DetailCard title="Cost price">
+                <KV label="Cost">{fmtMoney(p.cost_price)}</KV>
+              </DetailCard>
+            )}
+
+            {(model3dUrl || p.model_name) && (
+              <DetailCard title="3D model" icon={FiLayers}>
+                <KV label="Model name">{fmt(p.model_name)}</KV>
+                <KV label="Model file URL" wide>
+                  {model3dUrl ? (
+                    <a
+                      href={model3dUrl}
+                      className="text-indigo-600 underline break-all"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {model3dUrl}
+                    </a>
+                  ) : (
+                    '—'
+                  )}
+                </KV>
+              </DetailCard>
+            )}
+
+            {(p.meta_title || p.meta_description || p.meta_keywords) && (
+              <DetailCard title="SEO" icon={FiTag}>
+                <KV label="Meta title" wide>
+                  {fmt(p.meta_title)}
+                </KV>
+                <KV label="Meta description" wide>
+                  {fmt(p.meta_description)}
+                </KV>
+                <KV label="Meta keywords" wide>
+                  {fmt(p.meta_keywords)}
+                </KV>
+              </DetailCard>
+            )}
+
+            {(p.created_at || p.updated_at) && (
+              <DetailCard title="Timestamps" icon={FiCpu}>
+                <KV label="Created">{p.created_at ? new Date(p.created_at).toLocaleString() : '—'}</KV>
+                <KV label="Updated">{p.updated_at ? new Date(p.updated_at).toLocaleString() : '—'}</KV>
+              </DetailCard>
+            )}
+
             {/* Color variants */}
             {variantRows.length > 0 && (
               <section className="rounded-xl bg-white border border-gray-200/80 shadow-sm overflow-hidden">
@@ -305,8 +612,8 @@ export default function ProductViewModal({ product: initialProduct, onClose }) {
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-xs text-gray-500">
                           {row.hex && (
                             <span className="inline-flex items-center gap-1 font-mono">
-                              <FiHash className="w-3 h-3" />
-                              {row.hex}
+                              <FiHash className="w-3 h-3 shrink-0" />
+                              {String(row.hex).replace(/^#/, '')}
                             </span>
                           )}
                           <span>

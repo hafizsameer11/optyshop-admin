@@ -1537,68 +1537,14 @@ const Products = () => {
 
   // Helper function to get column configuration based on selected section
   const getTableColumns = () => {
-    // Essential columns that are always visible
-    const essentialColumns = [
+    // Table stays compact: Product → Price → Stock → Status → View → Actions (details in View modal)
+    return [
       { key: 'product', label: 'Product', responsive: '', alwaysVisible: true },
       { key: 'price', label: 'Price', responsive: '', alwaysVisible: true },
       { key: 'stock', label: 'Stock', responsive: 'hidden sm:table-cell', alwaysVisible: true },
       { key: 'status', label: 'Status', responsive: '', alwaysVisible: true },
       { key: 'view', label: 'View', responsive: '', alwaysVisible: true },
-      { key: 'actions', label: 'Actions', responsive: '', alwaysVisible: true }
-    ];
-    
-    // Extra columns (responsive breakpoints still hide some on small screens)
-    const additionalColumns = [
-      { key: 'id', label: 'ID', responsive: '', alwaysVisible: true },
-      { key: 'sku', label: 'SKU', responsive: 'hidden md:table-cell', alwaysVisible: true },
-      { key: 'category', label: 'Category', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-      { key: 'subcategory', label: 'SubCategory', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-    ];
-    
-    const sectionSpecificColumns = {
-      'contact-lenses': [
-        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'contact_lens_type', label: 'Contact Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-        { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-        { key: 'material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-        { key: 'water_content', label: 'Water Content', responsive: 'hidden xl:table-cell', alwaysVisible: true },
-        { key: 'replacement_frequency', label: 'Replacement', responsive: 'hidden xl:table-cell', alwaysVisible: true },
-      ],
-      'eye-hygiene': [
-        { key: 'size_volume', label: 'Size/Volume', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'pack_type', label: 'Pack Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-        { key: 'expiry_date', label: 'Expiry Date', responsive: 'hidden xl:table-cell', alwaysVisible: true },
-      ],
-      'sunglasses': [
-        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-      ],
-      'eyeglasses': [
-        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-      ],
-      'opty-kids': [
-        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-      ],
-      'all': [
-        { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell', alwaysVisible: true },
-        { key: 'color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: true },
-        { key: 'product_type', label: 'Product Type', responsive: 'hidden md:table-cell', alwaysVisible: true },
-      ],
-    };
-    
-    // Return all columns (headers always visible, cells conditionally visible)
-    return [
-      ...essentialColumns,
-      ...additionalColumns,
-      ...(sectionSpecificColumns[selectedSection] || sectionSpecificColumns['all']),
+      { key: 'actions', label: 'Actions', responsive: '', alwaysVisible: true },
     ];
   };
 
@@ -1622,9 +1568,6 @@ const Products = () => {
                 {product.slug && (
                   <div className="text-xs text-gray-500 truncate mt-0.5">{product.slug}</div>
                 )}
-                <div className="md:hidden text-xs text-gray-400 mt-1">
-                  SKU: {product.sku ? String(product.sku) : '-'}
-                </div>
               </div>
             </div>
           </td>

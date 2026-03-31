@@ -151,14 +151,17 @@ const ProductModal = ({ product, onClose }) => {
 
   // SKU Generation function for all product types
   const generateSKU = () => {
-    // Get brand name from brands array
-    const selectedBrand = brands.find(brand => brand.id === parseInt(formData.brand_id));
-    const brandCode = selectedBrand?.name || '';
-    
-    // Convert brand name to code (e.g., Ray-Ban -> RB)
+    // Get brand name from brands array (IDs may be string or number from API / <select>)
+    const selectedBrand = brands.find(
+      (brand) => String(brand.id) === String(formData.brand_id ?? '')
+    );
+    const brandCode = (selectedBrand?.name || '').trim();
+
+    // Convert brand name to initials (e.g., Ray-Ban or Ray Ban -> RB)
     const brandAbbreviation = brandCode
-      .split('-')
-      .map(part => part.trim().charAt(0).toUpperCase())
+      .split(/[\s-]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase())
       .join('');
     
     const model = formData.model_name || '';
@@ -190,8 +193,8 @@ const ProductModal = ({ product, onClose }) => {
       
       return `${brandAbbreviation}-${model}-${lensWidth}-${frameColor}-${lensMaterial}`;
       
-    } else if (productType === 'contact_lenses') {
-      // Contact lenses format: ACUVUE-OASYS-6PK-8.6-14.2
+    } else if (productType === 'contact_lenses' || productType === 'contact_lens') {
+      // Contact lenses format: ACUVUE-OASYS-6PK-8.6-14.2 (dropdown uses contact_lens)
       const packaging = formData.packaging || ''; // e.g., 6PK, 30PK
       const baseCurve = formData.base_curve || ''; // e.g., 8.6
       const diameter = formData.diameter || ''; // e.g., 14.2
@@ -3193,8 +3196,8 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   const modalContent = (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-gray-200/50 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl border border-gray-200/50 overflow-hidden flex flex-col max-h-[95vh] min-h-0 md:min-h-[min(78vh,900px)]">
         {/* Fixed Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -3241,7 +3244,7 @@ const ProductModal = ({ product, onClose }) => {
         </div>
 
         {/* Scrollable Form Content */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(90vh - 200px)' }} noValidate>
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto flex flex-col" noValidate>
           <div className="p-6 space-y-6">
             {/* General Tab */}
             {activeTab === 'general' && (
@@ -3344,7 +3347,7 @@ const ProductModal = ({ product, onClose }) => {
                       )}
                     </div>
                   </>
-                ) : formData.product_type === 'contact_lenses' ? (
+                ) : formData.product_type === 'contact_lenses' || formData.product_type === 'contact_lens' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -3544,7 +3547,7 @@ const ProductModal = ({ product, onClose }) => {
                         ? 'Format: Brand-Model-Caliber-Color-Lens Material (e.g., RB-RX5228-54-2000-POLARIZED)'
                         : formData.product_type === 'prescription_glasses' || formData.product_type === 'eyeglasses'
                         ? 'Format: Brand*Model*Caliber*Bridge*Color (e.g., RB*RX5228*54*17*2000)'
-                        : formData.product_type === 'contact_lenses'
+                        : formData.product_type === 'contact_lenses' || formData.product_type === 'contact_lens'
                         ? 'Format: Brand-Model-Packaging-BaseCurve-Diameter (e.g., ACUVUE-OASYS-6PK-8.6-14.2)'
                         : formData.product_type === 'solution' || formData.product_type === 'eye_hygiene'
                         ? 'Format: Brand-Model-Volume (e.g., OPTI-FREE-EXPRESS-355ML)'

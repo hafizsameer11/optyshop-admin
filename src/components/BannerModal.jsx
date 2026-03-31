@@ -9,6 +9,28 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { API_ROUTES } from '../config/apiRoutes';
 
+/** Preset banner placement values (API accepts string; Postman examples use e.g. "header") */
+const BANNER_POSITION_OPTIONS = [
+  { value: '', label: '— None —' },
+  { value: 'header', label: 'Header' },
+  { value: 'hero', label: 'Hero' },
+  { value: 'footer', label: 'Footer' },
+  { value: 'sidebar', label: 'Sidebar' },
+  { value: 'category', label: 'Category' },
+  { value: 'top', label: 'Top' },
+  { value: 'bottom', label: 'Bottom' },
+  { value: 'main', label: 'Main' },
+];
+
+function getBannerPositionOptions(currentPosition) {
+  const opts = [...BANNER_POSITION_OPTIONS];
+  const p = (currentPosition ?? '').trim();
+  if (p && !opts.some((o) => o.value === p)) {
+    opts.push({ value: p, label: `${p} (saved)` });
+  }
+  return opts;
+}
+
 // Helper function to normalize is_active values from backend
 const normalizeIsActive = (isActive) => {
   return Boolean(isActive && isActive !== '0' && isActive !== 0);
@@ -855,14 +877,21 @@ const BannerModal = ({ banner, onClose }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('positionOptional')}
             </label>
-            <input
-              type="text"
+            <select
               name="position"
-              value={formData.position}
+              value={formData.position ?? ''}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="e.g., header, footer, sidebar"
-            />
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+            >
+              {getBannerPositionOptions(formData.position).map((opt) => (
+                <option key={opt.value || 'empty'} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Where this banner appears in the page layout (e.g. header, hero, category strip).
+            </p>
           </div>
 
           <div>

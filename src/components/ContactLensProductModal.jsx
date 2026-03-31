@@ -1296,7 +1296,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                               <tr key={configId || Math.random()} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-sm text-gray-900">{name}</td>
                                 <td className="px-4 py-3 text-sm text-gray-600">{displayName}</td>
-                                <td className="px-4 py-3 text-sm text-gray-600">${price.toFixed(2)}</td>
+                                <td className="px-4 py-3 text-sm text-gray-600">€{price.toFixed(2)}</td>
                                 <td className="px-4 py-3 text-sm">
                                   <span className={`px-2 py-1 rounded-full text-xs ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     {isActive ? 'Active' : 'Inactive'}
@@ -1389,7 +1389,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                               <tr key={configId || Math.random()} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-sm text-gray-900">{name}</td>
                                 <td className="px-4 py-3 text-sm text-gray-600">{displayName}</td>
-                                <td className="px-4 py-3 text-sm text-gray-600">${price.toFixed(2)}</td>
+                                <td className="px-4 py-3 text-sm text-gray-600">€{price.toFixed(2)}</td>
                                 <td className="px-4 py-3 text-sm">
                                   <span className={`px-2 py-1 rounded-full text-xs ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     {isActive ? 'Active' : 'Inactive'}

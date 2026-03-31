@@ -136,7 +136,7 @@ const Coupons = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {coupon.discount_type === 'percentage' 
                       ? `${coupon.discount_value}%` 
-                      : `$${coupon.discount_value}`}
+                      : `€${coupon.discount_value}`}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {coupon.starts_at && coupon.ends_at 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://optyshop-frontend.hmstech.org/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://optyshop-frontend.hmstech.org/api',
   headers: {
     'Content-Type': 'application/json',
   },

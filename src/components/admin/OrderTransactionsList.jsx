@@ -5,7 +5,8 @@
  * Allows admin to view and manage transactions
  */
 import React, { useState, useEffect } from 'react';
-import { FiDollarSign, FiArrowDown, FiArrowUp, FiRefreshCw, FiEye, FiRefreshCcw } from 'react-icons/fi';
+import { FiArrowDown, FiArrowUp, FiRefreshCw, FiEye, FiRefreshCcw } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import api from '../../utils/api';
 import { API_ROUTES } from '../../config/apiRoutes';
 import toast from 'react-hot-toast';
@@ -62,7 +63,7 @@ const AdminOrderTransactionsList = ({ orderId, orderTotal, onTransactionUpdate }
       case 'chargeback':
         return <FiArrowUp className="w-5 h-5 text-red-600" />;
       default:
-        return <FiDollarSign className="w-5 h-5 text-gray-600" />;
+        return <FaEuroSign className="w-5 h-5 text-gray-600" />;
     }
   };
 
@@ -112,7 +113,7 @@ const AdminOrderTransactionsList = ({ orderId, orderTotal, onTransactionUpdate }
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <FiDollarSign className="mr-2" />
+          <FaEuroSign className="mr-2" />
           Payment Transactions
         </h3>
         <p className="text-gray-500 text-sm">No transactions found for this order.</p>
@@ -130,7 +131,7 @@ const AdminOrderTransactionsList = ({ orderId, orderTotal, onTransactionUpdate }
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <FiDollarSign className="mr-2" />
+          <FaEuroSign className="mr-2" />
           Payment Transactions ({transactions.length})
         </h3>
         <div className="flex items-center space-x-2">
@@ -198,11 +199,11 @@ const AdminOrderTransactionsList = ({ orderId, orderTotal, onTransactionUpdate }
                       transaction.type === 'payment' ? 'text-green-700' : 'text-red-700'
                     }`}>
                       {transaction.type === 'payment' ? '+' : '-'}
-                      {transaction.currency || 'USD'} {transaction.amount?.toFixed(2) || '0.00'}
+                      {transaction.currency || 'EUR'} {transaction.amount?.toFixed(2) || '0.00'}
                     </p>
                     {transaction.gateway_fee && transaction.gateway_fee > 0 && (
                       <p className="text-xs text-gray-500">
-                        Fee: {transaction.currency || 'USD'} {transaction.gateway_fee.toFixed(2)}
+                        Fee: {transaction.currency || 'EUR'} {transaction.gateway_fee.toFixed(2)}
                       </p>
                     )}
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full mt-1 ${getStatusColor(transaction.status)}`}>
@@ -222,7 +223,7 @@ const AdminOrderTransactionsList = ({ orderId, orderTotal, onTransactionUpdate }
                   {transaction.net_amount && transaction.net_amount !== transaction.amount && (
                     <div>
                       <span className="font-medium">Net:</span>{' '}
-                      {transaction.currency || 'USD'} {transaction.net_amount.toFixed(2)}
+                      {transaction.currency || 'EUR'} {transaction.net_amount.toFixed(2)}
                     </div>
                   )}
                 </div>
@@ -238,7 +239,7 @@ const AdminOrderTransactionsList = ({ orderId, orderTotal, onTransactionUpdate }
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Order Total:</span>
             <span className="text-lg font-semibold text-gray-900">
-              {transactions[0]?.currency || 'USD'} {orderTotal?.toFixed(2) || '0.00'}
+              {transactions[0]?.currency || 'EUR'} {orderTotal?.toFixed(2) || '0.00'}
             </span>
           </div>
           
@@ -249,7 +250,7 @@ const AdminOrderTransactionsList = ({ orderId, orderTotal, onTransactionUpdate }
                 <span className={`text-xl font-bold ${
                   netAmount >= 0 ? 'text-green-700' : 'text-red-700'
                 }`}>
-                  {transactions[0]?.currency || 'USD'} {Math.abs(netAmount).toFixed(2)}
+                  {transactions[0]?.currency || 'EUR'} {Math.abs(netAmount).toFixed(2)}
                 </span>
               </div>
               {netAmount < 0 && (
@@ -265,7 +266,7 @@ const AdminOrderTransactionsList = ({ orderId, orderTotal, onTransactionUpdate }
             <div className="flex justify-between items-center mt-2 pt-2 border-t border-blue-200">
               <span className="text-xs text-gray-600">Total Gateway Fees:</span>
               <span className="text-sm font-semibold text-gray-700">
-                {transactions[0]?.currency || 'USD'} {
+                {transactions[0]?.currency || 'EUR'} {
                   transactions
                     .filter(t => t.gateway_fee && t.gateway_fee > 0)
                     .reduce((sum, t) => sum + t.gateway_fee, 0)

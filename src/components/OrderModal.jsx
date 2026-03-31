@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiDollarSign, FiXCircle, FiUser, FiPackage } from 'react-icons/fi';
+import { FiX, FiXCircle, FiUser, FiPackage } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -939,31 +940,31 @@ const OrderModal = ({ order, onClose }) => {
             {/* Pricing Breakdown */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                <FiDollarSign className="mr-2" />
+                <FaEuroSign className="mr-2" />
                 {t('pricingBreakdown')}
               </h3>
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-lg border border-blue-200 shadow-sm space-y-3">
                 <div className="flex justify-between items-center text-sm">
                   <span className="font-medium text-gray-700">{t('subtotal')}:</span>
-                  <span className="font-semibold text-gray-900">${parseFloat(orderData?.subtotal || 0).toFixed(2)}</span>
+                  <span className="font-semibold text-gray-900">€{parseFloat(orderData?.subtotal || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="font-medium text-gray-700">{t('tax')}:</span>
-                  <span className="font-semibold text-gray-900">${parseFloat(orderData?.tax || 0).toFixed(2)}</span>
+                  <span className="font-semibold text-gray-900">€{parseFloat(orderData?.tax || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="font-medium text-gray-700">{t('shipping')}:</span>
-                  <span className="font-semibold text-gray-900">${parseFloat(orderData?.shipping || 0).toFixed(2)}</span>
+                  <span className="font-semibold text-gray-900">€{parseFloat(orderData?.shipping || 0).toFixed(2)}</span>
                 </div>
                 {orderData?.discount && parseFloat(orderData.discount) > 0 && (
                   <div className="flex justify-between items-center text-sm text-red-600">
                     <span className="font-medium">{t('discount')}:</span>
-                    <span className="font-bold">-${parseFloat(orderData.discount).toFixed(2)}</span>
+                    <span className="font-bold">-€{parseFloat(orderData.discount).toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center text-base font-bold border-t-2 border-blue-300 pt-3 mt-2">
                   <span className="text-gray-900">{t('total')}:</span>
-                  <span className="text-indigo-700 text-lg">${parseFloat(orderData?.total || orderData?.total_amount || 0).toFixed(2)}</span>
+                  <span className="text-indigo-700 text-lg">€{parseFloat(orderData?.total || orderData?.total_amount || 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -1193,7 +1194,7 @@ const OrderModal = ({ order, onClose }) => {
                                       <div className="flex items-center text-xs">
                                         <span className="font-semibold text-gray-700 w-24">{t('progressiveVariant')}:</span>
                                         <span className="px-2 py-1 rounded bg-green-50 text-green-700 font-medium">
-                                          {item.progressiveVariant.name} {item.progressiveVariant.price && `($${item.progressiveVariant.price})`}
+                                          {item.progressiveVariant.name} {item.progressiveVariant.price && `(€${item.progressiveVariant.price})`}
                                         </span>
                                       </div>
                                     )}
@@ -1382,10 +1383,10 @@ const OrderModal = ({ order, onClose }) => {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-700 font-medium">
-                            ${parseFloat(item.unit_price || 0).toFixed(2)}
+                            €{parseFloat(item.unit_price || 0).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-bold">
-                            ${parseFloat(item.total_price || item.unit_price * item.quantity || 0).toFixed(2)}
+                            €{parseFloat(item.total_price || item.unit_price * item.quantity || 0).toFixed(2)}
                           </td>
                         </tr>
                       ))
@@ -1524,7 +1525,7 @@ const OrderModal = ({ order, onClose }) => {
                     disabled={loading}
                     className="flex-1 px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    <FiDollarSign />
+                    <FaEuroSign />
                     {t('processRefund')}
                   </button>
                 )}
@@ -1563,11 +1564,11 @@ const OrderModal = ({ order, onClose }) => {
                       max={orderData?.total || orderData?.total_amount || 0}
                       value={refundAmount}
                       onChange={(e) => setRefundAmount(e.target.value)}
-                      placeholder={`Max: $${orderData?.total || orderData?.total_amount || '0.00'}`}
+                      placeholder={`Max: €${orderData?.total || orderData?.total_amount || '0.00'}`}
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {refundAmount ? `${t('partialRefund')}: $${refundAmount}` : t('fullRefundWillBeProcessed')}
+                      {refundAmount ? `${t('partialRefund')}: €${refundAmount}` : t('fullRefundWillBeProcessed')}
                     </p>
                   </div>
                   <div>

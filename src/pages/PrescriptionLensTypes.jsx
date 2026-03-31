@@ -264,7 +264,7 @@ const PrescriptionLensTypes = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${basePrice ? basePrice.toFixed(2) : 'N/A'}
+                        €{basePrice ? basePrice.toFixed(2) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                         {description}

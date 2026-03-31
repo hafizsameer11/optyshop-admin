@@ -275,7 +275,7 @@ const LensOptions = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{optionId}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{optionName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{optionType}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice !== undefined && basePrice !== null ? (parseFloat(basePrice) || 0).toFixed(2) : 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">€{basePrice !== undefined && basePrice !== null ? (parseFloat(basePrice) || 0).toFixed(2) : 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${

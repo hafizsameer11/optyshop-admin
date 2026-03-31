@@ -1668,10 +1668,10 @@ const Products = () => {
       case 'price':
         return (
           <td className={`table-cell-responsive text-sm sm:text-base font-semibold text-gray-900 ${responsiveClass}`}>
-            ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
+            €{product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
             {product.compare_at_price && (
               <div className="text-xs text-gray-400 line-through mt-0.5">
-                ${parseFloat(product.compare_at_price).toFixed(2)}
+                €{parseFloat(product.compare_at_price).toFixed(2)}
               </div>
             )}
           </td>

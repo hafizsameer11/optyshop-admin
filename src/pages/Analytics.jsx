@@ -246,7 +246,7 @@ const Analytics = () => {
                 <div>
                   <p className="text-sm text-gray-600">Total Revenue</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    ${salesData.totalRevenue?.toFixed(2) || '0.00'}
+                    €{salesData.totalRevenue?.toFixed(2) || '0.00'}
                   </p>
                 </div>
                 <FiTrendingUp className="w-8 h-8 text-green-500" />
@@ -268,7 +268,7 @@ const Analytics = () => {
                 <div>
                   <p className="text-sm text-gray-600">Average Order Value</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    ${salesData.averageOrderValue?.toFixed(2) || '0.00'}
+                    €{salesData.averageOrderValue?.toFixed(2) || '0.00'}
                   </p>
                 </div>
                 <FiBarChart2 className="w-8 h-8 text-purple-500" />
@@ -298,7 +298,7 @@ const Analytics = () => {
                       {item.period || item.date || `Period ${index + 1}`}
                     </span>
                     <span className="text-sm font-semibold text-gray-900">
-                      ${item.revenue?.toFixed(2) || item.amount?.toFixed(2) || '0.00'}
+                      €{item.revenue?.toFixed(2) || item.amount?.toFixed(2) || '0.00'}
                     </span>
                   </div>
                 ))}

@@ -242,7 +242,7 @@ const LensTypes = () => {
                       {type.thickness_factor || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${type.price_adjustment !== undefined && type.price_adjustment !== null ? (parseFloat(type.price_adjustment) || 0).toFixed(2) : 'N/A'}
+                      €{type.price_adjustment !== undefined && type.price_adjustment !== null ? (parseFloat(type.price_adjustment) || 0).toFixed(2) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {type.description || 'N/A'}

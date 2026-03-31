@@ -3,7 +3,8 @@
  * Shows detailed transaction information in a user-friendly format
  */
 import React from 'react';
-import { FiX, FiCheckCircle, FiXCircle, FiClock, FiDollarSign, FiFileText, FiCreditCard } from 'react-icons/fi';
+import { FiX, FiCheckCircle, FiXCircle, FiClock, FiFileText, FiCreditCard } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import LanguageSwitcher from '../LanguageSwitcher';
 
 const TransactionDetailsModal = ({ transaction, onClose }) => {
@@ -103,7 +104,7 @@ const TransactionDetailsModal = ({ transaction, onClose }) => {
           {/* Financial Information */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <FiDollarSign className="mr-2" />
+              <FaEuroSign className="mr-2" />
               Payment Information
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -123,14 +124,14 @@ const TransactionDetailsModal = ({ transaction, onClose }) => {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Gross Amount</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {transaction.currency || 'USD'} {transaction.amount?.toFixed(2) || '0.00'}
+                  {transaction.currency || 'EUR'} {transaction.amount?.toFixed(2) || '0.00'}
                 </p>
               </div>
               {transaction.gateway_fee && transaction.gateway_fee > 0 && (
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Gateway Fee</p>
                   <p className="text-lg font-semibold text-red-600">
-                    - {transaction.currency || 'USD'} {transaction.gateway_fee.toFixed(2)}
+                    - {transaction.currency || 'EUR'} {transaction.gateway_fee.toFixed(2)}
                   </p>
                 </div>
               )}
@@ -139,10 +140,10 @@ const TransactionDetailsModal = ({ transaction, onClose }) => {
                   <p className="text-lg font-semibold text-gray-700">Net Amount</p>
                   <p className="text-3xl font-bold text-green-700">
                     {transaction.net_amount !== undefined && transaction.net_amount !== null
-                      ? `${transaction.currency || 'USD'} ${transaction.net_amount.toFixed(2)}`
+                      ? `${transaction.currency || 'EUR'} ${transaction.net_amount.toFixed(2)}`
                       : transaction.gateway_fee && transaction.gateway_fee > 0
-                      ? `${transaction.currency || 'USD'} ${((transaction.amount || 0) - transaction.gateway_fee).toFixed(2)}`
-                      : `${transaction.currency || 'USD'} ${transaction.amount?.toFixed(2) || '0.00'}`}
+                      ? `${transaction.currency || 'EUR'} ${((transaction.amount || 0) - transaction.gateway_fee).toFixed(2)}`
+                      : `${transaction.currency || 'EUR'} ${transaction.amount?.toFixed(2) || '0.00'}`}
                   </p>
                 </div>
               </div>
@@ -215,7 +216,7 @@ const TransactionDetailsModal = ({ transaction, onClose }) => {
                   <div>
                     <span className="text-gray-600">Order Total:</span>{' '}
                     <span className="font-semibold text-gray-900">
-                      {transaction.order.currency || transaction.currency || 'USD'} {transaction.order.total.toFixed(2)}
+                      {transaction.order.currency || transaction.currency || 'EUR'} {transaction.order.total.toFixed(2)}
                     </span>
                   </div>
                 )}

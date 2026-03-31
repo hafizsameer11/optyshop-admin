@@ -432,7 +432,7 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
                   />
                   <div>
                     <p className="font-medium text-gray-900">{formData.size_volume || 'Variant'}</p>
-                    <p className="text-sm text-gray-600">${formData.price || '0.00'}</p>
+                    <p className="text-sm text-gray-600">€{formData.price || '0.00'}</p>
                   </div>
                 </div>
               </div>

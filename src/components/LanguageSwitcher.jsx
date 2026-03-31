@@ -31,7 +31,7 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
   if (variant === 'compact') {
     const buttonClasses = onGradient
       ? "flex items-center gap-2 px-3 py-1.5 text-sm bg-white/25 hover:bg-white/40 text-white rounded-lg transition-colors backdrop-blur-sm border border-white/30 shadow-sm"
-      : "flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors";
+      : "flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors";
     
     const iconClasses = onGradient ? "text-white" : "";
     
@@ -53,21 +53,21 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             ></div>
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50 max-h-80 overflow-y-auto">
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 max-h-80 overflow-y-auto">
               {languages.map((lang) => (
                 <button
                   key={lang.code}
                   onClick={() => handleLanguageChange(lang.code)}
                   className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-colors ${
                     language === lang.code
-                      ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-indigo-50 text-indigo-600'
+                      : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <span className="text-lg">{lang.flag}</span>
                   <span>{lang.name}</span>
                   {language === lang.code && (
-                    <span className="ml-auto text-indigo-600 dark:text-indigo-400">✓</span>
+                    <span className="ml-auto text-indigo-600">✓</span>
                   )}
                 </button>
               ))}
@@ -83,7 +83,7 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
         aria-label="Change language"
       >
         <FiGlobe className="w-5 h-5" />
@@ -97,8 +97,8 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           ></div>
-          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50 max-h-96 overflow-y-auto">
-            <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-gray-800">
+          <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 max-h-96 overflow-y-auto">
+            <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 bg-white">
               {t('selectLanguage')}
             </div>
             {languages.map((lang) => (
@@ -107,14 +107,14 @@ const LanguageSwitcher = ({ variant = 'default', onGradient = false }) => {
                 onClick={() => handleLanguageChange(lang.code)}
                 className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-colors ${
                   language === lang.code
-                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-indigo-50 text-indigo-600'
+                    : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <span className="text-lg">{lang.flag}</span>
                 <span>{lang.name}</span>
                 {language === lang.code && (
-                  <span className="ml-auto text-indigo-600 dark:text-indigo-400">✓</span>
+                  <span className="ml-auto text-indigo-600">✓</span>
                 )}
               </button>
             ))}

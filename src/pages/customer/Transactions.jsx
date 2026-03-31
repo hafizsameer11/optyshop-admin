@@ -4,7 +4,8 @@
  * Uses access_token (customer token) not admin_token
  */
 import React, { useState, useEffect } from 'react';
-import { FiDollarSign, FiEye, FiFilter, FiDownload, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiEye, FiFilter, FiDownload, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import customerApi from '../../utils/customerApi';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../../config/apiRoutes';
@@ -199,7 +200,7 @@ const CustomerTransactions = () => {
       {/* Transactions List */}
       {transactions.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <FiDollarSign className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <FaEuroSign className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Transactions Found</h3>
           <p className="text-gray-600">You haven't made any transactions yet.</p>
         </div>
@@ -261,11 +262,11 @@ const CustomerTransactions = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-sm font-semibold text-gray-900">
-                          {transaction.currency || 'USD'} {transaction.amount?.toFixed(2) || '0.00'}
+                          {transaction.currency || 'EUR'} {transaction.amount?.toFixed(2) || '0.00'}
                         </span>
                         {transaction.net_amount && transaction.net_amount !== transaction.amount && (
                           <span className="text-xs text-gray-500">
-                            Net: {transaction.currency || 'USD'} {transaction.net_amount.toFixed(2)}
+                            Net: {transaction.currency || 'EUR'} {transaction.net_amount.toFixed(2)}
                           </span>
                         )}
                       </div>

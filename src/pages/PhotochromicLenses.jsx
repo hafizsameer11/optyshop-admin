@@ -255,7 +255,7 @@ const PhotochromicLenses = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lensId}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lensName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{lensSlug || 'N/A'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${basePrice !== undefined && basePrice !== null ? (parseFloat(basePrice) || 0).toFixed(2) : 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">€{basePrice !== undefined && basePrice !== null ? (parseFloat(basePrice) || 0).toFixed(2) : 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sortOrder}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

@@ -4,7 +4,8 @@
  * Can be used in customer dashboard, order details, etc.
  */
 import React from 'react';
-import { FiDollarSign, FiCheckCircle, FiClock, FiXCircle } from 'react-icons/fi';
+import { FiCheckCircle, FiClock, FiXCircle } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const TransactionSummary = ({ transaction, showOrderLink = true, compact = false }) => {
@@ -49,7 +50,7 @@ const TransactionSummary = ({ transaction, showOrderLink = true, compact = false
           </div>
           <div className="text-right">
             <p className="text-sm font-semibold text-gray-900">
-              {transaction.currency || 'USD'} {transaction.amount?.toFixed(2) || '0.00'}
+              {transaction.currency || 'EUR'} {transaction.amount?.toFixed(2) || '0.00'}
             </p>
             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(transaction.status)}`}>
               {transaction.status}
@@ -65,7 +66,7 @@ const TransactionSummary = ({ transaction, showOrderLink = true, compact = false
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <FiDollarSign className="mr-2" />
+            <FaEuroSign className="mr-2" />
             Transaction Details
           </h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -84,11 +85,11 @@ const TransactionSummary = ({ transaction, showOrderLink = true, compact = false
         <div>
           <p className="text-sm text-gray-600 mb-1">Amount</p>
           <p className="text-xl font-bold text-gray-900">
-            {transaction.currency || 'USD'} {transaction.amount?.toFixed(2) || '0.00'}
+            {transaction.currency || 'EUR'} {transaction.amount?.toFixed(2) || '0.00'}
           </p>
           {transaction.net_amount && transaction.net_amount !== transaction.amount && (
             <p className="text-xs text-gray-500 mt-1">
-              Net: {transaction.currency || 'USD'} {transaction.net_amount.toFixed(2)}
+              Net: {transaction.currency || 'EUR'} {transaction.net_amount.toFixed(2)}
             </p>
           )}
         </div>

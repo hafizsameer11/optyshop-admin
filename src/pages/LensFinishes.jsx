@@ -469,7 +469,7 @@ const LensFinishes = () => {
                       {finish.description || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${finish.price_adjustment !== undefined && finish.price_adjustment !== null ? (parseFloat(finish.price_adjustment) || 0).toFixed(2) : (finish.priceAdjustment !== undefined && finish.priceAdjustment !== null ? (parseFloat(finish.priceAdjustment) || 0).toFixed(2) : 'N/A')}
+                      €{finish.price_adjustment !== undefined && finish.price_adjustment !== null ? (parseFloat(finish.price_adjustment) || 0).toFixed(2) : (finish.priceAdjustment !== undefined && finish.priceAdjustment !== null ? (parseFloat(finish.priceAdjustment) || 0).toFixed(2) : 'N/A')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

@@ -236,7 +236,7 @@ const LensCoatings = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${coating.price_adjustment !== undefined && coating.price_adjustment !== null ? (parseFloat(coating.price_adjustment) || 0).toFixed(2) : (coating.base_price !== undefined && coating.base_price !== null ? (parseFloat(coating.base_price) || 0).toFixed(2) : 'N/A')}
+                      €{coating.price_adjustment !== undefined && coating.price_adjustment !== null ? (parseFloat(coating.price_adjustment) || 0).toFixed(2) : (coating.base_price !== undefined && coating.base_price !== null ? (parseFloat(coating.base_price) || 0).toFixed(2) : 'N/A')}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {coating.description || 'N/A'}

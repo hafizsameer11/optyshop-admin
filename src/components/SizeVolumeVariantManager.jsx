@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload, FiDollarSign, FiPackage } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload, FiPackage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { 
   getProductSizeVolumeVariants,
@@ -222,11 +222,11 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate, on
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            ${variant.price}
+                            €{variant.price}
                           </div>
                           {variant.compare_at_price && (
                             <div className="text-sm text-gray-400 line-through">
-                              ${variant.compare_at_price}
+                              €{variant.compare_at_price}
                             </div>
                           )}
                         </td>

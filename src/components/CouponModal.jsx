@@ -567,7 +567,7 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
                               )}
                             </div>
                             {product.price && (
-                              <span className="text-sm text-gray-600">${parseFloat(product.price).toFixed(2)}</span>
+                              <span className="text-sm text-gray-600">€{parseFloat(product.price).toFixed(2)}</span>
                             )}
                           </label>
                         );

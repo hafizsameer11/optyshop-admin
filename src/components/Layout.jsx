@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { forceLightTheme } from '../utils/theme';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -38,8 +39,12 @@ const Layout = ({ children }) => {
     }
   }, [sidebarOpen]);
 
+  useEffect(() => {
+    forceLightTheme();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       <div 

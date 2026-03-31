@@ -3,7 +3,8 @@
  * Compact widget for customer dashboard showing recent transactions
  */
 import React, { useState, useEffect } from 'react';
-import { FiDollarSign, FiArrowRight, FiCheckCircle, FiClock, FiXCircle } from 'react-icons/fi';
+import { FiArrowRight, FiCheckCircle, FiClock, FiXCircle } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import customerApi from '../../utils/customerApi';
 import { API_ROUTES } from '../../config/apiRoutes';
 import { Link } from 'react-router-dom';
@@ -63,7 +64,7 @@ const TransactionHistoryWidget = ({ limit = 5 }) => {
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <FiDollarSign className="mr-2" />
+          <FaEuroSign className="mr-2" />
           Recent Transactions
         </h3>
         <Link
@@ -77,7 +78,7 @@ const TransactionHistoryWidget = ({ limit = 5 }) => {
 
       {transactions.length === 0 ? (
         <div className="text-center py-8">
-          <FiDollarSign className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+          <FaEuroSign className="w-12 h-12 text-gray-400 mx-auto mb-2" />
           <p className="text-sm text-gray-500">No transactions yet</p>
         </div>
       ) : (
@@ -100,7 +101,7 @@ const TransactionHistoryWidget = ({ limit = 5 }) => {
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold text-gray-900">
-                  {transaction.currency || 'USD'} {transaction.amount?.toFixed(2) || '0.00'}
+                  {transaction.currency || 'EUR'} {transaction.amount?.toFixed(2) || '0.00'}
                 </p>
                 {transaction.order_id && (
                   <Link

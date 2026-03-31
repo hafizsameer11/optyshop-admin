@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiShoppingBag, FiShoppingCart, FiUsers, FiDollarSign,
+  FiShoppingBag, FiShoppingCart, FiUsers,
   FiTrendingUp, FiClock, FiEye, FiAlertCircle, FiActivity,
   FiArrowUp, FiArrowDown
 } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -159,7 +160,7 @@ const Dashboard = () => {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between space-y-4 md:space-y-0 pb-4 border-b border-gray-200/50">
         <div>
-          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight font-display">
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight font-display">
             {t('dashboard')}
           </h1>
           <p className="text-gray-500 mt-1 font-medium">{t('welcomeBack')}</p>
@@ -179,8 +180,8 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title={t('totalRevenue')}
-          value={`$${stats.totalRevenue?.toLocaleString() || 0}`}
-          icon={FiDollarSign}
+          value={`€${stats.totalRevenue?.toLocaleString() || 0}`}
+          icon={FaEuroSign}
           gradient="bg-gradient-to-br from-emerald-400 to-teal-600"
           trend={12.5}
         />
@@ -218,7 +219,7 @@ const Dashboard = () => {
                 <h2 className="text-xl font-bold text-gray-800">{t('revenueAnalytics')}</h2>
                 <p className="text-sm text-gray-500">{t('monthlyRevenuePerformance')}</p>
               </div>
-              <select className="bg-gray-50 border-none text-sm font-medium text-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-100 cursor-pointer py-2 px-4 shadow-sm">
+              <select className="bg-gray-50 border border-gray-200 text-sm font-medium text-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-100 cursor-pointer py-2 px-4 shadow-sm">
                 <option>Last 30 Days</option>
                 <option>Last 6 Months</option>
                 <option>Year to Date</option>
@@ -238,13 +239,13 @@ const Dashboard = () => {
                   ];
                 }
 
-                const maxVal = Math.max(...trend.map(t => t.revenue));
+                const maxVal = Math.max(...trend.map(t => t.revenue), 1);
 
                 return trend.map((item, i) => (
                   <div key={i} className="flex flex-col items-center flex-1 group">
-                    <div className="relative w-full flex items-end justify-center h-48 bg-gray-50 rounded-xl overflow-hidden group-hover:bg-indigo-50 transition-colors">
+                    <div className="relative w-full flex items-end justify-center h-48 bg-indigo-50/80 rounded-xl overflow-hidden group-hover:bg-indigo-100/80 transition-colors border border-indigo-100/60">
                       <div
-                        className="w-full max-w-[24px] md:max-w-[40px] bg-indigo-500 rounded-t-sm opacity-80 group-hover:opacity-100 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(99,102,241,0.3)]"
+                        className="w-full max-w-[24px] md:max-w-[40px] bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t-sm opacity-90 group-hover:opacity-100 transition-all duration-500 ease-out shadow-md shadow-indigo-500/40"
                         style={{
                           height: `${(item.revenue / maxVal) * 100}%`,
                           animationDelay: `${i * 100}ms`
@@ -252,10 +253,10 @@ const Dashboard = () => {
                       />
                       {/* Tooltip */}
                       <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs py-1 px-2 rounded pointer-events-none transform -translate-y-2 group-hover:translate-y-0 duration-200">
-                        ${item.revenue.toLocaleString()}
+                        €{item.revenue.toLocaleString()}
                       </div>
                     </div>
-                    <span className="text-xs font-medium text-gray-400 mt-3 group-hover:text-indigo-600 transition-colors">{item.label}</span>
+                    <span className="text-xs font-medium text-gray-600 mt-3 group-hover:text-indigo-700 transition-colors">{item.label}</span>
                   </div>
                 ));
               })()}
@@ -305,7 +306,7 @@ const Dashboard = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm font-bold text-gray-900">${order.total_amount}</span>
+                          <span className="text-sm font-bold text-gray-900">€{order.total_amount}</span>
                         </td>
                         <td className="px-6 py-4 text-gray-500 text-sm">
                           {new Date(order.created_at || Date.now()).toLocaleDateString()}
@@ -415,7 +416,7 @@ const Dashboard = () => {
                       <p className="text-sm font-semibold text-gray-800">{frame.name}</p>
                       <p className="text-xs text-gray-500">{frame.sales} sales this month</p>
                     </div>
-                    <span className="text-sm font-bold text-indigo-600">${frame.revenue?.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-indigo-600">€{frame.revenue?.toLocaleString()}</span>
                   </div>
                 ))
               ) : (
@@ -426,7 +427,7 @@ const Dashboard = () => {
                       <p className="text-sm font-semibold text-gray-800">Classic Ray-Ban {i + 1}</p>
                       <p className="text-xs text-gray-500">2{i} sales this month</p>
                     </div>
-                    <span className="text-sm font-bold text-indigo-600">$1,2{i}0</span>
+                    <span className="text-sm font-bold text-indigo-600">€1,2{i}0</span>
                   </div>
                 ))
               )}

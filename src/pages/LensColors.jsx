@@ -487,7 +487,7 @@ const LensColors = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${priceAdjustment !== undefined && priceAdjustment !== null ? (parseFloat(priceAdjustment) || 0).toFixed(2) : 'N/A'}
+                        €{priceAdjustment !== undefined && priceAdjustment !== null ? (parseFloat(priceAdjustment) || 0).toFixed(2) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

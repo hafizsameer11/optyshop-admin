@@ -178,7 +178,7 @@ const ShippingMethods = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{method.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{method.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{method.type || 'N/A'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${method.price || '0.00'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">€{method.price || '0.00'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{method.estimatedDays || method.estimated_days || 'N/A'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

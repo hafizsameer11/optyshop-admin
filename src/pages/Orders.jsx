@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiEye, FiPackage, FiSearch, FiPlus, FiDollarSign } from 'react-icons/fi';
+import { FiEye, FiPackage, FiSearch, FiPlus } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import OrderModal from '../components/OrderModal';
@@ -373,7 +374,7 @@ const Orders = () => {
                       {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${order.total || order.total_amount || '0.00'}
+                      €{order.total || order.total_amount || '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -407,7 +408,7 @@ const Orders = () => {
                           className="text-blue-600 hover:text-blue-900"
                           title="View transactions for this order"
                         >
-                          <FiDollarSign />
+                          <FaEuroSign />
                         </a>
                       </div>
                     </td>

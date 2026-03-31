@@ -256,7 +256,7 @@ const LensTreatments = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${treatment.price !== undefined && treatment.price !== null ? (parseFloat(treatment.price) || 0).toFixed(2) : 'N/A'}
+                      €{treatment.price !== undefined && treatment.price !== null ? (parseFloat(treatment.price) || 0).toFixed(2) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {treatment.description || 'N/A'}

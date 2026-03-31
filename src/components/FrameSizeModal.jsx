@@ -230,7 +230,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
                     <p className="font-medium text-indigo-900">{selectedProduct.name}</p>
                     <p className="text-sm text-indigo-700">
                       {selectedProduct.product_code && `Code: ${selectedProduct.product_code}`}
-                      {selectedProduct.price && ` • Price: $${selectedProduct.price}`}
+                      {selectedProduct.price && ` • Price: €${selectedProduct.price}`}
                     </p>
                   </div>
                   <button
@@ -296,7 +296,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
                             {product.product_code || '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-500">
-                            {product.price ? `$${product.price}` : '-'}
+                            {product.price ? `€${product.price}` : '-'}
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

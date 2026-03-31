@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload, FiDollarSign, FiPackage } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload, FiPackage } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { 
   getEyeHygieneVariants,
@@ -332,7 +333,7 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
                   Price ($) *
                 </label>
                 <div className="relative">
-                  <FiDollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <FaEuroSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="number"
                     step="0.01"
@@ -428,7 +429,7 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
                   />
                   <div>
                     <p className="font-medium text-gray-900">{formData.name || 'Unnamed Variant'}</p>
-                    <p className="text-sm text-gray-600">${formData.price || '0.00'}</p>
+                    <p className="text-sm text-gray-600">€{formData.price || '0.00'}</p>
                   </div>
                 </div>
               </div>
@@ -519,7 +520,7 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
                         <p className="text-sm text-gray-600 mb-2">{variant.description}</p>
                       )}
                       <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span className="font-medium text-gray-900">${variant.price}</span>
+                        <span className="font-medium text-gray-900">€{variant.price}</span>
                         <span>Order: {variant.sort_order}</span>
                       </div>
                     </div>

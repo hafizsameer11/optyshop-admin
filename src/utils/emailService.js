@@ -270,7 +270,7 @@ export const sendOrderStatusUpdateEmail = async (order, previousStatus = null) =
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Total Amount:</td>
-              <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">$${orderData.total}</td>
+              <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">€${orderData.total}</td>
             </tr>
           </table>
         </div>
@@ -315,7 +315,7 @@ Your order ${orderData.orderNumber} status has been updated to: ${statusLabel}
 Order Details:
 - Order Number: ${orderData.orderNumber}
 - Order Date: ${orderData.createdAt}
-- Total Amount: $${orderData.total}
+- Total Amount: €${orderData.total}
 
 ${orderData.shippingAddress ? `
 Shipping Address:
@@ -376,7 +376,7 @@ export const sendOrderRefundEmail = async (order, refundAmount = null, refundRea
             Refund Amount
           </p>
           <p style="margin: 10px 0 0 0; color: #78350F; font-size: 28px; font-weight: bold;">
-            $${refundAmountDisplay}
+            €${refundAmountDisplay}
           </p>
         </div>
         
@@ -398,7 +398,7 @@ export const sendOrderRefundEmail = async (order, refundAmount = null, refundRea
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Original Amount:</td>
-              <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">$${orderData.total}</td>
+              <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">€${orderData.total}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Payment Method:</td>
@@ -439,12 +439,12 @@ Hello ${orderData.customerName || 'Customer'},
 
 We have processed a refund for your order ${orderData.orderNumber}.
 
-Refund Amount: $${refundAmountDisplay}
+Refund Amount: €${refundAmountDisplay}
 
 ${refundReason ? `Refund Reason: ${refundReason}\n` : ''}
 Order Details:
 - Order Number: ${orderData.orderNumber}
-- Original Amount: $${orderData.total}
+- Original Amount: €${orderData.total}
 - Payment Method: ${order.payment_method || 'N/A'}
 
 Important: The refund will be processed to your original payment method. 
@@ -645,7 +645,7 @@ export const sendOrderCancellationEmail = async (order, cancellationReason = nul
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Amount:</td>
-              <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">$${orderData.total}</td>
+              <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">€${orderData.total}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Payment Method:</td>
@@ -694,7 +694,7 @@ ${cancellationReason ? `Cancellation Reason: ${cancellationReason}\n` : ''}
 Order Details:
 - Order Number: ${orderData.orderNumber}
 - Order Date: ${orderData.createdAt}
-- Order Amount: $${orderData.total}
+- Order Amount: €${orderData.total}
 - Payment Method: ${order.payment_method || 'N/A'}
 
 Refund Information:

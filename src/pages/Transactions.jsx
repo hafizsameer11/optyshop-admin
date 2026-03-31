@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiDollarSign, FiEye, FiRefreshCw, FiFilter, FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
+import { FiEye, FiRefreshCw, FiFilter, FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -226,7 +227,7 @@ const Transactions = () => {
           onClick={() => setCreateModalOpen(true)}
           className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
         >
-          <FiDollarSign />
+          <FaEuroSign />
           <span>Create Transaction</span>
         </button>
       </div>
@@ -241,15 +242,15 @@ const Transactions = () => {
                 <div>
                   <p className="text-sm text-gray-600">Total Revenue (Net)</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    ${stats.totalRevenue?.toFixed(2) || stats.netRevenue?.toFixed(2) || stats.stats?.totalRevenue?.toFixed(2) || '0.00'}
+                    €{stats.totalRevenue?.toFixed(2) || stats.netRevenue?.toFixed(2) || stats.stats?.totalRevenue?.toFixed(2) || '0.00'}
                   </p>
                   {stats.totalAmount && stats.totalFees && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Gross: ${(stats.totalAmount + stats.totalFees).toFixed(2)} | Fees: ${stats.totalFees.toFixed(2)}
+                      Gross: €{(stats.totalAmount + stats.totalFees).toFixed(2)} | Fees: €{stats.totalFees.toFixed(2)}
                     </p>
                   )}
                 </div>
-                <FiDollarSign className="w-8 h-8 text-green-500" />
+                <FaEuroSign className="w-8 h-8 text-green-500" />
               </div>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
@@ -296,7 +297,7 @@ const Transactions = () => {
                   <div key={index} className="bg-gray-50 rounded-lg p-4">
                     <p className="text-sm font-medium text-gray-700 capitalize">{method.method || 'N/A'}</p>
                     <p className="text-xl font-bold text-gray-900 mt-1">{method.count || 0}</p>
-                    <p className="text-xs text-gray-500 mt-1">${(method.totalAmount || 0).toFixed(2)}</p>
+                    <p className="text-xs text-gray-500 mt-1">€{(method.totalAmount || 0).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -497,21 +498,21 @@ const Transactions = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex flex-col">
                         <span className="font-semibold text-gray-900">
-                          {transaction.currency || 'USD'} {transaction.amount?.toFixed(2) || '0.00'}
+                          {transaction.currency || 'EUR'} {transaction.amount?.toFixed(2) || '0.00'}
                         </span>
                         {transaction.gateway_fee && transaction.gateway_fee > 0 && (
                           <span className="text-xs text-gray-500">
-                            Fee: {transaction.currency || 'USD'} {transaction.gateway_fee.toFixed(2)}
+                            Fee: {transaction.currency || 'EUR'} {transaction.gateway_fee.toFixed(2)}
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-700">
                       {transaction.net_amount !== undefined && transaction.net_amount !== null
-                        ? `${transaction.currency || 'USD'} ${transaction.net_amount.toFixed(2)}`
+                        ? `${transaction.currency || 'EUR'} ${transaction.net_amount.toFixed(2)}`
                         : transaction.gateway_fee && transaction.gateway_fee > 0
-                        ? `${transaction.currency || 'USD'} ${((transaction.amount || 0) - transaction.gateway_fee).toFixed(2)}`
-                        : `${transaction.currency || 'USD'} ${transaction.amount?.toFixed(2) || '0.00'}`}
+                        ? `${transaction.currency || 'EUR'} ${((transaction.amount || 0) - transaction.gateway_fee).toFixed(2)}`
+                        : `${transaction.currency || 'EUR'} ${transaction.amount?.toFixed(2) || '0.00'}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeColor(transaction.type)}`}>
@@ -636,14 +637,14 @@ const Transactions = () => {
                     <div>
                       <p className="text-sm text-gray-600">Gross Amount</p>
                       <p className="font-semibold text-lg">
-                        {selectedTransaction.currency || 'USD'} {selectedTransaction.amount?.toFixed(2) || '0.00'}
+                        {selectedTransaction.currency || 'EUR'} {selectedTransaction.amount?.toFixed(2) || '0.00'}
                       </p>
                     </div>
                     {selectedTransaction.gateway_fee && selectedTransaction.gateway_fee > 0 && (
                       <div>
                         <p className="text-sm text-gray-600">Gateway Fee</p>
                         <p className="font-semibold text-red-600">
-                          - {selectedTransaction.currency || 'USD'} {selectedTransaction.gateway_fee.toFixed(2)}
+                          - {selectedTransaction.currency || 'EUR'} {selectedTransaction.gateway_fee.toFixed(2)}
                         </p>
                       </div>
                     )}
@@ -652,10 +653,10 @@ const Transactions = () => {
                         <p className="text-sm font-semibold text-gray-700">Net Amount</p>
                         <p className="font-bold text-lg text-green-700">
                           {selectedTransaction.net_amount !== undefined && selectedTransaction.net_amount !== null
-                            ? `${selectedTransaction.currency || 'USD'} ${selectedTransaction.net_amount.toFixed(2)}`
+                            ? `${selectedTransaction.currency || 'EUR'} ${selectedTransaction.net_amount.toFixed(2)}`
                             : selectedTransaction.gateway_fee && selectedTransaction.gateway_fee > 0
-                            ? `${selectedTransaction.currency || 'USD'} ${((selectedTransaction.amount || 0) - selectedTransaction.gateway_fee).toFixed(2)}`
-                            : `${selectedTransaction.currency || 'USD'} ${selectedTransaction.amount?.toFixed(2) || '0.00'}`}
+                            ? `${selectedTransaction.currency || 'EUR'} ${((selectedTransaction.amount || 0) - selectedTransaction.gateway_fee).toFixed(2)}`
+                            : `${selectedTransaction.currency || 'EUR'} ${selectedTransaction.amount?.toFixed(2) || '0.00'}`}
                         </p>
                       </div>
                     </div>
@@ -799,7 +800,7 @@ const CreateTransactionModal = ({ onClose, onSubmit }) => {
     status: 'completed',
     payment_method: 'stripe',
     amount: '',
-    currency: 'USD',
+    currency: 'EUR',
     gateway_transaction_id: '',
     gateway_fee: '',
     description: '',
@@ -962,8 +963,8 @@ const CreateTransactionModal = ({ onClose, onSubmit }) => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
                   <option value="GBP">GBP</option>
                 </select>
               </div>

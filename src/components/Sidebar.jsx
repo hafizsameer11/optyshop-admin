@@ -6,32 +6,22 @@ import {
   FiShoppingCart,
   FiUsers,
   FiGrid,
-  FiLayers,
-  FiEye,
-  FiTag,
   FiFileText,
   FiTrendingUp,
-  FiSettings,
   FiImage,
   FiMessageSquare,
   FiFile,
   FiStar,
   FiZap,
-  FiBox,
   FiX,
   FiChevronDown,
-  FiChevronRight,
   FiInbox,
   FiBriefcase,
   FiDollarSign,
   FiBarChart2,
-  FiGlobe,
-  FiDroplet,
-  FiShield,
-  FiPackage,
   FiFolder,
   FiFolderPlus,
-  FiAperture,
+  FiTag,
   FiActivity,
   FiTruck,
   FiLogOut,
@@ -194,7 +184,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -202,30 +191,28 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-indigo-600 via-purple-600 to-pink-500 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-r border-indigo-500/20 dark:border-gray-700 shadow-2xl z-50 transition-all duration-300 ease-in-out ${isOpen
+        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-xl z-50 transition-all duration-300 ease-in-out ${isOpen
             ? 'w-72 translate-x-0'
             : 'w-20 -translate-x-full lg:translate-x-0'
           }`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo Section */}
-          <div className="flex items-center justify-between h-20 px-4 border-b border-white/10 backdrop-blur-sm bg-white/5">
+          <div className="flex items-center justify-between h-20 px-4 border-b border-gray-200 bg-gray-50/90">
             <div className={`flex items-center gap-3 ${!isOpen && 'lg:justify-center w-full'}`}>
-              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md shadow-lg border border-white/30 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-bold text-xl">O</span>
               </div>
               {isOpen && (
                 <div className="min-w-0">
-                  <h1 className="text-xl font-bold text-white drop-shadow-lg">OptyShop</h1>
-                  <p className="text-xs text-white/80 font-medium">{t('adminPanel')}</p>
+                  <h1 className="text-xl font-bold text-gray-900">OptyShop</h1>
+                  <p className="text-xs text-gray-500 font-medium">{t('adminPanel')}</p>
                 </div>
               )}
             </div>
             <button
               onClick={toggleSidebar}
-              className={`p-2 rounded-lg text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200 ${!isOpen && 'lg:mx-auto'}`}
+              className={`p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200 ${!isOpen && 'lg:mx-auto'}`}
               aria-label="Toggle sidebar"
             >
               {isOpen ? (
@@ -236,19 +223,18 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4 px-3 sidebar-scrollbar">
+          <nav className="flex-1 overflow-y-auto py-4 px-3 sidebar-scrollbar-light">
             <div className="space-y-1">
               {menuSections.map((section, index) => {
                 if (section.type === 'divider') {
                   return isOpen ? (
                     <div key={`divider-${index}`} className="px-4 py-3 mt-4">
-                      <p className="text-xs font-bold text-white/60 uppercase tracking-widest">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                         {section.label}
                       </p>
                     </div>
                   ) : (
-                    <div key={`divider-${index}`} className="h-px bg-white/10 my-3"></div>
+                    <div key={`divider-${index}`} className="h-px bg-gray-200 my-3"></div>
                   );
                 }
 
@@ -261,14 +247,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                       key={path}
                       to={path}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
-                          ? 'bg-white/20 backdrop-blur-md text-white shadow-lg border border-white/30'
-                          : 'text-white/80 hover:bg-white/10 hover:text-white'
+                          ? 'bg-indigo-50 text-indigo-800 shadow-sm border border-indigo-100'
+                          : 'text-gray-700 hover:bg-gray-50'
                         } ${!isOpen && 'lg:justify-center'}`}
                       title={!isOpen ? label : ''}
                     >
-                      <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-white/70'}`} />
+                      <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-indigo-600' : 'text-gray-500'}`} />
                       {isOpen && (
-                        <span className={`text-sm font-medium ${active ? 'font-semibold text-white' : ''}`}>
+                        <span className={`text-sm font-medium ${active ? 'font-semibold' : ''}`}>
                           {label}
                         </span>
                       )}
@@ -284,30 +270,31 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   return (
                     <div key={key}>
                       <button
+                        type="button"
                         onClick={() => toggleSubmenu(key)}
                         className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${hasActiveChild
-                            ? 'bg-white/20 backdrop-blur-md text-white shadow-lg border border-white/30'
-                            : 'text-white/80 hover:bg-white/10 hover:text-white'
+                            ? 'bg-indigo-50 text-indigo-800 shadow-sm border border-indigo-100'
+                            : 'text-gray-700 hover:bg-gray-50'
                           } ${!isOpen && 'lg:justify-center'}`}
                         title={!isOpen ? label : ''}
                       >
                         <div className="flex items-center gap-3">
-                          <Icon className={`w-5 h-5 flex-shrink-0 ${hasActiveChild ? 'text-white' : 'text-white/70'}`} />
+                          <Icon className={`w-5 h-5 flex-shrink-0 ${hasActiveChild ? 'text-indigo-600' : 'text-gray-500'}`} />
                           {isOpen && (
-                            <span className={`text-sm font-medium ${hasActiveChild ? 'font-semibold text-white' : ''}`}>
+                            <span className={`text-sm font-medium ${hasActiveChild ? 'font-semibold' : ''}`}>
                               {label}
                             </span>
                           )}
                         </div>
                         {isOpen && (
                           <FiChevronDown
-                            className={`w-4 h-4 transition-transform text-white/70 ${isOpenSubmenu ? 'rotate-180' : ''}`}
+                            className={`w-4 h-4 transition-transform text-gray-500 ${isOpenSubmenu ? 'rotate-180' : ''}`}
                           />
                         )}
                       </button>
 
                       {isOpen && isOpenSubmenu && children && (
-                        <div className="ml-6 mt-2 space-y-1 border-l-2 border-white/20 pl-4">
+                        <div className="ml-6 mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
                           {children.map((child) => {
                             const childActive = isActive(child.path);
                             const ChildIcon = child.icon || FiFile;
@@ -317,8 +304,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                 key={child.path}
                                 to={child.path}
                                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${childActive
-                                    ? 'bg-white/15 text-white shadow-md border border-white/20 font-semibold'
-                                    : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                    ? 'bg-indigo-50 text-indigo-800 border border-indigo-100 font-semibold'
+                                    : 'text-gray-600 hover:bg-gray-50'
                                   }`}
                               >
                                 <ChildIcon className="w-4 h-4 flex-shrink-0" />
@@ -339,26 +326,26 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             </div>
           </nav>
 
-          {/* User Section & Logout */}
-          <div className="border-t border-white/10 p-4 mt-auto backdrop-blur-sm bg-white/5">
+          <div className="border-t border-gray-200 p-4 mt-auto bg-gray-50/80">
             {isOpen && user && (
               <div className="mb-3 px-2">
-                <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg">
-                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-semibold text-base flex-shrink-0 border border-white/30 shadow-md">
+                <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-base flex-shrink-0">
                     {user?.first_name?.charAt(0) || 'U'}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-white truncate drop-shadow-sm">
+                    <p className="text-sm font-bold text-gray-900 truncate">
                       {user?.first_name} {user?.last_name}
                     </p>
-                    <p className="text-xs text-white/80 font-medium">{t('administrator')}</p>
+                    <p className="text-xs text-gray-500 font-medium">{t('administrator')}</p>
                   </div>
                 </div>
               </div>
             )}
             <button
+              type="button"
               onClick={logout}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-white bg-gradient-to-r from-red-500/80 to-red-600/80 hover:from-red-500 hover:to-red-600 border border-red-400/30 hover:border-red-400/50 shadow-lg hover:shadow-xl backdrop-blur-sm ${!isOpen && 'lg:justify-center'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-white bg-red-600 hover:bg-red-700 shadow-md ${!isOpen && 'lg:justify-center'
                 }`}
               title={!isOpen ? t('logout') : ''}
             >

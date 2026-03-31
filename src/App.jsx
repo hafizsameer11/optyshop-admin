@@ -64,6 +64,7 @@ import PrescriptionFormDropdownValues from './pages/prescription-forms/Prescript
 
 // Layout
 import Layout from './components/Layout';
+import ThemeSync from './components/ThemeSync';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -89,6 +90,7 @@ function App() {
       <AuthProvider>
         <NavigationProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <ThemeSync />
             <Toaster position="top-right" />
             <Routes>
               <Route path="/login" element={<Login />} />

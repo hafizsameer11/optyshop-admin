@@ -663,7 +663,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
                 <option value="">No Product Assigned</option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
-                    {product.name} {product.sku ? `(${product.sku})` : ''} - ${product.price || '0.00'}
+                    {product.name} {product.sku ? `(${product.sku})` : ''} - €{product.price || '0.00'}
                   </option>
                 ))}
               </select>
@@ -757,7 +757,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
                   </p>
                   <ol className="text-sm text-gray-700 space-y-1 ml-4 list-decimal">
                     <li>Units are set in <strong>Available Units</strong> field above (e.g., 10, 20, 30)</li>
-                    <li>Set different prices and images for each unit (e.g., Unit 10: $32, Unit 20: $60, Unit 30: $90)</li>
+                    <li>Set different prices and images for each unit (e.g., Unit 10: €32, Unit 20: €60, Unit 30: €90)</li>
                     <li>When a customer selects a unit on the website, the price and images update automatically</li>
                     <li>The website calls <code className="bg-white px-1 rounded text-xs">GET /api/contact-lens-forms/config/:id/unit/:unit</code> to get unit-specific data</li>
                     <li><strong>Units are independent from qty:</strong> Units = pack sizes, Qty = right/left eye quantity in form</li>
@@ -851,7 +851,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
                               />
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                              Leave empty to use base price ({formData.price ? `$${formData.price}` : 'not set'})
+                              Leave empty to use base price ({formData.price ? `€${formData.price}` : 'not set'})
                             </p>
                           </div>
 

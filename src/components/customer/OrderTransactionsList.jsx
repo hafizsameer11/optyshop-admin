@@ -4,7 +4,8 @@
  * Handles multiple transactions per order (payments, refunds, chargebacks)
  */
 import React, { useState, useEffect } from 'react';
-import { FiDollarSign, FiArrowDown, FiArrowUp, FiRefreshCw } from 'react-icons/fi';
+import { FiArrowDown, FiArrowUp, FiRefreshCw } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import customerApi from '../../utils/customerApi';
 import { API_ROUTES } from '../../config/apiRoutes';
 import TransactionSummary from './TransactionSummary';
@@ -60,7 +61,7 @@ const OrderTransactionsList = ({ orderId, orderTotal }) => {
       case 'chargeback':
         return <FiArrowUp className="w-5 h-5 text-red-600" />;
       default:
-        return <FiDollarSign className="w-5 h-5 text-gray-600" />;
+        return <FaEuroSign className="w-5 h-5 text-gray-600" />;
     }
   };
 
@@ -94,7 +95,7 @@ const OrderTransactionsList = ({ orderId, orderTotal }) => {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <FiDollarSign className="mr-2" />
+          <FaEuroSign className="mr-2" />
           Payment Transactions
         </h3>
         <p className="text-gray-500 text-sm">No transactions found for this order.</p>
@@ -112,7 +113,7 @@ const OrderTransactionsList = ({ orderId, orderTotal }) => {
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <FiDollarSign className="mr-2" />
+          <FaEuroSign className="mr-2" />
           Payment Transactions
         </h3>
         <button
@@ -155,7 +156,7 @@ const OrderTransactionsList = ({ orderId, orderTotal }) => {
                       transaction.type === 'payment' ? 'text-green-700' : 'text-red-700'
                     }`}>
                       {transaction.type === 'payment' ? '+' : '-'}
-                      {transaction.currency || 'USD'} {transaction.amount?.toFixed(2) || '0.00'}
+                      {transaction.currency || 'EUR'} {transaction.amount?.toFixed(2) || '0.00'}
                     </p>
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
@@ -194,7 +195,7 @@ const OrderTransactionsList = ({ orderId, orderTotal }) => {
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Order Total:</span>
             <span className="text-lg font-semibold text-gray-900">
-              {transactions[0]?.currency || 'USD'} {orderTotal?.toFixed(2) || '0.00'}
+              {transactions[0]?.currency || 'EUR'} {orderTotal?.toFixed(2) || '0.00'}
             </span>
           </div>
           
@@ -205,7 +206,7 @@ const OrderTransactionsList = ({ orderId, orderTotal }) => {
                 <span className={`text-xl font-bold ${
                   netAmount >= 0 ? 'text-green-700' : 'text-red-700'
                 }`}>
-                  {transactions[0]?.currency || 'USD'} {Math.abs(netAmount).toFixed(2)}
+                  {transactions[0]?.currency || 'EUR'} {Math.abs(netAmount).toFixed(2)}
                 </span>
               </div>
               {netAmount < 0 && (

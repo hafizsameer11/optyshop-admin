@@ -3971,7 +3971,7 @@ const ProductModal = ({ product, onClose }) => {
                       item.name || 'N/A',
                       item.slug || 'N/A',
                       item.type || 'N/A',
-                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      item.base_price ? `€${item.base_price}` : 'N/A',
                       <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {item.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
@@ -4016,7 +4016,7 @@ const ProductModal = ({ product, onClose }) => {
                       item.name || 'N/A',
                       item.slug || 'N/A',
                       item.type || 'N/A',
-                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      item.base_price ? `€${item.base_price}` : 'N/A',
                       <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {item.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
@@ -4060,7 +4060,7 @@ const ProductModal = ({ product, onClose }) => {
                       item.id,
                       item.name || 'N/A',
                       item.slug || 'N/A',
-                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      item.base_price ? `€${item.base_price}` : 'N/A',
                       <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {item.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
@@ -4104,7 +4104,7 @@ const ProductModal = ({ product, onClose }) => {
                       item.id,
                       item.name || 'N/A',
                       item.slug || 'N/A',
-                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      item.base_price ? `€${item.base_price}` : 'N/A',
                       <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {item.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
@@ -4197,7 +4197,7 @@ const ProductModal = ({ product, onClose }) => {
                       item.id,
                       item.name || 'N/A',
                       item.slug || 'N/A',
-                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      item.base_price ? `€${item.base_price}` : 'N/A',
                       <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {item.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
@@ -4241,7 +4241,7 @@ const ProductModal = ({ product, onClose }) => {
                       item.id,
                       item.name || 'N/A',
                       item.slug || 'N/A',
-                      item.base_price ? `$${item.base_price}` : 'N/A',
+                      item.base_price ? `€${item.base_price}` : 'N/A',
                       <span key="status" className={`px-2 py-1 rounded text-xs ${item.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {item.is_active !== false ? 'Active' : 'Inactive'}
                       </span>
@@ -4907,7 +4907,7 @@ const ProductModal = ({ product, onClose }) => {
                               <tr key={config.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
                                 <td className="px-4 py-3 text-sm text-gray-700">{displayName}</td>
-                                <td className="px-4 py-3 text-sm text-gray-700">${price}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700">€{price}</td>
                                 <td className="px-4 py-3">
                                   <span className={`px-2 py-1 rounded text-xs ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     {isActive ? 'Active' : 'Inactive'}
@@ -4996,7 +4996,7 @@ const ProductModal = ({ product, onClose }) => {
                               <tr key={config.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-sm text-gray-900">{config.name || 'N/A'}</td>
                                 <td className="px-4 py-3 text-sm text-gray-700">{displayName}</td>
-                                <td className="px-4 py-3 text-sm text-gray-700">${price}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700">€{price}</td>
                                 <td className="px-4 py-3">
                                   <span className={`px-2 py-1 rounded text-xs ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     {isActive ? 'Active' : 'Inactive'}

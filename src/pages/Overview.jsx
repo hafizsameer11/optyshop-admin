@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiTrendingUp, FiShoppingCart, FiUsers, FiPackage, FiDollarSign, FiActivity } from 'react-icons/fi';
+import { FiTrendingUp, FiShoppingCart, FiUsers, FiPackage, FiActivity } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -64,10 +65,10 @@ const Overview = () => {
               <div>
                 <p className="text-sm text-gray-600">Total Revenue</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ${overview.summary.totalRevenue?.toFixed(2) || overview.summary.revenue?.toFixed(2) || '0.00'}
+                  €{overview.summary.totalRevenue?.toFixed(2) || overview.summary.revenue?.toFixed(2) || '0.00'}
                 </p>
               </div>
-              <FiDollarSign className="w-8 h-8 text-green-500" />
+              <FaEuroSign className="w-8 h-8 text-green-500" />
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
@@ -122,7 +123,7 @@ const Overview = () => {
                       {item.period || item.date || item.month || `Period ${index + 1}`}
                     </span>
                     <span className="text-sm font-semibold text-gray-900">
-                      ${item.revenue?.toFixed(2) || item.amount?.toFixed(2) || '0.00'}
+                      €{item.revenue?.toFixed(2) || item.amount?.toFixed(2) || '0.00'}
                     </span>
                   </div>
                 ))}
@@ -215,7 +216,7 @@ const Overview = () => {
                   </p>
                   {frame.revenue && (
                     <p className="text-xs text-gray-600">
-                      Revenue: ${frame.revenue.toFixed(2)}
+                      Revenue: €{frame.revenue.toFixed(2)}
                     </p>
                   )}
                 </div>

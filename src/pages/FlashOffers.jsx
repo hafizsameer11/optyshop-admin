@@ -185,7 +185,7 @@ const FlashOffers = () => {
                       {offer.discount_value ? (
                         offer.discount_type === 'percentage' 
                           ? `${offer.discount_value}%`
-                          : `$${offer.discount_value}`
+                          : `€${offer.discount_value}`
                       ) : offer.discount_percentage ? (
                         `${offer.discount_percentage}%`
                       ) : (

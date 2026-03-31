@@ -8,6 +8,11 @@
   min-height: 100vh;
 }
 
+/* react-hot-toast: stay above modals (admin uses z-[9999]–z-[10000]) */
+[data-rht-toaster] {
+  z-index: 200000 !important;
+}
+
 @layer base {
   * {
     @apply box-border;

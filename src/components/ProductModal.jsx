@@ -149,89 +149,20 @@ const ProductModal = ({ product, onClose }) => {
     };
   };
 
-  // SKU Generation function for all product types
-  const generateSKU = () => {
-    // Get brand name from brands array (IDs may be string or number from API / <select>)
-    const selectedBrand = brands.find(
-      (brand) => String(brand.id) === String(formData.brand_id ?? '')
-    );
-    const brandCode = (selectedBrand?.name || '').trim();
-
-    // Convert brand name to initials (e.g., Ray-Ban or Ray Ban -> RB)
-    const brandAbbreviation = brandCode
-      .split(/[\s-]+/)
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join('');
-    
-    const model = formData.model_name || '';
-    const lensWidth = formData.lens_width || '';
-    const frameColor = formData.frame_color || '';
-    
-    // Check product type to determine format
-    const productType = formData.product_type || 'frame';
-    
-    if (productType === 'prescription_glasses' || productType === 'eyeglasses') {
-      // Prescription glasses format: RB*RX5228*54*17*2000
-      const bridgeWidth = formData.bridge_width || '';
-      
-      if (!brandAbbreviation || !model || !lensWidth || !bridgeWidth || !frameColor) {
-        toast.error('All fields required for prescription glasses SKU: Brand, Model, Lens Width, Bridge Width, Frame Color');
-        return null;
-      }
-      
-      return `${brandAbbreviation}*${model}*${lensWidth}*${bridgeWidth}*${frameColor}`;
-      
-    } else if (productType === 'sunglasses') {
-      // Sunglasses format: RB-RX5228-54-2000-POLARIZED
-      const lensMaterial = formData.lens_material || '';
-      
-      if (!brandAbbreviation || !model || !lensWidth || !frameColor || !lensMaterial) {
-        toast.error('All fields required for sunglasses SKU: Brand, Model, Lens Width, Frame Color, Lens Material');
-        return null;
-      }
-      
-      return `${brandAbbreviation}-${model}-${lensWidth}-${frameColor}-${lensMaterial}`;
-      
-    } else if (productType === 'contact_lenses' || productType === 'contact_lens') {
-      // Contact lenses format: ACUVUE-OASYS-6PK-8.6-14.2 (dropdown uses contact_lens)
-      const packaging = formData.packaging || ''; // e.g., 6PK, 30PK
-      const baseCurve = formData.base_curve || ''; // e.g., 8.6
-      const diameter = formData.diameter || ''; // e.g., 14.2
-      
-      if (!brandAbbreviation || !model || !packaging || !baseCurve || !diameter) {
-        toast.error('All fields required for contact lenses SKU: Brand, Model, Packaging, Base Curve, Diameter');
-        return null;
-      }
-      
-      return `${brandAbbreviation}-${model}-${packaging}-${baseCurve}-${diameter}`;
-      
-    } else if (productType === 'solution' || productType === 'eye_hygiene') {
-      // Solutions format: OPTI-FREE-EXPRESS-355ML
-      const volume = formData.volume || ''; // e.g., 355ML, 300ML
-      
-      if (!brandAbbreviation || !model || !volume) {
-        toast.error('All fields required for solution SKU: Brand, Model, Volume');
-        return null;
-      }
-      
-      return `${brandAbbreviation}-${model}-${volume}`;
-      
+  /** Random unique SKU — no dependency on brand/model sequence */
+  const generateRandomSKU = () => {
+    let suffix = '';
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const bytes = new Uint8Array(8);
+      crypto.getRandomValues(bytes);
+      suffix = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
     } else {
-      // Default format for regular frames
-      if (!brandAbbreviation || !model || !lensWidth || !frameColor) {
-        toast.error('All fields required for SKU generation: Brand, Model, Lens Width, Frame Color');
-        return null;
-      }
-      
-      return `${brandAbbreviation}*${model}*${lensWidth}*${frameColor}`;
+      suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`.toUpperCase();
     }
+    return `SKU-${suffix}`;
   };
 
-  // Legacy function for backward compatibility
-  const generatePrescriptionGlassesSKU = () => {
-    return generateSKU();
-  };
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     name: '',
@@ -586,6 +517,7 @@ const ProductModal = ({ product, onClose }) => {
       console.log('🔄 productToUse after fetchFullProductDetails:', productToUse);
 
       if (productToUse) {
+        setFieldErrors({});
         setFormData({
           name: productToUse.name || '',
           slug: productToUse.slug || '',
@@ -779,6 +711,7 @@ const ProductModal = ({ product, onClose }) => {
     } else {
       console.log('📝 No product provided - initializing empty form for new product');
       // Reset form for new product
+      setFieldErrors({});
       setExistingImages([]);
       setExistingColorImages([]);
       setFormData({
@@ -1023,6 +956,10 @@ const ProductModal = ({ product, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    if (name === 'sku') {
+      setFieldErrors((prev) => (prev.sku ? { ...prev, sku: '' } : prev));
+    }
 
     // If category changes, fetch subcategories and reset subcategory selections
     if (name === 'category_id') {
@@ -1569,6 +1506,7 @@ const ProductModal = ({ product, onClose }) => {
     setLoading(true);
 
     try {
+      setFieldErrors({});
       // Validate required fields
       if (!formData.name || !formData.name.trim()) {
         toast.error('Product name is required');
@@ -1576,7 +1514,7 @@ const ProductModal = ({ product, onClose }) => {
         return;
       }
       if (!formData.sku || !formData.sku.trim()) {
-        toast.error('SKU is required');
+        setFieldErrors({ sku: 'SKU is required' });
         setLoading(false);
         return;
       }
@@ -3524,35 +3462,31 @@ const ProductModal = ({ product, onClose }) => {
                         name="sku"
                         value={formData.sku}
                         onChange={handleChange}
-                        className="input-modern flex-1"
+                        className={`input-modern flex-1 ${fieldErrors.sku ? 'border-red-500 ring-1 ring-red-200 focus:border-red-500 focus:ring-red-200' : ''}`}
                         required
+                        aria-invalid={fieldErrors.sku ? 'true' : undefined}
+                        aria-describedby={fieldErrors.sku ? 'sku-error' : undefined}
                       />
                       <button
                         type="button"
                         onClick={() => {
-                          const generatedSKU = generateSKU();
-                          if (generatedSKU) {
-                            setFormData(prev => ({ ...prev, sku: generatedSKU }));
-                            toast.success('SKU generated successfully!');
-                          }
+                          setFieldErrors((prev) => ({ ...prev, sku: '' }));
+                          setFormData((prev) => ({ ...prev, sku: generateRandomSKU() }));
+                          toast.success('Random SKU generated');
                         }}
                         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium whitespace-nowrap"
-                        title="Auto-generate SKU based on product type"
+                        title="Generate a random unique SKU (no extra fields required)"
                       >
                         Auto Generate
                       </button>
                     </div>
+                    {fieldErrors.sku && (
+                      <p id="sku-error" className="mt-1 text-sm text-red-600" role="alert">
+                        {fieldErrors.sku}
+                      </p>
+                    )}
                     <p className="mt-1 text-xs text-gray-500">
-                      {formData.product_type === 'sunglasses' 
-                        ? 'Format: Brand-Model-Caliber-Color-Lens Material (e.g., RB-RX5228-54-2000-POLARIZED)'
-                        : formData.product_type === 'prescription_glasses' || formData.product_type === 'eyeglasses'
-                        ? 'Format: Brand*Model*Caliber*Bridge*Color (e.g., RB*RX5228*54*17*2000)'
-                        : formData.product_type === 'contact_lenses' || formData.product_type === 'contact_lens'
-                        ? 'Format: Brand-Model-Packaging-BaseCurve-Diameter (e.g., ACUVUE-OASYS-6PK-8.6-14.2)'
-                        : formData.product_type === 'solution' || formData.product_type === 'eye_hygiene'
-                        ? 'Format: Brand-Model-Volume (e.g., OPTI-FREE-EXPRESS-355ML)'
-                        : 'Format: Brand*Model*Caliber*Color (e.g., RB*RX5228*54*2000)'
-                      }
+                      Enter a SKU or use Auto Generate for a random code (e.g. SKU-…). You can edit it anytime.
                     </p>
                   </div>
 

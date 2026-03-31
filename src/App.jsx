@@ -91,7 +91,13 @@ function App() {
         <NavigationProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ThemeSync />
-            <Toaster position="top-right" />
+            <Toaster
+              position="top-right"
+              containerStyle={{ zIndex: 200000 }}
+              toastOptions={{
+                style: { zIndex: 200000 },
+              }}
+            />
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route

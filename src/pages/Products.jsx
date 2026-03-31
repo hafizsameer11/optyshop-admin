@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiEye, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import ContactLensProductModal from '../components/ContactLensProductModal';
+import ProductViewModal from '../components/ProductViewModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
@@ -340,7 +341,8 @@ const Products = () => {
   // Track if this is the initial mount to prevent clearing restored subcategory filter
   const [isInitialMount, setIsInitialMount] = useState(true);
   const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger search on Enter
-  const [expandedProducts, setExpandedProducts] = useState(new Set()); // Track which products have expanded details
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewProduct, setViewProduct] = useState(null);
 
   // Debug: Log the initial component state
   console.log('🔍 Initial component state:', {
@@ -1000,6 +1002,16 @@ const Products = () => {
     setModalOpen(true);
   };
 
+  const handleViewProduct = (product) => {
+    setViewProduct(product);
+    setViewModalOpen(true);
+  };
+
+  const handleViewModalClose = () => {
+    setViewModalOpen(false);
+    setViewProduct(null);
+  };
+
   // Determine which modal to use based on product's actual product_type when editing,
   // or based on selected section when creating a new product
   const getProductModal = () => {
@@ -1535,50 +1547,50 @@ const Products = () => {
       { key: 'actions', label: 'Actions', responsive: '', alwaysVisible: true }
     ];
     
-    // Additional columns that are hidden by default (shown when expanded)
+    // Extra columns (responsive breakpoints still hide some on small screens)
     const additionalColumns = [
-      { key: 'id', label: 'ID', responsive: '', alwaysVisible: false },
-      { key: 'sku', label: 'SKU', responsive: 'hidden md:table-cell', alwaysVisible: false },
-      { key: 'category', label: 'Category', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-      { key: 'subcategory', label: 'SubCategory', responsive: 'hidden lg:table-cell', alwaysVisible: false },
+      { key: 'id', label: 'ID', responsive: '', alwaysVisible: true },
+      { key: 'sku', label: 'SKU', responsive: 'hidden md:table-cell', alwaysVisible: true },
+      { key: 'category', label: 'Category', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+      { key: 'subcategory', label: 'SubCategory', responsive: 'hidden lg:table-cell', alwaysVisible: true },
     ];
     
     const sectionSpecificColumns = {
       'contact-lenses': [
-        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'contact_lens_type', label: 'Contact Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-        { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-        { key: 'material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-        { key: 'water_content', label: 'Water Content', responsive: 'hidden xl:table-cell', alwaysVisible: false },
-        { key: 'replacement_frequency', label: 'Replacement', responsive: 'hidden xl:table-cell', alwaysVisible: false },
+        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'contact_lens_type', label: 'Contact Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+        { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+        { key: 'material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+        { key: 'water_content', label: 'Water Content', responsive: 'hidden xl:table-cell', alwaysVisible: true },
+        { key: 'replacement_frequency', label: 'Replacement', responsive: 'hidden xl:table-cell', alwaysVisible: true },
       ],
       'eye-hygiene': [
-        { key: 'size_volume', label: 'Size/Volume', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'pack_type', label: 'Pack Type', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-        { key: 'expiry_date', label: 'Expiry Date', responsive: 'hidden xl:table-cell', alwaysVisible: false },
+        { key: 'size_volume', label: 'Size/Volume', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'pack_type', label: 'Pack Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+        { key: 'expiry_date', label: 'Expiry Date', responsive: 'hidden xl:table-cell', alwaysVisible: true },
       ],
       'sunglasses': [
-        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: false },
+        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
       ],
       'eyeglasses': [
-        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: false },
+        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
       ],
       'opty-kids': [
-        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: false },
+        { key: 'frame_shape', label: 'Shape', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'frame_material', label: 'Material', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+        { key: 'frame_color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'lens_type', label: 'Lens Type', responsive: 'hidden lg:table-cell', alwaysVisible: true },
       ],
       'all': [
-        { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell', alwaysVisible: false },
-        { key: 'color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: false },
-        { key: 'product_type', label: 'Product Type', responsive: 'hidden md:table-cell', alwaysVisible: false },
+        { key: 'brand', label: 'Brand', responsive: 'hidden lg:table-cell', alwaysVisible: true },
+        { key: 'color', label: 'Color', responsive: 'hidden md:table-cell', alwaysVisible: true },
+        { key: 'product_type', label: 'Product Type', responsive: 'hidden md:table-cell', alwaysVisible: true },
       ],
     };
     
@@ -1870,24 +1882,13 @@ const Products = () => {
         return (
           <td className={`table-cell-responsive ${responsiveClass}`}>
             <button
-              onClick={() => {
-                const newExpanded = new Set(expandedProducts);
-                if (newExpanded.has(product.id)) {
-                  newExpanded.delete(product.id);
-                } else {
-                  newExpanded.add(product.id);
-                }
-                setExpandedProducts(newExpanded);
-              }}
+              type="button"
+              onClick={() => handleViewProduct(product)}
               className="p-2 rounded-xl text-blue-600 hover:text-white hover:bg-blue-500 transition-all duration-200"
-              title={expandedProducts.has(product.id) ? "Hide Details" : "View Details"}
-              aria-label={expandedProducts.has(product.id) ? "Hide Details" : "View Details"}
+              title="View product details"
+              aria-label="View product details"
             >
-              {expandedProducts.has(product.id) ? (
-                <FiChevronUp className="w-4 h-4" />
-              ) : (
-                <FiChevronDown className="w-4 h-4" />
-              )}
+              <FiEye className="w-4 h-4" />
             </button>
           </td>
         );
@@ -2105,24 +2106,14 @@ const Products = () => {
           <table className="w-full min-w-[800px]">
             <thead className="bg-white border-b border-gray-200">
               <tr>
-                {getTableColumns().map((column) => {
-                  // Show header only if column is always visible OR if any product is expanded
-                  const hasExpandedProducts = expandedProducts.size > 0;
-                  const shouldShowHeader = column.alwaysVisible || hasExpandedProducts;
-                  
-                  if (!shouldShowHeader) {
-                    return <th key={column.key} className="hidden"></th>;
-                  }
-                  
-                  return (
-                    <th 
-                      key={column.key}
-                      className={`table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs ${column.responsive}`}
-                    >
-                      {column.label}
-                    </th>
-                  );
-                })}
+                {getTableColumns().map((column) => (
+                  <th
+                    key={column.key}
+                    className={`table-header-responsive font-semibold text-gray-700 uppercase tracking-wider text-xs ${column.responsive}`}
+                  >
+                    {column.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -2141,28 +2132,18 @@ const Products = () => {
                   </td>
                 </tr>
               ) : (
-                products.map((product) => {
-                  const isExpanded = expandedProducts.has(product.id);
-                  return (
-                    <tr 
-                      key={product.id}
-                      className={`hover:bg-gray-50/50 transition-all duration-200 group border-b border-gray-100 ${isExpanded ? 'bg-gray-50/30' : ''}`}
-                    >
-                      {getTableColumns().map((column) => {
-                        // Hide columns that are not always visible unless the row is expanded
-                        const shouldShow = column.alwaysVisible || isExpanded;
-                        if (!shouldShow) {
-                          return <td key={column.key} className="hidden"></td>;
-                        }
-                        return (
-                          <React.Fragment key={column.key}>
-                            {renderTableCell(product, column)}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tr>
-                  );
-                })
+                products.map((product) => (
+                  <tr
+                    key={product.id}
+                    className="hover:bg-gray-50/50 transition-all duration-200 group border-b border-gray-100"
+                  >
+                    {getTableColumns().map((column) => (
+                      <React.Fragment key={column.key}>
+                        {renderTableCell(product, column)}
+                      </React.Fragment>
+                    ))}
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -2193,6 +2174,9 @@ const Products = () => {
       </div>
 
       {modalOpen && getProductModal()}
+      {viewModalOpen && viewProduct && (
+        <ProductViewModal product={viewProduct} onClose={handleViewModalClose} />
+      )}
     </div>
   );
 };

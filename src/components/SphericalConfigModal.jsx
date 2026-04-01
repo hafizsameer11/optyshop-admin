@@ -4,6 +4,14 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import { sphericalConfigs } from '../api/contactLensForms';
+import { labelsFromNestedSubcategory } from '../utils/contactLensConfigLabels';
+
+/** Only re-apply server/config into the form when opening a different row — not when parent re-passes a new object reference for the same config (that was wiping name/display_name edits). */
+function sphericalConfigSyncKey(cfg) {
+  if (cfg == null) return '';
+  if (cfg.id != null && cfg.id !== '') return `id:${cfg.id}`;
+  return `draft:${cfg.product_id ?? cfg.productId ?? cfg.product?.id ?? 'none'}`;
+}
 
 const SphericalConfigModal = ({ config, onClose }) => {
   const [formData, setFormData] = useState({
@@ -44,65 +52,64 @@ const SphericalConfigModal = ({ config, onClose }) => {
     }
   }, [formData.sub_category_id, subCategories.length]);
 
+  const configSyncKey = sphericalConfigSyncKey(config);
+
   useEffect(() => {
-    if (config) {
-      setFormData({
-        name: config.name || '',
-        sub_category_id: config.sub_category_id || config.subCategoryId || '',
-        product_id: config.product_id || config.productId || config.product?.id || '',
-        display_name: config.display_name || config.displayName || '',
-        price: config.price !== undefined ? config.price : '',
-        is_active: config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true),
-        available_units: Array.isArray(config.available_units) ? config.available_units.map(String) : (Array.isArray(config.availableUnits) ? config.availableUnits.map(String) : []),
-        right_qty: Array.isArray(config.right_qty) ? config.right_qty.map(String) : (Array.isArray(config.rightQty) ? config.rightQty.map(String) : []),
-        right_base_curve: Array.isArray(config.right_base_curve) ? config.right_base_curve.map(String) : (Array.isArray(config.rightBaseCurve) ? config.rightBaseCurve.map(String) : []),
-        right_diameter: Array.isArray(config.right_diameter) ? config.right_diameter.map(String) : (Array.isArray(config.rightDiameter) ? config.rightDiameter.map(String) : []),
-        right_power: Array.isArray(config.right_power) ? config.right_power.map(String) : (Array.isArray(config.rightPower) ? config.rightPower.map(String) : []),
-        left_qty: Array.isArray(config.left_qty) ? config.left_qty.map(String) : (Array.isArray(config.leftQty) ? config.leftQty.map(String) : []),
-        left_base_curve: Array.isArray(config.left_base_curve) ? config.left_base_curve.map(String) : (Array.isArray(config.leftBaseCurve) ? config.leftBaseCurve.map(String) : []),
-        left_diameter: Array.isArray(config.left_diameter) ? config.left_diameter.map(String) : (Array.isArray(config.leftDiameter) ? config.leftDiameter.map(String) : []),
-        left_power: Array.isArray(config.left_power) ? config.left_power.map(String) : (Array.isArray(config.leftPower) ? config.leftPower.map(String) : []),
-      });
-
-      // Load unit_prices and unit_images if they exist
-      if (config.unit_prices && typeof config.unit_prices === 'object') {
-        // Convert all values to numbers
-        const prices = {};
-        Object.keys(config.unit_prices).forEach(key => {
-          prices[String(key)] = typeof config.unit_prices[key] === 'number'
-            ? config.unit_prices[key]
-            : parseFloat(config.unit_prices[key]) || 0;
-        });
-        setUnitPrices(prices);
-      } else {
-        setUnitPrices({});
-      }
-
-      if (config.unit_images && typeof config.unit_images === 'object') {
-        // Ensure all values are arrays
-        const images = {};
-        Object.keys(config.unit_images).forEach(key => {
-          images[String(key)] = Array.isArray(config.unit_images[key])
-            ? config.unit_images[key]
-            : [];
-        });
-        setUnitImages(images);
-      } else {
-        setUnitImages({});
-      }
-
-      setUseBackendCopy(false); // Reset when editing existing config
-      setUnitImageFiles({}); // Reset image files
-      setUnitImagePreviews({}); // Reset image previews
-      // Products will be fetched automatically when sub_category_id is set and subCategories are loaded
-    } else {
+    if (!config) {
       setUnitPrices({});
       setUnitImages({});
       setUnitImageFiles({});
       setUnitImagePreviews({});
-      setUseBackendCopy(false); // Reset when creating new config
+      setUseBackendCopy(false);
+      return;
     }
-  }, [config]);
+
+    setFormData({
+      name: config.name || '',
+      sub_category_id: config.sub_category_id || config.subCategoryId || '',
+      product_id: config.product_id || config.productId || config.product?.id || '',
+      display_name: config.display_name || config.displayName || '',
+      price: config.price !== undefined ? config.price : '',
+      is_active: config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true),
+      available_units: Array.isArray(config.available_units) ? config.available_units.map(String) : (Array.isArray(config.availableUnits) ? config.availableUnits.map(String) : []),
+      right_qty: Array.isArray(config.right_qty) ? config.right_qty.map(String) : (Array.isArray(config.rightQty) ? config.rightQty.map(String) : []),
+      right_base_curve: Array.isArray(config.right_base_curve) ? config.right_base_curve.map(String) : (Array.isArray(config.rightBaseCurve) ? config.rightBaseCurve.map(String) : []),
+      right_diameter: Array.isArray(config.right_diameter) ? config.right_diameter.map(String) : (Array.isArray(config.rightDiameter) ? config.rightDiameter.map(String) : []),
+      right_power: Array.isArray(config.right_power) ? config.right_power.map(String) : (Array.isArray(config.rightPower) ? config.rightPower.map(String) : []),
+      left_qty: Array.isArray(config.left_qty) ? config.left_qty.map(String) : (Array.isArray(config.leftQty) ? config.leftQty.map(String) : []),
+      left_base_curve: Array.isArray(config.left_base_curve) ? config.left_base_curve.map(String) : (Array.isArray(config.leftBaseCurve) ? config.leftBaseCurve.map(String) : []),
+      left_diameter: Array.isArray(config.left_diameter) ? config.left_diameter.map(String) : (Array.isArray(config.leftDiameter) ? config.leftDiameter.map(String) : []),
+      left_power: Array.isArray(config.left_power) ? config.left_power.map(String) : (Array.isArray(config.leftPower) ? config.leftPower.map(String) : []),
+    });
+
+    if (config.unit_prices && typeof config.unit_prices === 'object') {
+      const prices = {};
+      Object.keys(config.unit_prices).forEach(key => {
+        prices[String(key)] = typeof config.unit_prices[key] === 'number'
+          ? config.unit_prices[key]
+          : parseFloat(config.unit_prices[key]) || 0;
+      });
+      setUnitPrices(prices);
+    } else {
+      setUnitPrices({});
+    }
+
+    if (config.unit_images && typeof config.unit_images === 'object') {
+      const images = {};
+      Object.keys(config.unit_images).forEach(key => {
+        images[String(key)] = Array.isArray(config.unit_images[key])
+          ? config.unit_images[key]
+          : [];
+      });
+      setUnitImages(images);
+    } else {
+      setUnitImages({});
+    }
+
+    setUseBackendCopy(false);
+    setUnitImageFiles({});
+    setUnitImagePreviews({});
+  }, [configSyncKey]);
 
   const fetchSubCategories = async () => {
     try {
@@ -290,9 +297,18 @@ const SphericalConfigModal = ({ config, onClose }) => {
 
     const newFormData = { ...formData, [name]: fieldValue };
 
-    // If sub_category_id changes, reset product_id (products will be fetched by useEffect)
     if (name === 'sub_category_id') {
-      newFormData.product_id = ''; // Reset product when category changes
+      newFormData.product_id = '';
+      if (fieldValue) {
+        const subCat = subCategories.find(
+          (sc) => String(sc.id) === String(fieldValue) || sc.id === parseInt(fieldValue, 10)
+        );
+        const derived = labelsFromNestedSubcategory(subCat);
+        if (derived) {
+          newFormData.name = derived.name;
+          newFormData.display_name = derived.display_name;
+        }
+      }
     }
 
     setFormData(newFormData);

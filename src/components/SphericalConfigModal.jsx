@@ -370,19 +370,28 @@ const SphericalConfigModal = ({ config, onClose }) => {
         left_power: formData.left_power.filter(v => v !== ''),
       };
 
+      // Normalize selected sub-subcategory to integer so backend applies updates correctly
+      if (submitData.sub_category_id !== '' && submitData.sub_category_id != null) {
+        const parsedSubCategoryId = parseInt(submitData.sub_category_id, 10);
+        submitData.sub_category_id = Number.isNaN(parsedSubCategoryId) ? null : parsedSubCategoryId;
+      } else {
+        submitData.sub_category_id = null;
+      }
+
       // Include product_id if selected (convert empty string to null for API)
       // But preserve product_id from config if it was passed
       if (submitData.product_id === '' || submitData.product_id === null) {
         // If config had product_id, preserve it
         if (config?.product_id || config?.productId || config?.product?.id) {
-          submitData.product_id = parseInt(config.product_id || config.productId || config.product?.id);
+          submitData.product_id = parseInt(config.product_id || config.productId || config.product?.id, 10);
         } else {
           submitData.product_id = null;
         }
       } else if (submitData.product_id) {
-        submitData.product_id = parseInt(submitData.product_id);
+        submitData.product_id = parseInt(submitData.product_id, 10);
       }
 
+      console.log('📤 Submitting spherical config with sub_category_id:', submitData.sub_category_id);
       console.log('📤 Submitting spherical config with product_id:', submitData.product_id);
 
       // Add backend copy flag if user clicked copy button

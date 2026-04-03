@@ -53,6 +53,9 @@ const SphericalConfigModal = ({ config, onClose }) => {
   }, [formData.sub_category_id, subCategories.length]);
 
   const configSyncKey = sphericalConfigSyncKey(config);
+  const isEditingExisting = config?.id != null && config.id !== '';
+  const presetProductId =
+    config?.product_id ?? config?.productId ?? config?.product?.id ?? null;
 
   useEffect(() => {
     if (!config) {
@@ -481,7 +484,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
         });
 
         let response;
-        if (config) {
+        if (isEditingExisting) {
           response = await sphericalConfigs.update(config.id, formDataToSend);
           if (response.success) {
             toast.success(response.message || 'Spherical configuration updated successfully');
@@ -517,7 +520,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
         }
 
         let response;
-        if (config) {
+        if (isEditingExisting) {
           response = await sphericalConfigs.update(config.id, submitData);
           if (response.success) {
             toast.success(response.message || 'Spherical configuration updated successfully');
@@ -604,7 +607,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-gray-200/50 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10 flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {config ? 'Edit Spherical Configuration' : 'Add Spherical Configuration'}
+            {isEditingExisting ? 'Edit Spherical Configuration' : 'Add Spherical Configuration'}
           </h2>
           <button
             onClick={() => onClose(false)}
@@ -676,27 +679,39 @@ const SphericalConfigModal = ({ config, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Product (Optional)
+                Product
               </label>
-              <select
-                name="product_id"
-                value={formData.product_id}
-                onChange={handleChange}
-                className="input-modern"
-                disabled={loadingProducts || !formData.sub_category_id}
-              >
-                <option value="">No Product Assigned</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} {product.sku ? `(${product.sku})` : ''} - €{product.price || '0.00'}
-                  </option>
-                ))}
-              </select>
-              {loadingProducts && (
-                <p className="text-xs text-gray-500 mt-1">Loading products...</p>
-              )}
-              {!loadingProducts && formData.sub_category_id && products.length === 0 && (
-                <p className="text-xs text-gray-500 mt-1">No contact lens products available for this category</p>
+              {isEditingExisting ? (
+                <p className="text-sm text-gray-600 py-2 px-3 rounded-lg bg-gray-50 border border-gray-200">
+                  Linked to product #{formData.product_id || '—'}. Product cannot be changed here.
+                </p>
+              ) : presetProductId != null && presetProductId !== '' ? (
+                <p className="text-sm text-gray-600 py-2 px-3 rounded-lg bg-indigo-50 border border-indigo-100">
+                  This configuration will be saved for product #{presetProductId} (current contact lens product).
+                </p>
+              ) : (
+                <>
+                  <select
+                    name="product_id"
+                    value={formData.product_id}
+                    onChange={handleChange}
+                    className="input-modern"
+                    disabled={loadingProducts || !formData.sub_category_id}
+                  >
+                    <option value="">No Product Assigned</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name} {product.sku ? `(${product.sku})` : ''} - €{product.price || '0.00'}
+                      </option>
+                    ))}
+                  </select>
+                  {loadingProducts && (
+                    <p className="text-xs text-gray-500 mt-1">Loading products...</p>
+                  )}
+                  {!loadingProducts && formData.sub_category_id && products.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">No contact lens products available for this category</p>
+                  )}
+                </>
               )}
             </div>
 
@@ -1114,7 +1129,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
               className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSubmit}
             >
-              {loading ? 'Saving...' : config ? 'Update' : 'Create'}
+              {loading ? 'Saving...' : isEditingExisting ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

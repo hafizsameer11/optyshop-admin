@@ -1119,6 +1119,7 @@ const Products = () => {
           <ContactLensProductModal
             product={productToPass}
             onClose={handleModalClose}
+            onAfterSave={handleContactLensAfterSave}
             selectedSection={selectedSection}
           />
         );
@@ -1175,6 +1176,7 @@ const Products = () => {
         <ContactLensProductModal
           product={defaultProductType ? { product_type: defaultProductType } : null}
           onClose={handleModalClose}
+          onAfterSave={handleContactLensAfterSave}
           selectedSection={selectedSection}
         />
       );
@@ -1221,6 +1223,17 @@ const Products = () => {
     } else {
       console.log('❌ Modal closed without refresh (cancelled or failed)');
     }
+  };
+
+  /** After creating a contact lens product, keep the modal open as edit with the new id and refresh the table. */
+  const handleContactLensAfterSave = (savedProduct) => {
+    if (savedProduct?.id) {
+      setEditingProduct({ ...savedProduct, product_type: 'contact_lens' });
+    }
+    setTimeout(() => {
+      fetchProducts();
+      setImageRefreshKey(Date.now());
+    }, 100);
   };
 
   // Section options

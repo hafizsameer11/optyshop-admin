@@ -9,7 +9,67 @@ import { useI18n } from '../context/I18nContext';
 import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
 
-const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
+function contactLensImagesFromProduct(p) {
+  if (!p) return [];
+  if (p.images && Array.isArray(p.images)) {
+    return p.images.filter((img) => img && typeof img === 'string');
+  }
+  if (p.image || p.image_url) {
+    return [p.image || p.image_url].filter(Boolean);
+  }
+  return [];
+}
+
+/** Merge API payload with current form when POST returns a sparse product. */
+function mergeContactLensProductAfterSave(apiProduct, form) {
+  if (!apiProduct?.id) return apiProduct;
+  const {
+    variants,
+    sizeVolumeVariants,
+    size_volume_variants,
+    size_volume,
+    pack_type,
+    ...clean
+  } = apiProduct;
+  return {
+    ...clean,
+    product_type: 'contact_lens',
+    name: clean.name ?? form.name,
+    slug: clean.slug || form.slug,
+    sku: clean.sku ?? form.sku,
+    price: clean.price ?? form.price,
+    cost_price: clean.cost_price ?? form.cost_price,
+    description: clean.description ?? form.description,
+    short_description: clean.short_description ?? form.short_description,
+    category_id: clean.category_id ?? form.category_id,
+    sub_category_id:
+      clean.sub_category_id ?? clean.subcategory_id ?? form.sub_category_id,
+    stock_quantity: clean.stock_quantity ?? clean.stock ?? form.stock_quantity,
+    stock_status: clean.stock_status ?? form.stock_status,
+    compare_at_price: clean.compare_at_price ?? form.compare_at_price,
+    meta_title: clean.meta_title ?? form.meta_title,
+    meta_description: clean.meta_description ?? form.meta_description,
+    meta_keywords: clean.meta_keywords ?? form.meta_keywords,
+    is_active: clean.is_active !== undefined ? clean.is_active : form.is_active,
+    is_featured: clean.is_featured !== undefined ? clean.is_featured : form.is_featured,
+    contact_lens_brand: clean.contact_lens_brand ?? form.contact_lens_brand,
+    contact_lens_material: clean.contact_lens_material ?? form.contact_lens_material,
+    contact_lens_color: clean.contact_lens_color ?? form.contact_lens_color,
+    contact_lens_type: clean.contact_lens_type ?? form.contact_lens_type,
+    replacement_frequency: clean.replacement_frequency ?? form.replacement_frequency,
+    water_content: clean.water_content ?? form.water_content,
+    can_sleep_with:
+      clean.can_sleep_with !== undefined ? clean.can_sleep_with : form.can_sleep_with,
+    is_medical_device:
+      clean.is_medical_device !== undefined
+        ? clean.is_medical_device
+        : form.is_medical_device,
+    has_uv_filter:
+      clean.has_uv_filter !== undefined ? clean.has_uv_filter : form.has_uv_filter,
+  };
+}
+
+const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSave }) => {
   const { t } = useI18n();
   
   // Helper function to handle contact lens form modal close with refresh
@@ -78,9 +138,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
-  const [nestedSubCategoriesForConfig, setNestedSubCategoriesForConfig] = useState([]);
-  const [productsForConfig, setProductsForConfig] = useState([]);
-  
+
   // Configuration tables state
   const [sphericalConfigs, setSphericalConfigs] = useState([]);
   const [astigmatismConfigs, setAstigmatismConfigs] = useState([]);
@@ -143,29 +201,24 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
   useEffect(() => {
     if (formData.sub_category_id) {
       fetchNestedSubCategories(formData.sub_category_id);
-      // Also fetch nested subcategories for configurations
-      fetchNestedSubCategoriesForConfig(formData.sub_category_id);
-      // Fetch products for configurations
-      if (formData.sub_category_id) {
-        fetchProductsForConfig(formData.sub_category_id);
-      }
     } else {
       setNestedSubCategories([]);
-      setNestedSubCategoriesForConfig([]);
-      setProductsForConfig([]);
     }
   }, [formData.sub_category_id]);
   
-  // Fetch configurations when tab changes (fetch all configs, not filtered by product)
+  // Load configs only for this product (same behavior as ProductModal contact lens tabs)
   useEffect(() => {
+    if (!product?.id) {
+      setSphericalConfigs([]);
+      setAstigmatismConfigs([]);
+      return;
+    }
     if (activeTab === 'spherical') {
-      console.log('🔄 Tab changed to spherical, fetching all spherical configs');
       fetchSphericalConfigs();
     } else if (activeTab === 'astigmatism') {
-      console.log('🔄 Tab changed to astigmatism, fetching all astigmatism configs');
       fetchAstigmatismConfigs();
     }
-  }, [activeTab]);
+  }, [activeTab, product?.id]);
 
   const fetchProductOptions = async () => {
     try {
@@ -226,38 +279,6 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
   };
 
-  const fetchNestedSubCategoriesForConfig = async (subCategoryId) => {
-    if (!subCategoryId) {
-      setNestedSubCategoriesForConfig([]);
-      return;
-    }
-    try {
-      const response = await api.get(API_ROUTES.SUBCATEGORIES.BY_PARENT(subCategoryId));
-      const responseData = response.data?.data || response.data || {};
-      const nestedData = responseData.subcategories || response.data || [];
-      setNestedSubCategoriesForConfig(Array.isArray(nestedData) ? nestedData : []);
-    } catch (error) {
-      console.warn('Failed to fetch nested subcategories for config', error);
-      setNestedSubCategoriesForConfig([]);
-    }
-  };
-
-  const fetchProductsForConfig = async (subCategoryId) => {
-    if (!subCategoryId) {
-      setProductsForConfig([]);
-      return;
-    }
-    try {
-      const response = await api.get(API_ROUTES.ADMIN.CONTACT_LENS_FORMS.PRODUCTS);
-      const responseData = response.data?.data || response.data || {};
-      const productsData = responseData.products || response.data || [];
-      setProductsForConfig(Array.isArray(productsData) ? productsData : []);
-    } catch (error) {
-      console.warn('Failed to fetch products for config', error);
-      setProductsForConfig([]);
-    }
-  };
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === 'category_id') {
@@ -300,7 +321,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     });
 
     if (validFiles.length > 0) {
-      const newFiles = product ? validFiles : [...imageFiles, ...validFiles];
+      const newFiles = product?.id ? validFiles : [...imageFiles, ...validFiles];
       setImageFiles(newFiles);
 
       // Upload files immediately to get HTTPS URLs
@@ -330,7 +351,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
 
       Promise.all(uploadPromises).then((previews) => {
         const validPreviews = previews.filter(Boolean);
-        const newPreviews = product ? [...imagePreviews, ...validPreviews] : [...imagePreviews, ...validPreviews];
+        const newPreviews = product?.id ? [...imagePreviews, ...validPreviews] : [...imagePreviews, ...validPreviews];
         setImagePreviews(newPreviews);
         toast.success(`${validFiles.length} image(s) added`);
       });
@@ -484,48 +505,65 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     return extractedData;
   };
 
-  // Fetch Spherical Configurations
+  const filterConfigsByProductId = (configs, productId) => {
+    if (!Array.isArray(configs) || productId == null) return [];
+    return configs.filter((config) => {
+      if (!config) return false;
+      const pid = config.product_id ?? config.productId ?? config.product?.id;
+      return (
+        pid == productId ||
+        pid === parseInt(productId, 10) ||
+        String(pid) === String(productId)
+      );
+    });
+  };
+
+  // Fetch Spherical Configurations for current product only
   const fetchSphericalConfigs = async () => {
+    if (!product?.id) {
+      setSphericalConfigs([]);
+      return;
+    }
+    const productId = product.id;
     try {
       setLoadingSpherical(true);
-      
-      // Build endpoint with query parameters - fetch ALL configs, not filtered by product
+
       const queryParams = new URLSearchParams();
       queryParams.append('limit', '1000');
       queryParams.append('page', '1');
-      
-      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}`;
-      console.log(`🔍 Fetching all spherical configs from: ${endpoint}`);
-      
-      const response = await api.get(endpoint);
-      console.log('📦 Spherical configs API response:', response);
-      console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
-      
-      // Extract data from response
+
+      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}&product_id=${productId}`;
+      let useProductIdFilter = true;
+      let response;
+
+      try {
+        response = await api.get(endpoint);
+      } catch (filterError) {
+        if (filterError.response?.status === 400 || filterError.response?.status === 422) {
+          useProductIdFilter = false;
+          endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.SPHERICAL.LIST}?${queryParams.toString()}`;
+          response = await api.get(endpoint);
+        } else {
+          throw filterError;
+        }
+      }
+
       let configsData = extractConfigData(response, 'sphericalConfigs');
-      console.log(`📊 Raw extracted data:`, configsData);
-      
-      // If extraction returned empty, try alternative extraction methods
+
       if (!configsData || configsData.length === 0) {
-        console.log('🔍 Primary extraction returned empty, trying alternative methods...');
-        // Try extracting with generic 'configs' key
         const altData = extractConfigData({ data: response.data }, 'configs');
         if (altData && altData.length > 0) {
           configsData = altData;
-          console.log(`✅ Alternative extraction found ${configsData.length} items`);
         }
       }
-      
-      // Validate and set data
+
+      if (!useProductIdFilter && Array.isArray(configsData) && configsData.length > 0) {
+        configsData = filterConfigsByProductId(configsData, productId);
+      }
+
       if (Array.isArray(configsData)) {
-        console.log(`✅ Successfully extracted ${configsData.length} spherical configs:`, configsData);
         setSphericalConfigs(configsData);
-        
-        if (configsData.length === 0) {
-          console.log('ℹ️ No spherical configs found');
-        }
       } else {
-        console.warn('⚠️ Extracted data is not an array:', configsData);
         setSphericalConfigs([]);
       }
     } catch (error) {
@@ -560,48 +598,52 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
     }
   };
 
-  // Fetch Astigmatism Configurations
+  // Fetch Astigmatism Configurations for current product only
   const fetchAstigmatismConfigs = async () => {
+    if (!product?.id) {
+      setAstigmatismConfigs([]);
+      return;
+    }
+    const productId = product.id;
     try {
       setLoadingAstigmatism(true);
-      
-      // Build endpoint with query parameters - fetch ALL configs, not filtered by product
+
       const queryParams = new URLSearchParams();
       queryParams.append('limit', '1000');
       queryParams.append('page', '1');
-      
-      const endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}`;
-      console.log(`🔍 Fetching all astigmatism configs from: ${endpoint}`);
-      
-      const response = await api.get(endpoint);
-      console.log('📦 Astigmatism configs API response:', response);
-      console.log('📦 Full response data:', JSON.stringify(response.data, null, 2));
-      
-      // Extract data from response
+
+      let endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}&product_id=${productId}`;
+      let useProductIdFilter = true;
+      let response;
+
+      try {
+        response = await api.get(endpoint);
+      } catch (filterError) {
+        if (filterError.response?.status === 400 || filterError.response?.status === 422) {
+          useProductIdFilter = false;
+          endpoint = `${API_ROUTES.ADMIN.CONTACT_LENS_FORMS.ASTIGMATISM.LIST}?${queryParams.toString()}`;
+          response = await api.get(endpoint);
+        } else {
+          throw filterError;
+        }
+      }
+
       let configsData = extractConfigData(response, 'astigmatismConfigs');
-      console.log(`📊 Raw extracted data:`, configsData);
-      
-      // If extraction returned empty, try alternative extraction methods
+
       if (!configsData || configsData.length === 0) {
-        console.log('🔍 Primary extraction returned empty, trying alternative methods...');
-        // Try extracting with generic 'configs' key
         const altData = extractConfigData({ data: response.data }, 'configs');
         if (altData && altData.length > 0) {
           configsData = altData;
-          console.log(`✅ Alternative extraction found ${configsData.length} items`);
         }
       }
-      
-      // Validate and set data
+
+      if (!useProductIdFilter && Array.isArray(configsData) && configsData.length > 0) {
+        configsData = filterConfigsByProductId(configsData, productId);
+      }
+
       if (Array.isArray(configsData)) {
-        console.log(`✅ Successfully extracted ${configsData.length} astigmatism configs:`, configsData);
         setAstigmatismConfigs(configsData);
-        
-        if (configsData.length === 0) {
-          console.log('ℹ️ No astigmatism configs found');
-        }
       } else {
-        console.warn('⚠️ Extracted data is not an array:', configsData);
         setAstigmatismConfigs([]);
       }
     } catch (error) {
@@ -764,7 +806,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
           }
         });
 
-        if (product) {
+        if (product?.id) {
           const imagesToKeep = imagePreviews.filter(preview => 
             typeof preview === 'string' && 
             preview.startsWith('https://') &&
@@ -777,13 +819,13 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
           submitData.append('images', file);
         });
 
-        if (product) {
+        if (product?.id) {
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), submitData);
         } else {
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
         }
       } else {
-        if (product) {
+        if (product?.id) {
           const imagesToKeep = imagePreviews.filter(preview => 
             typeof preview === 'string' && 
             preview.startsWith('https://') &&
@@ -791,18 +833,64 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
           );
           dataToSend.images = imagesToKeep;
         }
-        if (product) {
+        if (product?.id) {
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), dataToSend);
         } else {
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, dataToSend);
         }
       }
 
-      toast.success(product ? 'Contact lens product updated successfully' : 'Contact lens product created successfully');
+      const responseData = response.data?.data || response.data;
+      let savedProduct = responseData?.product || responseData;
+      if (savedProduct && typeof savedProduct === 'object') {
+        const {
+          variants,
+          sizeVolumeVariants,
+          size_volume_variants,
+          size_volume,
+          pack_type,
+          ...rest
+        } = savedProduct;
+        savedProduct = rest;
+      }
+
+      const successMessage =
+        response.data?.message ||
+        (product?.id
+          ? 'Contact lens product updated successfully'
+          : 'Contact lens product created successfully');
+
+      toast.success(successMessage);
       setImageFiles([]);
-      setImagePreviews([]);
-      setExistingImages([]);
-      onClose();
+
+      const isUpdate = Boolean(product?.id);
+
+      if (!isUpdate && savedProduct?.id) {
+        const merged = mergeContactLensProductAfterSave(savedProduct, formData);
+        const fromApi = contactLensImagesFromProduct(savedProduct);
+        const httpsPreviews = imagePreviews.filter(
+          (p) => typeof p === 'string' && p.startsWith('https://')
+        );
+        const nextPreviews = fromApi.length > 0 ? fromApi : httpsPreviews;
+        setExistingImages(nextPreviews);
+        setImagePreviews(nextPreviews);
+        if (typeof onAfterSave === 'function') {
+          onAfterSave(merged, { isCreate: true });
+        } else {
+          setImagePreviews([]);
+          setExistingImages([]);
+          onClose(true);
+        }
+      } else if (isUpdate) {
+        setImagePreviews([]);
+        setExistingImages([]);
+        onClose(true);
+      } else {
+        setImagePreviews([]);
+        setExistingImages([]);
+        toast.error('Product saved but no id was returned. Refresh the list and try editing.');
+        onClose(true);
+      }
     } catch (error) {
       console.error('Product save error:', error);
       if (!error.response) {
@@ -833,7 +921,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white flex-shrink-0">
           <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-            {product ? 'Edit Contact Lens Product' : 'Add Contact Lens Product'}
+            {product?.id ? 'Edit Contact Lens Product' : 'Add Contact Lens Product'}
           </h2>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="compact" />
@@ -1243,16 +1331,23 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
             {/* Spherical Configurations Tab */}
             {activeTab === 'spherical' && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  Spherical configurations are stored per product. Only settings linked to this product appear here.
+                </p>
+                <div className="flex justify-between items-center flex-wrap gap-2">
                   <h3 className="text-lg font-bold text-gray-900">Spherical Configurations</h3>
-                  <button
-                    type="button"
-                    onClick={handleSphericalAdd}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                  >
-                    <FiPlus className="w-4 h-4" />
-                    Add Configuration
-                  </button>
+                  {product?.id ? (
+                    <button
+                      type="button"
+                      onClick={handleSphericalAdd}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                    >
+                      <FiPlus className="w-4 h-4" />
+                      Add Configuration
+                    </button>
+                  ) : (
+                    <p className="text-sm text-gray-500">Save the product first to add configurations.</p>
+                  )}
                 </div>
                 {loadingSpherical ? (
                   <div className="text-center py-8">Loading...</div>
@@ -1277,7 +1372,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                         {sphericalConfigs.length === 0 ? (
                           <tr>
                             <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
-                              No spherical configurations found. {product?.id ? 'Click "Add Configuration" to create one.' : 'Save the product first to add configurations.'}
+                              {product?.id
+                                ? 'No spherical configurations for this product yet. Click "Add Configuration" to create one.'
+                                : 'Save the product first. Then you can add spherical configurations for this product only.'}
                             </td>
                           </tr>
                         ) : (
@@ -1336,16 +1433,23 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
             {/* Astigmatism Configurations Tab */}
             {activeTab === 'astigmatism' && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  Astigmatism configurations are stored per product. Only settings linked to this product appear here.
+                </p>
+                <div className="flex justify-between items-center flex-wrap gap-2">
                   <h3 className="text-lg font-bold text-gray-900">Astigmatism Configurations</h3>
-                  <button
-                    type="button"
-                    onClick={handleAstigmatismAdd}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                  >
-                    <FiPlus className="w-4 h-4" />
-                    Add Configuration
-                  </button>
+                  {product?.id ? (
+                    <button
+                      type="button"
+                      onClick={handleAstigmatismAdd}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                    >
+                      <FiPlus className="w-4 h-4" />
+                      Add Configuration
+                    </button>
+                  ) : (
+                    <p className="text-sm text-gray-500">Save the product first to add configurations.</p>
+                  )}
                 </div>
                 {loadingAstigmatism ? (
                   <div className="text-center py-8">Loading...</div>
@@ -1370,7 +1474,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
                         {astigmatismConfigs.length === 0 ? (
                           <tr>
                             <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
-                              No astigmatism configurations found. {product?.id ? 'Click "Add Configuration" to create one.' : 'Save the product first to add configurations.'}
+                              {product?.id
+                                ? 'No astigmatism configurations for this product yet. Click "Add Configuration" to create one.'
+                                : 'Save the product first. Then you can add astigmatism configurations for this product only.'}
                             </td>
                           </tr>
                         ) : (
@@ -1478,7 +1584,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
               disabled={loading}
               className="btn-primary-modern disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
+              {loading ? 'Saving...' : product?.id ? 'Update Product' : 'Create Product'}
             </button>
           </div>
         </form>
@@ -1493,17 +1599,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection }) => {
         {astigmatismModalOpen && (
           <AstigmatismConfigModal
             config={selectedAstigmatismConfig || (product?.id ? { product_id: product.id } : null)}
-            onClose={(saved = false) => {
-              setAstigmatismModalOpen(false);
-              setSelectedAstigmatismConfig(null);
-              // Always refresh data when modal closes to show latest data
-              if (product?.id) {
-                console.log('🔄 Refreshing astigmatism configs after modal close');
-                setTimeout(() => {
-                  fetchAstigmatismConfigs();
-                }, 100);
-              }
-            }}
+            onClose={handleContactLensFormClose('astigmatism')}
           />
         )}
       </div>

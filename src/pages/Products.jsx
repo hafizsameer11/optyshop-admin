@@ -305,6 +305,13 @@ const Products = () => {
   });
   
   const { searchTerm, categoryFilter, subCategoryFilter, selectedSection, page } = pageState;
+
+  // Migrate renamed section (persisted localStorage may still have old value)
+  useEffect(() => {
+    if (selectedSection === 'opty-kids') {
+      setPageState({ selectedSection: 'sport-glasses' });
+    }
+  }, [selectedSection]);
   
   // Modal state persistence across page refreshes
   const [modalOpen, setModalOpen] = useState(() => {
@@ -338,6 +345,8 @@ const Products = () => {
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
   const [sectionCategoryIds, setSectionCategoryIds] = useState([]); // All category IDs for the selected section
   const [sectionSubCategoryIds, setSectionSubCategoryIds] = useState([]); // All subcategory IDs (including nested) for the selected section
+  /** True after first categories API attempt (success or failure). Prevents infinite loading when section filters wait on categories. */
+  const [categoriesHydrated, setCategoriesHydrated] = useState(false);
   // Track if this is the initial mount to prevent clearing restored subcategory filter
   const [isInitialMount, setIsInitialMount] = useState(true);
   const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger search on Enter
@@ -467,17 +476,25 @@ const Products = () => {
   }, [categories.length, categoryFilter, isInitialMount]);
 
   useEffect(() => {
-    // Only fetch products if we have valid category/subcategory IDs for the section
-    // or if section is 'all' (which doesn't need category filtering)
-    if (selectedSection === 'all' || sectionCategoryIds.length > 0 || sectionSubCategoryIds.length > 0) {
-      fetchProducts();
-    } else if (selectedSection !== 'all' && categories.length > 0) {
-      // If we have categories loaded but no sectionCategoryIds yet, wait for them
-      // This prevents fetching with stale or empty category IDs
-      console.log(`⏳ Waiting for category IDs to be resolved for section "${selectedSection}" before fetching products...`);
+    // "All products" can load immediately. Section tabs need the category list first so
+    // findCategoriesForSection can run; otherwise we never called fetchProducts() when
+    // sectionCategoryIds stayed [] (no name match / empty DB) and the page spun forever.
+    if (selectedSection !== 'all' && !categoriesHydrated) {
+      return;
     }
+    fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, categoryFilter, subCategoryFilter, brandFilter, selectedSection, sectionCategoryIds, sectionSubCategoryIds, searchTrigger]);
+  }, [
+    page,
+    categoryFilter,
+    subCategoryFilter,
+    brandFilter,
+    selectedSection,
+    sectionCategoryIds,
+    sectionSubCategoryIds,
+    searchTrigger,
+    categoriesHydrated,
+  ]);
   
   // Fetch subcategories when category filter changes
   useEffect(() => {
@@ -508,6 +525,8 @@ const Products = () => {
     } catch (error) {
       console.warn('Failed to fetch categories:', error);
       setCategories([]);
+    } finally {
+      setCategoriesHydrated(true);
     }
   };
 
@@ -632,6 +651,19 @@ const Products = () => {
             note: 'This usually means the category IDs haven\'t been updated yet. Will retry when correct IDs are set.'
           });
           // Don't fetch with wrong category IDs - wait for correct ones
+          setLoading(false);
+          return;
+        }
+
+        // No category maps to this section — never call the products API without category_id.
+        // Otherwise [] and [] vacuously "match" above and the backend returns ALL products.
+        if (expectedCategoryIds.length === 0) {
+          console.warn(`⚠️ No categories mapped for section "${selectedSection}". Showing empty list (add/match a category name for this section).`, {
+            selectedSection,
+            availableCategories: categories.map((c) => ({ id: c.id, name: c.name, slug: c.slug })),
+          });
+          setProducts([]);
+          setTotalPages(1);
           setLoading(false);
           return;
         }
@@ -1044,8 +1076,12 @@ const Products = () => {
       if (categoryLower.includes('eye') && categoryLower.includes('glass')) {
         return 'frame';
       }
-      if (categoryLower.includes('opty') && categoryLower.includes('kids')) {
-        return 'frame'; // Opty Kids uses frame product type
+      if (
+        (categoryLower.includes('sport') &&
+          (categoryLower.includes('glass') || categoryLower.includes('glasses'))) ||
+        (categoryLower.includes('opty') && categoryLower.includes('kids'))
+      ) {
+        return 'frame'; // Sport glasses & legacy Opty Kids use frame product type
       }
       
       return null;
@@ -1162,7 +1198,7 @@ const Products = () => {
     const productTypeMap = {
       'sunglasses': 'sunglasses',
       'eyeglasses': 'frame',
-      'opty-kids': 'frame', // Opty Kids uses same product type as eyeglasses
+      'sport-glasses': 'frame', // Sport glasses (same flow as eyeglasses)
       'eye-hygiene': 'eye_hygiene',
       'contact-lenses': 'contact_lens',
       'all': null // Will use default product type
@@ -1241,14 +1277,14 @@ const Products = () => {
     { value: 'all', label: 'All Products', icon: '📦' },
     { value: 'sunglasses', label: 'Sunglasses', icon: '🕶️' },
     { value: 'eyeglasses', label: 'Eyeglasses', icon: '👓' },
-    { value: 'opty-kids', label: 'Opty Kids', icon: '👶' },
+    { value: 'sport-glasses', label: 'Sport glasses', icon: '🥽' },
     { value: 'contact-lenses', label: 'Contact Lenses', icon: '🔍' },
     { value: 'eye-hygiene', label: 'Eye Hygiene', icon: '💧' },
   ];
 
   // Map section names to exact category names/slugs (case-insensitive matching)
   // Based on actual categories in the system:
-  // - "opty kids" (exact match)
+  // - "sport glasses" / legacy "opty kids"
   // - "sun glasses" (exact match - two words)
   // - "contact-lenses" or "contact lenses" (with hyphen or space, case variations)
   // - "eye glasses" (exact match - two words)
@@ -1256,19 +1292,40 @@ const Products = () => {
   const sectionToCategoryMap = {
     'sunglasses': ['sun glasses', 'sunglasses', 'sun-glasses', 'sunglass'],
     'eyeglasses': ['eye glasses', 'eyeglasses', 'eye-glasses', 'eyeglass'],
-    'opty-kids': ['opty kids', 'opty-kids', 'optykids'],
+    'sport-glasses': [
+      'sport glasses',
+      'sport-glasses',
+      'sportglasses',
+      'sport glass',
+      // Legacy categories still used in some DBs
+      'opty kids',
+      'opty-kids',
+      'optykids',
+    ],
     'contact-lenses': [
       'contact-lenses', 'contact lenses', 'contactlenses',
       'contact lens', 'contact-lens', 'contactlens',
       'contact lenses', 'Contact Lenses', 'CONTACT LENSES'
     ],
-    'eye-hygiene': ['eye hygiene', 'eye-hygiene', 'eyehygiene'],
+    'eye-hygiene': [
+      'eye hygiene',
+      'eye-hygiene',
+      'eyehygiene',
+      'ocular hygiene',
+      'ocular-hygiene',
+      'igiene oculare',
+      'igiene-oculare',
+      'eye care',
+      'eyecare',
+      'hygiene oculare',
+      'ocular care',
+    ],
   };
 
   // Find categories matching the section
   // This function finds all categories that match a given section (e.g., "Sunglasses", "Eyeglasses")
   // Products are then filtered by these category IDs (category_id field) - NOT by product_id or product_type
-  // Categories in system: "opty kids", "sun glasses", "contact-lenses" / "contact lenses", "eye glasses", "eye hygiene"
+  // Categories in system: "sport glasses" (legacy: "opty kids"), "sun glasses", "contact-lenses", "eye glasses", "eye hygiene"
   const findCategoriesForSection = (section) => {
     if (section === 'all') {
       return [];
@@ -1320,6 +1377,34 @@ const Products = () => {
           return true;
         }
       }
+
+      // Eye hygiene: DB category names vary (EN/IT, "ocular", "care", etc.). Match by keywords, not only fixed strings.
+      if (section === 'eye-hygiene') {
+        const bundle = `${catName} ${catSlug}`;
+        const hasHygieneWord =
+          bundle.includes('hygiene') ||
+          bundle.includes('hygien') ||
+          bundle.includes('igiene') ||
+          bundle.includes('higiene');
+        const hasEyeish =
+          bundle.includes('eye') ||
+          bundle.includes('ocular') ||
+          bundle.includes('oculare') ||
+          bundle.includes('oculo') ||
+          bundle.includes('ocul');
+        const isEyeCareOnly =
+          (bundle.includes('eye') && bundle.includes('care')) ||
+          bundle.includes('eyecare') ||
+          bundle.includes('eye-care');
+        if ((hasHygieneWord && hasEyeish) || isEyeCareOnly) {
+          console.log(`✅ Found eye hygiene category by keyword matching:`, {
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+          });
+          return true;
+        }
+      }
       
       const partialNameMatch = patterns.some(pattern => {
         const patternLower = normalize(pattern);
@@ -1331,18 +1416,36 @@ const Products = () => {
       
       const matchesName = exactNameMatch || partialNameMatch;
       
-      // Special handling: Eyeglasses should exclude Opty Kids categories
-      // "eye glasses" should NOT match "opty kids"
+      // Eyeglasses: exclude sport glasses & legacy Opty Kids (those have their own section)
       if (section === 'eyeglasses') {
-        const isOptyKids = catName.includes('opty') && catName.includes('kids');
-        return matchesName && !isOptyKids;
+        const bundle = `${catName} ${catSlug}`;
+        const isSportGlasses =
+          (bundle.includes('sport') &&
+            (bundle.includes('glass') || bundle.includes('glasses'))) ||
+          bundle.includes('sportglass');
+        const isLegacyOptyKids =
+          catName.includes('opty') && catName.includes('kids');
+        return matchesName && !isSportGlasses && !isLegacyOptyKids;
       }
-      
-      // Special handling: Opty Kids should only match "opty kids" categories
-      // Must contain both "opty" and "kids"
-      if (section === 'opty-kids') {
-        const isOptyKids = catName.includes('opty') && catName.includes('kids');
-        return isOptyKids;
+
+      // Sport glasses: match "sport" + "glass(es)" or legacy "opty" + "kids"
+      if (section === 'sport-glasses') {
+        const bundle = `${catName} ${catSlug}`;
+        const hasSportGlasses =
+          (bundle.includes('sport') &&
+            (bundle.includes('glass') || bundle.includes('glasses'))) ||
+          bundle.includes('sportglass');
+        const legacyOptyKids =
+          catName.includes('opty') && catName.includes('kids');
+        if (hasSportGlasses || legacyOptyKids) {
+          console.log(`✅ Found sport glasses category by keyword matching:`, {
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+            legacyOptyKids,
+          });
+          return true;
+        }
       }
       
       // For other sections, return if name or slug matches
@@ -1956,7 +2059,7 @@ const Products = () => {
         {/* Configurations (Spherical, Astigmatism, Dropdown Values) are available as tabs in the product form */}
 
         {/* Lens Management is now integrated into the Product Modal */}
-        {/* Configurations are available as tabs in the product form for Sunglasses, Eyeglasses, and Opty Kids */}
+        {/* Configurations are available as tabs in the product form for Sunglasses, Eyeglasses, and Sport glasses */}
       </div>
 
       {/* Enhanced Search and Table Card - Responsive */}

@@ -2235,10 +2235,14 @@ const ProductModal = ({ product, onClose }) => {
     isEyeHygieneByCategory ||
     isEyeHygieneFromLegacyAccessory;
 
-  // Define tabs - show Lens Management only for frames, sunglasses, and opty-kids (but NOT eye hygiene)
+  // Define tabs - show Lens Management only for frames, sunglasses, sport glasses (and legacy opty-kids) (but NOT eye hygiene)
   // Show Spherical and Astigmatism Configurations for contact lens products
   // IMPORTANT: All sections/tabs are present when editing - tabs are conditionally shown based on product_type
-  const productTypeCheck = formData.product_type === 'frame' || formData.product_type === 'sunglasses' || formData.product_type === 'opty-kids';
+  const productTypeCheck =
+    formData.product_type === 'frame' ||
+    formData.product_type === 'sunglasses' ||
+    formData.product_type === 'sport-glasses' ||
+    formData.product_type === 'opty-kids';
   const isFrameOrSunglasses = productTypeCheck && !isEyeHygiene; // Exclude eye hygiene products
   const isContactLens = formData.product_type === 'contact_lens' && !isEyeHygiene; // Also exclude eye hygiene from contact lens tabs
 
@@ -3698,7 +3702,7 @@ const ProductModal = ({ product, onClose }) => {
                 </div>
 
 
-                {/* Frame/Lens related fields - Only show for frames, sunglasses, opty-kids */}
+                {/* Frame/Lens related fields - frames, sunglasses, sport glasses / legacy opty-kids */}
                 {!isEyeHygiene && (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-200 pt-6">
@@ -3838,7 +3842,7 @@ const ProductModal = ({ product, onClose }) => {
               <div className="space-y-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-blue-800">
-                    <strong>ℹ️ Note:</strong> Lens Management configurations are global settings that apply to all frames, sunglasses, and opty-kids products.
+                    <strong>ℹ️ Note:</strong> Lens Management configurations are global settings that apply to all frames, sunglasses, and sport glasses products.
                   </p>
                 </div>
 

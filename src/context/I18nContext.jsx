@@ -138,6 +138,10 @@ const translations = {
     noneNoParents: 'None (No parent subcategories available)',
     nestedSubCategoryNote: 'This will be a nested subcategory (sub-subcategory)',
     topLevelSubCategoryNote: 'Leave empty to create a top-level subcategory, or select a parent to create a nested subcategory',
+    subCategorySlugAutoHint:
+      'For top-level subcategories, the slug is generated as name + your product category (e.g. men-sport-glasses) so the same display name can exist under different categories. You can edit the slug.',
+    subCategoryDuplicateTopLevel:
+      'Could not save: this slug or name may already exist for another top-level subcategory with the same parent scope. Try editing the slug (category is included automatically for new rows). If it still fails, the server may need uniqueness rules that include category_id for top-level subcategories.',
     noTopLevelSubCategories: 'No top-level subcategories found in this category. Create a top-level subcategory first, then you can create nested subcategories.',
     enterSubCategoryDescription: 'Enter subcategory description (optional)',
     sortOrder: 'Sort Order',
@@ -556,6 +560,10 @@ const translations = {
     noneNoParents: 'لا شيء (لا توجد فئات فرعية أصلية متاحة)',
     nestedSubCategoryNote: 'ستكون هذه فئة فرعية متداخلة (فئة فرعية من فئة فرعية)',
     topLevelSubCategoryNote: 'اتركه فارغاً لإنشاء فئة فرعية على المستوى الأعلى، أو اختر أصل لإنشاء فئة فرعية متداخلة',
+    subCategorySlugAutoHint:
+      'For top-level subcategories, the slug is generated as name + your product category (e.g. men-sport-glasses) so the same display name can exist under different categories. You can edit the slug.',
+    subCategoryDuplicateTopLevel:
+      'Could not save: this slug or name may already exist for another top-level subcategory with the same parent scope. Try editing the slug (category is included automatically for new rows). If it still fails, the server may need uniqueness rules that include category_id for top-level subcategories.',
     noTopLevelSubCategories: 'لم يتم العثور على فئات فرعية على المستوى الأعلى في هذه الفئة. أنشئ فئة فرعية على المستوى الأعلى أولاً، ثم يمكنك إنشاء فئات فرعية متداخلة.',
     enterSubCategoryDescription: 'أدخل وصف الفئة الفرعية (اختياري)',
     sortOrder: 'ترتيب الفرز',
@@ -776,6 +784,10 @@ const translations = {
     noneNoParents: 'Aucune (Aucune sous-catégorie parente disponible)',
     nestedSubCategoryNote: 'Ce sera une sous-catégorie imbriquée (sous-sous-catégorie)',
     topLevelSubCategoryNote: 'Laissez vide pour créer une sous-catégorie de niveau supérieur, ou sélectionnez un parent pour créer une sous-catégorie imbriquée',
+    subCategorySlugAutoHint:
+      'For top-level subcategories, the slug is generated as name + your product category (e.g. men-sport-glasses) so the same display name can exist under different categories. You can edit the slug.',
+    subCategoryDuplicateTopLevel:
+      'Could not save: this slug or name may already exist for another top-level subcategory with the same parent scope. Try editing the slug (category is included automatically for new rows). If it still fails, the server may need uniqueness rules that include category_id for top-level subcategories.',
     noTopLevelSubCategories: 'Aucune sous-catégorie de niveau supérieur trouvée dans cette catégorie. Créez d\'abord une sous-catégorie de niveau supérieur, puis vous pourrez créer des sous-catégories imbriquées.',
     enterSubCategoryDescription: 'Entrez la description de la sous-catégorie (optionnel)',
     sortOrder: 'Ordre de tri',
@@ -994,6 +1006,10 @@ const translations = {
     noneNoParents: 'Ninguna (No hay subcategorías principales disponibles)',
     nestedSubCategoryNote: 'Esta será una subcategoría anidada (sub-subcategoría)',
     topLevelSubCategoryNote: 'Deje vacío para crear una subcategoría de nivel superior, o seleccione un principal para crear una subcategoría anidada',
+    subCategorySlugAutoHint:
+      'For top-level subcategories, the slug is generated as name + your product category (e.g. men-sport-glasses) so the same display name can exist under different categories. You can edit the slug.',
+    subCategoryDuplicateTopLevel:
+      'Could not save: this slug or name may already exist for another top-level subcategory with the same parent scope. Try editing the slug (category is included automatically for new rows). If it still fails, the server may need uniqueness rules that include category_id for top-level subcategories.',
     noTopLevelSubCategories: 'No se encontraron subcategorías de nivel superior en esta categoría. Cree primero una subcategoría de nivel superior, luego puede crear subcategorías anidadas.',
     enterSubCategoryDescription: 'Ingrese la descripción de la subcategoría (opcional)',
     sortOrder: 'Orden de clasificación',
@@ -1212,6 +1228,10 @@ const translations = {
     noneNoParents: 'Nessuna (Nessuna sottocategoria principale disponibile)',
     nestedSubCategoryNote: 'Questa sarà una sottocategoria annidata (sotto-sottocategoria)',
     topLevelSubCategoryNote: 'Lascia vuoto per creare una sottocategoria di primo livello, o seleziona un principale per creare una sottocategoria annidata',
+    subCategorySlugAutoHint:
+      'For top-level subcategories, the slug is generated as name + your product category (e.g. men-sport-glasses) so the same display name can exist under different categories. You can edit the slug.',
+    subCategoryDuplicateTopLevel:
+      'Could not save: this slug or name may already exist for another top-level subcategory with the same parent scope. Try editing the slug (category is included automatically for new rows). If it still fails, the server may need uniqueness rules that include category_id for top-level subcategories.',
     noTopLevelSubCategories: 'Nessuna sottocategoria di primo livello trovata in questa categoria. Crea prima una sottocategoria di primo livello, poi puoi creare sottocategorie annidate.',
     enterSubCategoryDescription: 'Inserisci la descrizione della sottocategoria (opzionale)',
     sortOrder: 'Ordine di ordinamento',
@@ -1430,6 +1450,10 @@ const translations = {
     noneNoParents: 'Keine (Keine übergeordneten Unterkategorien verfügbar)',
     nestedSubCategoryNote: 'Dies wird eine verschachtelte Unterkategorie (Unter-Unterkategorie) sein',
     topLevelSubCategoryNote: 'Leer lassen, um eine Unterkategorie der obersten Ebene zu erstellen, oder wählen Sie eine übergeordnete Kategorie aus, um eine verschachtelte Unterkategorie zu erstellen',
+    subCategorySlugAutoHint:
+      'For top-level subcategories, the slug is generated as name + your product category (e.g. men-sport-glasses) so the same display name can exist under different categories. You can edit the slug.',
+    subCategoryDuplicateTopLevel:
+      'Could not save: this slug or name may already exist for another top-level subcategory with the same parent scope. Try editing the slug (category is included automatically for new rows). If it still fails, the server may need uniqueness rules that include category_id for top-level subcategories.',
     noTopLevelSubCategories: 'Keine Unterkategorien der obersten Ebene in dieser Kategorie gefunden. Erstellen Sie zuerst eine Unterkategorie der obersten Ebene, dann können Sie verschachtelte Unterkategorien erstellen.',
     enterSubCategoryDescription: 'Beschreibung der Unterkategorie eingeben (optional)',
     sortOrder: 'Sortierreihenfolge',
@@ -1648,6 +1672,10 @@ const translations = {
     noneNoParents: 'Nenhuma (Nenhuma subcategoria principal disponível)',
     nestedSubCategoryNote: 'Esta será uma subcategoria aninhada (sub-subcategoria)',
     topLevelSubCategoryNote: 'Deixe vazio para criar uma subcategoria de nível superior, ou selecione um principal para criar uma subcategoria aninhada',
+    subCategorySlugAutoHint:
+      'For top-level subcategories, the slug is generated as name + your product category (e.g. men-sport-glasses) so the same display name can exist under different categories. You can edit the slug.',
+    subCategoryDuplicateTopLevel:
+      'Could not save: this slug or name may already exist for another top-level subcategory with the same parent scope. Try editing the slug (category is included automatically for new rows). If it still fails, the server may need uniqueness rules that include category_id for top-level subcategories.',
     noTopLevelSubCategories: 'Nenhuma subcategoria de nível superior encontrada nesta categoria. Crie primeiro uma subcategoria de nível superior, depois você pode criar subcategorias aninhadas.',
     enterSubCategoryDescription: 'Digite a descrição da subcategoria (opcional)',
     sortOrder: 'Ordem de classificação',

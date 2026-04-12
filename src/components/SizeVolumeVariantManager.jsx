@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload, FiPackage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { 
@@ -13,24 +13,10 @@ import {
 const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate, onAddVariant, onEditVariant }) => {
   const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(false);
+  const supports = supportsSizeVolumeVariants(productType);
 
-  // Check if product supports size-volume variants
-  if (!supportsSizeVolumeVariants(productType)) {
-    return (
-      <div className="bg-gray-50 rounded-lg p-6 text-center">
-        <p className="text-gray-500">Size/Volume Variants are only available for eye hygiene products.</p>
-      </div>
-    );
-  }
-
-  // Load variants when component mounts or productId changes
-  useEffect(() => {
-    if (productId) {
-      loadVariants();
-    }
-  }, [productId]);
-
-  const loadVariants = async () => {
+  const loadVariants = useCallback(async () => {
+    if (!supports || !productId) return;
     try {
       setLoading(true);
       console.log('🔄 Loading size-volume variants for product:', productId);
@@ -48,7 +34,26 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate, on
     } finally {
       setLoading(false);
     }
-  };
+  }, [supports, productId, onVariantsUpdate]);
+
+  // Hooks must run every render — never return before useEffect (fixes "more hooks than previous render")
+  useEffect(() => {
+    if (!supports) {
+      setVariants([]);
+      return;
+    }
+    if (productId) {
+      loadVariants();
+    }
+  }, [supports, productId, loadVariants]);
+
+  if (!supports) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-6 text-center">
+        <p className="text-gray-500">Size/Volume Variants are only available for eye hygiene products.</p>
+      </div>
+    );
+  }
 
   const handleAddNew = () => {
     if (!productId) {

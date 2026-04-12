@@ -12,6 +12,38 @@ import {
   deleteSubCategory
 } from '../api/subCategories';
 
+/** URL-safe segment for slug */
+function slugifySegment(s) {
+  if (s == null || s === '') return '';
+  return String(s)
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/**
+ * Top-level subcategories share parent_id=null across categories; many backends
+ * enforce uniqueness on (parent_id, slug) without category_id, which blocks the
+ * same name in two product categories. Scope the auto slug by category so
+ * "men" + Sport → men-sport-glasses (if category slug/name differs).
+ */
+function buildAutoSlug(name, categoryId, parentId, categories) {
+  const base = slugifySegment(name);
+  if (!base) return '';
+  const hasParent = parentId !== undefined && parentId !== null && String(parentId).trim() !== '';
+  if (hasParent) {
+    return base;
+  }
+  if (!categoryId) return base;
+  const cat = categories.find((c) => String(c.id) === String(categoryId));
+  const catPart = cat ? slugifySegment(cat.slug || cat.name || '') : '';
+  if (!catPart) return `${base}-c${categoryId}`;
+  return `${base}-${catPart}`;
+}
+
 const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
     const { t } = useI18n();
     const [formData, setFormData] = useState({
@@ -26,6 +58,12 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [availableParents, setAvailableParents] = useState([]);
     const [loadingParents, setLoadingParents] = useState(false);
+    /** User edited slug manually — stop overwriting from name/category */
+    const [slugTouched, setSlugTouched] = useState(false);
+
+    useEffect(() => {
+        setSlugTouched(false);
+    }, [subCategory]);
 
     useEffect(() => {
         if (subCategory) {
@@ -185,20 +223,51 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
             fieldValue = value;
         }
 
-        // Auto-generate slug from name (only when creating new subcategory)
-        if (name === 'name' && !subCategory && type !== 'number') {
-            // Generate base slug from name
-            // Note: Duplicate names/slugs are allowed for sub-subcategories under different parents
-            const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            setFormData(prev => ({ ...prev, name: fieldValue, slug }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: fieldValue }));
+        if (name === 'slug' && !subCategory) {
+            setSlugTouched(true);
+            setFormData((prev) => ({ ...prev, slug: fieldValue }));
+            return;
         }
 
-        // Clear parent_id when category changes (parent must be in same category)
-        if (name === 'category_id') {
-            setFormData(prev => ({ ...prev, category_id: fieldValue, parent_id: '' }));
+        if (name === 'name' && !subCategory && type !== 'number') {
+            setFormData((prev) => {
+                const next = { ...prev, name: fieldValue };
+                if (!slugTouched) {
+                    next.slug = buildAutoSlug(
+                        fieldValue,
+                        next.category_id,
+                        next.parent_id,
+                        categories
+                    );
+                }
+                return next;
+            });
+            return;
         }
+
+        if (name === 'category_id') {
+            setFormData((prev) => {
+                const next = { ...prev, category_id: fieldValue, parent_id: '' };
+                if (!subCategory && !slugTouched) {
+                    next.slug = buildAutoSlug(next.name, next.category_id, next.parent_id, categories);
+                }
+                return next;
+            });
+            return;
+        }
+
+        if (name === 'parent_id' && !subCategory) {
+            setFormData((prev) => {
+                const next = { ...prev, parent_id: fieldValue };
+                if (!slugTouched) {
+                    next.slug = buildAutoSlug(next.name, next.category_id, next.parent_id, categories);
+                }
+                return next;
+            });
+            return;
+        }
+
+        setFormData((prev) => ({ ...prev, [name]: fieldValue }));
     };
 
     const handleSubmit = async (e) => {
@@ -359,11 +428,9 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                             );
                         }
                     } else {
-                        // Top-level subcategory - global uniqueness is expected
                         toast.error(
-                            `A top-level subcategory with this name or slug already exists.\n` +
-                            `💡 Tip: Create this as a sub-subcategory under a parent to allow duplicates under different parents.`,
-                            { duration: 5000 }
+                            t('subCategoryDuplicateTopLevel'),
+                            { duration: 8000 }
                         );
                     }
                 } else {
@@ -510,6 +577,11 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                                     className="input-modern font-mono w-full"
                                     required
                                 />
+                                {!subCategory && !formData.parent_id && (
+                                    <p className="text-xs text-gray-600 mt-2 px-1">
+                                        {t('subCategorySlugAutoHint')}
+                                    </p>
+                                )}
                                 {formData.parent_id && (
                                     <p className="text-xs text-blue-600 mt-2 px-1">
                                         💡 <strong>Note:</strong> You can use the same slug for sub-subcategories under different parent subcategories.

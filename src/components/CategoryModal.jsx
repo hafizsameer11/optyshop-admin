@@ -17,6 +17,7 @@ const CategoryModal = ({ category, onClose }) => {
   const { t } = useI18n();
   const [formData, setFormData] = useState({
     name: '',
+    name_it: '',
     slug: '',
     description: '',
     is_active: true,
@@ -29,6 +30,7 @@ const CategoryModal = ({ category, onClose }) => {
       // Handle both snake_case and camelCase field names
       setFormData({
         name: category.name || '',
+        name_it: category.name_it || '',
         slug: category.slug || '',
         description: category.description || '',
         is_active: category.is_active !== undefined 
@@ -43,6 +45,7 @@ const CategoryModal = ({ category, onClose }) => {
     } else {
       setFormData({
         name: '',
+        name_it: '',
         slug: '',
         description: '',
         is_active: true,
@@ -88,6 +91,12 @@ const CategoryModal = ({ category, onClose }) => {
         is_active: formData.is_active !== undefined ? formData.is_active : true,
         sort_order: parseInt(formData.sort_order) || 0,
       };
+
+      if (formData.name_it && formData.name_it.trim()) {
+        dataToSend.name_it = formData.name_it.trim();
+      } else {
+        dataToSend.name_it = null;
+      }
 
       // Only include description if it has a value
       if (formData.description && formData.description.trim()) {
@@ -165,6 +174,20 @@ const CategoryModal = ({ category, onClose }) => {
                 onChange={handleChange}
                 className="input-modern w-full"
                 required
+              />
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
+                Italian title (menu) <span className="text-gray-400 font-normal text-xs">optional</span>
+              </label>
+              <input
+                type="text"
+                name="name_it"
+                value={formData.name_it}
+                onChange={handleChange}
+                className="input-modern w-full"
+                placeholder="Titolo in italiano per il menu"
               />
             </div>
 

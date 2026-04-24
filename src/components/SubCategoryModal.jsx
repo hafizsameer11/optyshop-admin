@@ -48,6 +48,7 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
     const { t } = useI18n();
     const [formData, setFormData] = useState({
         name: '',
+        name_it: '',
         slug: '',
         category_id: '',
         parent_id: '',
@@ -74,6 +75,7 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
             
             setFormData({
                 name: subCategory.name || '',
+                name_it: subCategory.name_it || '',
                 slug: subCategory.slug || '',
                 category_id: subCategory.category_id || subCategory.category?.id || '',
                 parent_id: parentId,
@@ -84,6 +86,7 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
         } else {
             setFormData({
                 name: '',
+                name_it: '',
                 slug: '',
                 category_id: '',
                 parent_id: '',
@@ -305,6 +308,12 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                 parent_id: parentId, // null for top-level, or parent subcategory ID for nested
                 is_active: formData.is_active !== undefined ? formData.is_active : true,
             };
+
+            if (formData.name_it && formData.name_it.trim()) {
+                dataToSend.name_it = formData.name_it.trim();
+            } else {
+                dataToSend.name_it = null;
+            }
             
             console.log('📤 Sending subcategory:', {
                 isNested: parentId !== null,
@@ -563,6 +572,20 @@ const SubCategoryModal = ({ subCategory, categories, onClose, onSuccess }) => {
                                         💡 <strong>Note:</strong> You can use the same name for sub-subcategories under different parent subcategories.
                                     </p>
                                 )}
+                            </div>
+
+                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <label className="block text-sm font-bold text-gray-800 mb-2">
+                                    Italian title (menu) <span className="text-gray-400 font-normal text-xs">optional</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="name_it"
+                                    value={formData.name_it}
+                                    onChange={handleChange}
+                                    className="input-modern w-full"
+                                    placeholder="Titolo in italiano per il menu"
+                                />
                             </div>
 
                             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">

@@ -511,13 +511,12 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                     formDataToSend.append('unit_prices', JSON.stringify(validUnitPrices));
                 }
 
-                // Add files for each unit
-                // Format: unit_images_30[], unit_images_60[], etc.
+                // Field names must match multer (unit_images_10, unit_images_90, …) — no [] suffix
                 Object.keys(unitImageFiles).forEach(unit => {
                     const files = unitImageFiles[unit];
                     if (files && files.length > 0) {
                         files.forEach(file => {
-                            formDataToSend.append(`unit_images_${unit}[]`, file);
+                            formDataToSend.append(`unit_images_${unit}`, file);
                         });
                     }
                 });

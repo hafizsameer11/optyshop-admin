@@ -315,7 +315,7 @@ export const processUnitImages = (unitImageFiles) => {
     const files = unitImageFiles[unit];
     if (files && files.length > 0) {
       files.forEach(file => {
-        formData.append(`unit_images_${unit}[]`, file);
+        formData.append(`unit_images_${unit}`, file);
       });
     }
   });

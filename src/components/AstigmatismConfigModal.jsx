@@ -419,15 +419,6 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                 submitData.product_id = parseInt(submitData.product_id, 10);
             }
 
-            console.log('📤 Submitting astigmatism config with sub_category_id:', submitData.sub_category_id);
-            console.log('📤 Submitting astigmatism config with product_id:', submitData.product_id);
-            console.log('📤 Full submit data structure:', {
-                ...submitData,
-                unit_prices: Object.keys(validUnitPrices).length > 0 ? validUnitPrices : undefined,
-                unit_images: Object.keys(unitImages).some(unit => unitImages[unit]?.length > 0) ? unitImages : undefined
-            });
-            console.log('📤 available_units being sent:', submitData.available_units);
-
             // Add backend copy flag if user clicked copy button
             if (useBackendCopy) {
                 submitData.copy_right_to_left = true;
@@ -452,6 +443,15 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
             const hasUnitImageFiles = Object.keys(unitImageFiles).some(unit =>
                 unitImageFiles[unit] && unitImageFiles[unit].length > 0
             );
+
+            console.log('📤 Submitting astigmatism config with sub_category_id:', submitData.sub_category_id);
+            console.log('📤 Submitting astigmatism config with product_id:', submitData.product_id);
+            console.log('📤 Full submit data structure:', {
+                ...submitData,
+                unit_prices: Object.keys(validUnitPrices).length > 0 ? validUnitPrices : undefined,
+                unit_images: Object.keys(unitImages).some(unit => unitImages[unit]?.length > 0) ? unitImages : undefined
+            });
+            console.log('📤 available_units being sent:', submitData.available_units);
 
             // If we have files, use FormData; otherwise use JSON
             if (hasUnitImageFiles) {
@@ -932,7 +932,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                                                             Price for Unit {unitKey}
                                                         </label>
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-gray-500">$</span>
+                                                            <span className="text-gray-500">€</span>
                                                             <input
                                                                 type="number"
                                                                 step="0.01"

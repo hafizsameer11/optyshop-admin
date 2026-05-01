@@ -389,7 +389,7 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
                 required
               >
                 <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount ($)</option>
+                <option value="fixed">Fixed Amount (€)</option>
               </select>
             </div>
             <div>
@@ -413,7 +413,7 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
           {formData.discount_type === 'percentage' && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Max Discount ($)
+                Max Discount (€)
               </label>
               <input
                 type="number"
@@ -430,7 +430,7 @@ const CouponModal = ({ coupon, onClose, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Minimum Order Amount ($)
+              Minimum Order Amount (€)
             </label>
             <input
               type="number"

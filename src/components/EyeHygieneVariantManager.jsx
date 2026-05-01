@@ -330,7 +330,7 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price ($) *
+                  Price (€) *
                 </label>
                 <div className="relative">
                   <FaEuroSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />

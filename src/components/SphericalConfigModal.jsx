@@ -874,7 +874,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
                               Price for Unit {unitKey}
                             </label>
                             <div className="flex items-center gap-2">
-                              <span className="text-gray-500">$</span>
+                              <span className="text-gray-500">€</span>
                               <input
                                 type="number"
                                 step="0.01"

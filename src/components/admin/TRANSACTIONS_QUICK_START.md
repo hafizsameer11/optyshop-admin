@@ -55,9 +55,9 @@ Transactions → Find transaction → Click 🔄 → Update status
 
 #### In Order Modal:
 - Timeline of all transactions
-- Payment: +$199.99 (green)
-- Refund: -$50.00 (red)
-- Net Amount: $149.99
+- Payment: +€199.99 (green)
+- Refund: -€50.00 (red)
+- Net Amount: €149.99
 - Total Gateway Fees
 
 #### In Transactions Page:
@@ -102,21 +102,21 @@ Transactions → Find transaction → Click 🔄 → Update status
 
 ### 🎓 Example Scenario
 
-**Order #123: $199.99**
+**Order #123: €199.99**
 
 1. Customer pays → Transaction #1
    - Type: payment
-   - Amount: $199.99
+   - Amount: €199.99
    - Status: completed
    - Order payment_status: paid ✅
 
 2. Customer returns item → Transaction #2
    - Type: partial_refund
-   - Amount: $50.00
+   - Amount: €50.00
    - Status: completed
-   - Net Amount: $149.99
+   - Net Amount: €149.99
 
-**Result:** Order shows payment_status: "paid", but net amount is $149.99
+**Result:** Order shows payment_status: "paid", but net amount is €149.99
 
 ### 🔗 Navigation
 

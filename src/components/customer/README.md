@@ -194,7 +194,7 @@ const OrderDetails = ({ order }) => {
   return (
     <div>
       <h2>Order #{order.id}</h2>
-      <p>Total: ${order.total}</p>
+      <p>Total: €{order.total}</p>
       
       {/* Shows all transactions for this order in timeline format */}
       <OrderTransactionsList 

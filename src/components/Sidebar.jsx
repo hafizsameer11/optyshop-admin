@@ -17,7 +17,6 @@ import {
   FiChevronDown,
   FiInbox,
   FiBriefcase,
-  FiDollarSign,
   FiBarChart2,
   FiFolder,
   FiFolderPlus,
@@ -29,6 +28,7 @@ import {
   FiAward,
   FiGift
 } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 
@@ -163,7 +163,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     },
     {
       type: 'item',
-      item: { path: '/transactions', icon: FiDollarSign, label: t('transactions') }
+      item: { path: '/transactions', icon: FaEuroSign, label: t('transactions') }
     },
     {
       type: 'item',

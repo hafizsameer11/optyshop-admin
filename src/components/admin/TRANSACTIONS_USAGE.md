@@ -191,9 +191,9 @@ Net Amount = Sum of completed payments - Sum of completed refunds/chargebacks
 ```
 
 **Example:**
-- Payment: +$199.99 (completed)
-- Partial Refund: -$50.00 (completed)
-- Net Amount: $149.99
+- Payment: +€199.99 (completed)
+- Partial Refund: -€50.00 (completed)
+- Net Amount: €149.99
 
 ### Gateway Fees
 

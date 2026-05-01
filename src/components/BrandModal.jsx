@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiUpload, FiImage, FiExternalLink } from 'react-icons/fi';
 import api from '../utils/api';
+import uploadAPI from '../api/upload';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -102,34 +103,26 @@ const BrandModal = ({ brand, onClose, onSuccess }) => {
     }
 
     // Upload to server immediately to get HTTPS URL
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    // Show loading state
     toast.loading('Uploading logo...');
-    
-    // Upload to server
-    fetch('/api/admin/upload/image', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success && data.url) {
+    uploadAPI
+      .uploadImage(file)
+      .then((result) => {
+        const url = result.url;
+        if (!url) {
+          toast.error('Failed to upload logo');
+          return;
+        }
         setLogoFile(file);
-        setLogoPreview(data.url);
+        setLogoPreview(url);
         toast.success('Logo uploaded successfully');
-      } else {
-        toast.error('Failed to upload logo');
-      }
-    })
-    .catch(error => {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload logo');
-    })
-    .finally(() => {
-      toast.dismiss();
-    });
+      })
+      .catch((error) => {
+        console.error('Upload error:', error);
+        toast.error(error.message || 'Failed to upload logo');
+      })
+      .finally(() => {
+        toast.dismiss();
+      });
   };
 
   const handleRemoveLogo = () => {

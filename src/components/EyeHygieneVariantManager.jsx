@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload, FiPackage } from 'react-icons/fi';
 import { FaEuroSign } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import uploadAPI from '../api/upload';
 import { 
   getEyeHygieneVariants,
   getProductEyeHygieneVariants,
@@ -185,33 +186,25 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
     const file = e.target.files[0];
     if (file) {
       // Upload to server immediately to get HTTPS URL
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      // Show loading state
       toast.loading('Uploading image...');
-      
-      // Upload to server
-      fetch('/api/admin/upload/image', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success && data.url) {
-          setFormData(prev => ({ ...prev, image_url: data.url }));
+      uploadAPI
+        .uploadImage(file)
+        .then((result) => {
+          const url = result.url;
+          if (!url) {
+            toast.error('Failed to upload image');
+            return;
+          }
+          setFormData((prev) => ({ ...prev, image_url: url }));
           toast.success('Image uploaded successfully');
-        } else {
-          toast.error('Failed to upload image');
-        }
-      })
-      .catch(error => {
-        console.error('Upload error:', error);
-        toast.error('Failed to upload image');
-      })
-      .finally(() => {
-        toast.dismiss();
-      });
+        })
+        .catch((error) => {
+          console.error('Upload error:', error);
+          toast.error(error.message || 'Failed to upload image');
+        })
+        .finally(() => {
+          toast.dismiss();
+        });
     }
   };
 

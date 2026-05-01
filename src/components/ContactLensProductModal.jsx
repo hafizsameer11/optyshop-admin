@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiUpload, FiChevronRight, FiPlus, FiTrash2, FiCopy, FiEdit2 } from 'react-icons/fi';
 import api from '../utils/api';
+import uploadAPI from '../api/upload';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -325,29 +326,16 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
       setImageFiles(newFiles);
 
       // Upload files immediately to get HTTPS URLs
-      const uploadPromises = validFiles.map((file) => {
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        return fetch('/api/admin/upload/image', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success && data.url) {
-            return data.url;
-          } else {
-            toast.error('Failed to upload image');
+      const uploadPromises = validFiles.map((file) =>
+        uploadAPI
+          .uploadImage(file)
+          .then((r) => r.url)
+          .catch((error) => {
+            console.error('Upload error:', error);
+            toast.error(error.message || 'Failed to upload image');
             return null;
-          }
-        })
-        .catch(error => {
-          console.error('Upload error:', error);
-          toast.error('Failed to upload image');
-          return null;
-        });
-      });
+          })
+      );
 
       Promise.all(uploadPromises).then((previews) => {
         const validPreviews = previews.filter(Boolean);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiX, FiPlus, FiUploadCloud } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import uploadAPI from '../api/upload';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -304,42 +305,33 @@ const LensColorModal = ({ lensColor, onClose }) => {
     const file = e.target.files[0];
     if (file) {
       // Upload to server immediately to get HTTPS URL
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      // Show loading state
       toast.loading('Uploading image...');
-      
-      // Upload to server
-      fetch('/api/admin/upload/image', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success && data.url) {
+      uploadAPI
+        .uploadImage(file)
+        .then((result) => {
+          const url = result.url;
+          if (!url) {
+            toast.error('Failed to upload image');
+            return;
+          }
           if (colorIndex !== null) {
-            // Update specific color's image
             const updatedColors = [...colors];
             updatedColors[colorIndex].imageFile = file;
-            updatedColors[colorIndex].imagePreview = data.url;
+            updatedColors[colorIndex].imagePreview = url;
             setColors(updatedColors);
           } else {
             setImageFile(file);
-            setImagePreview(data.url);
+            setImagePreview(url);
           }
           toast.success('Image uploaded successfully');
-        } else {
-          toast.error('Failed to upload image');
-        }
-      })
-      .catch(error => {
-        console.error('Upload error:', error);
-        toast.error('Failed to upload image');
-      })
-      .finally(() => {
-        toast.dismiss();
-      });
+        })
+        .catch((error) => {
+          console.error('Upload error:', error);
+          toast.error(error.message || 'Failed to upload image');
+        })
+        .finally(() => {
+          toast.dismiss();
+        });
     }
   };
 

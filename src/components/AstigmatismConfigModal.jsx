@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiPlus, FiTrash2, FiCopy } from 'react-icons/fi';
 import api from '../utils/api';
+import uploadAPI from '../api/upload';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import { astigmatismConfigs } from '../api/contactLensForms';
@@ -1066,42 +1067,33 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                                                                         const files = Array.from(e.target.files || []);
                                                                         if (files.length > 0) {
                                                                             // Upload files immediately to get HTTPS URLs
-                                                                            files.forEach(file => {
-                                                                                const formData = new FormData();
-                                                                                formData.append('image', file);
-                                                                                
-                                                                                // Show loading state
+                                                                            files.forEach((file) => {
                                                                                 toast.loading('Uploading image...');
-                                                                                
-                                                                                // Upload to server
-                                                                                fetch('/api/admin/upload/image', {
-                                                                                    method: 'POST',
-                                                                                    body: formData
-                                                                                })
-                                                                                .then(response => response.json())
-                                                                                .then(data => {
-                                                                                    if (data.success && data.url) {
-                                                                                        // Add file to files array and HTTPS URL to previews
-                                                                                        setUnitImageFiles(prev => ({
+                                                                                uploadAPI
+                                                                                    .uploadImage(file)
+                                                                                    .then((result) => {
+                                                                                        const url = result.url;
+                                                                                        if (!url) {
+                                                                                            toast.error('Failed to upload image');
+                                                                                            return;
+                                                                                        }
+                                                                                        setUnitImageFiles((prev) => ({
                                                                                             ...prev,
-                                                                                            [unitKey]: [...(prev[unitKey] || []), file]
+                                                                                            [unitKey]: [...(prev[unitKey] || []), file],
                                                                                         }));
-                                                                                        setUnitImagePreviews(prev => ({
+                                                                                        setUnitImagePreviews((prev) => ({
                                                                                             ...prev,
-                                                                                            [unitKey]: [...(prev[unitKey] || []), data.url]
+                                                                                            [unitKey]: [...(prev[unitKey] || []), url],
                                                                                         }));
                                                                                         toast.success('Image uploaded successfully');
-                                                                                    } else {
-                                                                                        toast.error('Failed to upload image');
-                                                                                    }
-                                                                                })
-                                                                                .catch(error => {
-                                                                                    console.error('Upload error:', error);
-                                                                                    toast.error('Failed to upload image');
-                                                                                })
-                                                                                .finally(() => {
-                                                                                    toast.dismiss();
-                                                                                });
+                                                                                    })
+                                                                                    .catch((error) => {
+                                                                                        console.error('Upload error:', error);
+                                                                                        toast.error(error.message || 'Failed to upload image');
+                                                                                    })
+                                                                                    .finally(() => {
+                                                                                        toast.dismiss();
+                                                                                    });
                                                                             });
                                                                         }
                                                                         // Reset input

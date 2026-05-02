@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMenu, FiLogOut, FiBell, FiSearch, FiUser, FiSettings, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import {
+  ADMIN_GLOBAL_SEARCH_SCOPES,
+  ADMIN_GLOBAL_SEARCH_SCOPE_KEY,
+  DEFAULT_ADMIN_SEARCH_SCOPE_ID,
+} from '../config/adminGlobalSearch';
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
@@ -11,19 +16,44 @@ const Header = ({ toggleSidebar }) => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
+  const [searchScope, setSearchScope] = useState(() => {
+    try {
+      const saved = localStorage.getItem(ADMIN_GLOBAL_SEARCH_SCOPE_KEY);
+      if (saved && ADMIN_GLOBAL_SEARCH_SCOPES.some((s) => s.id === saved)) return saved;
+    } catch {
+      /* ignore */
+    }
+    return DEFAULT_ADMIN_SEARCH_SCOPE_ID;
+  });
   const isDemoMode = localStorage.getItem('demo_user') !== null;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(ADMIN_GLOBAL_SEARCH_SCOPE_KEY, searchScope);
+    } catch {
+      /* ignore */
+    }
+  }, [searchScope]);
 
   const handleHeaderSearch = (e) => {
     e.preventDefault();
     const q = headerSearch.trim();
-    navigate('/products', { state: { adminGlobalSearch: q } });
+    const scope = ADMIN_GLOBAL_SEARCH_SCOPES.find((s) => s.id === searchScope);
+    const path = scope?.path || '/products';
+    if (!q) {
+      navigate(path);
+      return;
+    }
+    const params = new URLSearchParams();
+    params.set('adminSearch', q);
+    navigate(`${path}?${params.toString()}`);
   };
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm backdrop-blur-lg bg-white/95">
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-4 flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-y-3 min-h-16 py-2 sm:py-0 sm:h-16 sm:min-h-0">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
             <button
               onClick={toggleSidebar}
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors lg:hidden"
@@ -34,23 +64,39 @@ const Header = ({ toggleSidebar }) => {
 
             <form
               onSubmit={handleHeaderSearch}
-              className="hidden md:flex items-center flex-1 max-w-lg"
+              className="flex flex-1 min-w-0 max-w-2xl items-stretch gap-2"
             >
-              <div className="relative w-full">
-                <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+              <label className="sr-only" htmlFor="admin-search-scope">
+                Search in
+              </label>
+              <select
+                id="admin-search-scope"
+                value={searchScope}
+                onChange={(e) => setSearchScope(e.target.value)}
+                className="shrink-0 w-[9.5rem] sm:w-36 pl-2 pr-7 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
+                aria-label="Search in"
+              >
+                {ADMIN_GLOBAL_SEARCH_SCOPES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <div className="relative flex-1 min-w-0">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none" />
                 <input
                   type="search"
                   value={headerSearch}
                   onChange={(e) => setHeaderSearch(e.target.value)}
                   placeholder={t('searchPlaceholder')}
                   aria-label={t('searchPlaceholder')}
-                  className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-gray-900 placeholder-gray-400"
+                  className="w-full pl-9 sm:pl-12 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-gray-900 placeholder-gray-400"
                 />
               </div>
             </form>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <LanguageSwitcher />
 
             {isDemoMode && (

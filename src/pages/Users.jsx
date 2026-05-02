@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FiEdit2, FiSearch, FiPlus } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -9,6 +10,7 @@ import { useI18n } from '../context/I18nContext';
 
 const Users = () => {
   const { t } = useI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,6 +22,17 @@ const Users = () => {
   useEffect(() => {
     fetchUsers();
   }, [page]);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('adminSearch');
+    if (fromUrl == null || fromUrl === '') return;
+    setSearchTerm(fromUrl);
+    setPage(1);
+    const next = new URLSearchParams(searchParams);
+    next.delete('adminSearch');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()]);
 
   const fetchUsers = async () => {
     try {

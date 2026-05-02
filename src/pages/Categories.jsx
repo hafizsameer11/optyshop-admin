@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiChevronDown, FiChevronRight } from 'react-icons/fi';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { FiPlus, FiEdit2, FiTrash2, FiChevronDown, FiChevronRight, FiSearch } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import CategoryModal from '../components/CategoryModal';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -9,6 +10,8 @@ import {
 } from '../api/categories';
 
 const Categories = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [listSearch, setListSearch] = useState('');
   const [categories, setCategories] = useState([]);
   const [subCategoriesMap, setSubCategoriesMap] = useState({}); // categoryId -> subcategories array
   const [expandedCategories, setExpandedCategories] = useState({}); // categoryId -> boolean
@@ -20,6 +23,27 @@ const Categories = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('adminSearch');
+    if (fromUrl == null || fromUrl === '') return;
+    setListSearch(fromUrl);
+    const next = new URLSearchParams(searchParams);
+    next.delete('adminSearch');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()]);
+
+  const filteredCategories = useMemo(() => {
+    const q = listSearch.trim().toLowerCase();
+    if (!q) return categories;
+    return categories.filter(
+      (c) =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.slug || '').toLowerCase().includes(q) ||
+        (String(c.description || '').toLowerCase().includes(q))
+    );
+  }, [categories, listSearch]);
 
   const fetchCategories = async () => {
     try {
@@ -117,6 +141,18 @@ const Categories = () => {
 
       {/* Enhanced Table Card - Responsive */}
       <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden">
+        <div className="p-4 border-b border-gray-200/80 bg-gray-50/50">
+          <div className="relative max-w-md">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="search"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Search categories by name, slug…"
+              className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+            />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px]">
             <thead className="bg-gradient-to-r from-gray-50 via-indigo-50/30 to-purple-50/30 border-b border-gray-200">
@@ -148,20 +184,26 @@ const Categories = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {categories.length === 0 ? (
+              {filteredCategories.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="table-cell-responsive text-center">
                     <div className="flex flex-col items-center justify-center py-8 sm:py-12">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4">
                         <FiPlus className="w-8 h-8 text-gray-400" />
                       </div>
-                      <p className="text-gray-500 font-semibold text-base sm:text-lg">No categories found</p>
-                      <p className="text-gray-400 text-sm mt-1">Get started by adding your first category</p>
+                      <p className="text-gray-500 font-semibold text-base sm:text-lg">
+                        {categories.length === 0 ? 'No categories found' : 'No categories match your search'}
+                      </p>
+                      <p className="text-gray-400 text-sm mt-1">
+                        {categories.length === 0
+                          ? 'Get started by adding your first category'
+                          : 'Try a different search term'}
+                      </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                categories.map((category, index) => {
+                filteredCategories.map((category, index) => {
                   // Handle different possible product count structures
                   let productCount = 0;
                   if (Array.isArray(category.products)) {

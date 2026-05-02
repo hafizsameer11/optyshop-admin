@@ -463,6 +463,24 @@ const Products = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- apply header search once per navigation state
   }, [location.state]);
 
+  /** Header global search uses ?adminSearch= — apply and strip so URL stays shareable */
+  useEffect(() => {
+    const fromUrl = searchParams.get('adminSearch');
+    if (fromUrl == null || fromUrl === '') return;
+    setPageState({
+      searchTerm: fromUrl,
+      page: 1,
+      selectedSection: 'all',
+      categoryFilter: '',
+      subCategoryFilter: '',
+      brandFilter: '',
+    });
+    const next = new URLSearchParams(searchParams);
+    next.delete('adminSearch');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run when query string changes
+  }, [searchParams.toString()]);
+
   useEffect(() => {
     if (
       prevDebouncedSearchRef.current !== undefined &&

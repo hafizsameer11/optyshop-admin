@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -6,6 +7,7 @@ import SubCategoryModal from '../components/SubCategoryModal';
 import { API_ROUTES, buildQueryString } from '../config/apiRoutes';
 
 const SubCategories = () => {
+    const [urlSearchParams, setUrlSearchParams] = useSearchParams();
     const [subCategories, setSubCategories] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -23,6 +25,17 @@ const SubCategories = () => {
     useEffect(() => {
         fetchData();
     }, [currentPage, searchQuery, categoryFilter]);
+
+    useEffect(() => {
+        const fromUrl = urlSearchParams.get('adminSearch');
+        if (fromUrl == null || fromUrl === '') return;
+        setSearchQuery(fromUrl);
+        setCurrentPage(1);
+        const next = new URLSearchParams(urlSearchParams);
+        next.delete('adminSearch');
+        setUrlSearchParams(next, { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [urlSearchParams.toString()]);
 
     const fetchData = async () => {
         try {

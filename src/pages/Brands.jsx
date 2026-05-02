@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiImage, FiExternalLink } from 'react-icons/fi';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { FiPlus, FiEdit2, FiTrash2, FiImage, FiExternalLink, FiSearch } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import BrandModal from '../components/BrandModal';
 import { API_ROUTES } from '../config/apiRoutes';
@@ -9,6 +10,8 @@ import {
 } from '../api/brands';
 
 const Brands = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [listSearch, setListSearch] = useState('');
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -17,6 +20,27 @@ const Brands = () => {
   useEffect(() => {
     fetchBrands();
   }, []);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('adminSearch');
+    if (fromUrl == null || fromUrl === '') return;
+    setListSearch(fromUrl);
+    const next = new URLSearchParams(searchParams);
+    next.delete('adminSearch');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()]);
+
+  const filteredBrands = useMemo(() => {
+    const q = listSearch.trim().toLowerCase();
+    if (!q) return brands;
+    return brands.filter(
+      (b) =>
+        (b.name || '').toLowerCase().includes(q) ||
+        (b.slug || '').toLowerCase().includes(q) ||
+        String(b.description || '').toLowerCase().includes(q)
+    );
+  }, [brands, listSearch]);
 
   const fetchBrands = async () => {
     try {
@@ -112,6 +136,18 @@ const Brands = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow">
+        <div className="p-4 border-b border-gray-200">
+          <div className="relative max-w-md">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="search"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Search brands by name, slug…"
+              className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+            />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -140,7 +176,14 @@ const Brands = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {brands.map((brand) => (
+              {filteredBrands.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    {brands.length === 0 ? 'No brands yet.' : 'No brands match your search.'}
+                  </td>
+                </tr>
+              ) : (
+              filteredBrands.map((brand) => (
                 <tr key={brand.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     {brand.logo_image ? (
@@ -217,17 +260,11 @@ const Brands = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
       </div>
-
-      {brands.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No brands found. Click "Add Brand" to create one.</p>
-        </div>
-      )}
 
       {modalOpen && (
         <BrandModal

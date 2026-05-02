@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FiEye, FiPackage, FiSearch, FiPlus } from 'react-icons/fi';
 import { FaEuroSign } from 'react-icons/fa';
 import api from '../utils/api';
@@ -10,7 +11,8 @@ import { useI18n } from '../context/I18nContext';
 
 const Orders = () => {
   const { t } = useI18n();
-  
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // State persistence key
   const STORAGE_KEY = 'orders_page_state';
   
@@ -93,6 +95,17 @@ const Orders = () => {
   useEffect(() => {
     fetchOrders();
   }, [page, statusFilter, paymentStatusFilter, paymentMethodFilter, searchTerm, startDate, endDate]);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('adminSearch');
+    if (fromUrl == null || fromUrl === '') return;
+    setSearchTerm(fromUrl);
+    setPage(1);
+    const next = new URLSearchParams(searchParams);
+    next.delete('adminSearch');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()]);
 
   const fetchOrders = async () => {
     try {

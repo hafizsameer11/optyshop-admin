@@ -356,6 +356,23 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
         toast.success('Right Eye values copied to Left Eye');
     };
 
+    const buildUnitImagesPayload = () => {
+        const unitSet = new Set([
+            ...formData.available_units.filter(Boolean).map(String),
+            ...Object.keys(unitImages || {}),
+            ...Object.keys(unitImageFiles || {}),
+        ]);
+        const out = {};
+        unitSet.forEach((unit) => {
+            if (!unit) return;
+            const images = Array.isArray(unitImages[unit])
+                ? unitImages[unit].filter((img) => img && String(img).trim() !== '')
+                : [];
+            out[unit] = images;
+        });
+        return out;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -492,19 +509,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                     }
                 });
 
-                // Add existing unit_images URLs as JSON (for units without new files)
-                const validUnitImages = {};
-                Object.keys(unitImages).forEach(unit => {
-                    const images = Array.isArray(unitImages[unit])
-                        ? unitImages[unit].filter(img => img && img.trim() !== '')
-                        : [];
-                    if (images.length > 0) {
-                        validUnitImages[unit] = images;
-                    }
-                });
-                if (Object.keys(validUnitImages).length > 0) {
-                    formDataToSend.append('unit_images', JSON.stringify(validUnitImages));
-                }
+                formDataToSend.append('unit_images', JSON.stringify(buildUnitImagesPayload()));
 
                 // Add unit_prices as JSON
                 if (Object.keys(validUnitPrices).length > 0) {
@@ -543,19 +548,7 @@ const AstigmatismConfigModal = ({ config, onClose }) => {
                     );
                 }
             } else {
-                // No files, use JSON (existing URLs only)
-                const validUnitImages = {};
-                Object.keys(unitImages).forEach(unit => {
-                    const images = Array.isArray(unitImages[unit])
-                        ? unitImages[unit].filter(img => img && img.trim() !== '')
-                        : [];
-                    if (images.length > 0) {
-                        validUnitImages[unit] = images;
-                    }
-                });
-                if (Object.keys(validUnitImages).length > 0) {
-                    submitData.unit_images = validUnitImages;
-                }
+                submitData.unit_images = buildUnitImagesPayload();
 
                 // Remove available_units if empty to avoid validation errors
                 if (submitData.available_units && submitData.available_units.length === 0) {

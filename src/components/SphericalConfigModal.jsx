@@ -348,6 +348,24 @@ const SphericalConfigModal = ({ config, onClose }) => {
     toast.success('Right Eye values copied to Left Eye');
   };
 
+  /** Full unit_images map for API: includes empty arrays so removals and "clear all" persist. */
+  const buildUnitImagesPayload = () => {
+    const unitSet = new Set([
+      ...formData.available_units.filter(Boolean).map(String),
+      ...Object.keys(unitImages || {}),
+      ...Object.keys(unitImageFiles || {}),
+    ]);
+    const out = {};
+    unitSet.forEach((unit) => {
+      if (!unit) return;
+      const images = Array.isArray(unitImages[unit])
+        ? unitImages[unit].filter((img) => img && String(img).trim() !== '')
+        : [];
+      out[unit] = images;
+    });
+    return out;
+  };
+
   const handleSubmit = async () => {
     console.log('🔍 Spherical Configuration form submission started');
     console.log('🔍 Form data before submission:', formData);
@@ -454,19 +472,8 @@ const SphericalConfigModal = ({ config, onClose }) => {
           }
         });
 
-        // Add existing unit_images URLs as JSON (for units without new files)
-        const validUnitImages = {};
-        Object.keys(unitImages).forEach(unit => {
-          const images = Array.isArray(unitImages[unit])
-            ? unitImages[unit].filter(img => img && img.trim() !== '')
-            : [];
-          if (images.length > 0) {
-            validUnitImages[unit] = images;
-          }
-        });
-        if (Object.keys(validUnitImages).length > 0) {
-          formDataToSend.append('unit_images', JSON.stringify(validUnitImages));
-        }
+        const unitImagesPayload = buildUnitImagesPayload();
+        formDataToSend.append('unit_images', JSON.stringify(unitImagesPayload));
 
         // Add unit_prices as JSON
         if (Object.keys(validUnitPrices).length > 0) {
@@ -500,19 +507,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
           }
         }
       } else {
-        // No files, use JSON (existing URLs only)
-        const validUnitImages = {};
-        Object.keys(unitImages).forEach(unit => {
-          const images = Array.isArray(unitImages[unit])
-            ? unitImages[unit].filter(img => img && img.trim() !== '')
-            : [];
-          if (images.length > 0) {
-            validUnitImages[unit] = images;
-          }
-        });
-        if (Object.keys(validUnitImages).length > 0) {
-          submitData.unit_images = validUnitImages;
-        }
+        submitData.unit_images = buildUnitImagesPayload();
 
         // Remove available_units if empty to avoid validation errors
         if (submitData.available_units && submitData.available_units.length === 0) {

@@ -10,7 +10,14 @@ const Header = ({ toggleSidebar }) => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState('');
   const isDemoMode = localStorage.getItem('demo_user') !== null;
+
+  const handleHeaderSearch = (e) => {
+    e.preventDefault();
+    const q = headerSearch.trim();
+    navigate('/products', { state: { adminGlobalSearch: q } });
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm backdrop-blur-lg bg-white/95">
@@ -25,16 +32,22 @@ const Header = ({ toggleSidebar }) => {
               <FiMenu className="w-5 h-5" />
             </button>
 
-            <div className="hidden md:flex items-center flex-1 max-w-lg">
+            <form
+              onSubmit={handleHeaderSearch}
+              className="hidden md:flex items-center flex-1 max-w-lg"
+            >
               <div className="relative w-full">
-                <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                 <input
-                  type="text"
+                  type="search"
+                  value={headerSearch}
+                  onChange={(e) => setHeaderSearch(e.target.value)}
                   placeholder={t('searchPlaceholder')}
+                  aria-label={t('searchPlaceholder')}
                   className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-gray-900 placeholder-gray-400"
                 />
               </div>
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-3">

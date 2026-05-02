@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
@@ -292,6 +292,8 @@ const ProductImage = ({ product, refreshKey }) => {
 };
 
 const Products = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useI18n();
   
@@ -305,6 +307,8 @@ const Products = () => {
   });
   
   const { searchTerm, categoryFilter, subCategoryFilter, selectedSection, page } = pageState;
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  const prevDebouncedSearchRef = useRef();
 
   // Migrate renamed section (persisted localStorage may still have old value)
   useEffect(() => {
@@ -349,7 +353,6 @@ const Products = () => {
   const [categoriesHydrated, setCategoriesHydrated] = useState(false);
   // Track if this is the initial mount to prevent clearing restored subcategory filter
   const [isInitialMount, setIsInitialMount] = useState(true);
-  const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger search on Enter
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewProduct, setViewProduct] = useState(null);
 
@@ -444,6 +447,32 @@ const Products = () => {
     }
   }, [searchParams, products]);
 
+  useEffect(() => {
+    const q = location.state?.adminGlobalSearch;
+    if (q !== undefined && q !== null) {
+      setPageState({
+        searchTerm: typeof q === 'string' ? q : '',
+        page: 1,
+        selectedSection: 'all',
+        categoryFilter: '',
+        subCategoryFilter: '',
+        brandFilter: '',
+      });
+      navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- apply header search once per navigation state
+  }, [location.state]);
+
+  useEffect(() => {
+    if (
+      prevDebouncedSearchRef.current !== undefined &&
+      prevDebouncedSearchRef.current !== debouncedSearchTerm
+    ) {
+      setPageState({ page: 1 });
+    }
+    prevDebouncedSearchRef.current = debouncedSearchTerm;
+  }, [debouncedSearchTerm, setPageState]);
+
   // Restore full product data when component mounts if there's a saved editing product
   useEffect(() => {
     if (editingProduct && editingProduct.id && products.length > 0) {
@@ -492,7 +521,7 @@ const Products = () => {
     selectedSection,
     sectionCategoryIds,
     sectionSubCategoryIds,
-    searchTrigger,
+    debouncedSearchTerm,
     categoriesHydrated,
   ]);
   
@@ -512,9 +541,6 @@ const Products = () => {
       setIsInitialMount(false);
     }
   }, [categoryFilter, isInitialMount]);
-
-  // Note: searchTerm changes are handled by the Enter key press in the input
-  // No automatic page reset on searchTerm change to prevent unwanted API calls
 
   const fetchCategories = async () => {
     try {
@@ -598,8 +624,7 @@ const Products = () => {
         limit: '12',
       });
       
-      // Trim search term and only send if not empty
-      const trimmedSearch = searchTerm?.trim();
+      const trimmedSearch = debouncedSearchTerm?.trim();
       if (trimmedSearch) {
         params.append('search', trimmedSearch);
       }
@@ -2076,14 +2101,6 @@ const Products = () => {
                 value={searchTerm}
                 onChange={(e) => {
                   setPageState({ searchTerm: e.target.value });
-                  // Only update the input value, don't trigger search
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    // Trigger search only on Enter key press
-                    setPageState({ page: 1 }); // Reset to first page
-                    setSearchTrigger(prev => prev + 1); // Trigger search
-                  }
                 }}
                 className="input-modern pl-10 sm:pl-12 w-full"
               />

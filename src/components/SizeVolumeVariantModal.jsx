@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiUpload, FiImage } from 'react-icons/fi';
 import api from '../utils/api';
+import uploadAPI from '../api/upload';
 import toast from 'react-hot-toast';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -87,45 +88,47 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     console.log('📁 File selected:', file);
-    
+
     if (!file) {
       console.log('❌ No file selected');
       return;
     }
-    
-    // Check file type
+
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
-      e.target.value = ''; // Clear the input
+      e.target.value = '';
       return;
     }
-    
-    // Check file size (10MB limit)
+
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Image size must be less than 10MB');
-      e.target.value = ''; // Clear the input
+      e.target.value = '';
       return;
     }
-    
+
     console.log('✅ File validation passed:', file.name, file.type, file.size);
-    
-    // Convert to Base64 for preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Url = event.target.result;
-      console.log('🖼️ Image converted to Base64');
-      setFormData(prev => ({ ...prev, image_url: base64Url }));
-      toast.success(`Image uploaded: ${file.name}`);
-    };
-    reader.onerror = (error) => {
-      console.error('❌ Error reading file:', error);
-      toast.error('Failed to read image file');
-      e.target.value = ''; // Clear the input
-    };
-    reader.readAsDataURL(file);
+
+    // Upload to S3 immediately. The image_url column is VARCHAR(500), so we MUST
+    // store an HTTPS URL — Base64 data URLs overflow and trigger a 500 on save.
+    const toastId = toast.loading('Uploading image...');
+    try {
+      const result = await uploadAPI.uploadImage(file);
+      const url = result?.url;
+      if (!url) {
+        toast.error('Upload did not return a valid image URL', { id: toastId });
+        return;
+      }
+      setFormData((prev) => ({ ...prev, image_url: url }));
+      toast.success(`Image uploaded: ${file.name}`, { id: toastId });
+    } catch (uploadErr) {
+      console.error('❌ Variant image upload failed:', uploadErr);
+      toast.error(uploadErr?.message || 'Failed to upload image', { id: toastId });
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = async () => {
@@ -186,20 +189,17 @@ const SizeVolumeVariantModal = ({ variant, productId, onClose }) => {
       if (typeof onClose === 'function') {
         onClose(true);
       }
-    } catch (error) {
-      console.error('❌ Size/Volume Variant save error:', error);
-      console.error('Error response:', error.response?.data);
-      
-      // Always simulate successful save for demo purposes (same as Frame Sizes)
-      console.log('🔄 Simulating save for demo due to error');
-      toast.error('Backend unavailable - Simulating save for demo');
-      setTimeout(() => {
-        toast.success('Demo: Size/Volume variant saved successfully (simulated)');
-        console.log('🔄 Calling onClose(true) after simulation');
-        if (typeof onClose === 'function') {
-          onClose(true);
-        }
-      }, 1000);
+    } catch (err) {
+      console.error('❌ Size/Volume Variant save error:', err);
+      console.error('Error response:', err.response?.data);
+
+      // Surface real failures so the user knows the save did NOT succeed.
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message;
+      const fallback = status
+        ? `Failed to save variant (HTTP ${status})`
+        : 'Network error - please check your connection';
+      toast.error(serverMsg || fallback);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiEye } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiEye, FiPower } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import ContactLensProductModal from '../components/ContactLensProductModal';
@@ -11,7 +11,8 @@ import { useI18n } from '../context/I18nContext';
 import api from '../utils/api';
 import { 
   getProducts,
-  deleteProduct
+  deleteProduct,
+  updateProduct
 } from '../api/products';
 import { getBrands } from '../api/brands';
 import { getSubCategories } from '../api/subCategories';
@@ -450,13 +451,13 @@ const Products = () => {
   useEffect(() => {
     const q = location.state?.adminGlobalSearch;
     if (q !== undefined && q !== null) {
+      setBrandFilter('');
       setPageState({
         searchTerm: typeof q === 'string' ? q : '',
         page: 1,
         selectedSection: 'all',
         categoryFilter: '',
         subCategoryFilter: '',
-        brandFilter: '',
       });
       navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
     }
@@ -467,13 +468,13 @@ const Products = () => {
   useEffect(() => {
     const fromUrl = searchParams.get('adminSearch');
     if (fromUrl == null || fromUrl === '') return;
+    setBrandFilter('');
     setPageState({
       searchTerm: fromUrl,
       page: 1,
       selectedSection: 'all',
       categoryFilter: '',
       subCategoryFilter: '',
-      brandFilter: '',
     });
     const next = new URLSearchParams(searchParams);
     next.delete('adminSearch');
@@ -1025,6 +1026,30 @@ const Products = () => {
         toast.error('❌ Demo mode - Please log in with real credentials to delete products');
       } else {
         toast.error('Failed to delete product');
+      }
+    }
+  };
+
+  const handleToggleProductStatus = async (product) => {
+    if (!product?.id) return;
+
+    const nextActive = !Boolean(product.is_active);
+    const actionLabel = nextActive ? 'activate' : 'disable';
+    const confirmed = window.confirm(`Are you sure you want to ${actionLabel} "${product.name}"?`);
+    if (!confirmed) return;
+
+    try {
+      await updateProduct(product.id, { is_active: nextActive });
+      toast.success(`Product ${nextActive ? 'activated' : 'disabled'} successfully`);
+      fetchProducts();
+    } catch (error) {
+      console.error('❌ Product status toggle error:', error);
+      if (!error.response) {
+        toast.error(`Backend unavailable - cannot ${actionLabel} product`);
+      } else if (error.response.status === 401) {
+        toast.error('Authentication failed. Please log in again.');
+      } else {
+        toast.error(`Failed to ${actionLabel} product`);
       }
     }
   };
@@ -2015,6 +2040,18 @@ const Products = () => {
               >
                 <FiTrash2 className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => handleToggleProductStatus(product)}
+                className={`p-2 rounded-xl transition-all duration-200 ${
+                  product.is_active
+                    ? 'text-amber-600 hover:text-white hover:bg-amber-500'
+                    : 'text-green-600 hover:text-white hover:bg-green-500'
+                }`}
+                title={product.is_active ? 'Disable product' : 'Activate product'}
+                aria-label={product.is_active ? 'Disable product' : 'Activate product'}
+              >
+                <FiPower className="w-4 h-4" />
+              </button>
             </div>
           </td>
         );
@@ -2045,7 +2082,8 @@ const Products = () => {
     
     // Clear all filters when switching to "All Products"
     if (section === 'all') {
-      setPageState({ brandFilter: '', searchTerm: '' });
+      setBrandFilter('');
+      setPageState({ searchTerm: '' });
       console.log(`✅ Showing ALL products (cleared all filters including brand and search)`);
     } else {
       const sectionLabel = sections.find(s => s.value === section)?.label || section;
@@ -2166,7 +2204,8 @@ const Products = () => {
               <select
                 value={brandFilter}
                 onChange={(e) => {
-                  setPageState({ brandFilter: e.target.value, page: 1 });
+                  setBrandFilter(e.target.value);
+                  setPageState({ page: 1 });
                 }}
                 className="input-modern w-full"
               >
@@ -2184,7 +2223,8 @@ const Products = () => {
               <div>
                 <button
                   onClick={() => {
-                    setPageState({ categoryFilter: '', subCategoryFilter: '', brandFilter: '', searchTerm: '', selectedSection: 'all', page: 1 });
+                    setBrandFilter('');
+                    setPageState({ categoryFilter: '', subCategoryFilter: '', searchTerm: '', selectedSection: 'all', page: 1 });
                   }}
                   className="w-full px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
                 >

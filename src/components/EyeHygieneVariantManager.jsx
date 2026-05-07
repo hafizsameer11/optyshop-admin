@@ -28,21 +28,18 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
     sort_order: 0
   });
 
-  // Check if product supports eye hygiene variants
-  if (!supportsEyeHygieneVariants(productType)) {
-    return (
-      <div className="bg-gray-50 rounded-lg p-6 text-center">
-        <p className="text-gray-500">Eye Hygiene Variants are only available for eye hygiene products.</p>
-      </div>
-    );
-  }
+  const supports = supportsEyeHygieneVariants(productType);
 
-  // Load variants when component mounts or productId changes
+  // Hooks must run unconditionally — never return before useEffect (avoids
+  // "Rendered more hooks than during the previous render" when productType changes).
   useEffect(() => {
-    if (productId) {
+    if (supports && productId) {
       loadVariants();
+    } else if (!supports) {
+      setVariants([]);
     }
-  }, [productId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, supports]);
 
   // Initialize form data with productId
   useEffect(() => {
@@ -52,19 +49,37 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
     }));
   }, []); // Only run once on mount
 
+  if (!supports) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-6 text-center">
+        <p className="text-gray-500">Eye Hygiene Variants are only available for eye hygiene products.</p>
+      </div>
+    );
+  }
+
   const loadVariants = async () => {
     try {
       setLoading(true);
       console.log('Loading variants for product:', productId);
-      const data = await getProductEyeHygieneVariants(productId);
-      console.log('Variants loaded:', data);
-      setVariants(data.variants || []);
+      const response = await getProductEyeHygieneVariants(productId);
+      console.log('Variants loaded:', response);
+      // Backend returns { success, message, data: variants[] }; service returns the envelope.
+      const list = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.variants)
+          ? response.data.variants
+          : Array.isArray(response?.variants)
+            ? response.variants
+            : Array.isArray(response)
+              ? response
+              : [];
+      setVariants(list);
       if (onVariantsUpdate) {
-        onVariantsUpdate(data.variants || []);
+        onVariantsUpdate(list);
       }
     } catch (error) {
       console.error('Error loading variants:', error);
-      toast.error('Failed to load variants');
+      toast.error(error?.response?.data?.message || 'Failed to load variants');
     } finally {
       setLoading(false);
     }

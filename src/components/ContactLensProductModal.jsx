@@ -48,6 +48,34 @@ const getHexFromColorName = (colorName) => {
   return colorMap[normalized] || null;
 };
 
+const PRESET_VARIANT_COLORS = [
+  { hex: '#000000', name: 'Black' },
+  { hex: '#4A3728', name: 'Brown' },
+  { hex: '#1E3A5F', name: 'Blue' },
+  { hex: '#2D5016', name: 'Green' },
+  { hex: '#5C4033', name: 'Hazel' },
+  { hex: '#708090', name: 'Gray' },
+  { hex: '#C9A961', name: 'Honey' },
+  { hex: '#8B4789', name: 'Amethyst' },
+  { hex: '#2F4F4F', name: 'Sterling Gray' },
+  { hex: '#1B4D3E', name: 'Gemstone Green' },
+  { hex: '#4A6741', name: 'Pure Hazel' },
+  { hex: '#1E40AF', name: 'Brilliant Blue' },
+  { hex: '#0F172A', name: 'True Sapphire' },
+  { hex: '#7C2D12', name: 'Chestnut Brown' },
+  { hex: '#B45309', name: 'Pure Honey' },
+  { hex: '#831843', name: 'Vivid Plum' },
+  { hex: '#0D9488', name: 'Sea Green' },
+  { hex: '#A16207', name: 'Amber' },
+  { hex: '#E11D48', name: 'Rose' },
+  { hex: '#4C1D95', name: 'Violet' },
+];
+
+const PRESET_HEX_NAME_MAP = PRESET_VARIANT_COLORS.reduce((acc, { hex, name }) => {
+  acc[String(hex).toUpperCase().trim()] = name;
+  return acc;
+}, {});
+
 const getColorNameFromHex = (hexCode) => {
   if (!hexCode) return 'Unknown';
   const hexMap = {
@@ -64,19 +92,9 @@ const getColorNameFromHex = (hexCode) => {
     '#800020': 'Burgundy',
   };
   const normalized = hexCode.toUpperCase().trim();
+  if (PRESET_HEX_NAME_MAP[normalized]) return PRESET_HEX_NAME_MAP[normalized];
   return hexMap[normalized] || hexCode;
 };
-
-const PRESET_VARIANT_COLORS = [
-  { hex: '#000000', name: 'Black' },
-  { hex: '#4A3728', name: 'Brown' },
-  { hex: '#1E3A5F', name: 'Blue' },
-  { hex: '#2D5016', name: 'Green' },
-  { hex: '#5C4033', name: 'Hazel' },
-  { hex: '#708090', name: 'Gray' },
-  { hex: '#C9A961', name: 'Honey' },
-  { hex: '#8B4789', name: 'Amethyst' },
-];
 
 function hydrateColorVariantsFromProduct(p) {
   if (!p) {
@@ -126,7 +144,7 @@ function hydrateColorVariantsFromProduct(p) {
       const imageUrls = Array.isArray(entry.images) ? entry.images.filter((u) => u && typeof u === 'string') : [];
       existingColorImagesStructure.push({
         hexCode: H,
-        name: entry.name || entry.color || getColorNameFromHex(H),
+        name: entry.display_name || entry.name || entry.color || getColorNameFromHex(H),
         price: entry.price ?? null,
         images: imageUrls,
       });
@@ -166,7 +184,7 @@ function hydrateColorVariantsFromProduct(p) {
       const filtered = imageUrls.filter((url) => url && typeof url === 'string');
       existingColorImagesStructure.push({
         hexCode: H,
-        name: colorData?.name || getColorNameFromHex(H),
+        name: colorData?.display_name || colorData?.name || getColorNameFromHex(H),
         price: colorData?.price ?? null,
         images: filtered,
       });
@@ -187,10 +205,20 @@ function hydrateColorVariantsFromProduct(p) {
   return { existingColorImages: [], imagesWithColors: [], pendingVariantHexes: [] };
 }
 
-function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages) {
+function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages, displayNameByHex = {}) {
   const colorImagesToKeep = [];
   const existingImagesByColor = {};
   const FileConstructor = typeof File !== 'undefined' ? File : null;
+
+  const resolveDisplayName = (hex) => {
+    if (!hex) return 'Color';
+    const H = String(hex).toUpperCase();
+    const fromMap = displayNameByHex[H];
+    if (fromMap && String(fromMap).trim()) return String(fromMap).trim();
+    const row = existingColorImages.find((ci) => String(ci.hexCode).toUpperCase() === H);
+    if (row?.name && String(row.name).trim()) return String(row.name).trim();
+    return getColorNameFromHex(hex);
+  };
 
   imagesWithColors.forEach((img) => {
     if (
@@ -211,9 +239,11 @@ function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages) 
     const H = colorImg.hexCode?.toUpperCase();
     const keptImages = H ? existingImagesByColor[H] || [] : [];
     if (keptImages.length > 0) {
+      const displayName = resolveDisplayName(colorImg.hexCode);
       colorImagesToKeep.push({
         hexCode: colorImg.hexCode,
-        name: colorImg.name,
+        name: displayName,
+        display_name: displayName,
         price: colorImg.price,
         images: keptImages,
       });
@@ -230,9 +260,11 @@ function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages) 
       const existing = colorImagesToKeep.find((ci) => ci.hexCode === img.hexCode);
       if (!existing) {
         const colorData = existingColorImages.find((ci) => ci.hexCode === img.hexCode);
+        const displayName = resolveDisplayName(img.hexCode) || colorData?.name || getColorNameFromHex(img.hexCode);
         colorImagesToKeep.push({
           hexCode: img.hexCode,
-          name: colorData?.name || getColorNameFromHex(img.hexCode),
+          name: displayName,
+          display_name: displayName,
           price: colorData?.price || null,
           images: [],
         });
@@ -246,9 +278,12 @@ function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages) 
     if (!urls || urls.length === 0) return;
     if (colorImagesToKeep.some((ci) => String(ci.hexCode).toUpperCase() === H)) return;
     const colorData = existingColorImages.find((ci) => String(ci.hexCode).toUpperCase() === H);
+    const hexNorm = normalizeVariantHex(colorData?.hexCode || H) || H;
+    const displayName = resolveDisplayName(hexNorm) || colorData?.name || getColorNameFromHex(hexNorm);
     colorImagesToKeep.push({
-      hexCode: normalizeVariantHex(colorData?.hexCode || H) || H,
-      name: colorData?.name || getColorNameFromHex(colorData?.hexCode || H),
+      hexCode: hexNorm,
+      name: displayName,
+      display_name: displayName,
       price: colorData?.price ?? null,
       images: urls,
     });
@@ -392,6 +427,8 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
   const [existingColorImages, setExistingColorImages] = useState([]);
   const [pendingVariantHexes, setPendingVariantHexes] = useState([]);
   const [customVariantHexInput, setCustomVariantHexInput] = useState('');
+  const [customVariantNameInput, setCustomVariantNameInput] = useState('');
+  const [variantDisplayNameByHex, setVariantDisplayNameByHex] = useState({});
   const [variantUploadHex, setVariantUploadHex] = useState(null);
 
   const canManageColorVariants = useMemo(() => Boolean(product?.id), [product?.id]);
@@ -478,6 +515,8 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
       setImagesWithColors([]);
       setPendingVariantHexes([]);
       setCustomVariantHexInput('');
+      setCustomVariantNameInput('');
+      setVariantDisplayNameByHex({});
       return;
     }
 
@@ -490,11 +529,32 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
       setImagesWithColors(rowsCol);
       setPendingVariantHexes(pendCol);
       setCustomVariantHexInput('');
+      setCustomVariantNameInput('');
+      const nameMap = {};
+      exCol.forEach((c) => {
+        if (c.hexCode) {
+          const H = String(c.hexCode).toUpperCase();
+          nameMap[H] = (c.name && String(c.name).trim()) || getColorNameFromHex(H);
+        }
+      });
+      setVariantDisplayNameByHex(nameMap);
       return;
     }
 
     setExistingColorImages(exCol);
     setImagesWithColors(rowsCol);
+    setVariantDisplayNameByHex((prev) => {
+      const next = { ...prev };
+      exCol.forEach((c) => {
+        if (!c.hexCode) return;
+        const H = String(c.hexCode).toUpperCase();
+        const serverName = (c.name && String(c.name).trim()) || getColorNameFromHex(H);
+        if (next[H] === undefined || next[H] === null || String(next[H]).trim() === '') {
+          next[H] = serverName;
+        }
+      });
+      return next;
+    });
     setPendingVariantHexes((prev) => {
       const known = new Set();
       exCol.forEach((c) => {
@@ -737,7 +797,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
     e.target.value = '';
   };
 
-  const addVariantRow = (hexRaw) => {
+  const addVariantRow = (hexRaw, suggestedName) => {
     const raw = String(hexRaw ?? '').trim();
     const normalized = normalizeVariantHex(raw) || raw;
     if (!isValidHexCode(normalized)) {
@@ -754,9 +814,15 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
       toast.error('This color is already added');
       return;
     }
+    const label = String(suggestedName ?? '').trim() || getColorNameFromHex(H);
     setPendingVariantHexes((prev) => [...prev, H]);
     setCustomVariantHexInput('');
-    toast.success(`Added ${getColorNameFromHex(H)} — upload photos below`);
+    setCustomVariantNameInput('');
+    setVariantDisplayNameByHex((prev) => ({
+      ...prev,
+      [H]: label,
+    }));
+    toast.success(`Added ${label} — upload photos below`);
   };
 
   const removeVariantHex = (hex) => {
@@ -764,6 +830,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
     setImagesWithColors((prev) => prev.filter((img) => !(img.hexCode && img.hexCode.toUpperCase() === H)));
     setExistingColorImages((prev) => prev.filter((c) => c.hexCode?.toUpperCase() !== H));
     setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
+    setVariantDisplayNameByHex((prev) => {
+      const next = { ...prev };
+      delete next[H];
+      return next;
+    });
     toast.success('Color variant removed');
   };
 
@@ -1207,7 +1278,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
         });
 
         if (product?.id) {
-          const colorImagesToKeep = buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages);
+          const colorImagesToKeep = buildColorImagesToKeepForSubmit(
+            imagesWithColors,
+            existingColorImages,
+            variantDisplayNameByHex
+          );
           submitData.append('color_images', JSON.stringify(colorImagesToKeep));
         }
 
@@ -1226,7 +1301,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
           dataToSend.images = imagesToKeep;
         }
         if (product?.id) {
-          dataToSend.color_images = buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages);
+          dataToSend.color_images = buildColorImagesToKeepForSubmit(
+            imagesWithColors,
+            existingColorImages,
+            variantDisplayNameByHex
+          );
         }
         if (product?.id) {
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), dataToSend);
@@ -1746,6 +1825,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                             setImagesWithColors([]);
                             setExistingColorImages([]);
                             setPendingVariantHexes([]);
+                            setVariantDisplayNameByHex({});
                             toast.success('All color variants cleared');
                           }}
                           className="text-xs text-red-600 hover:text-red-800 font-medium"
@@ -1762,7 +1842,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                           <button
                             key={hex}
                             type="button"
-                            onClick={() => addVariantRow(hex)}
+                            onClick={() => addVariantRow(hex, name)}
                             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-800 hover:border-indigo-400 hover:bg-indigo-50/80 transition-colors"
                           >
                             <span className="w-5 h-5 rounded border border-gray-300 shadow-inner" style={{ backgroundColor: hex }} />
@@ -1771,7 +1851,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                         ))}
                       </div>
                       <div className="flex flex-wrap items-end gap-2">
-                        <div className="flex-1 min-w-[200px]">
+                        <div className="flex-1 min-w-[140px]">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Custom hex</label>
                           <input
                             type="text"
@@ -1781,9 +1861,19 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                             className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
                           />
                         </div>
+                        <div className="flex-1 min-w-[160px]">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Display name (optional)</label>
+                          <input
+                            type="text"
+                            value={customVariantNameInput}
+                            onChange={(e) => setCustomVariantNameInput(e.target.value)}
+                            placeholder="e.g. Gemstone Green"
+                            className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
                         <button
                           type="button"
-                          onClick={() => addVariantRow(customVariantHexInput)}
+                          onClick={() => addVariantRow(customVariantHexInput, customVariantNameInput)}
                           className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
                         >
                           <FiPlus className="w-4 h-4" />
@@ -1801,25 +1891,49 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                     <div className="space-y-4">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">2 · Photos per colour</p>
                       {variantHexListOrdered.map((hex) => {
+                        const HKey = String(hex).toUpperCase();
                         const variantImages = imagesWithColors.filter(
-                          (img) => img.hexCode && img.hexCode.toUpperCase() === hex
+                          (img) => img.hexCode && img.hexCode.toUpperCase() === HKey
                         );
                         const safeInputId = `cl-variant-img-${hex.replace(/[^a-zA-Z0-9]/g, '')}`;
+                        const displayValue =
+                          variantDisplayNameByHex[HKey] ??
+                          existingColorImages.find((c) => String(c.hexCode).toUpperCase() === HKey)?.name ??
+                          getColorNameFromHex(hex);
                         return (
                           <div
-                            key={hex}
+                            key={HKey}
                             className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
                           >
-                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-                              <div className="flex items-center gap-2">
-                                <span className="w-6 h-6 rounded border border-gray-300 shadow-inner" style={{ backgroundColor: hex }} />
-                                <span className="text-sm font-semibold text-gray-900">{getColorNameFromHex(hex)}</span>
-                                <span className="text-xs font-mono text-gray-500">{hex}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                <span
+                                  className="w-6 h-6 mt-1 shrink-0 rounded border border-gray-300 shadow-inner"
+                                  style={{ backgroundColor: hex }}
+                                />
+                                <div className="flex-1 min-w-0 space-y-1">
+                                  <label className="text-xs font-medium text-gray-500" htmlFor={`cl-name-${safeInputId}`}>
+                                    Display name (shown on shop)
+                                  </label>
+                                  <input
+                                    id={`cl-name-${safeInputId}`}
+                                    type="text"
+                                    value={displayValue}
+                                    onChange={(e) =>
+                                      setVariantDisplayNameByHex((prev) => ({
+                                        ...prev,
+                                        [HKey]: e.target.value,
+                                      }))
+                                    }
+                                    className="w-full max-w-md text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg px-2 py-1.5"
+                                  />
+                                  <p className="text-xs font-mono text-gray-500">{hex}</p>
+                                </div>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => removeVariantHex(hex)}
-                                className="text-xs text-red-600 hover:text-red-800 font-medium"
+                                className="text-xs text-red-600 hover:text-red-800 font-medium shrink-0 sm:mt-6"
                               >
                                 Remove colour
                               </button>

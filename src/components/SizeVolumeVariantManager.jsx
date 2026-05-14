@@ -266,6 +266,7 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate, on
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <button
+                              type="button"
                               onClick={() => toggleVariantStatus(variant)}
                               className={`p-1 rounded transition-colors ${
                                 variant.is_active 
@@ -279,6 +280,7 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate, on
                               }`} />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleEdit(variant)}
                               className="text-blue-600 hover:text-blue-900 p-1"
                               title="Edit variant"
@@ -286,6 +288,7 @@ const SizeVolumeVariantManager = ({ productId, productType, onVariantsUpdate, on
                               <FiEdit2 className="w-4 h-4" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleDelete(variant)}
                               className="text-red-600 hover:text-red-900 p-1"
                               title="Delete variant"

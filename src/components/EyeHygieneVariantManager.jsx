@@ -535,6 +535,7 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
                   </div>
                   <div className="flex items-center gap-1">
                     <button
+                      type="button"
                       onClick={() => toggleVariantStatus(variant)}
                       className={`p-1 rounded transition-colors ${
                         variant.is_active 
@@ -548,6 +549,7 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
                       }`} />
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleEdit(variant)}
                       className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                       title="Edit variant"
@@ -555,6 +557,7 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
                       <FiEdit2 className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleDelete(variant)}
                       className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                       title="Delete variant"

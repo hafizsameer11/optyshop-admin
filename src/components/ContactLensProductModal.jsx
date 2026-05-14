@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiUpload, FiChevronRight, FiPlus, FiTrash2, FiCopy, FiEdit2 } from 'react-icons/fi';
 import api from '../utils/api';
@@ -91,13 +91,13 @@ function hydrateColorVariantsFromProduct(p) {
       const H = normalizeVariantHex(String(c.hexCode || c.value || ''));
       if (!H || !isValidHexCode(H)) return;
       const imageUrls = Array.isArray(c.images) ? c.images.filter((u) => u && typeof u === 'string') : [];
-      if (imageUrls.length === 0) return;
       existingColorImagesStructure.push({
         hexCode: H,
         name: c.display_name || c.name || getColorNameFromHex(H),
         price: c.price ?? null,
         images: imageUrls,
       });
+      if (imageUrls.length === 0) return;
       imageUrls.forEach((url) => {
         imagesWithHexCodes.push({
           id: `existing-${imageIdCounter++}`,
@@ -124,13 +124,13 @@ function hydrateColorVariantsFromProduct(p) {
       const H = normalizeVariantHex(String(entry.hexCode || entry.hex_code || entry.value || ''));
       if (!H || !isValidHexCode(H)) return;
       const imageUrls = Array.isArray(entry.images) ? entry.images.filter((u) => u && typeof u === 'string') : [];
-      if (imageUrls.length === 0) return;
       existingColorImagesStructure.push({
         hexCode: H,
         name: entry.name || entry.color || getColorNameFromHex(H),
         price: entry.price ?? null,
         images: imageUrls,
       });
+      if (imageUrls.length === 0) return;
       imageUrls.forEach((url) => {
         imagesWithHexCodes.push({
           id: `existing-${imageIdCounter++}`,
@@ -164,13 +164,13 @@ function hydrateColorVariantsFromProduct(p) {
             ? [colorData]
             : [];
       const filtered = imageUrls.filter((url) => url && typeof url === 'string');
-      if (filtered.length === 0) return;
       existingColorImagesStructure.push({
         hexCode: H,
         name: colorData?.name || getColorNameFromHex(H),
         price: colorData?.price ?? null,
         images: filtered,
       });
+      if (filtered.length === 0) return;
       filtered.forEach((imageUrl) => {
         imagesWithHexCodes.push({
           id: `existing-${imageIdCounter++}`,
@@ -194,13 +194,12 @@ function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages) 
 
   imagesWithColors.forEach((img) => {
     if (
-      img.isExisting &&
       img.hexCode &&
       isValidHexCode(img.hexCode) &&
       img.preview &&
       typeof img.preview === 'string' &&
       !img.preview.startsWith('data:') &&
-      img.preview.startsWith('https://')
+      (img.preview.startsWith('https://') || img.preview.startsWith('http://'))
     ) {
       const H = img.hexCode.toUpperCase();
       if (!existingImagesByColor[H]) existingImagesByColor[H] = [];
@@ -239,6 +238,20 @@ function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages) 
         });
       }
     }
+  });
+
+  // Colours that only exist as new uploads (not yet in existingColorImages rows)
+  Object.keys(existingImagesByColor).forEach((H) => {
+    const urls = existingImagesByColor[H];
+    if (!urls || urls.length === 0) return;
+    if (colorImagesToKeep.some((ci) => String(ci.hexCode).toUpperCase() === H)) return;
+    const colorData = existingColorImages.find((ci) => String(ci.hexCode).toUpperCase() === H);
+    colorImagesToKeep.push({
+      hexCode: normalizeVariantHex(colorData?.hexCode || H) || H,
+      name: colorData?.name || getColorNameFromHex(colorData?.hexCode || H),
+      price: colorData?.price ?? null,
+      images: urls,
+    });
   });
 
   return colorImagesToKeep;
@@ -405,6 +418,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
   const [selectedSphericalConfig, setSelectedSphericalConfig] = useState(null);
   const [selectedAstigmatismConfig, setSelectedAstigmatismConfig] = useState(null);
 
+  /** Avoid wiping unsaved colour rows when `product` object identity changes but id stays the same. */
+  const colorStateProductIdRef = useRef(null);
+
   useEffect(() => {
     fetchProductOptions();
     if (product) {
@@ -451,18 +467,46 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
       }
       setExistingImages(existingImageUrls);
       setImagePreviews(existingImageUrls);
-      const { existingColorImages: exCol, imagesWithColors: rowsCol, pendingVariantHexes: pendCol } =
-        hydrateColorVariantsFromProduct(product);
-      setExistingColorImages(exCol);
-      setImagesWithColors(rowsCol);
-      setPendingVariantHexes(pendCol);
-      setCustomVariantHexInput('');
-    } else {
+    }
+  }, [product]);
+
+  // Colour variants: hydrate from API when product id changes; on same id, merge server data without clearing in-progress hex rows.
+  useEffect(() => {
+    if (!product) {
+      colorStateProductIdRef.current = null;
       setExistingColorImages([]);
       setImagesWithColors([]);
       setPendingVariantHexes([]);
       setCustomVariantHexInput('');
+      return;
     }
+
+    const { existingColorImages: exCol, imagesWithColors: rowsCol, pendingVariantHexes: pendCol } =
+      hydrateColorVariantsFromProduct(product);
+
+    if (colorStateProductIdRef.current !== product.id) {
+      colorStateProductIdRef.current = product.id;
+      setExistingColorImages(exCol);
+      setImagesWithColors(rowsCol);
+      setPendingVariantHexes(pendCol);
+      setCustomVariantHexInput('');
+      return;
+    }
+
+    setExistingColorImages(exCol);
+    setImagesWithColors(rowsCol);
+    setPendingVariantHexes((prev) => {
+      const known = new Set();
+      exCol.forEach((c) => {
+        if (c.hexCode) known.add(String(c.hexCode).toUpperCase());
+      });
+      rowsCol.forEach((img) => {
+        if (img.hexCode && isValidHexCode(img.hexCode)) {
+          known.add(String(img.hexCode).toUpperCase());
+        }
+      });
+      return prev.filter((h) => !known.has(String(h).toUpperCase()));
+    });
   }, [product]);
 
   useEffect(() => {

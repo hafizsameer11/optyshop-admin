@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiUpload, FiChevronRight, FiPlus, FiTrash2, FiCopy, FiEdit2 } from 'react-icons/fi';
 import api from '../utils/api';
@@ -9,6 +9,240 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
+
+/** Hex swatches for PDP / storefront colour variants (#RRGGBB only). */
+const isValidHexCode = (hex) => {
+  if (!hex || typeof hex !== 'string') return false;
+  return /^#([A-Fa-f0-9]{6})$/.test(hex.trim());
+};
+
+const normalizeVariantHex = (raw) => {
+  if (raw == null || typeof raw !== 'string') return null;
+  const t = raw.trim();
+  if (isValidHexCode(t)) return t.toUpperCase();
+  if (/^[A-Fa-f0-9]{6}$/.test(t)) return `#${t}`.toUpperCase();
+  return null;
+};
+
+const getHexFromColorName = (colorName) => {
+  if (!colorName) return null;
+  const colorMap = {
+    black: '#000000',
+    white: '#FFFFFF',
+    brown: '#8B4513',
+    blue: '#0000FF',
+    red: '#FF0000',
+    green: '#008000',
+    gray: '#808080',
+    grey: '#808080',
+    gold: '#FFD700',
+    silver: '#C0C0C0',
+    tortoise: '#8B4513',
+    tortoiseshell: '#8B4513',
+    navy: '#000080',
+    burgundy: '#800020',
+    clear: '#FFFFFF',
+    transparent: '#FFFFFF',
+  };
+  const normalized = colorName.toLowerCase().trim();
+  return colorMap[normalized] || null;
+};
+
+const getColorNameFromHex = (hexCode) => {
+  if (!hexCode) return 'Unknown';
+  const hexMap = {
+    '#000000': 'Black',
+    '#FFFFFF': 'White',
+    '#8B4513': 'Brown',
+    '#0000FF': 'Blue',
+    '#FF0000': 'Red',
+    '#008000': 'Green',
+    '#808080': 'Gray',
+    '#FFD700': 'Gold',
+    '#C0C0C0': 'Silver',
+    '#000080': 'Navy',
+    '#800020': 'Burgundy',
+  };
+  const normalized = hexCode.toUpperCase().trim();
+  return hexMap[normalized] || hexCode;
+};
+
+const PRESET_VARIANT_COLORS = [
+  { hex: '#000000', name: 'Black' },
+  { hex: '#4A3728', name: 'Brown' },
+  { hex: '#1E3A5F', name: 'Blue' },
+  { hex: '#2D5016', name: 'Green' },
+  { hex: '#5C4033', name: 'Hazel' },
+  { hex: '#708090', name: 'Gray' },
+  { hex: '#C9A961', name: 'Honey' },
+  { hex: '#8B4789', name: 'Amethyst' },
+];
+
+function hydrateColorVariantsFromProduct(p) {
+  if (!p) {
+    return { existingColorImages: [], imagesWithColors: [], pendingVariantHexes: [] };
+  }
+
+  if (Array.isArray(p.colors) && p.colors.length > 0) {
+    const existingColorImagesStructure = [];
+    const imagesWithHexCodes = [];
+    let imageIdCounter = 0;
+    p.colors.forEach((c) => {
+      const H = normalizeVariantHex(String(c.hexCode || c.value || ''));
+      if (!H || !isValidHexCode(H)) return;
+      const imageUrls = Array.isArray(c.images) ? c.images.filter((u) => u && typeof u === 'string') : [];
+      if (imageUrls.length === 0) return;
+      existingColorImagesStructure.push({
+        hexCode: H,
+        name: c.display_name || c.name || getColorNameFromHex(H),
+        price: c.price ?? null,
+        images: imageUrls,
+      });
+      imageUrls.forEach((url) => {
+        imagesWithHexCodes.push({
+          id: `existing-${imageIdCounter++}`,
+          file: null,
+          preview: url,
+          hexCode: H,
+          isExisting: true,
+        });
+      });
+    });
+    return { existingColorImages: existingColorImagesStructure, imagesWithColors: imagesWithHexCodes, pendingVariantHexes: [] };
+  }
+
+  const ci = p.color_images;
+  if (!ci) {
+    return { existingColorImages: [], imagesWithColors: [], pendingVariantHexes: [] };
+  }
+
+  if (Array.isArray(ci)) {
+    const existingColorImagesStructure = [];
+    const imagesWithHexCodes = [];
+    let imageIdCounter = 0;
+    ci.forEach((entry) => {
+      const H = normalizeVariantHex(String(entry.hexCode || entry.hex_code || entry.value || ''));
+      if (!H || !isValidHexCode(H)) return;
+      const imageUrls = Array.isArray(entry.images) ? entry.images.filter((u) => u && typeof u === 'string') : [];
+      if (imageUrls.length === 0) return;
+      existingColorImagesStructure.push({
+        hexCode: H,
+        name: entry.name || entry.color || getColorNameFromHex(H),
+        price: entry.price ?? null,
+        images: imageUrls,
+      });
+      imageUrls.forEach((url) => {
+        imagesWithHexCodes.push({
+          id: `existing-${imageIdCounter++}`,
+          file: null,
+          preview: url,
+          hexCode: H,
+          isExisting: true,
+        });
+      });
+    });
+    return { existingColorImages: existingColorImagesStructure, imagesWithColors: imagesWithHexCodes, pendingVariantHexes: [] };
+  }
+
+  if (typeof ci === 'object') {
+    const imagesWithHexCodes = [];
+    let imageIdCounter = 0;
+    const existingColorImagesStructure = [];
+    Object.keys(ci).forEach((key) => {
+      let hexCode = key;
+      if (!isValidHexCode(key)) {
+        hexCode = getHexFromColorName(key) || key;
+      }
+      const H = normalizeVariantHex(String(hexCode));
+      if (!H || !isValidHexCode(H)) return;
+      const colorData = ci[key];
+      const imageUrls = Array.isArray(colorData?.images)
+        ? colorData.images
+        : Array.isArray(colorData)
+          ? colorData
+          : typeof colorData === 'string'
+            ? [colorData]
+            : [];
+      const filtered = imageUrls.filter((url) => url && typeof url === 'string');
+      if (filtered.length === 0) return;
+      existingColorImagesStructure.push({
+        hexCode: H,
+        name: colorData?.name || getColorNameFromHex(H),
+        price: colorData?.price ?? null,
+        images: filtered,
+      });
+      filtered.forEach((imageUrl) => {
+        imagesWithHexCodes.push({
+          id: `existing-${imageIdCounter++}`,
+          file: null,
+          preview: imageUrl,
+          hexCode: H,
+          isExisting: true,
+        });
+      });
+    });
+    return { existingColorImages: existingColorImagesStructure, imagesWithColors: imagesWithHexCodes, pendingVariantHexes: [] };
+  }
+
+  return { existingColorImages: [], imagesWithColors: [], pendingVariantHexes: [] };
+}
+
+function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages) {
+  const colorImagesToKeep = [];
+  const existingImagesByColor = {};
+  const FileConstructor = typeof File !== 'undefined' ? File : null;
+
+  imagesWithColors.forEach((img) => {
+    if (
+      img.isExisting &&
+      img.hexCode &&
+      isValidHexCode(img.hexCode) &&
+      img.preview &&
+      typeof img.preview === 'string' &&
+      !img.preview.startsWith('data:') &&
+      img.preview.startsWith('https://')
+    ) {
+      const H = img.hexCode.toUpperCase();
+      if (!existingImagesByColor[H]) existingImagesByColor[H] = [];
+      existingImagesByColor[H].push(img.preview);
+    }
+  });
+
+  existingColorImages.forEach((colorImg) => {
+    const H = colorImg.hexCode?.toUpperCase();
+    const keptImages = H ? existingImagesByColor[H] || [] : [];
+    if (keptImages.length > 0) {
+      colorImagesToKeep.push({
+        hexCode: colorImg.hexCode,
+        name: colorImg.name,
+        price: colorImg.price,
+        images: keptImages,
+      });
+    }
+  });
+
+  imagesWithColors.forEach((img) => {
+    if (
+      FileConstructor &&
+      img.file instanceof FileConstructor &&
+      img.hexCode &&
+      isValidHexCode(img.hexCode)
+    ) {
+      const existing = colorImagesToKeep.find((ci) => ci.hexCode === img.hexCode);
+      if (!existing) {
+        const colorData = existingColorImages.find((ci) => ci.hexCode === img.hexCode);
+        colorImagesToKeep.push({
+          hexCode: img.hexCode,
+          name: colorData?.name || getColorNameFromHex(img.hexCode),
+          price: colorData?.price || null,
+          images: [],
+        });
+      }
+    }
+  });
+
+  return colorImagesToKeep;
+}
 
 function contactLensImagesFromProduct(p) {
   if (!p) return [];
@@ -67,6 +301,8 @@ function mergeContactLensProductAfterSave(apiProduct, form) {
         : form.is_medical_device,
     has_uv_filter:
       clean.has_uv_filter !== undefined ? clean.has_uv_filter : form.has_uv_filter,
+    color_images: clean.color_images !== undefined ? clean.color_images : null,
+    colors: clean.colors !== undefined ? clean.colors : null,
   };
 }
 
@@ -139,6 +375,25 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  const [imagesWithColors, setImagesWithColors] = useState([]);
+  const [existingColorImages, setExistingColorImages] = useState([]);
+  const [pendingVariantHexes, setPendingVariantHexes] = useState([]);
+  const [customVariantHexInput, setCustomVariantHexInput] = useState('');
+  const [variantUploadHex, setVariantUploadHex] = useState(null);
+
+  const canManageColorVariants = useMemo(() => Boolean(product?.id), [product?.id]);
+
+  const variantHexListOrdered = useMemo(() => {
+    const set = new Set();
+    existingColorImages.forEach((c) => {
+      if (c.hexCode) set.add(String(c.hexCode).toUpperCase());
+    });
+    imagesWithColors.forEach((img) => {
+      if (img.hexCode && isValidHexCode(img.hexCode)) set.add(img.hexCode.toUpperCase());
+    });
+    pendingVariantHexes.forEach((h) => set.add(h));
+    return Array.from(set);
+  }, [existingColorImages, imagesWithColors, pendingVariantHexes]);
 
   // Configuration tables state
   const [sphericalConfigs, setSphericalConfigs] = useState([]);
@@ -196,6 +451,17 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
       }
       setExistingImages(existingImageUrls);
       setImagePreviews(existingImageUrls);
+      const { existingColorImages: exCol, imagesWithColors: rowsCol, pendingVariantHexes: pendCol } =
+        hydrateColorVariantsFromProduct(product);
+      setExistingColorImages(exCol);
+      setImagesWithColors(rowsCol);
+      setPendingVariantHexes(pendCol);
+      setCustomVariantHexInput('');
+    } else {
+      setExistingColorImages([]);
+      setImagesWithColors([]);
+      setPendingVariantHexes([]);
+      setCustomVariantHexInput('');
     }
   }, [product]);
 
@@ -366,6 +632,95 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
     // Update preview array
     const newPreviews = imagePreviews.filter((_, i) => i !== index);
     setImagePreviews(newPreviews);
+  };
+
+  const handleVariantImagesChange = (hex, e) => {
+    const H = String(hex).toUpperCase();
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const validFiles = [];
+    const invalidFiles = [];
+    files.forEach((file) => {
+      if (!file.type.startsWith('image/')) {
+        invalidFiles.push(`${file.name}: Not an image file`);
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        invalidFiles.push(`${file.name}: Size exceeds 5MB`);
+        return;
+      }
+      validFiles.push(file);
+    });
+
+    if (invalidFiles.length > 0) {
+      toast.error(`Invalid files:\n${invalidFiles.join('\n')}`);
+    }
+    if (validFiles.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    setVariantUploadHex(H);
+    const uploadPromises = validFiles.map(async (file) => {
+      try {
+        const data = await uploadAPI.uploadImage(file);
+        return { file, preview: data.url };
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error(`Failed to upload ${file.name}: ${error.message}`);
+        return null;
+      }
+    });
+
+    Promise.all(uploadPromises)
+      .then((results) => {
+        const validResults = results.filter(Boolean);
+        const newImages = validResults.map((result, index) => ({
+          id: `new-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 9)}`,
+          file: result.file,
+          preview: result.preview,
+          hexCode: H,
+          isExisting: false,
+        }));
+        setImagesWithColors((prev) => [...prev, ...newImages]);
+        setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
+        if (validResults.length > 0) {
+          toast.success(`${validResults.length} photo(s) added for ${getColorNameFromHex(H)}`);
+        }
+      })
+      .finally(() => setVariantUploadHex(null));
+    e.target.value = '';
+  };
+
+  const addVariantRow = (hexRaw) => {
+    const raw = String(hexRaw ?? '').trim();
+    const normalized = normalizeVariantHex(raw) || raw;
+    if (!isValidHexCode(normalized)) {
+      toast.error('Invalid color. Use format #RRGGBB (e.g. #000000).');
+      return;
+    }
+    const H = normalized.toUpperCase();
+    const used = new Set([
+      ...existingColorImages.map((c) => c.hexCode?.toUpperCase()).filter(Boolean),
+      ...imagesWithColors.map((i) => i.hexCode?.toUpperCase()).filter(Boolean),
+      ...pendingVariantHexes,
+    ]);
+    if (used.has(H)) {
+      toast.error('This color is already added');
+      return;
+    }
+    setPendingVariantHexes((prev) => [...prev, H]);
+    setCustomVariantHexInput('');
+    toast.success(`Added ${getColorNameFromHex(H)} — upload photos below`);
+  };
+
+  const removeVariantHex = (hex) => {
+    const H = String(hex).toUpperCase();
+    setImagesWithColors((prev) => prev.filter((img) => !(img.hexCode && img.hexCode.toUpperCase() === H)));
+    setExistingColorImages((prev) => prev.filter((c) => c.hexCode?.toUpperCase() !== H));
+    setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
+    toast.success('Color variant removed');
   };
 
 
@@ -808,6 +1163,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
         });
 
         if (product?.id) {
+          const colorImagesToKeep = buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages);
+          submitData.append('color_images', JSON.stringify(colorImagesToKeep));
+        }
+
+        if (product?.id) {
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), submitData);
         } else {
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
@@ -820,6 +1180,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
             existingImages.includes(preview)
           );
           dataToSend.images = imagesToKeep;
+        }
+        if (product?.id) {
+          dataToSend.color_images = buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages);
         }
         if (product?.id) {
           response = await api.put(API_ROUTES.ADMIN.PRODUCTS.UPDATE(product.id), dataToSend);
@@ -945,6 +1308,10 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
             {/* General Tab */}
             {activeTab === 'general' && (
               <>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 mb-4">
+                  <strong className="text-slate-900">Lens tint / colour options on the shop: </strong>
+                  open the <button type="button" className="text-indigo-700 font-semibold underline" onClick={() => setActiveTab('images')}>Images</button> tab → <strong>Color variants</strong> (after the product is saved once you can add hex colours and photos).
+                </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Product Name <span className="text-red-500">*</span>
@@ -1273,6 +1640,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
             {/* Images Tab */}
             {activeTab === 'images' && (
               <>
+                <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2.5 text-sm text-gray-800 mb-4">
+                  <span className="font-semibold text-indigo-900">Shop lens colours / tints: </span>
+                  Use <strong>Color variants</strong> below (add a #RRGGBB colour, then upload photos). Shoppers pick a colour on the product page; general images above are the default gallery.
+                </div>
+
                 {imagePreviews.length > 0 && (
                   <div className="grid grid-cols-4 gap-4 mb-4">
                     {imagePreviews.map((preview, index) => (
@@ -1313,6 +1685,156 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                     id="contact-lens-image-input"
                   />
                 </label>
+
+                {canManageColorVariants && (
+                  <div className="border-t border-gray-200 pt-6 mt-6 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-900">Color variants</h3>
+                        <p className="text-xs text-gray-600 mt-1 max-w-xl">
+                          Step 1: Add a colour (hex). Step 2: Upload at least one image per colour so the storefront can switch photos when customers pick a tint.
+                        </p>
+                      </div>
+                      {(imagesWithColors.length > 0 || existingColorImages.length > 0 || pendingVariantHexes.length > 0) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImagesWithColors([]);
+                            setExistingColorImages([]);
+                            setPendingVariantHexes([]);
+                            toast.success('All color variants cleared');
+                          }}
+                          className="text-xs text-red-600 hover:text-red-800 font-medium"
+                        >
+                          Clear all color variants
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 space-y-3">
+                      <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wide">1 · Add a colour</p>
+                      <div className="flex flex-wrap gap-2">
+                        {PRESET_VARIANT_COLORS.map(({ hex, name }) => (
+                          <button
+                            key={hex}
+                            type="button"
+                            onClick={() => addVariantRow(hex)}
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-800 hover:border-indigo-400 hover:bg-indigo-50/80 transition-colors"
+                          >
+                            <span className="w-5 h-5 rounded border border-gray-300 shadow-inner" style={{ backgroundColor: hex }} />
+                            {name}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap items-end gap-2">
+                        <div className="flex-1 min-w-[200px]">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Custom hex</label>
+                          <input
+                            type="text"
+                            value={customVariantHexInput}
+                            onChange={(e) => setCustomVariantHexInput(e.target.value)}
+                            placeholder="#RRGGBB"
+                            className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => addVariantRow(customVariantHexInput)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+                        >
+                          <FiPlus className="w-4 h-4" />
+                          Add variant
+                        </button>
+                      </div>
+                    </div>
+
+                    {variantHexListOrdered.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-6 border border-dashed border-gray-200 rounded-xl bg-gray-50">
+                        No colour variants yet. Use presets or custom hex, then add photos under each colour.
+                      </p>
+                    )}
+
+                    <div className="space-y-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">2 · Photos per colour</p>
+                      {variantHexListOrdered.map((hex) => {
+                        const variantImages = imagesWithColors.filter(
+                          (img) => img.hexCode && img.hexCode.toUpperCase() === hex
+                        );
+                        const safeInputId = `cl-variant-img-${hex.replace(/[^a-zA-Z0-9]/g, '')}`;
+                        return (
+                          <div
+                            key={hex}
+                            className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+                          >
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                              <div className="flex items-center gap-2">
+                                <span className="w-6 h-6 rounded border border-gray-300 shadow-inner" style={{ backgroundColor: hex }} />
+                                <span className="text-sm font-semibold text-gray-900">{getColorNameFromHex(hex)}</span>
+                                <span className="text-xs font-mono text-gray-500">{hex}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeVariantHex(hex)}
+                                className="text-xs text-red-600 hover:text-red-800 font-medium"
+                              >
+                                Remove colour
+                              </button>
+                            </div>
+                            <div className="p-4 space-y-3">
+                              {variantImages.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                  {variantImages.map((img) => (
+                                    <div key={img.id} className="relative group">
+                                      <img
+                                        src={img.preview}
+                                        alt=""
+                                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-500">No photos for this colour yet.</p>
+                              )}
+                              <div>
+                                <label
+                                  htmlFor={safeInputId}
+                                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium cursor-pointer ${
+                                    variantUploadHex === hex.toUpperCase()
+                                      ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
+                                      : 'border-gray-200 bg-white hover:border-indigo-300'
+                                  }`}
+                                >
+                                  <FiUpload className="w-4 h-4" />
+                                  {variantUploadHex === hex.toUpperCase() ? 'Uploading…' : 'Add photos for this colour'}
+                                </label>
+                                <input
+                                  id={safeInputId}
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  className="hidden"
+                                  onChange={(e) => handleVariantImagesChange(hex, e)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {!canManageColorVariants && (
+                  <div className="border-t border-gray-200 pt-6 mt-6">
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                      <p className="font-semibold">Color variants</p>
+                      <p className="text-xs mt-1 text-amber-900/90">
+                        Save the product once, then open it again for editing. After that, you can add colour variants and photos here (same flow as eyeglass products).
+                      </p>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 

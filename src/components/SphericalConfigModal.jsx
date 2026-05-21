@@ -353,6 +353,7 @@ const SphericalConfigModal = ({ config, onClose }) => {
     }
   };
 
+  /** Pack list = Available Units field only (removed packs must not linger via price/image maps). */
   const collectPackUnits = () => {
     const set = new Set();
     formData.available_units
@@ -361,9 +362,6 @@ const SphericalConfigModal = ({ config, onClose }) => {
         const n = parseInt(String(u), 10);
         if (!Number.isNaN(n) && n > 0) set.add(String(n));
       });
-    Object.keys(unitPrices || {}).forEach((k) => k && set.add(String(k)));
-    Object.keys(unitImages || {}).forEach((k) => k && set.add(String(k)));
-    Object.keys(unitImageFiles || {}).forEach((k) => k && set.add(String(k)));
     return [...set];
   };
 
@@ -393,14 +391,8 @@ const SphericalConfigModal = ({ config, onClose }) => {
 
   /** Full unit_images map for API: includes empty arrays so removals and "clear all" persist. */
   const buildUnitImagesPayload = () => {
-    const unitSet = new Set([
-      ...formData.available_units.filter(Boolean).map(String),
-      ...Object.keys(unitImages || {}),
-      ...Object.keys(unitImageFiles || {}),
-    ]);
     const out = {};
-    unitSet.forEach((unit) => {
-      if (!unit) return;
+    collectPackUnits().forEach((unit) => {
       const images = Array.isArray(unitImages[unit])
         ? unitImages[unit].filter((img) => img && String(img).trim() !== '')
         : [];

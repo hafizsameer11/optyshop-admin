@@ -330,8 +330,51 @@ const SphericalConfigModal = ({ config, onClose }) => {
   };
 
   const removeArrayItem = (field, index) => {
+    const removed = formData[field][index];
     const newArray = formData[field].filter((_, i) => i !== index);
     setFormData({ ...formData, [field]: newArray });
+    if (field === 'available_units' && removed != null && String(removed).trim() !== '') {
+      const unit = String(removed).trim();
+      setUnitPrices((prev) => {
+        const next = { ...prev };
+        delete next[unit];
+        return next;
+      });
+      setUnitImages((prev) => {
+        const next = { ...prev };
+        delete next[unit];
+        return next;
+      });
+      setUnitImageFiles((prev) => {
+        const next = { ...prev };
+        delete next[unit];
+        return next;
+      });
+    }
+  };
+
+  const collectPackUnits = () => {
+    const set = new Set();
+    formData.available_units
+      .filter((u) => u !== '' && u != null)
+      .forEach((u) => {
+        const n = parseInt(String(u), 10);
+        if (!Number.isNaN(n) && n > 0) set.add(String(n));
+      });
+    Object.keys(unitPrices || {}).forEach((k) => k && set.add(String(k)));
+    Object.keys(unitImages || {}).forEach((k) => k && set.add(String(k)));
+    Object.keys(unitImageFiles || {}).forEach((k) => k && set.add(String(k)));
+    return [...set];
+  };
+
+  const buildValidUnitPrices = () => {
+    const out = {};
+    collectPackUnits().forEach((unit) => {
+      const raw = unitPrices[unit];
+      const price = typeof raw === 'number' ? raw : parseFloat(raw);
+      if (!Number.isNaN(price) && price > 0) out[unit] = price;
+    });
+    return out;
   };
 
   const copyRightToLeft = () => {
@@ -421,20 +464,15 @@ const SphericalConfigModal = ({ config, onClose }) => {
         submitData.copy_right_to_left = true;
       }
 
-      // Add unit_prices and unit_images if they have values
-      // Convert unit_prices values to numbers and filter out empty/zero values
-      const validUnitPrices = {};
-      Object.keys(unitPrices).forEach(unit => {
-        const price = typeof unitPrices[unit] === 'number'
-          ? unitPrices[unit]
-          : parseFloat(unitPrices[unit]);
-        if (price && price > 0) {
-          validUnitPrices[unit] = price;
-        }
-      });
-      if (Object.keys(validUnitPrices).length > 0) {
-        submitData.unit_prices = validUnitPrices;
-      }
+      const packUnits = collectPackUnits();
+      submitData.available_units = packUnits.map((u) => parseInt(u, 10)).filter((n) => !Number.isNaN(n) && n > 0);
+      const validUnitPrices = buildValidUnitPrices();
+      const unitImagesPayload = buildUnitImagesPayload();
+      submitData.unit_prices = validUnitPrices;
+      submitData.unit_images = unitImagesPayload;
+      delete submitData.availableUnits;
+      delete submitData.unit_options;
+      delete submitData.unit_types;
 
       // Check if we have any files to upload
       const hasUnitImageFiles = Object.keys(unitImageFiles).some(unit =>
@@ -445,16 +483,15 @@ const SphericalConfigModal = ({ config, onClose }) => {
       if (hasUnitImageFiles) {
         const formDataToSend = new FormData();
 
-        // Add all form fields to FormData
-        Object.keys(submitData).forEach(key => {
-          const value = submitData[key];
+        const { unit_prices: _up, unit_images: _ui, ...submitFields } = submitData;
+
+        // Add all form fields to FormData (pack fields appended once below)
+        Object.keys(submitFields).forEach(key => {
+          const value = submitFields[key];
           if (value === null || value === undefined) {
             return; // Skip null/undefined
-          } else if (key === 'available_units' && Array.isArray(value)) {
-            // Only send available_units if it has values
-            if (value.length > 0) {
-              formDataToSend.append(key, JSON.stringify(value));
-            }
+          } else if (key === 'available_units') {
+            return;
           } else if (typeof value === 'boolean') {
             formDataToSend.append(key, value.toString());
           } else if (typeof value === 'number') {
@@ -472,13 +509,9 @@ const SphericalConfigModal = ({ config, onClose }) => {
           }
         });
 
-        const unitImagesPayload = buildUnitImagesPayload();
+        formDataToSend.append('available_units', JSON.stringify(submitData.available_units));
         formDataToSend.append('unit_images', JSON.stringify(unitImagesPayload));
-
-        // Add unit_prices as JSON
-        if (Object.keys(validUnitPrices).length > 0) {
-          formDataToSend.append('unit_prices', JSON.stringify(validUnitPrices));
-        }
+        formDataToSend.append('unit_prices', JSON.stringify(validUnitPrices));
 
         // Add files for each unit (field names must match multer: unit_images_10, unit_images_90, …)
         Object.keys(unitImageFiles).forEach(unit => {
@@ -507,13 +540,6 @@ const SphericalConfigModal = ({ config, onClose }) => {
           }
         }
       } else {
-        submitData.unit_images = buildUnitImagesPayload();
-
-        // Remove available_units if empty to avoid validation errors
-        if (submitData.available_units && submitData.available_units.length === 0) {
-          delete submitData.available_units;
-        }
-
         let response;
         if (isEditingExisting) {
           response = await sphericalConfigs.update(config.id, submitData);

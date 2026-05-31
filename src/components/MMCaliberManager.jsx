@@ -101,13 +101,15 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       return;
     }
 
+    const imageUrl = formData.image_url?.trim() || '';
+
     try {
       setLoading(true);
       
       if (editingCaliber) {
         // Update existing caliber
         const response = await mmCalibersApi.updateCaliber(productId, editingCaliber.mm, {
-          image_url: formData.image_url
+          image_url: imageUrl
         });
         console.log('Caliber updated successfully:', response);
         toast.success('Caliber updated successfully');
@@ -115,7 +117,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         // Update the caliber in local state
         const updatedCaliber = {
           mm: editingCaliber.mm,
-          image_url: formData.image_url
+          image_url: imageUrl
         };
         console.log('🔄 Updating caliber in table:', updatedCaliber);
         setCalibers(prev => prev.map(c => 
@@ -130,7 +132,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         // Create new caliber
         const response = await mmCalibersApi.addCaliberToProduct(productId, {
           mm: formData.mm,
-          image_url: formData.image_url
+          image_url: imageUrl
         });
         console.log('✅ Caliber created successfully:', response);
         toast.success('Caliber created successfully');
@@ -138,7 +140,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         // Add the new caliber to local state immediately (no page refresh)
         const newCaliber = {
           mm: formData.mm,
-          image_url: formData.image_url
+          image_url: imageUrl
         };
         console.log('🔄 Adding new caliber to table:', newCaliber);
         setCalibers(prev => [...prev, newCaliber]);
@@ -387,7 +389,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL
+                  Image URL <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -396,7 +398,6 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
                     onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
                     placeholder="https://example.com/image.jpg"
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
                   />
                   <label className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-2">
                     <FiUpload className="w-4 h-4" />
@@ -410,7 +411,9 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
                     />
                   </label>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Supported formats: PNG, JPG, WEBP (Max 10MB)</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Supported formats: PNG, JPG, WEBP (Max 10MB). Leave empty when this caliber uses the same image as another size.
+                </p>
               </div>
             </div>
 
@@ -480,18 +483,29 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {calibers.map((caliber) => (
+            {calibers.map((caliber) => {
+              const displayImage =
+                caliber.image_url?.trim() ||
+                calibers.find((c) => c.image_url?.trim())?.image_url ||
+                '';
+              return (
               <div key={caliber.mm} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
+                    {displayImage ? (
                     <img
-                      src={caliber.image_url}
+                      src={displayImage}
                       alt={`${caliber.mm}mm`}
                       className="w-12 h-12 object-cover rounded-lg border border-gray-200"
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/48x48?text=No+Image';
                       }}
                     />
+                    ) : (
+                    <div className="w-12 h-12 flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-[10px] text-gray-400 text-center leading-tight px-1">
+                      No image
+                    </div>
+                    )}
                     <div>
                       <h4 className="font-medium text-gray-900">{formatCaliberDisplay(caliber.mm)}</h4>
                       <p className="text-sm text-gray-500">Frame size option</p>
@@ -516,9 +530,13 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
                 </div>
                 <div className="text-xs text-gray-400">
                   Size: {caliber.mm}mm
+                  {!caliber.image_url?.trim() && displayImage && (
+                    <span className="block text-gray-400">Uses shared image</span>
+                  )}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

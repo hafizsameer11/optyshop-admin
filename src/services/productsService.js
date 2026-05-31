@@ -408,14 +408,17 @@ export const validateCaliberData = (caliberData) => {
     errors.push('Caliber size (mm) is required and must be a number');
   }
   
-  if (!caliberData.image_url) {
-    errors.push('Image URL is required');
-  }
-  
-  try {
-    new URL(caliberData.image_url);
-  } catch {
-    errors.push('Image URL must be a valid URL');
+  const imageUrl = typeof caliberData.image_url === 'string' ? caliberData.image_url.trim() : '';
+  if (imageUrl) {
+    const isRelativeOrData =
+      imageUrl.startsWith('/') || imageUrl.startsWith('data:') || imageUrl.startsWith('blob:');
+    if (!isRelativeOrData) {
+      try {
+        new URL(imageUrl);
+      } catch {
+        errors.push('Image URL must be a valid URL');
+      }
+    }
   }
   
   return errors;

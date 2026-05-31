@@ -51,6 +51,8 @@ const BannerModal = ({ banner, onClose }) => {
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [mobileImageFile, setMobileImageFile] = useState(null);
+  const [mobileImagePreview, setMobileImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Debug: Log imageFile state changes
@@ -137,6 +139,8 @@ const BannerModal = ({ banner, onClose }) => {
       // Normalize image URL for preview
       const normalizedUrl = normalizeImageUrl(banner.image_url);
       setImagePreview(normalizedUrl);
+      const normalizedMobileUrl = normalizeImageUrl(banner.mobile_image_url);
+      setMobileImagePreview(normalizedMobileUrl);
 
       // Load category and subcategory data if available
       const categoryId = banner.category_id || banner.categoryId;
@@ -177,6 +181,8 @@ const BannerModal = ({ banner, onClose }) => {
         sub_category_id: '',
       });
       setImagePreview(null);
+      setMobileImageFile(null);
+      setMobileImagePreview(null);
       setParentSubCategoryId('');
       setSubCategories([]);
       setNestedSubCategories([]);
@@ -298,6 +304,39 @@ const BannerModal = ({ banner, onClose }) => {
     }
 
     setFormData(newFormData);
+  };
+
+  const handleMobileImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB for faster uploads');
+      return;
+    }
+
+    setMobileImageFile(file);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setMobileImagePreview(event.target.result);
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      const data = await uploadAPI.uploadImage(file);
+      if (data.success && data.url) {
+        setMobileImagePreview(data.url);
+        toast.success('Mobile image uploaded successfully');
+      }
+    } catch (error) {
+      console.error('Mobile image upload error:', error);
+    }
   };
 
   const handleImageChange = async (e) => {
@@ -476,6 +515,10 @@ const BannerModal = ({ banner, onClose }) => {
         // (though this should have been caught by validation above)
         submitData.append('image', '');
         console.warn('New banner created without image file - sending empty image field');
+      }
+
+      if (mobileImageFile) {
+        submitData.append('mobile_image', mobileImageFile);
       }
 
       // Debug: Log FormData contents
@@ -733,6 +776,38 @@ const BannerModal = ({ banner, onClose }) => {
             {banner && !imageFile && (
               <p className="text-xs text-gray-500 mt-1">
                 {t('leaveEmptyToKeepCurrent')}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mobile image (optional)
+            </label>
+            {mobileImagePreview && (
+              <div className="mb-4">
+                <img
+                  src={mobileImagePreview}
+                  alt="Mobile preview"
+                  className="w-full max-w-xs h-48 object-cover rounded-lg border"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleMobileImageChange}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Optional. Shown on phones and tablets; if empty, the desktop image is used on mobile.
+            </p>
+            {banner && !mobileImageFile && (
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty to keep the current mobile image.
               </p>
             )}
           </div>

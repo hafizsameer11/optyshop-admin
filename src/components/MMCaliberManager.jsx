@@ -513,14 +513,24 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
                   </div>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => handleEdit(caliber)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEdit(caliber);
+                      }}
                       className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                       title="Edit caliber"
                     >
                       <FiEdit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(caliber)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDelete(caliber);
+                      }}
                       className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                       title="Delete caliber"
                     >

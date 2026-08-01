@@ -3493,7 +3493,9 @@ const ProductModal = ({ product, onClose }) => {
                       Enter a SKU or use Auto Generate for a random code (e.g. SKU-…). You can edit it anytime.
                     </p>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       {t('price')} <span className="text-red-500">*</span>
@@ -3504,13 +3506,11 @@ const ProductModal = ({ product, onClose }) => {
                       value={formData.price}
                       onChange={handleChange}
                       step="0.01"
+                      min="0"
                       className="input-modern"
                       required
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       {t('compareAtPrice')}
@@ -3521,11 +3521,11 @@ const ProductModal = ({ product, onClose }) => {
                       value={formData.compare_at_price}
                       onChange={handleChange}
                       step="0.01"
+                      min="0"
                       className="input-modern"
                       placeholder={t('originalPrice')}
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       {t('costPrice')}
@@ -3536,6 +3536,7 @@ const ProductModal = ({ product, onClose }) => {
                       value={formData.cost_price}
                       onChange={handleChange}
                       step="0.01"
+                      min="0"
                       className="input-modern"
                       placeholder={t('wholesaleCost')}
                     />

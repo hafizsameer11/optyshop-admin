@@ -1474,6 +1474,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                       required
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Price <span className="text-red-500">*</span>
@@ -1484,13 +1487,11 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                       value={formData.price}
                       onChange={handleChange}
                       step="0.01"
+                      min="0"
                       className="input-modern"
                       required
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Compare At Price</label>
                     <input
@@ -1499,7 +1500,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                       value={formData.compare_at_price}
                       onChange={handleChange}
                       step="0.01"
+                      min="0"
                       className="input-modern"
+                      placeholder="Original / strikethrough price"
                     />
                   </div>
                   <div>
@@ -1510,7 +1513,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                       value={formData.cost_price}
                       onChange={handleChange}
                       step="0.01"
+                      min="0"
                       className="input-modern"
+                      placeholder="Wholesale / cost"
                     />
                   </div>
                 </div>

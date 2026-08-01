@@ -23,6 +23,8 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
     name: '',
     description: '',
     price: '',
+    compare_at_price: '',
+    cost_price: '',
     image_url: '',
     is_active: true,
     sort_order: 0
@@ -91,6 +93,8 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
       name: '',
       description: '',
       price: '',
+      compare_at_price: '',
+      cost_price: '',
       image_url: '',
       is_active: true,
       sort_order: 0
@@ -111,7 +115,15 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
     // Prepare data for validation
     const submitData = {
       ...formData,
-      price: parseFloat(formData.price)
+      price: parseFloat(formData.price),
+      compare_at_price:
+        formData.compare_at_price !== '' && formData.compare_at_price != null
+          ? parseFloat(formData.compare_at_price)
+          : null,
+      cost_price:
+        formData.cost_price !== '' && formData.cost_price != null
+          ? parseFloat(formData.cost_price)
+          : null,
     };
     
     // Validate form data
@@ -171,7 +183,13 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
       product_id: variant.product_id,
       name: variant.name,
       description: variant.description || '',
-      price: variant.price.toString(),
+      price: variant.price != null ? String(variant.price) : '',
+      compare_at_price:
+        variant.compare_at_price != null && variant.compare_at_price !== ''
+          ? String(variant.compare_at_price)
+          : '',
+      cost_price:
+        variant.cost_price != null && variant.cost_price !== '' ? String(variant.cost_price) : '',
       image_url: variant.image_url || '',
       is_active: variant.is_active,
       sort_order: variant.sort_order || 0
@@ -351,6 +369,42 @@ const EyeHygieneVariantManager = ({ productId, productType, onVariantsUpdate }) 
                     placeholder="0.00"
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Compare at Price (€)
+                </label>
+                <div className="relative">
+                  <FaEuroSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.compare_at_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, compare_at_price: e.target.value }))}
+                    placeholder="Original price"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cost Price (€)
+                </label>
+                <div className="relative">
+                  <FaEuroSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.cost_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))}
+                    placeholder="Wholesale / cost"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>

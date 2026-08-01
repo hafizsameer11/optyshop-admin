@@ -21,6 +21,8 @@ const SphericalConfigModal = ({ config, onClose }) => {
     product_id: '',
     display_name: '',
     price: '',
+    compare_at_price: '',
+    cost_price: '',
     is_active: true,
     available_units: [],
     right_qty: [],
@@ -73,7 +75,13 @@ const SphericalConfigModal = ({ config, onClose }) => {
       sub_category_id: config.sub_category_id || config.subCategoryId || '',
       product_id: config.product_id || config.productId || config.product?.id || '',
       display_name: config.display_name || config.displayName || '',
-      price: config.price !== undefined ? config.price : '',
+      price: config.price !== undefined && config.price !== null ? config.price : '',
+      compare_at_price:
+        config.compare_at_price !== undefined && config.compare_at_price !== null
+          ? config.compare_at_price
+          : '',
+      cost_price:
+        config.cost_price !== undefined && config.cost_price !== null ? config.cost_price : '',
       is_active: config.is_active !== undefined ? config.is_active : (config.isActive !== undefined ? config.isActive : true),
       available_units: Array.isArray(config.available_units) ? config.available_units.map(String) : (Array.isArray(config.availableUnits) ? config.availableUnits.map(String) : []),
       right_qty: Array.isArray(config.right_qty) ? config.right_qty.map(String) : (Array.isArray(config.rightQty) ? config.rightQty.map(String) : []),
@@ -728,19 +736,52 @@ const SphericalConfigModal = ({ config, onClose }) => {
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Price
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                className="input-modern"
-                placeholder="e.g., 29.99"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Price
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="input-modern"
+                  placeholder="e.g., 29.99"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Compare at Price
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  name="compare_at_price"
+                  value={formData.compare_at_price}
+                  onChange={handleChange}
+                  className="input-modern"
+                  placeholder="Original / strikethrough price"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Cost Price
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  name="cost_price"
+                  value={formData.cost_price}
+                  onChange={handleChange}
+                  className="input-modern"
+                  placeholder="Wholesale / cost"
+                />
+              </div>
             </div>
           </div>
 

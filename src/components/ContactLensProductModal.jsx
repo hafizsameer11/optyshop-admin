@@ -16,6 +16,15 @@ const isValidHexCode = (hex) => {
   return /^#([A-Fa-f0-9]{6})$/.test(hex.trim());
 };
 
+// An image already saved on the server: http(s) URL or a relative /uploads path.
+// Local-only previews (data:/blob:) are excluded.
+const isSavedImageUrl = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  const url = value.trim();
+  if (!url) return false;
+  return !url.startsWith('data:') && !url.startsWith('blob:');
+};
+
 const normalizeVariantHex = (raw) => {
   if (raw == null || typeof raw !== 'string') return null;
   const t = raw.trim();
@@ -224,10 +233,7 @@ function buildColorImagesToKeepForSubmit(imagesWithColors, existingColorImages, 
     if (
       img.hexCode &&
       isValidHexCode(img.hexCode) &&
-      img.preview &&
-      typeof img.preview === 'string' &&
-      !img.preview.startsWith('data:') &&
-      (img.preview.startsWith('https://') || img.preview.startsWith('http://'))
+      isSavedImageUrl(img.preview)
     ) {
       const H = img.hexCode.toUpperCase();
       if (!existingImagesByColor[H]) existingImagesByColor[H] = [];
@@ -426,6 +432,9 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
   const [imagesWithColors, setImagesWithColors] = useState([]);
   const [existingColorImages, setExistingColorImages] = useState([]);
   const [pendingVariantHexes, setPendingVariantHexes] = useState([]);
+  // Image keep-lists replace what is stored, so they are only sent when the user changed images.
+  const [imagesDirty, setImagesDirty] = useState(false);
+  const [colorImagesDirty, setColorImagesDirty] = useState(false);
   const [customVariantHexInput, setCustomVariantHexInput] = useState('');
   const [customVariantNameInput, setCustomVariantNameInput] = useState('');
   const [variantDisplayNameByHex, setVariantDisplayNameByHex] = useState({});
@@ -504,6 +513,8 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
       }
       setExistingImages(existingImageUrls);
       setImagePreviews(existingImageUrls);
+      setImagesDirty(false);
+      setColorImagesDirty(false);
     }
   }, [product]);
 
@@ -694,6 +705,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
     if (validFiles.length > 0) {
       const newFiles = product?.id ? validFiles : [...imageFiles, ...validFiles];
       setImageFiles(newFiles);
+      setImagesDirty(true);
 
       // Upload files immediately to get HTTPS URLs
       const uploadPromises = validFiles.map((file) =>
@@ -717,13 +729,23 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
     e.target.value = '';
   };
 
+  /** Saved image URLs the user has not removed, in display order. */
+  const getImagesToKeep = () => {
+    const ordered = imagePreviews.filter(
+      (preview) => isSavedImageUrl(preview) && existingImages.includes(preview)
+    );
+    const missing = existingImages.filter((url) => isSavedImageUrl(url) && !ordered.includes(url));
+    return [...ordered, ...missing];
+  };
+
   const removeImage = (index) => {
     const previewToRemove = imagePreviews[index];
-    if (typeof previewToRemove === 'string' && previewToRemove.startsWith('https://')) {
+    setImagesDirty(true);
+    if (isSavedImageUrl(previewToRemove) && existingImages.includes(previewToRemove)) {
       setExistingImages(prev => prev.filter(img => img !== previewToRemove));
     } else {
-      const existingCount = imagePreviews.slice(0, index).filter(preview => 
-        typeof preview === 'string' && preview.startsWith('https://')
+      const existingCount = imagePreviews.slice(0, index).filter(preview =>
+        isSavedImageUrl(preview) && existingImages.includes(preview)
       ).length;
       const fileIndex = index - existingCount;
       if (fileIndex >= 0 && fileIndex < imageFiles.length) {
@@ -788,6 +810,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
           isExisting: false,
         }));
         setImagesWithColors((prev) => [...prev, ...newImages]);
+        if (newImages.length > 0) setColorImagesDirty(true);
         setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
         if (validResults.length > 0) {
           toast.success(`${validResults.length} photo(s) added for ${getColorNameFromHex(H)}`);
@@ -827,6 +850,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
 
   const removeVariantHex = (hex) => {
     const H = String(hex).toUpperCase();
+    setColorImagesDirty(true);
     setImagesWithColors((prev) => prev.filter((img) => !(img.hexCode && img.hexCode.toUpperCase() === H)));
     setExistingColorImages((prev) => prev.filter((c) => c.hexCode?.toUpperCase() !== H));
     setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
@@ -1264,20 +1288,15 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
           }
         });
 
-        if (product?.id) {
-          const imagesToKeep = imagePreviews.filter(preview => 
-            typeof preview === 'string' && 
-            preview.startsWith('https://') &&
-            existingImages.includes(preview)
-          );
-          submitData.append('images', JSON.stringify(imagesToKeep));
+        if (product?.id && imagesDirty) {
+          submitData.append('images', JSON.stringify(getImagesToKeep()));
         }
 
         imageFiles.forEach((file) => {
           submitData.append('images', file);
         });
 
-        if (product?.id) {
+        if (product?.id && colorImagesDirty) {
           const colorImagesToKeep = buildColorImagesToKeepForSubmit(
             imagesWithColors,
             existingColorImages,
@@ -1292,15 +1311,10 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
           response = await api.post(API_ROUTES.ADMIN.PRODUCTS.CREATE, submitData);
         }
       } else {
-        if (product?.id) {
-          const imagesToKeep = imagePreviews.filter(preview => 
-            typeof preview === 'string' && 
-            preview.startsWith('https://') &&
-            existingImages.includes(preview)
-          );
-          dataToSend.images = imagesToKeep;
+        if (product?.id && imagesDirty) {
+          dataToSend.images = getImagesToKeep();
         }
-        if (product?.id) {
+        if (product?.id && colorImagesDirty) {
           dataToSend.color_images = buildColorImagesToKeepForSubmit(
             imagesWithColors,
             existingColorImages,
@@ -1336,16 +1350,16 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
 
       toast.success(successMessage);
       setImageFiles([]);
+      setImagesDirty(false);
+      setColorImagesDirty(false);
 
       const isUpdate = Boolean(product?.id);
 
       if (!isUpdate && savedProduct?.id) {
         const merged = mergeContactLensProductAfterSave(savedProduct, formData);
         const fromApi = contactLensImagesFromProduct(savedProduct);
-        const httpsPreviews = imagePreviews.filter(
-          (p) => typeof p === 'string' && p.startsWith('https://')
-        );
-        const nextPreviews = fromApi.length > 0 ? fromApi : httpsPreviews;
+        const savedPreviews = imagePreviews.filter((p) => isSavedImageUrl(p));
+        const nextPreviews = fromApi.length > 0 ? fromApi : savedPreviews;
         setExistingImages(nextPreviews);
         setImagePreviews(nextPreviews);
         if (typeof onAfterSave === 'function') {
@@ -1827,6 +1841,7 @@ const ContactLensProductModal = ({ product, onClose, selectedSection, onAfterSav
                         <button
                           type="button"
                           onClick={() => {
+                            setColorImagesDirty(true);
                             setImagesWithColors([]);
                             setExistingColorImages([]);
                             setPendingVariantHexes([]);

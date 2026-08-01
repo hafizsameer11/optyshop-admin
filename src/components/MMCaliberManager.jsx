@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiImage, FiSave, FiX, FiUpload } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiSave, FiX, FiMaximize2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { mmCalibersApi } from '../api/mmCalibers';
-import { 
+import {
   validateCaliberData,
   formatCaliberDisplay,
   supportsMMCalibers
@@ -12,11 +12,9 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   const [calibers, setCalibers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingCaliber, setEditingCaliber] = useState(null);
   const [apiError, setApiError] = useState(null);
   const [formData, setFormData] = useState({
     mm: '',
-    image_url: '',
     product_id: productId || ''
   });
 
@@ -75,13 +73,10 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   };
 
   const resetForm = () => {
-    console.log('🔄 Resetting caliber form - closing form and showing table');
     setFormData({ 
       mm: '', 
-      image_url: '',
       product_id: productId || ''
     });
-    setEditingCaliber(null);
     setShowAddForm(false);
   };
 
@@ -101,56 +96,23 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       return;
     }
 
-    const imageUrl = formData.image_url?.trim() || '';
-
     try {
       setLoading(true);
-      
-      if (editingCaliber) {
-        // Update existing caliber
-        const response = await mmCalibersApi.updateCaliber(productId, editingCaliber.mm, {
-          image_url: imageUrl
-        });
-        console.log('Caliber updated successfully:', response);
-        toast.success('Caliber updated successfully');
-        
-        // Update the caliber in local state
-        const updatedCaliber = {
-          mm: editingCaliber.mm,
-          image_url: imageUrl
-        };
-        console.log('🔄 Updating caliber in table:', updatedCaliber);
-        setCalibers(prev => prev.map(c => 
-          c.mm === editingCaliber.mm ? updatedCaliber : c
-        ));
-        if (onCalibersUpdate) {
-          onCalibersUpdate(prev => prev.map(c => 
-            c.mm === editingCaliber.mm ? updatedCaliber : c
-          ));
-        }
-      } else {
-        // Create new caliber
-        const response = await mmCalibersApi.addCaliberToProduct(productId, {
-          mm: formData.mm,
-          image_url: imageUrl
-        });
-        console.log('✅ Caliber created successfully:', response);
-        toast.success('Caliber created successfully');
-        
-        // Add the new caliber to local state immediately (no page refresh)
-        const newCaliber = {
-          mm: formData.mm,
-          image_url: imageUrl
-        };
-        console.log('🔄 Adding new caliber to table:', newCaliber);
-        setCalibers(prev => [...prev, newCaliber]);
-        if (onCalibersUpdate) {
-          onCalibersUpdate(prev => [...prev, newCaliber]);
-        }
+
+      const response = await mmCalibersApi.addCaliberToProduct(productId, {
+        mm: formData.mm
+      });
+      console.log('✅ Caliber created successfully:', response);
+      toast.success('Caliber created successfully');
+
+      // Add the new caliber to local state immediately (no page refresh)
+      const newCaliber = { mm: formData.mm };
+      const nextCalibers = [...calibers, newCaliber];
+      setCalibers(nextCalibers);
+      if (onCalibersUpdate) {
+        onCalibersUpdate(nextCalibers);
       }
-      
-      // Close form immediately to show table
-      console.log('🔄 Closing form...');
+
       resetForm();
       
       // Reload calibers to ensure we have the latest data from server
@@ -176,24 +138,6 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleEdit = (caliber) => {
-    console.log('🔧 Edit button clicked for caliber:', caliber);
-    console.log('🔧 Current showAddForm state:', showAddForm);
-    setEditingCaliber(caliber);
-    setFormData({
-      mm: caliber.mm,
-      image_url: caliber.image_url,
-      product_id: productId || ''
-    });
-    console.log('🔧 Setting showAddForm to true');
-    setShowAddForm(true);
-    console.log('🔧 Form data set:', {
-      mm: caliber.mm,
-      image_url: caliber.image_url,
-      product_id: productId || ''
-    });
   };
 
   const handleDelete = async (caliber) => {
@@ -227,54 +171,15 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
     }
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    console.log('📁 File selected:', file);
-    
-    if (!file) {
-      console.log('❌ No file selected');
-      return;
-    }
-    
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      e.target.value = ''; // Clear the input
-      return;
-    }
-    
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image size must be less than 10MB');
-      e.target.value = ''; // Clear the input
-      return;
-    }
-    
-    console.log('✅ File validation passed:', file.name, file.type, file.size);
-    
-    // Convert to Base64 for preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Url = event.target.result;
-      console.log('🖼️ Image converted to Base64');
-      setFormData(prev => ({ ...prev, image_url: base64Url }));
-      toast.success(`Image uploaded: ${file.name}`);
-    };
-    reader.onerror = (error) => {
-      console.error('❌ Error reading file:', error);
-      toast.error('Failed to read image file');
-      e.target.value = ''; // Clear the input
-    };
-    reader.readAsDataURL(file);
-  };
-
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">MM Calibers</h3>
-            <p className="text-sm text-gray-500 mt-1">Manage frame size options with images</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Frame size options only (like shoe sizes). Sizes never change the product image.
+            </p>
           </div>
           <button
             onClick={(e) => {
@@ -332,14 +237,12 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         </div>
       )}
 
-      {/* Add/Edit Form */}
-      {console.log('🔍 Rendering check - showAddForm:', showAddForm, 'editingCaliber:', editingCaliber) || showAddForm && (
+      {/* Add Form */}
+      {showAddForm && (
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50" onSubmit={(e) => e.preventDefault()}>
           <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-medium text-gray-900">
-                {editingCaliber ? 'Edit Caliber' : 'Add New Caliber'}
-              </h4>
+              <h4 className="font-medium text-gray-900">Add New Caliber</h4>
               <button
                 type="button"
                 onClick={(e) => {
@@ -353,7 +256,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Product ID
@@ -379,62 +282,13 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, mm: e.target.value }))}
                   placeholder="e.g., 58"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  disabled={!!editingCaliber} // Don't allow editing mm for existing calibers
                   required
                 />
-                {editingCaliber && (
-                  <p className="text-xs text-gray-500 mt-1">Caliber size cannot be changed after creation</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                    placeholder="https://example.com/image.jpg"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <label className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-2">
-                    <FiUpload className="w-4 h-4" />
-                    <span>Upload</span>
-                    <input
-                      key={formData.image_url || 'file-input'}
-                      type="file"
-                      accept="image/png, image/jpeg, image/jpg, image/webp"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Supported formats: PNG, JPG, WEBP (Max 10MB). Leave empty when this caliber uses the same image as another size.
+                  Sizes are shown to customers in a dropdown. Product photos come from the Images tab.
                 </p>
               </div>
             </div>
-
-            {formData.image_url && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Preview</label>
-                <div className="flex items-center gap-4">
-                  <img
-                    src={formData.image_url}
-                    alt="Caliber preview"
-                    className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                    onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/64x64?text=Error';
-                    }}
-                  />
-                  <span className="text-sm text-gray-600">
-                    {formatCaliberDisplay(formData.mm)}
-                  </span>
-                </div>
-              </div>
-            )}
 
             <div className="flex gap-3 justify-end">
               <button
@@ -459,7 +313,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 <FiSave className="w-4 h-4" />
-                {editingCaliber ? 'Update' : 'Create'} Caliber
+                Create Caliber
               </button>
             </div>
           </form>
@@ -475,78 +329,34 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
           </div>
         ) : calibers.length === 0 ? (
           <div className="text-center py-8">
-            <FiImage className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <FiMaximize2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">No calibers added yet</p>
             <p className="text-sm text-gray-400 mt-1">
               {productId ? 'Add your first caliber to get started' : 'Save the product first to add calibers'}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {calibers.map((caliber) => {
-              const displayImage =
-                caliber.image_url?.trim() ||
-                calibers.find((c) => c.image_url?.trim())?.image_url ||
-                '';
-              return (
-              <div key={caliber.mm} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    {displayImage ? (
-                    <img
-                      src={displayImage}
-                      alt={`${caliber.mm}mm`}
-                      className="w-12 h-12 object-cover rounded-lg border border-gray-200"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/48x48?text=No+Image';
-                      }}
-                    />
-                    ) : (
-                    <div className="w-12 h-12 flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-[10px] text-gray-400 text-center leading-tight px-1">
-                      No image
-                    </div>
-                    )}
-                    <div>
-                      <h4 className="font-medium text-gray-900">{formatCaliberDisplay(caliber.mm)}</h4>
-                      <p className="text-sm text-gray-500">Frame size option</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleEdit(caliber);
-                      }}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                      title="Edit caliber"
-                    >
-                      <FiEdit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleDelete(caliber);
-                      }}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                      title="Delete caliber"
-                    >
-                      <FiTrash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400">
-                  Size: {caliber.mm}mm
-                  {!caliber.image_url?.trim() && displayImage && (
-                    <span className="block text-gray-400">Uses shared image</span>
-                  )}
-                </div>
+          <div className="flex flex-wrap gap-3">
+            {calibers.map((caliber) => (
+              <div
+                key={caliber.mm}
+                className="flex items-center gap-3 border border-gray-200 rounded-lg pl-4 pr-2 py-2 hover:shadow-sm transition-shadow"
+              >
+                <span className="font-medium text-gray-900">{formatCaliberDisplay(caliber.mm)}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDelete(caliber);
+                  }}
+                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                  title="Delete caliber"
+                >
+                  <FiTrash2 className="w-4 h-4" />
+                </button>
               </div>
-            );
-            })}
+            ))}
           </div>
         )}
       </div>

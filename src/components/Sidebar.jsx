@@ -26,7 +26,8 @@ import {
   FiLogOut,
   FiMenu,
   FiAward,
-  FiGift
+  FiGift,
+  FiAlertCircle
 } from 'react-icons/fi';
 import { FaEuroSign } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
@@ -61,6 +62,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     {
       type: 'item',
       item: { path: '/products', icon: FiShoppingBag, label: t('products') }
+    },
+    {
+      type: 'item',
+      item: { path: '/products/out-of-stock', icon: FiAlertCircle, label: 'Out of Stock' }
     },
     {
       type: 'item',

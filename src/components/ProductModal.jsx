@@ -46,6 +46,16 @@ const isValidHexCode = (hex) => {
   return hexPattern.test(hex.trim());
 };
 
+// An image already saved on the server: http(s) URL or a relative /uploads path.
+// Local-only previews (data:/blob:) are excluded.
+const isSavedImageUrl = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  const url = value.trim();
+  if (!url) return false;
+  if (url.startsWith('data:') || url.startsWith('blob:')) return false;
+  return true;
+};
+
 // Helper function to convert color name to hex code (for backward compatibility)
 const getHexFromColorName = (colorName) => {
   if (!colorName) return null;
@@ -301,6 +311,10 @@ const ProductModal = ({ product, onClose }) => {
   const [variantUploadHex, setVariantUploadHex] = useState(null);
   const [customVariantHexInput, setCustomVariantHexInput] = useState('');
   const [existingColorImages, setExistingColorImages] = useState([]); // Existing color images structure for deletion tracking
+  // Image payloads are only sent on update when the user actually changed images,
+  // otherwise the backend would treat the computed keep-list as a deletion request.
+  const [imagesDirty, setImagesDirty] = useState(false);
+  const [colorImagesDirty, setColorImagesDirty] = useState(false);
   const [model3DFile, setModel3DFile] = useState(null);
   const [model3DPreview, setModel3DPreview] = useState(null);
 
@@ -626,6 +640,8 @@ const ProductModal = ({ product, onClose }) => {
         setImagePreviews(existingImageUrls); // Start with existing images
         // Reset imageFiles when editing - user must explicitly select new images to update them
         setImageFiles([]);
+        setImagesDirty(false);
+        setColorImagesDirty(false);
 
         // Set 3D model preview if exists
         if (productToUse.model_3d || productToUse.model3d || productToUse.model3D) {
@@ -1003,6 +1019,19 @@ const ProductModal = ({ product, onClose }) => {
         ...formData,
         [name]: type === 'checkbox' ? checked : value
       });
+    } else if (name === 'stock_quantity') {
+      const qty = value === '' ? '' : parseInt(value, 10);
+      setFormData({
+        ...formData,
+        stock_quantity: value,
+        // Keep status in sync so qty 0 cannot stay marked as in_stock
+        stock_status:
+          qty !== '' && !Number.isNaN(qty) && qty <= 0
+            ? 'out_of_stock'
+            : formData.stock_status === 'out_of_stock' && qty > 0
+              ? 'in_stock'
+              : formData.stock_status,
+      });
     } else {
       setFormData({
         ...formData,
@@ -1062,6 +1091,7 @@ const ProductModal = ({ product, onClose }) => {
           isExisting: false,
         }));
         setImagesWithColors((prev) => [...prev, ...newImages]);
+        if (newImages.length > 0) setColorImagesDirty(true);
         setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
         if (validResults.length > 0) {
           toast.success(`${validResults.length} photo(s) added for ${getColorNameFromHex(H)}`);
@@ -1094,6 +1124,7 @@ const ProductModal = ({ product, onClose }) => {
 
   const removeVariantHex = (hex) => {
     const H = String(hex).toUpperCase();
+    setColorImagesDirty(true);
     setImagesWithColors((prev) => prev.filter((img) => !(img.hexCode && img.hexCode.toUpperCase() === H)));
     setExistingColorImages((prev) => prev.filter((c) => c.hexCode?.toUpperCase() !== H));
     setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
@@ -1120,6 +1151,7 @@ const ProductModal = ({ product, onClose }) => {
     if (validFiles.length > 0) {
       const newFiles = product ? validFiles : [...imageFiles, ...validFiles];
       setImageFiles(newFiles);
+      setImagesDirty(true);
 
       // Upload files immediately to get HTTPS URLs using proper API service
       const uploadPromises = validFiles.map(async (file) => {
@@ -1148,16 +1180,17 @@ const ProductModal = ({ product, onClose }) => {
 
   const removeImage = (index) => {
     const previewToRemove = imagePreviews[index];
+    setImagesDirty(true);
 
-    // Check if it's an existing image (HTTPS URL string) or a new file preview (Base64)
-    if (typeof previewToRemove === 'string' && !previewToRemove.startsWith('data:') && previewToRemove.startsWith('https://')) {
+    // Check if it's an existing image (saved URL) or a new file preview (Base64/blob)
+    if (isSavedImageUrl(previewToRemove) && existingImages.includes(previewToRemove)) {
       // It's an existing image URL - remove from existingImages
       setExistingImages(prev => prev.filter(img => img !== previewToRemove));
     } else {
       // It's a new file preview - find and remove from imageFiles
       // Count how many existing images come before this index
       const existingCount = imagePreviews.slice(0, index).filter(preview =>
-        typeof preview === 'string' && !preview.startsWith('data:') && preview.startsWith('https://')
+        isSavedImageUrl(preview) && existingImages.includes(preview)
       ).length;
       // The file index in imageFiles array
       const fileIndex = index - existingCount;
@@ -1175,9 +1208,19 @@ const ProductModal = ({ product, onClose }) => {
     toast.success('Image removed');
   };
 
+  /** Saved image URLs the user has not removed, in display order. */
+  const getImagesToKeep = () => {
+    const ordered = imagePreviews.filter(
+      (preview) => isSavedImageUrl(preview) && existingImages.includes(preview)
+    );
+    const missing = existingImages.filter((url) => isSavedImageUrl(url) && !ordered.includes(url));
+    return [...ordered, ...missing];
+  };
+
   const removeImageWithColor = (id) => {
     const imageToRemove = imagesWithColors.find(img => img.id === id);
     if (imageToRemove) {
+      setColorImagesDirty(true);
       // If it's an existing image, we need to update existingColorImages structure
       if (imageToRemove.isExisting && imageToRemove.hexCode) {
         setExistingColorImages(prev => {
@@ -1812,15 +1855,10 @@ const ProductModal = ({ product, onClose }) => {
           // Per backend flow: Send images as JSON array string to specify which images to KEEP
           // Backend will compare existing vs new list and delete removed images from storage
           // Images not in this list will be deleted from storage (local filesystem)
-          if (product) {
+          if (product && imagesDirty) {
             // Build the complete list of existing image URLs that should be kept
             // (only URLs from existingImages that are still in imagePreviews)
-            const imagesToKeep = imagePreviews.filter(preview =>
-              typeof preview === 'string' &&
-              !preview.startsWith('data:') &&
-              preview.startsWith('https://') &&
-              existingImages.includes(preview)
-            );
+            const imagesToKeep = getImagesToKeep();
 
             // Send as JSON array string (text field) FIRST (for image deletion support)
             // Backend flow:
@@ -1865,19 +1903,18 @@ const ProductModal = ({ product, onClose }) => {
           }
 
           // For UPDATE: Send complete color_images structure for deletion support
-          // ALWAYS send this field when updating (even if empty) to support deletion
-          // Per backend: When color_images is sent, it REPLACES all existing color images
-          // Empty array "[]" = delete all color images from storage and database
-          if (product) {
+          // Only sent when the user changed color images, because the backend REPLACES
+          // all existing color images with whatever is sent (empty array = delete all)
+          if (product && colorImagesDirty) {
             // Build the complete color_images structure with images that should remain
             const colorImagesToKeep = [];
 
-            // Group existing images by hex code (only URLs, not Base64 previews)
+            // Group existing images by hex code (only saved URLs, not local previews)
             // These are images that are still in the UI (not removed by user)
             const existingImagesByColor = {};
             imagesWithColors.forEach(img => {
               if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
-                img.preview && typeof img.preview === 'string' && !img.preview.startsWith('data:') && img.preview.startsWith('https://')) {
+                isSavedImageUrl(img.preview)) {
                 if (!existingImagesByColor[img.hexCode]) {
                   existingImagesByColor[img.hexCode] = [];
                 }
@@ -2000,71 +2037,57 @@ const ProductModal = ({ product, onClose }) => {
         // No files to upload - send as JSON body
         // But if updating, we still need to send image deletion arrays
         // Per backend flow: When sending JSON (not FormData), backend accepts arrays directly
-        if (product) {
-          // When updating without new files, we still need to send deletion arrays
-          // Build the complete list of existing image URLs that should be kept
-          const imagesToKeep = imagePreviews.filter(preview =>
-            typeof preview === 'string' &&
-            !preview.startsWith('data:') &&
-            preview.startsWith('https://') &&
-            existingImages.includes(preview)
-          );
+        if (product && (imagesDirty || colorImagesDirty)) {
+          // Only send the keep-lists the user actually touched: any list sent here
+          // replaces what is stored, so untouched fields must stay out of the payload.
+          if (imagesDirty) {
+            // Backend flow: Compares existing images vs. new list, deletes removed ones
+            // Empty array [] = delete all existing images
+            dataToSend.images = getImagesToKeep();
+          }
 
-          // Add images array for deletion support
-          // Backend flow: Compares existing images vs. new list, deletes removed ones
-          // Empty array [] = delete all existing images
-          dataToSend.images = imagesToKeep;
+          if (colorImagesDirty) {
+            const colorImagesToKeep = [];
+            const existingImagesByColor = {};
 
-          // Build color_images structure for deletion support
-          // ALWAYS send this field when updating (even if empty) to support deletion
-          const colorImagesToKeep = [];
-          const existingImagesByColor = {};
-
-          // Group existing images by hex code (only URLs, not Base64 previews)
-          // These are images that are still in the UI (not removed by user)
-          imagesWithColors.forEach(img => {
-            if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
-              img.preview && typeof img.preview === 'string' && !img.preview.startsWith('data:') && img.preview.startsWith('https://')) {
-              if (!existingImagesByColor[img.hexCode]) {
-                existingImagesByColor[img.hexCode] = [];
+            // Group existing images by hex code (only saved URLs, not local previews)
+            // These are images that are still in the UI (not removed by user)
+            imagesWithColors.forEach(img => {
+              if (img.isExisting && img.hexCode && isValidHexCode(img.hexCode) &&
+                isSavedImageUrl(img.preview)) {
+                if (!existingImagesByColor[img.hexCode]) {
+                  existingImagesByColor[img.hexCode] = [];
+                }
+                existingImagesByColor[img.hexCode].push(img.preview);
               }
-              existingImagesByColor[img.hexCode].push(img.preview);
-            }
-          });
+            });
 
-          // Build color_images structure from existing color images that should be kept
-          // Only include colors that still have images in the UI
-          existingColorImages.forEach(colorImg => {
-            const keptImages = existingImagesByColor[colorImg.hexCode] || [];
-            if (keptImages.length > 0) {
-              colorImagesToKeep.push({
-                hexCode: colorImg.hexCode,
-                name: colorImg.name,
-                price: colorImg.price,
-                images: keptImages
-              });
-            }
-            // If keptImages.length === 0, this color was completely removed - don't include it
-            // This ensures the color is deleted from storage and database
-          });
+            // Build color_images structure from existing color images that should be kept
+            // Only include colors that still have images in the UI
+            existingColorImages.forEach(colorImg => {
+              const keptImages = existingImagesByColor[colorImg.hexCode] || [];
+              if (keptImages.length > 0) {
+                colorImagesToKeep.push({
+                  hexCode: colorImg.hexCode,
+                  name: colorImg.name,
+                  price: colorImg.price,
+                  images: keptImages
+                });
+              }
+              // If keptImages.length === 0, this color was completely removed - don't include it
+              // This ensures the color is deleted from storage and database
+            });
 
-          // ALWAYS add color_images array for deletion support (even if empty)
-          // Backend behavior:
-          // - Empty array [] = Delete ALL color images from storage, set DB to null
-          // - Non-empty array = Replace existing with this list, delete removed images
-          dataToSend.color_images = colorImagesToKeep;
+            // Backend behavior:
+            // - Empty array [] = Delete ALL color images from storage, set DB to null
+            // - Non-empty array = Replace existing with this list, delete removed images
+            dataToSend.color_images = colorImagesToKeep;
+          }
 
           if (import.meta.env.DEV) {
             console.log('📤 Image Update Flow - JSON Body:');
-            console.log('  - Images to KEEP (array):', imagesToKeep);
-            console.log('  - Color images to KEEP:', colorImagesToKeep);
-            console.log('  - Backend will: Delete images NOT in keep list, Update database');
-            if (imagesToKeep.length === 0) {
-              console.log('  - ⚠️ Empty images array - ALL general images will be DELETED from storage and database');
-            }
-            if (colorImagesToKeep.length === 0) {
-              console.log('  - ⚠️ Empty color_images array - ALL color images will be DELETED from storage and database');
-            }
+            console.log('  - Images to KEEP (array):', dataToSend.images);
+            console.log('  - Color images to KEEP:', dataToSend.color_images);
           }
         }
 
@@ -2118,6 +2141,8 @@ const ProductModal = ({ product, onClose }) => {
       setExistingColorImages([]);
       setPendingVariantHexes([]);
       setCustomVariantHexInput('');
+      setImagesDirty(false);
+      setColorImagesDirty(false);
 
       // Close modal - parent component will refresh the products list
       console.log('🔄 Product saved successfully - calling onClose(true) to refresh table');
@@ -4488,6 +4513,7 @@ const ProductModal = ({ product, onClose }) => {
                         <button
                           type="button"
                           onClick={() => {
+                            setImagesDirty(true);
                             setImageFiles([]);
                             setImagePreviews([]);
                             setExistingImages([]);
@@ -4500,7 +4526,7 @@ const ProductModal = ({ product, onClose }) => {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         {imagePreviews.map((preview, index) => {
-                          const isExisting = typeof preview === 'string' && preview.startsWith('https://') && existingImages.includes(preview);
+                          const isExisting = isSavedImageUrl(preview) && existingImages.includes(preview);
                           return (
                             <div key={index} className="relative group">
                               <img
@@ -4636,6 +4662,7 @@ const ProductModal = ({ product, onClose }) => {
                         <button
                           type="button"
                           onClick={() => {
+                            setColorImagesDirty(true);
                             setImagesWithColors([]);
                             setExistingColorImages([]);
                             setPendingVariantHexes([]);

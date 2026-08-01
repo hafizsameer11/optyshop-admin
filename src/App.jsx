@@ -9,6 +9,7 @@ import { NavigationProvider } from './hooks/useNavigationContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
+import OutOfStockProducts from './pages/OutOfStockProducts';
 import Orders from './pages/Orders';
 import Users from './pages/Users';
 import Categories from './pages/Categories';
@@ -125,6 +126,7 @@ function App() {
                         <Route path="/prescription-forms/dropdown-values" element={<PrescriptionFormDropdownValues />} />
 
                         <Route path="/products" element={<Products />} />
+                        <Route path="/products/out-of-stock" element={<OutOfStockProducts />} />
                         <Route path="/orders" element={<Orders />} />
                         <Route path="/users" element={<Users />} />
                         <Route path="/categories" element={<Categories />} />

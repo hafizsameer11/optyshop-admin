@@ -407,6 +407,7 @@ export const API_ROUTES = {
     PRODUCTS: {
       LIST: `/admin/products`,
       CREATE: `/admin/products`,
+      OUT_OF_STOCK: `/admin/products/out-of-stock`,
       BY_ID: (id) => `/admin/products/${id}`, // GET single product (admin view - includes inactive products, variants, SEO)
       UPDATE: (id) => `/admin/products/${id}`, // PUT update product
       DELETE: (id) => `/admin/products/${id}`, // DELETE product

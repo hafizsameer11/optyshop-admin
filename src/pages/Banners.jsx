@@ -288,8 +288,8 @@ const Banners = () => {
 
   const getPageTypeLabel = (pageType) => {
     const labels = {
-      home: 'Home',
-      category: 'Category',
+      home: 'Home (hero)',
+      category: 'Home category section',
       subcategory: 'Subcategory',
       sub_subcategory: 'Sub-subcategory',
     };
@@ -322,8 +322,8 @@ const Banners = () => {
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
               <option value="">All Types</option>
-              <option value="home">Home</option>
-              <option value="category">Category</option>
+              <option value="home">Home (hero)</option>
+              <option value="category">Home category section</option>
               <option value="subcategory">Subcategory</option>
               <option value="sub_subcategory">Sub-subcategory</option>
             </select>
@@ -511,7 +511,7 @@ const Banners = () => {
                           return (
                             <div>
                               <div className="font-medium text-gray-900">{categoryName}</div>
-                              <div className="text-xs text-gray-500">Category Page</div>
+                              <div className="text-xs text-gray-500">Home category section</div>
                             </div>
                           );
                         } else if (pageType === 'subcategory') {

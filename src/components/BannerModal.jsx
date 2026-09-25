@@ -9,14 +9,14 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import { API_ROUTES } from '../config/apiRoutes';
 
-/** Preset banner placement values (API accepts string; Postman examples use e.g. "header") */
+/** Preset banner placement values (slot on the page — independent of page_type) */
 const BANNER_POSITION_OPTIONS = [
-  { value: '', label: '— None —' },
+  { value: '', label: '— Default / none —' },
+  { value: 'hero', label: 'Hero (main slider)' },
   { value: 'header', label: 'Header' },
-  { value: 'hero', label: 'Hero' },
   { value: 'footer', label: 'Footer' },
   { value: 'sidebar', label: 'Sidebar' },
-  { value: 'category', label: 'Category' },
+  { value: 'category_section', label: 'Home category section' },
   { value: 'top', label: 'Top' },
   { value: 'bottom', label: 'Bottom' },
   { value: 'main', label: 'Main' },
@@ -282,12 +282,25 @@ const BannerModal = ({ banner, onClose }) => {
         newFormData.sub_category_id = '';
         setSubCategories([]);
         setNestedSubCategories([]);
+        // Keep footer/header/hero; clear category-only slots
+        if (['category_section', 'subcategory_page', 'sub_subcategory_page', 'category'].includes(newFormData.position)) {
+          newFormData.position = 'hero';
+        }
       } else if (value === 'category') {
         newFormData.sub_category_id = '';
         setNestedSubCategories([]);
-        // Keep category_id if already selected
+        if (!newFormData.position || ['hero', 'header', ''].includes(newFormData.position)) {
+          newFormData.position = 'category_section';
+        }
+      } else if (value === 'subcategory') {
+        if (!newFormData.position || ['hero', 'header', 'category_section', ''].includes(newFormData.position)) {
+          newFormData.position = 'subcategory_page';
+        }
+      } else if (value === 'sub_subcategory') {
+        if (!newFormData.position || ['hero', 'header', 'category_section', 'subcategory_page', ''].includes(newFormData.position)) {
+          newFormData.position = 'sub_subcategory_page';
+        }
       }
-      // For subcategory and sub_subcategory, keep category_id and sub_category_id if selected
     }
 
     // Reset sub_category_id when category_id changes
@@ -465,10 +478,8 @@ const BannerModal = ({ banner, onClose }) => {
         submitData.append('link_url', formData.link_url.trim());
       }
       
-      // Only send position if it has a value
-      if (formData.position && formData.position.trim()) {
-        submitData.append('position', formData.position.trim());
-      }
+      // Always send position so clearing the slot works on update
+      submitData.append('position', formData.position ? formData.position.trim() : '');
       
       // Validate sort_order is a number
       const sortOrder = parseInt(formData.sort_order, 10);
@@ -837,20 +848,27 @@ const BannerModal = ({ banner, onClose }) => {
               required
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              <option value="home">Home Page</option>
-              <option value="category">Category Page</option>
+              <option value="home">Home Page (main hero)</option>
+              <option value="category">Home / Category section — pick a category</option>
               <option value="subcategory">Subcategory Page</option>
               <option value="sub_subcategory">Sub-subcategory Page</option>
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              Select where this banner should be displayed
+              {formData.page_type === 'home' &&
+                'Shows in the main home hero slider. Do not pick a category here.'}
+              {formData.page_type === 'category' &&
+                'Shows above that category’s product row on the home page (and on the category page). Select the category below.'}
+              {formData.page_type === 'subcategory' &&
+                'Shows on a subcategory page / home subcategory row. Select category + subcategory.'}
+              {formData.page_type === 'sub_subcategory' &&
+                'Shows on a sub-subcategory page. Select category + nested subcategory.'}
             </p>
           </div>
 
           {(formData.page_type === 'category' || formData.page_type === 'subcategory' || formData.page_type === 'sub_subcategory') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category * <span className="text-xs font-normal text-gray-500">(Required for this page type)</span>
+                Category * <span className="text-xs font-normal text-gray-500">(Required)</span>
               </label>
               <select
                 name="category_id"
@@ -965,7 +983,8 @@ const BannerModal = ({ banner, onClose }) => {
               ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              Where this banner appears in the page layout (e.g. header, hero, category strip).
+              Placement on the page. Use <strong>Footer</strong> or <strong>Header</strong> with any page type
+              (usually Home). Use <strong>Home category section</strong> with page type “Home / Category section”.
             </p>
           </div>
 

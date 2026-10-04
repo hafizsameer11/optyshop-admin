@@ -23,16 +23,20 @@ const slugify = (text) =>
     .replace(/^-+|-+$/g, '');
 
 /** Random unique accessory SKU — ACC- + hex suffix */
-const generateAccessorySKU = () => {
-  let suffix = '';
+const randomSuffix = (bytes = 4) => {
   if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
-    const bytes = new Uint8Array(6);
-    crypto.getRandomValues(bytes);
-    suffix = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-  } else {
-    suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
+    const buf = new Uint8Array(bytes);
+    crypto.getRandomValues(buf);
+    return Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('');
   }
-  return `ACC-${suffix}`;
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+};
+
+const generateAccessorySKU = () => `ACC-${randomSuffix(6).toUpperCase()}`;
+
+const generateAccessorySlug = (name) => {
+  const base = slugify(name) || 'accessory';
+  return `${base}-${randomSuffix(3)}`;
 };
 
 const emptyForm = {
@@ -70,7 +74,6 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [imagesDirty, setImagesDirty] = useState(false);
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   const resolveAccessoriCategory = useCallback(async () => {
     try {
@@ -114,7 +117,6 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
       if (cancelled) return;
 
       if (product?.id) {
-        setSlugManuallyEdited(true);
         const imgs = Array.isArray(product.images)
           ? product.images.filter(Boolean)
           : product.image || product.image_url
@@ -139,7 +141,7 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
           material: Array.isArray(product.frame_material)
             ? product.frame_material.join(', ')
             : product.frame_material || '',
-          unit: product.pack_type || product.size_volume || '',
+          unit: product.model_name || product.pack_type || product.size_volume || '',
           stock_quantity:
             product.stock_quantity != null ? String(product.stock_quantity) : '0',
           stock_status: product.stock_status || 'in_stock',
@@ -159,7 +161,6 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
         setImagePreviews([]);
         setImageFiles([]);
         setImagesDirty(false);
-        setSlugManuallyEdited(false);
       }
     })();
     return () => {
@@ -169,15 +170,11 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (name === 'slug') setSlugManuallyEdited(true);
     setFormData((prev) => {
       const next = {
         ...prev,
         [name]: type === 'checkbox' ? checked : value,
       };
-      if (name === 'name' && !slugManuallyEdited && !product?.id) {
-        next.slug = slugify(value);
-      }
       if (name === 'stock_quantity') {
         const qty = parseInt(value, 10);
         if (!Number.isNaN(qty)) {
@@ -310,8 +307,9 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
         stock_status: formData.stock_status || 'in_stock',
       };
 
-      if (formData.slug?.trim()) dataToSend.slug = formData.slug.trim();
-      else dataToSend.slug = slugify(formData.name);
+      if (!product?.id) {
+        dataToSend.slug = generateAccessorySlug(formData.name);
+      }
       if (formData.description?.trim()) dataToSend.description = formData.description.trim();
       if (formData.short_description?.trim()) {
         dataToSend.short_description = formData.short_description.trim();
@@ -326,7 +324,8 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
       // Reuse generic product columns with accessory labels (color / material / unit)
       if (formData.color?.trim()) dataToSend.frame_color = formData.color.trim();
       if (formData.material?.trim()) dataToSend.frame_material = formData.material.trim();
-      if (formData.unit?.trim()) dataToSend.pack_type = formData.unit.trim();
+      // Store unit/packaging on model_name so accessories are not treated as eye-hygiene packs
+      if (formData.unit?.trim()) dataToSend.model_name = formData.unit.trim();
       if (formData.meta_title?.trim()) dataToSend.meta_title = formData.meta_title.trim();
       if (formData.meta_description?.trim()) {
         dataToSend.meta_description = formData.meta_description.trim();
@@ -377,10 +376,10 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
           (product?.id ? 'Accessory updated successfully' : 'Accessory created successfully')
       );
 
-      if (typeof onAfterSave === 'function' && savedProduct?.id) {
-        onAfterSave({ ...savedProduct, product_type: 'accessory' });
-      } else if (typeof onClose === 'function') {
+      if (typeof onClose === 'function') {
         onClose(true);
+      } else if (typeof onAfterSave === 'function' && savedProduct?.id) {
+        onAfterSave({ ...savedProduct, product_type: 'accessory' });
       }
     } catch (error) {
       console.error('Accessory save error:', error);
@@ -467,19 +466,7 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Slug</label>
-                    <input
-                      type="text"
-                      name="slug"
-                      value={formData.slug}
-                      onChange={handleChange}
-                      className="input-modern"
-                      placeholder="auto-from-name"
-                    />
-                  </div>
-                  <div>
+                <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       SKU <span className="text-red-500">*</span>
                     </label>
@@ -510,7 +497,6 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
                       Auto-generated (e.g. ACC-…).{' '}
                       {product?.id ? 'Cannot change after create.' : 'Use Regenerate if needed.'}
                     </p>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

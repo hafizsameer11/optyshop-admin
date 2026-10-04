@@ -1378,15 +1378,9 @@ const Products = () => {
     }, 100);
   };
 
-  /** After creating/updating an accessory, refresh list; keep modal open in edit mode after create. */
-  const handleAccessoryAfterSave = (savedProduct) => {
-    if (savedProduct?.id) {
-      setEditingProduct({ ...savedProduct, product_type: 'accessory' });
-    }
-    setTimeout(() => {
-      fetchProducts();
-      setImageRefreshKey(Date.now());
-    }, 100);
+  /** After creating/updating an accessory, close the form and refresh the list. */
+  const handleAccessoryAfterSave = () => {
+    handleModalClose(true);
   };
 
   // Section options

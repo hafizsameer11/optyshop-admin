@@ -22,6 +22,19 @@ const slugify = (text) =>
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+/** Random unique accessory SKU — ACC- + hex suffix */
+const generateAccessorySKU = () => {
+  let suffix = '';
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(6);
+    crypto.getRandomValues(bytes);
+    suffix = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+  } else {
+    suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
+  }
+  return `ACC-${suffix}`;
+};
+
 const emptyForm = {
   name: '',
   slug: '',
@@ -140,6 +153,7 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
         setFormData({
           ...emptyForm,
           category_id: cat ? String(cat.id) : '',
+          sku: generateAccessorySKU(),
         });
         setExistingImages([]);
         setImagePreviews([]);
@@ -258,11 +272,7 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
         setLoading(false);
         return;
       }
-      if (!formData.sku?.trim()) {
-        toast.error('SKU is required');
-        setLoading(false);
-        return;
-      }
+      const skuValue = formData.sku?.trim() || generateAccessorySKU();
       if (!formData.price || Number.isNaN(parseFloat(formData.price)) || parseFloat(formData.price) < 0) {
         toast.error('Valid price is required');
         setLoading(false);
@@ -283,9 +293,13 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
         return;
       }
 
+      if (!formData.sku?.trim()) {
+        setFormData((prev) => ({ ...prev, sku: skuValue }));
+      }
+
       const dataToSend = {
         name: formData.name.trim(),
-        sku: formData.sku.trim(),
+        sku: skuValue,
         price: parseFloat(formData.price) || 0,
         category_id: parseInt(categoryId, 10),
         product_type: 'accessory',
@@ -469,14 +483,33 @@ const AccessoryProductModal = ({ product, onClose, onAfterSave }) => {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       SKU <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="sku"
-                      value={formData.sku}
-                      onChange={handleChange}
-                      className="input-modern"
-                      required
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        name="sku"
+                        value={formData.sku}
+                        readOnly
+                        className="input-modern flex-1 bg-slate-50 text-slate-700 cursor-default"
+                        title="Auto-generated SKU"
+                      />
+                      {!product?.id && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, sku: generateAccessorySKU() }));
+                            toast.success('New SKU generated');
+                          }}
+                          className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium whitespace-nowrap"
+                          title="Generate another SKU"
+                        >
+                          Regenerate
+                        </button>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Auto-generated (e.g. ACC-…).{' '}
+                      {product?.id ? 'Cannot change after create.' : 'Use Regenerate if needed.'}
+                    </p>
                   </div>
                 </div>
 

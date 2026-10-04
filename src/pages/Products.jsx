@@ -1138,6 +1138,13 @@ const Products = () => {
       if (categoryLower.includes('eye') && categoryLower.includes('hygiene')) {
         return 'eye_hygiene';
       }
+      if (
+        categoryLower.includes('accessor') ||
+        categoryLower === 'accessories' ||
+        categoryLower.includes('accessori')
+      ) {
+        return 'accessory';
+      }
       if (categoryLower.includes('sun') && (categoryLower.includes('glass') || categoryLower.includes('sunglass'))) {
         return 'sunglasses';
       }
@@ -1269,6 +1276,7 @@ const Products = () => {
       'sport-glasses': 'frame', // Sport glasses (same flow as eyeglasses)
       'eye-hygiene': 'eye_hygiene',
       'contact-lenses': 'contact_lens',
+      'accessories': 'accessory',
       'all': null // Will use default product type
     };
     
@@ -1348,6 +1356,7 @@ const Products = () => {
     { value: 'sport-glasses', label: 'Sport glasses', icon: '🥽' },
     { value: 'contact-lenses', label: 'Contact Lenses', icon: '🔍' },
     { value: 'eye-hygiene', label: 'Eye Hygiene', icon: '💧' },
+    { value: 'accessories', label: 'Accessories', icon: '🧰' },
   ];
 
   // Map section names to exact category names/slugs (case-insensitive matching)
@@ -1387,6 +1396,16 @@ const Products = () => {
       'eyecare',
       'hygiene oculare',
       'ocular care',
+    ],
+    'accessories': [
+      // Live production slug/name (Italian)
+      'accessori',
+      'accessories',
+      'accessory',
+      'eyewear accessories',
+      'eyewear-accessories',
+      'glasses accessories',
+      'glasses-accessories',
     ],
   };
 
@@ -1466,6 +1485,24 @@ const Products = () => {
           bundle.includes('eye-care');
         if ((hasHygieneWord && hasEyeish) || isEyeCareOnly) {
           console.log(`✅ Found eye hygiene category by keyword matching:`, {
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+          });
+          return true;
+        }
+      }
+
+      // Accessories: cases, kits, tools — top-level category, no subcategories required
+      if (section === 'accessories') {
+        const bundle = `${catName} ${catSlug}`;
+        if (
+          bundle.includes('accessor') ||
+          bundle.includes('accessori') ||
+          bundle.includes('astucci') ||
+          bundle.includes('custodie')
+        ) {
+          console.log(`✅ Found accessories category by keyword matching:`, {
             id: cat.id,
             name: cat.name,
             slug: cat.slug,

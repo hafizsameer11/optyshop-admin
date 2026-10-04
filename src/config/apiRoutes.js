@@ -71,6 +71,7 @@ export const API_ROUTES = {
       EYEGLASSES: `/products/section/eyeglasses`,        // PUBLIC - Filters by product_type='frame'
       CONTACT_LENSES: `/products/section/contact-lenses`, // PUBLIC - Filters by product_type='contact_lens'
       EYE_HYGIENE: `/products/section/eye-hygiene`,      // PUBLIC - Filters by product_type='eye_hygiene'
+      ACCESSORIES: `/products/section/accessories`,      // PUBLIC - Filters by product_type='accessory'
     },
   },
 
@@ -418,6 +419,7 @@ export const API_ROUTES = {
         EYEGLASSES: `/admin/products/section/eyeglasses`,        // ADMIN - Filters by product_type='frame'
         CONTACT_LENSES: `/admin/products/section/contact-lenses`, // ADMIN - Filters by product_type='contact_lens'
         EYE_HYGIENE: `/admin/products/section/eye-hygiene`,      // ADMIN - Filters by product_type='eye_hygiene'
+        ACCESSORIES: `/admin/products/section/accessories`,      // ADMIN - Filters by product_type='accessory'
       },
       // MM Caliber Management (for frame/glasses products)
       MM_CALIBERS: {

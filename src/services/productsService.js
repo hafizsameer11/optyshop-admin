@@ -6,7 +6,8 @@ export const ProductTypes = {
   SUNGLASSES: 'sunglasses',
   EYEGLASSES: 'frame',
   CONTACT_LENSES: 'contact_lens',
-  EYE_HYGIENE: 'eye_hygiene'
+  EYE_HYGIENE: 'eye_hygiene',
+  ACCESSORY: 'accessory',
 };
 
 // MM Caliber Interface

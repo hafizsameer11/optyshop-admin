@@ -4,6 +4,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiEye, FiPower } from 're
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import ContactLensProductModal from '../components/ContactLensProductModal';
+import AccessoryProductModal from '../components/AccessoryProductModal';
 import ProductViewModal from '../components/ProductViewModal';
 import { API_ROUTES } from '../config/apiRoutes';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -1235,6 +1236,24 @@ const Products = () => {
           />
         );
       }
+
+      // Dedicated Accessori form — do not use shared ProductModal
+      const isAccessory =
+        isProductType(productType, 'accessory') ||
+        inferredType === 'accessory' ||
+        categoryLower.includes('accessori') ||
+        categoryLower.includes('accessor');
+
+      if (isAccessory) {
+        productToPass = { ...editingProduct, product_type: 'accessory' };
+        return (
+          <AccessoryProductModal
+            product={productToPass}
+            onClose={handleModalClose}
+            onAfterSave={handleAccessoryAfterSave}
+          />
+        );
+      }
       
       // For eye hygiene products (identified by category), use ProductModal with 'eye_hygiene' product_type
       if (isEyeHygieneCategory) {
@@ -1293,6 +1312,17 @@ const Products = () => {
         />
       );
     }
+
+    // Dedicated Accessori form when Accessories section is selected
+    if (selectedSection === 'accessories') {
+      return (
+        <AccessoryProductModal
+          product={{ product_type: 'accessory' }}
+          onClose={handleModalClose}
+          onAfterSave={handleAccessoryAfterSave}
+        />
+      );
+    }
     
     // For other product types (including eye-hygiene), use ProductModal with default product type
     // ProductModal will automatically show the appropriate tabs based on product_type
@@ -1341,6 +1371,17 @@ const Products = () => {
   const handleContactLensAfterSave = (savedProduct) => {
     if (savedProduct?.id) {
       setEditingProduct({ ...savedProduct, product_type: 'contact_lens' });
+    }
+    setTimeout(() => {
+      fetchProducts();
+      setImageRefreshKey(Date.now());
+    }, 100);
+  };
+
+  /** After creating/updating an accessory, refresh list; keep modal open in edit mode after create. */
+  const handleAccessoryAfterSave = (savedProduct) => {
+    if (savedProduct?.id) {
+      setEditingProduct({ ...savedProduct, product_type: 'accessory' });
     }
     setTimeout(() => {
       fetchProducts();

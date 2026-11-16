@@ -642,6 +642,24 @@ export const API_ROUTES = {
       DELETE: (id) => `/admin/faqs/${id}`,
     },
 
+    // Contact Us locations
+    CONTACT_LOCATIONS: {
+      LIST: `/admin/contact-locations`,
+      CREATE: `/admin/contact-locations`,
+      BY_ID: (id) => `/admin/contact-locations/${id}`,
+      UPDATE: (id) => `/admin/contact-locations/${id}`,
+      DELETE: (id) => `/admin/contact-locations/${id}`,
+    },
+
+    // Footer social links
+    SOCIAL_LINKS: {
+      LIST: `/admin/social-links`,
+      CREATE: `/admin/social-links`,
+      BY_ID: (id) => `/admin/social-links/${id}`,
+      UPDATE: (id) => `/admin/social-links/${id}`,
+      DELETE: (id) => `/admin/social-links/${id}`,
+    },
+
     // Blog Posts Management
     BLOG_POSTS: {
       LIST: `/admin/blog-posts`,

@@ -202,6 +202,8 @@ const translations = {
     contentManagement: 'Content Management',
     blogPosts: 'Blog Posts',
     faqs: 'FAQs',
+    contactLocations: 'Contact Locations',
+    socialLinks: 'Social Links',
     pages: 'Pages',
     testimonials: 'Testimonials',
     operations: 'Operations',

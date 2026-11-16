@@ -10,6 +10,7 @@ import {
   FiTrendingUp,
   FiImage,
   FiMessageSquare,
+  FiMapPin,
   FiFile,
   FiStar,
   FiZap,
@@ -27,7 +28,8 @@ import {
   FiMenu,
   FiAward,
   FiGift,
-  FiAlertCircle
+  FiAlertCircle,
+  FiShare2
 } from 'react-icons/fi';
 import { FaEuroSign } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
@@ -132,6 +134,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       children: [
         { path: '/blog', icon: FiFileText, label: t('blogPosts') },
         { path: '/faqs', icon: FiMessageSquare, label: t('faqs') },
+        { path: '/contact-locations', icon: FiMapPin, label: t('contactLocations') },
+        { path: '/social-links', icon: FiShare2, label: t('socialLinks') || 'Link social' },
         { path: '/pages', icon: FiFile, label: t('pages') },
         { path: '/testimonials', icon: FiStar, label: t('testimonials') },
       ]

@@ -36,6 +36,8 @@ import FlashOffers from './pages/FlashOffers';
 import FreeGifts from './pages/FreeGifts';
 import BlogPosts from './pages/BlogPosts';
 import FAQs from './pages/FAQs';
+import ContactLocations from './pages/ContactLocations';
+import SocialLinks from './pages/SocialLinks';
 import Pages from './pages/Pages';
 import Testimonials from './pages/Testimonials';
 import Simulations from './pages/Simulations';
@@ -153,6 +155,8 @@ function App() {
                         <Route path="/free-gifts" element={<FreeGifts />} />
                         <Route path="/blog" element={<BlogPosts />} />
                         <Route path="/faqs" element={<FAQs />} />
+                        <Route path="/contact-locations" element={<ContactLocations />} />
+                        <Route path="/social-links" element={<SocialLinks />} />
                         <Route path="/pages" element={<Pages />} />
                         <Route path="/testimonials" element={<Testimonials />} />
                         <Route path="/simulations" element={<Simulations />} />

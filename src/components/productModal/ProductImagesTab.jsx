@@ -5,6 +5,7 @@ import {
   PRESET_VARIANT_COLORS,
   getColorNameFromHex,
   isSavedImageUrl,
+  isUsableImageUrl,
 } from './colorUtils';
 
 /**
@@ -267,7 +268,11 @@ const ProductImagesTab = ({
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">2 · Photos per color</p>
             {variantHexListOrdered.map((hex) => {
               const variantImages = imagesWithColors.filter(
-                (img) => img.hexCode && img.hexCode.toUpperCase() === hex
+                (img) =>
+                  img.hexCode &&
+                  img.hexCode.toUpperCase() === hex &&
+                  (isUsableImageUrl(img.preview) ||
+                    (typeof File !== 'undefined' && img.file instanceof File))
               );
               const safeInputId = `variant-img-${hex.replace(/[^a-zA-Z0-9]/g, '')}`;
               return (

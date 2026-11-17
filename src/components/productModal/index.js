@@ -1,6 +1,7 @@
 export {
   isValidHexCode,
   isSavedImageUrl,
+  isUsableImageUrl,
   getHexFromColorName,
   getColorNameFromHex,
   PRESET_VARIANT_COLORS,

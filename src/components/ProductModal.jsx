@@ -42,6 +42,7 @@ import { getCategories } from '../api/categories';
 import {
   isValidHexCode,
   isSavedImageUrl,
+  isUsableImageUrl,
   getColorNameFromHex,
   normalizeColorImagesList,
   buildColorImagesToKeep,
@@ -263,12 +264,22 @@ const ProductModal = ({ product, onClose }) => {
   const variantHexListOrdered = useMemo(() => {
     const set = new Set();
     existingColorImages.forEach((c) => {
-      if (c.hexCode) set.add(String(c.hexCode).toUpperCase());
+      const hex = String(c.hexCode || '').trim().toUpperCase();
+      if (!isValidHexCode(hex)) return;
+      const hasUsable = (c.images || []).some((url) => isUsableImageUrl(url));
+      if (hasUsable) set.add(hex);
     });
     imagesWithColors.forEach((img) => {
-      if (img.hexCode && isValidHexCode(img.hexCode)) set.add(img.hexCode.toUpperCase());
+      const hex = String(img.hexCode || '').trim().toUpperCase();
+      if (!isValidHexCode(hex)) return;
+      if (isUsableImageUrl(img.preview) || (typeof File !== 'undefined' && img.file instanceof File)) {
+        set.add(hex);
+      }
     });
-    pendingVariantHexes.forEach((h) => set.add(h));
+    pendingVariantHexes.forEach((h) => {
+      const hex = String(h || '').trim().toUpperCase();
+      if (isValidHexCode(hex)) set.add(hex);
+    });
     return Array.from(set);
   }, [existingColorImages, imagesWithColors, pendingVariantHexes]);
 
@@ -292,7 +303,7 @@ const ProductModal = ({ product, onClose }) => {
     } else {
       setActiveTab('general');
     }
-  }, [product]);
+  }, [product?.id]);
 
   // Helper function to check if a subcategory is a sub-subcategory and set form correctly
   const checkAndSetSubSubCategory = async (subCategoryId) => {
@@ -688,7 +699,7 @@ const ProductModal = ({ product, onClose }) => {
       setCustomVariantHexInput('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product]);
+  }, [product?.id]);
 
   // Fetch nested subcategories when subcategory is selected
   useEffect(() => {
@@ -1057,12 +1068,18 @@ const ProductModal = ({ product, onClose }) => {
   };
 
   const removeVariantHex = (hex) => {
-    const H = String(hex).toUpperCase();
+    const H = String(hex || '').trim().toUpperCase();
     setColorImagesDirty(true);
-    setImagesWithColors((prev) => prev.filter((img) => !(img.hexCode && img.hexCode.toUpperCase() === H)));
-    setExistingColorImages((prev) => prev.filter((c) => c.hexCode?.toUpperCase() !== H));
-    setPendingVariantHexes((prev) => prev.filter((h) => h !== H));
-    toast.success('Color variant removed');
+    setImagesWithColors((prev) =>
+      prev.filter((img) => String(img.hexCode || '').trim().toUpperCase() !== H)
+    );
+    setExistingColorImages((prev) =>
+      prev.filter((c) => String(c.hexCode || '').trim().toUpperCase() !== H)
+    );
+    setPendingVariantHexes((prev) =>
+      prev.filter((h) => String(h || '').trim().toUpperCase() !== H)
+    );
+    toast.success('Color variant removed — click Save Product to keep this change');
   };
 
   // Handle general images (without color codes) - for backward compatibility

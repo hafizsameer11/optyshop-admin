@@ -14,6 +14,20 @@ export const isSavedImageUrl = (value) => {
   return true;
 };
 
+/** Reject empty / dummy / unusable color preview URLs. */
+export const isUsableImageUrl = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  const url = value.trim();
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  if (lower === 'null' || lower === 'undefined' || lower === 'none' || lower === '-') return false;
+  if (url.startsWith('blob:')) return false;
+  if (url.startsWith('data:image/')) return true;
+  if (/^https?:\/\//i.test(url)) return true;
+  if (url.startsWith('/uploads/') || url.startsWith('uploads/')) return true;
+  return false;
+};
+
 export const getHexFromColorName = (colorName) => {
   if (!colorName) return null;
   const colorMap = {
@@ -102,7 +116,9 @@ export const normalizeColorImagesList = (raw) => {
     else if (Array.isArray(colorData)) imageUrls = colorData;
     else if (typeof colorData === 'string') imageUrls = [colorData];
 
-    const images = imageUrls.filter((url) => url && typeof url === 'string');
+    const images = imageUrls
+      .map((url) => (typeof url === 'string' ? url.trim() : ''))
+      .filter((url) => isUsableImageUrl(url));
     if (images.length === 0) return;
 
     out.push({
@@ -137,7 +153,7 @@ export const normalizeColorImagesList = (raw) => {
       };
     }
     (entry.images || []).forEach((url) => {
-      if (url && !mergedByHex[hex].images.includes(url)) {
+      if (isUsableImageUrl(url) && !mergedByHex[hex].images.includes(url)) {
         mergedByHex[hex].images.push(url);
       }
     });
@@ -175,7 +191,7 @@ export const buildColorImagesToKeep = (imagesWithColors, existingColorImages) =>
         images: [],
       };
     }
-    if (isSavedImageUrl(img.preview) && !byHex[hex].images.includes(img.preview)) {
+    if (isUsableImageUrl(img.preview) && isSavedImageUrl(img.preview) && !byHex[hex].images.includes(img.preview)) {
       byHex[hex].images.push(img.preview);
     }
   });
@@ -197,6 +213,7 @@ export const colorListToUiState = (normalized) => {
   let imageIdCounter = 0;
   (normalized || []).forEach((color) => {
     (color.images || []).forEach((imageUrl) => {
+      if (!isUsableImageUrl(imageUrl)) return;
       imagesWithHexCodes.push({
         id: `existing-${imageIdCounter++}`,
         file: null,

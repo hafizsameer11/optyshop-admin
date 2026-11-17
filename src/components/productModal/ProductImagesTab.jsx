@@ -307,6 +307,12 @@ const ProductImagesTab = ({
                               src={img.preview}
                               alt=""
                               className="w-full h-28 object-cover rounded-lg border border-gray-200"
+                              onError={() => {
+                                // Drop 404 tiles silently; Save persists the cleanup
+                                if (typeof removeImageWithColor === 'function') {
+                                  removeImageWithColor(img.id, { silent: true });
+                                }
+                              }}
                             />
                             <button
                               type="button"

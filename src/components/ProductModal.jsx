@@ -1168,30 +1168,31 @@ const ProductModal = ({ product, onClose }) => {
     return [...ordered, ...missing];
   };
 
-  const removeImageWithColor = (id) => {
-    const imageToRemove = imagesWithColors.find(img => img.id === id);
-    if (imageToRemove) {
+  const removeImageWithColor = (id, options = {}) => {
+    const silent = !!options.silent;
+    setImagesWithColors((prev) => {
+      const imageToRemove = prev.find((img) => img.id === id);
+      if (!imageToRemove) return prev;
       setColorImagesDirty(true);
-      // If it's an existing image, we need to update existingColorImages structure
       if (imageToRemove.isExisting && imageToRemove.hexCode) {
-        setExistingColorImages(prev => {
-          return prev.map(colorImg => {
-            if (colorImg.hexCode?.toUpperCase() === imageToRemove.hexCode?.toUpperCase()) {
-              // Remove this image URL from the color's images array
-              const updatedImages = colorImg.images.filter(imgUrl => imgUrl !== imageToRemove.preview);
-              if (updatedImages.length === 0) {
-                // If no images left for this color, remove the entire color entry
-                return null;
+        setExistingColorImages((prevColors) =>
+          prevColors
+            .map((colorImg) => {
+              if (colorImg.hexCode?.toUpperCase() !== imageToRemove.hexCode?.toUpperCase()) {
+                return colorImg;
               }
+              const updatedImages = (colorImg.images || []).filter(
+                (imgUrl) => imgUrl !== imageToRemove.preview
+              );
+              if (updatedImages.length === 0) return null;
               return { ...colorImg, images: updatedImages };
-            }
-            return colorImg;
-          }).filter(Boolean); // Remove null entries
-        });
+            })
+            .filter(Boolean)
+        );
       }
-      setImagesWithColors((prev) => prev.filter((img) => img.id !== id));
-      toast.success('Image removed');
-    }
+      if (!silent) toast.success('Image removed');
+      return prev.filter((img) => img.id !== id);
+    });
   };
 
   const handleModel3DChange = (e) => {

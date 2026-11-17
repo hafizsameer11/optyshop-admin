@@ -599,11 +599,11 @@ const ProductModal = ({ product, onClose }) => {
             const ui = colorListToUiState(normalizedColors);
             setExistingColorImages(ui.existingColorImages);
             setImagesWithColors(ui.imagesWithColors);
-            setPendingVariantHexes([]);
-          } else {
-            setExistingColorImages([]);
-            setImagesWithColors([]);
-            setPendingVariantHexes([]);
+          setPendingVariantHexes([]);
+        } else {
+          setExistingColorImages([]);
+          setImagesWithColors([]);
+          setPendingVariantHexes([]);
           }
         }
       }
@@ -1015,12 +1015,14 @@ const ProductModal = ({ product, onClose }) => {
     Promise.all(uploadPromises)
       .then((results) => {
         const validResults = results.filter(Boolean);
+        // preview is already a saved URL from uploadAPI — mark existing so Save
+        // only keeps URLs via color_images (no second FormData re-upload / doubling).
         const newImages = validResults.map((result, index) => ({
           id: `new-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 9)}`,
-          file: result.file,
+          file: null,
           preview: result.preview,
           hexCode: H,
-          isExisting: false,
+          isExisting: true,
         }));
         setImagesWithColors((prev) => [...prev, ...newImages]);
         if (newImages.length > 0) setColorImagesDirty(true);
@@ -1925,8 +1927,8 @@ const ProductModal = ({ product, onClose }) => {
           // Only send the keep-lists the user actually touched: any list sent here
           // replaces what is stored, so untouched fields must stay out of the payload.
           if (imagesDirty) {
-            // Backend flow: Compares existing images vs. new list, deletes removed ones
-            // Empty array [] = delete all existing images
+          // Backend flow: Compares existing images vs. new list, deletes removed ones
+          // Empty array [] = delete all existing images
             dataToSend.images = getImagesToKeep();
           }
 
@@ -3369,7 +3371,7 @@ const ProductModal = ({ product, onClose }) => {
                       Enter a SKU or use Auto Generate for a random code (e.g. SKU-…). You can edit it anytime.
                     </p>
                   </div>
-                </div>
+                  </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>

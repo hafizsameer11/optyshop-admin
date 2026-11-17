@@ -123,7 +123,29 @@ export const normalizeColorImagesList = (raw) => {
       pushEntry(key, parsed[key]);
     });
   }
-  return out;
+
+  // Merge duplicate hex rows (same color saved as multiple entries)
+  const mergedByHex = {};
+  out.forEach((entry) => {
+    const hex = String(entry.hexCode || '').toUpperCase();
+    if (!mergedByHex[hex]) {
+      mergedByHex[hex] = {
+        hexCode: hex,
+        name: entry.name,
+        price: entry.price,
+        images: [],
+      };
+    }
+    (entry.images || []).forEach((url) => {
+      if (url && !mergedByHex[hex].images.includes(url)) {
+        mergedByHex[hex].images.push(url);
+      }
+    });
+    if (entry.price != null && mergedByHex[hex].price == null) {
+      mergedByHex[hex].price = entry.price;
+    }
+  });
+  return Object.values(mergedByHex);
 };
 
 /** Build color_images payload to KEEP on update — never drop untouched colors. */

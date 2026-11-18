@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import useNewOrdersBadge from '../hooks/useNewOrdersBadge';
 import { useNavigate } from 'react-router-dom';
 import { FiMenu, FiLogOut, FiBell, FiSearch, FiUser, FiSettings, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +16,7 @@ const Header = ({ toggleSidebar }) => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { newCount: newOrdersCount } = useNewOrdersBadge();
   const [headerSearch, setHeaderSearch] = useState('');
   const [searchScope, setSearchScope] = useState(() => {
     try {
@@ -108,11 +110,16 @@ const Header = ({ toggleSidebar }) => {
             )}
 
             <button
+              type="button"
+              onClick={() => navigate('/orders')}
               className="relative p-2.5 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
-              aria-label="Notifications"
+              aria-label={newOrdersCount > 0 ? `${newOrdersCount} new orders` : 'Notifications'}
+              title={newOrdersCount > 0 ? `${newOrdersCount} new order(s)` : 'Orders'}
             >
               <FiBell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+              {newOrdersCount > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+              )}
             </button>
 
             <div className="relative">

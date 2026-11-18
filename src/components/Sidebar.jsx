@@ -34,11 +34,13 @@ import {
 import { FaEuroSign } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import useNewOrdersBadge from '../hooks/useNewOrdersBadge';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { t } = useI18n();
+  const { newCount: newOrdersCount } = useNewOrdersBadge();
   const [openSubmenus, setOpenSubmenus] = useState({
     catalog: false,
     prescription: false,
@@ -261,10 +263,20 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         } ${!isOpen && 'lg:justify-center'}`}
                       title={!isOpen ? label : ''}
                     >
-                      <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-indigo-600' : 'text-gray-500'}`} />
+                      <span className="relative flex-shrink-0">
+                        <Icon className={`w-5 h-5 ${active ? 'text-indigo-600' : 'text-gray-500'}`} />
+                        {path === '/orders' && newOrdersCount > 0 && (
+                          <span className="absolute -top-1 -right-1 min-w-[0.5rem] h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+                        )}
+                      </span>
                       {isOpen && (
-                        <span className={`text-sm font-medium ${active ? 'font-semibold' : ''}`}>
+                        <span className={`text-sm font-medium flex items-center gap-2 ${active ? 'font-semibold' : ''}`}>
                           {label}
+                          {path === '/orders' && newOrdersCount > 0 && (
+                            <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                              {newOrdersCount > 99 ? '99+' : newOrdersCount}
+                            </span>
+                          )}
                         </span>
                       )}
                     </Link>

@@ -6,6 +6,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import OrderModal from '../components/OrderModal';
 import { API_ROUTES } from '../config/apiRoutes';
+import { markOrdersSeen } from '../hooks/useNewOrdersBadge';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 
@@ -155,7 +156,10 @@ const Orders = () => {
       }
       
       console.log('Parsed orders:', ordersData);
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      const list = Array.isArray(ordersData) ? ordersData : [];
+      setOrders(list);
+      const maxId = list.reduce((m, o) => Math.max(m, Number(o.id) || 0), 0);
+      if (maxId > 0) markOrdersSeen(maxId);
       setTotalPages(pages);
     } catch (error) {
       console.error('Orders API error:', error);

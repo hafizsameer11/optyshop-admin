@@ -14,6 +14,7 @@ import {
   sendOrderCancellationEmail
 } from '../utils/emailService';
 import AdminOrderTransactionsList from './admin/OrderTransactionsList';
+import { formatOrderAddressLines, normalizeOrderAddress } from '../utils/orderAddress';
 
 const OrderModal = ({ order, onClose }) => {
   const { t } = useI18n();
@@ -85,7 +86,13 @@ const OrderModal = ({ order, onClose }) => {
       // Handle response structure: { success, message, data: { order: {...} } }
       const orderDetails = response.data?.data?.order || response.data?.order || response.data;
       if (orderDetails) {
-        setOrderData(orderDetails);
+        const shipping = normalizeOrderAddress(orderDetails.shipping_address);
+        const billing = normalizeOrderAddress(orderDetails.billing_address);
+        setOrderData({
+          ...orderDetails,
+          shipping_address: shipping || orderDetails.shipping_address,
+          billing_address: billing || orderDetails.billing_address,
+        });
         setStatus(orderDetails.status);
       }
     } catch (error) {
@@ -1087,51 +1094,39 @@ const OrderModal = ({ order, onClose }) => {
             )}
 
             {/* Shipping & Billing Addresses */}
-            {(orderData?.shipping_address || orderData?.billing_address) && (
+            {(() => {
+              const shippingLines = formatOrderAddressLines(orderData?.shipping_address);
+              const billingLines = formatOrderAddressLines(orderData?.billing_address);
+              if (shippingLines.length === 0 && billingLines.length === 0) return null;
+              return (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Shipping Address */}
-                {orderData?.shipping_address && (
+                {shippingLines.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('shippingAddress')}</h3>
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-lg border border-green-200 shadow-sm">
                       <div className="space-y-1 text-sm text-gray-700">
-                        {orderData.shipping_address.street && (
-                          <p className="font-medium">{orderData.shipping_address.street}</p>
-                        )}
-                        <p>
-                          {orderData.shipping_address.city && `${orderData.shipping_address.city}, `}
-                          {orderData.shipping_address.state} {orderData.shipping_address.zip}
-                        </p>
-                        {orderData.shipping_address.country && (
-                          <p className="font-semibold text-gray-900">{orderData.shipping_address.country}</p>
-                        )}
+                        {shippingLines.map((line, i) => (
+                          <p key={i} className={i === 0 ? 'font-medium text-gray-900' : ''}>{line}</p>
+                        ))}
                       </div>
                     </div>
                   </div>
                 )}
-
-                {/* Billing Address */}
-                {orderData?.billing_address && (
+                {billingLines.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('billingAddress')}</h3>
                     <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-lg border border-purple-200 shadow-sm">
                       <div className="space-y-1 text-sm text-gray-700">
-                        {orderData.billing_address.street && (
-                          <p className="font-medium">{orderData.billing_address.street}</p>
-                        )}
-                        <p>
-                          {orderData.billing_address.city && `${orderData.billing_address.city}, `}
-                          {orderData.billing_address.state} {orderData.billing_address.zip}
-                        </p>
-                        {orderData.billing_address.country && (
-                          <p className="font-semibold text-gray-900">{orderData.billing_address.country}</p>
-                        )}
+                        {billingLines.map((line, i) => (
+                          <p key={i} className={i === 0 ? 'font-medium text-gray-900' : ''}>{line}</p>
+                        ))}
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-            )}
+              );
+            })()}
 
             {/* Order Items */}
             <div>

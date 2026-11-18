@@ -956,10 +956,6 @@ const OrderModal = ({ order, onClose }) => {
                   <span className="font-semibold text-gray-900">€{parseFloat(orderData?.subtotal || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="font-medium text-gray-700">{t('tax')}:</span>
-                  <span className="font-semibold text-gray-900">€{parseFloat(orderData?.tax || 0).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
                   <span className="font-medium text-gray-700">{t('shipping')}:</span>
                   <span className="font-semibold text-gray-900">€{parseFloat(orderData?.shipping || 0).toFixed(2)}</span>
                 </div>

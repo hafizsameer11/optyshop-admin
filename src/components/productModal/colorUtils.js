@@ -121,10 +121,23 @@ export const normalizeColorImagesList = (raw) => {
       .filter((url) => isUsableImageUrl(url));
     if (images.length === 0) return;
 
+    const stockQty =
+      colorData && !Array.isArray(colorData) && colorData.stock_quantity != null && colorData.stock_quantity !== ''
+        ? Number(colorData.stock_quantity)
+        : null;
     out.push({
       hexCode,
-      name: (colorData && !Array.isArray(colorData) && colorData.name) || getColorNameFromHex(hexCode),
+      name:
+        (colorData && !Array.isArray(colorData) && (colorData.name || colorData.display_name)) ||
+        getColorNameFromHex(hexCode),
+      display_name:
+        (colorData && !Array.isArray(colorData) && (colorData.display_name || colorData.name)) ||
+        getColorNameFromHex(hexCode),
       price: colorData && !Array.isArray(colorData) && colorData.price != null ? colorData.price : null,
+      stock_quantity: Number.isFinite(stockQty) ? stockQty : null,
+      stock_status:
+        (colorData && !Array.isArray(colorData) && colorData.stock_status) ||
+        (Number.isFinite(stockQty) ? (stockQty > 0 ? 'in_stock' : 'out_of_stock') : null),
       images,
     });
   };
@@ -148,7 +161,10 @@ export const normalizeColorImagesList = (raw) => {
       mergedByHex[hex] = {
         hexCode: hex,
         name: entry.name,
+        display_name: entry.display_name || entry.name,
         price: entry.price,
+        stock_quantity: entry.stock_quantity != null ? entry.stock_quantity : null,
+        stock_status: entry.stock_status || null,
         images: [],
       };
     }
@@ -160,24 +176,58 @@ export const normalizeColorImagesList = (raw) => {
     if (entry.price != null && mergedByHex[hex].price == null) {
       mergedByHex[hex].price = entry.price;
     }
+    if (entry.stock_quantity != null && mergedByHex[hex].stock_quantity == null) {
+      mergedByHex[hex].stock_quantity = entry.stock_quantity;
+    }
+    if (entry.stock_status && !mergedByHex[hex].stock_status) {
+      mergedByHex[hex].stock_status = entry.stock_status;
+    }
+    if (entry.name && (!mergedByHex[hex].name || mergedByHex[hex].name === getColorNameFromHex(hex))) {
+      mergedByHex[hex].name = entry.name;
+      mergedByHex[hex].display_name = entry.display_name || entry.name;
+    }
   });
   return Object.values(mergedByHex);
 };
 
 /** Build color_images payload to KEEP on update — never drop untouched colors. */
-export const buildColorImagesToKeep = (imagesWithColors, existingColorImages) => {
+export const buildColorImagesToKeep = (imagesWithColors, existingColorImages, pendingVariantHexes = []) => {
   const byHex = {};
   const FileConstructor = typeof File !== 'undefined' ? File : null;
 
   (existingColorImages || []).forEach((colorImg) => {
     const hex = String(colorImg?.hexCode || '').trim().toUpperCase();
     if (!isValidHexCode(hex)) return;
+    const stockQty = colorImg.stock_quantity != null && colorImg.stock_quantity !== ''
+      ? Number(colorImg.stock_quantity)
+      : null;
     byHex[hex] = {
       hexCode: hex,
-      name: colorImg.name || getColorNameFromHex(hex),
+      name: colorImg.name || colorImg.display_name || getColorNameFromHex(hex),
+      display_name: colorImg.display_name || colorImg.name || getColorNameFromHex(hex),
       price: colorImg.price != null ? colorImg.price : null,
+      stock_quantity: Number.isFinite(stockQty) ? stockQty : null,
+      stock_status:
+        colorImg.stock_status ||
+        (Number.isFinite(stockQty) ? (stockQty > 0 ? 'in_stock' : 'out_of_stock') : null),
       images: [],
     };
+  });
+
+  (pendingVariantHexes || []).forEach((raw) => {
+    const hex = String(raw || '').trim().toUpperCase();
+    if (!isValidHexCode(hex)) return;
+    if (!byHex[hex]) {
+      byHex[hex] = {
+        hexCode: hex,
+        name: getColorNameFromHex(hex),
+        display_name: getColorNameFromHex(hex),
+        price: null,
+        stock_quantity: null,
+        stock_status: null,
+        images: [],
+      };
+    }
   });
 
   (imagesWithColors || []).forEach((img) => {
@@ -187,7 +237,10 @@ export const buildColorImagesToKeep = (imagesWithColors, existingColorImages) =>
       byHex[hex] = {
         hexCode: hex,
         name: getColorNameFromHex(hex),
+        display_name: getColorNameFromHex(hex),
         price: null,
+        stock_quantity: null,
+        stock_status: null,
         images: [],
       };
     }
@@ -198,12 +251,13 @@ export const buildColorImagesToKeep = (imagesWithColors, existingColorImages) =>
 
   return Object.values(byHex).filter((entry) => {
     if (entry.images.length > 0) return true;
+    if (entry.stock_quantity != null) return true;
     return (imagesWithColors || []).some(
       (img) =>
         String(img?.hexCode || '').toUpperCase() === entry.hexCode &&
         FileConstructor &&
         img.file instanceof FileConstructor
-    );
+    ) || (pendingVariantHexes || []).some((h) => String(h || '').toUpperCase() === entry.hexCode);
   });
 };
 

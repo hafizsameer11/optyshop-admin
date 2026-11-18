@@ -248,6 +248,7 @@ const ProductModal = ({ product, onClose }) => {
   /** While uploading variant photos, which hex row is active (shows progress in UI). */
   const [variantUploadHex, setVariantUploadHex] = useState(null);
   const [customVariantHexInput, setCustomVariantHexInput] = useState('');
+  const [customVariantLabelInput, setCustomVariantLabelInput] = useState('');
   const [existingColorImages, setExistingColorImages] = useState([]); // Existing color images structure for deletion tracking
   // Image payloads are only sent on update when the user actually changed images,
   // otherwise the backend would treat the computed keep-list as a deletion request.
@@ -267,7 +268,7 @@ const ProductModal = ({ product, onClose }) => {
       const hex = String(c.hexCode || '').trim().toUpperCase();
       if (!isValidHexCode(hex)) return;
       const hasUsable = (c.images || []).some((url) => isUsableImageUrl(url));
-      if (hasUsable) set.add(hex);
+      if (hasUsable || c.stock_quantity != null || c.name) set.add(hex);
     });
     imagesWithColors.forEach((img) => {
       const hex = String(img.hexCode || '').trim().toUpperCase();
@@ -1046,7 +1047,7 @@ const ProductModal = ({ product, onClose }) => {
     e.target.value = '';
   };
 
-  const addVariantRow = (hexRaw) => {
+  const addVariantRow = (hexRaw, labelRaw = '') => {
     const raw = String(hexRaw ?? '').trim();
     if (!isValidHexCode(raw)) {
       toast.error('Invalid color. Use format #RRGGBB (e.g. #000000).');
@@ -1062,9 +1063,65 @@ const ProductModal = ({ product, onClose }) => {
       toast.error('This color is already added');
       return;
     }
+    const label = String(labelRaw || '').trim() || getColorNameFromHex(H);
     setPendingVariantHexes((prev) => [...prev, H]);
+    setExistingColorImages((prev) => [
+      ...prev,
+      {
+        hexCode: H,
+        name: label,
+        display_name: label,
+        price: null,
+        stock_quantity: null,
+        stock_status: null,
+        images: [],
+      },
+    ]);
+    setColorImagesDirty(true);
     setCustomVariantHexInput('');
-    toast.success(`Added ${getColorNameFromHex(H)} — upload photos below`);
+    setCustomVariantLabelInput('');
+    toast.success(`Added ${label} — set stock and upload photos below`);
+  };
+
+  const updateVariantMeta = (hex, patch) => {
+    const H = String(hex || '').trim().toUpperCase();
+    setColorImagesDirty(true);
+    setExistingColorImages((prev) => {
+      const idx = prev.findIndex((c) => String(c.hexCode || '').toUpperCase() === H);
+      if (idx >= 0) {
+        const next = [...prev];
+        const merged = { ...next[idx], ...patch };
+        if (patch.name != null) {
+          merged.name = patch.name;
+          merged.display_name = patch.name;
+        }
+        if (patch.stock_quantity !== undefined) {
+          const qty = patch.stock_quantity;
+          merged.stock_quantity = qty;
+          merged.stock_status =
+            qty == null || Number.isNaN(qty) ? null : qty > 0 ? 'in_stock' : 'out_of_stock';
+        }
+        next[idx] = merged;
+        return next;
+      }
+      return [
+        ...prev,
+        {
+          hexCode: H,
+          name: patch.name || getColorNameFromHex(H),
+          display_name: patch.name || getColorNameFromHex(H),
+          price: null,
+          stock_quantity: patch.stock_quantity != null ? patch.stock_quantity : null,
+          stock_status:
+            patch.stock_quantity != null
+              ? patch.stock_quantity > 0
+                ? 'in_stock'
+                : 'out_of_stock'
+              : null,
+          images: [],
+        },
+      ];
+    });
   };
 
   const removeVariantHex = (hex) => {
@@ -1858,7 +1915,7 @@ const ProductModal = ({ product, onClose }) => {
           // Only sent when the user changed color images, because the backend REPLACES
           // all existing color images with whatever is sent (empty array = delete all)
           if (product && colorImagesDirty) {
-            const colorImagesToKeep = buildColorImagesToKeep(imagesWithColors, existingColorImages);
+            const colorImagesToKeep = buildColorImagesToKeep(imagesWithColors, existingColorImages, pendingVariantHexes);
 
             // ALWAYS send color_images field when updating (even if empty array)
             // Backend behavior:
@@ -1951,7 +2008,7 @@ const ProductModal = ({ product, onClose }) => {
           }
 
           if (colorImagesDirty) {
-            const colorImagesToKeep = buildColorImagesToKeep(imagesWithColors, existingColorImages);
+            const colorImagesToKeep = buildColorImagesToKeep(imagesWithColors, existingColorImages, pendingVariantHexes);
             dataToSend.color_images = colorImagesToKeep;
           }
 
@@ -4392,6 +4449,9 @@ const ProductModal = ({ product, onClose }) => {
                 setPendingVariantHexes={setPendingVariantHexes}
                 customVariantHexInput={customVariantHexInput}
                 setCustomVariantHexInput={setCustomVariantHexInput}
+                customVariantLabelInput={customVariantLabelInput}
+                setCustomVariantLabelInput={setCustomVariantLabelInput}
+                updateVariantMeta={updateVariantMeta}
                 addVariantRow={addVariantRow}
                 removeVariantHex={removeVariantHex}
                 removeImageWithColor={removeImageWithColor}

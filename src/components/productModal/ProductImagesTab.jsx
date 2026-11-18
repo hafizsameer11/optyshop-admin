@@ -40,6 +40,9 @@ const ProductImagesTab = ({
   setPendingVariantHexes,
   customVariantHexInput,
   setCustomVariantHexInput,
+  customVariantLabelInput,
+  setCustomVariantLabelInput,
+  updateVariantMeta,
   addVariantRow,
   removeVariantHex,
   removeImageWithColor,
@@ -237,7 +240,7 @@ const ProductImagesTab = ({
               ))}
             </div>
             <div className="flex flex-wrap items-end gap-2">
-              <div className="flex-1 min-w-[200px]">
+              <div className="flex-1 min-w-[140px]">
                 <label className="block text-xs font-medium text-gray-600 mb-1">Custom hex</label>
                 <input
                   type="text"
@@ -247,9 +250,19 @@ const ProductImagesTab = ({
                   className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
                 />
               </div>
+              <div className="flex-1 min-w-[140px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Color label</label>
+                <input
+                  type="text"
+                  value={customVariantLabelInput}
+                  onChange={(e) => setCustomVariantLabelInput(e.target.value)}
+                  placeholder="e.g. Tortoise Brown"
+                  className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
               <button
                 type="button"
-                onClick={() => addVariantRow(customVariantHexInput)}
+                onClick={() => addVariantRow(customVariantHexInput, customVariantLabelInput)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
               >
                 <FiPlus className="w-4 h-4" />
@@ -278,16 +291,43 @@ const ProductImagesTab = ({
               return (
                 <div key={hex} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                   <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div
                         className="w-11 h-11 rounded-lg border-2 border-white shadow shrink-0 ring-1 ring-gray-200"
                         style={{ backgroundColor: hex }}
                       />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {getColorNameFromHex(hex)}
-                        </p>
-                        <p className="text-xs font-mono text-gray-500">{hex}</p>
+                      <div className="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Color label</label>
+                          <input
+                            type="text"
+                            value={
+                              (existingColorImages.find((c) => String(c.hexCode).toUpperCase() === hex)?.name) ||
+                              getColorNameFromHex(hex)
+                            }
+                            onChange={(e) => updateVariantMeta(hex, { name: e.target.value })}
+                            className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                          <p className="text-[10px] font-mono text-gray-400 mt-0.5">{hex}</p>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Stock qty</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={
+                              existingColorImages.find((c) => String(c.hexCode).toUpperCase() === hex)?.stock_quantity ??
+                              ''
+                            }
+                            onChange={(e) =>
+                              updateVariantMeta(hex, {
+                                stock_quantity: e.target.value === '' ? null : parseInt(e.target.value, 10),
+                              })
+                            }
+                            placeholder="0"
+                            className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
                       </div>
                     </div>
                     <button
@@ -343,7 +383,7 @@ const ProductImagesTab = ({
                       >
                         <FiUpload className="w-4 h-4 text-indigo-600" />
                         <span className="text-sm font-medium text-indigo-800">
-                          Add photos for {getColorNameFromHex(hex)}
+                          Add photos for {(existingColorImages.find((c) => String(c.hexCode).toUpperCase() === hex)?.name) || getColorNameFromHex(hex)}
                         </span>
                         <input
                           id={safeInputId}

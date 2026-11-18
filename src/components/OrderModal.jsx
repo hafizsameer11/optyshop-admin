@@ -106,9 +106,9 @@ const OrderModal = ({ order, onClose }) => {
       const response = await api.put(API_ROUTES.ORDERS.UPDATE_STATUS(orderId), { status });
       // Handle response structure: { success, message, data: { order: {...} } }
       if (response.data?.success) {
-        toast.success(response.data.message || 'Order status updated successfully');
+        toast.success(response.data.message || 'Stato ordine aggiornato');
       } else {
-        toast.success('Order status updated successfully');
+        toast.success('Stato ordine aggiornato');
       }
       // Update local order data
       const updatedOrder = response.data?.data?.order;
@@ -1470,12 +1470,13 @@ const OrderModal = ({ order, onClose }) => {
                     onChange={(e) => setStatus(e.target.value)}
                     className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
-                    <option value="pending">{t('pending')}</option>
-                    <option value="processing">{t('processing')}</option>
-                    <option value="shipped">{t('shipped')}</option>
-                    <option value="delivered">{t('delivered')}</option>
-                    <option value="cancelled">{t('cancelled')}</option>
-                    <option value="refunded">{t('refunded')}</option>
+                    <option value="pending">{t('pending') || 'In attesa'}</option>
+                    <option value="confirmed">{t('confirmed') || 'Confermato'}</option>
+                    <option value="processing">{t('processing') || 'In elaborazione'}</option>
+                    <option value="shipped">{t('shipped') || 'Spedito'}</option>
+                    <option value="delivered">{t('delivered') || 'Consegnato'}</option>
+                    <option value="cancelled">{t('cancelled') || 'Annullato'}</option>
+                    <option value="refunded">{t('refunded') || 'Rimborsato'}</option>
                   </select>
                   <button
                     onClick={handleStatusUpdate}

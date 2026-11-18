@@ -215,12 +215,13 @@ export const sendOrderStatusUpdateEmail = async (order, previousStatus = null) =
 
   const orderData = formatOrderForEmail(order);
   const statusLabels = {
-    pending: 'Pending',
-    processing: 'Processing',
-    shipped: 'Shipped',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-    refunded: 'Refunded',
+    pending: 'In attesa',
+    confirmed: 'Confermato',
+    processing: 'In elaborazione',
+    shipped: 'Spedito',
+    delivered: 'Consegnato',
+    cancelled: 'Annullato',
+    refunded: 'Rimborsato',
   };
 
   const statusLabel = statusLabels[orderData.status.toLowerCase()] || orderData.status;
@@ -236,21 +237,21 @@ export const sendOrderStatusUpdateEmail = async (order, previousStatus = null) =
   let htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Order Status Update</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Aggiornamento ordine</h1>
       </div>
       
       <div style="padding: 30px;">
         <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-          Hello ${orderData.customerName || 'Customer'},
+          Ciao ${orderData.customerName || 'Cliente'},
         </p>
         
         <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-          Your order <strong>${orderData.orderNumber}</strong> status has been updated.
+          Lo stato del tuo ordine <strong>${orderData.orderNumber}</strong> è stato aggiornato.
         </p>
         
         <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${statusColor};">
           <p style="margin: 0; color: #6B7280; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-            New Status
+            Nuovo stato
           </p>
           <p style="margin: 10px 0 0 0; color: #111827; font-size: 24px; font-weight: bold;">
             ${statusLabel}
@@ -258,18 +259,18 @@ export const sendOrderStatusUpdateEmail = async (order, previousStatus = null) =
         </div>
         
         <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Order Details</h3>
+          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Dettagli ordine</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Number:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Numero ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${orderData.orderNumber}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Date:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Data ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">${orderData.createdAt}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Total Amount:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Importo totale:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">€${orderData.total}</td>
             </tr>
           </table>
@@ -277,7 +278,7 @@ export const sendOrderStatusUpdateEmail = async (order, previousStatus = null) =
         
         ${orderData.shippingAddress ? `
         <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Shipping Address</h3>
+          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Indirizzo di spedizione</h3>
           <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0;">
             ${orderData.shippingAddress.first_name || ''} ${orderData.shippingAddress.last_name || ''}<br>
             ${orderData.shippingAddress.address || orderData.shippingAddress.street || ''}<br>
@@ -288,44 +289,44 @@ export const sendOrderStatusUpdateEmail = async (order, previousStatus = null) =
         ` : ''}
         
         <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 30px;">
-          If you have any questions about your order, please don't hesitate to contact us.
+          Per qualsiasi domanda sul tuo ordine, non esitare a contattarci.
         </p>
         
         <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 20px;">
-          Thank you for your business!<br>
-          <strong>OptyShop Team</strong>
+          Grazie per aver scelto OptiShop.<br>
+          <strong>Il team OptiShop</strong>
         </p>
       </div>
       
       <div style="background-color: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
         <p style="color: #9CA3AF; font-size: 12px; margin: 0;">
-          This is an automated notification. Please do not reply to this email.
+          Questa è una notifica automatica. Si prega di non rispondere a questa email.
         </p>
       </div>
     </div>
   `;
 
   const textContent = `
-Order Status Update
+Aggiornamento ordine
 
-Hello ${orderData.customerName || 'Customer'},
+Ciao ${orderData.customerName || 'Cliente'},
 
 Your order ${orderData.orderNumber} status has been updated to: ${statusLabel}
 
-Order Details:
-- Order Number: ${orderData.orderNumber}
-- Order Date: ${orderData.createdAt}
-- Total Amount: €${orderData.total}
+Dettagli ordine:
+- Numero ordine: ${orderData.orderNumber}
+- Data ordine: ${orderData.createdAt}
+- Importo totale: €${orderData.total}
 
 ${orderData.shippingAddress ? `
-Shipping Address:
+Indirizzo di spedizione:
 ${orderData.shippingAddress.first_name || ''} ${orderData.shippingAddress.last_name || ''}
 ${orderData.shippingAddress.address || orderData.shippingAddress.street || ''}
 ${orderData.shippingAddress.city || ''}${orderData.shippingAddress.state ? `, ${orderData.shippingAddress.state}` : ''} ${orderData.shippingAddress.zip_code || orderData.shippingAddress.zip || ''}
 ${orderData.shippingAddress.country || ''}
 ` : ''}
 
-If you have any questions about your order, please don't hesitate to contact us.
+Per qualsiasi domanda sul tuo ordine, non esitare a contattarci.
 
 Thank you for your business!
 OptyShop Team
@@ -333,7 +334,7 @@ OptyShop Team
 
   return await sendEmail({
     to: customerEmail,
-    subject: `Order ${orderData.orderNumber} - Status Updated to ${statusLabel}`,
+    subject: `Ordine ${orderData.orderNumber} — ${statusLabel}`,
     html: htmlContent,
     text: textContent,
   });
@@ -359,21 +360,21 @@ export const sendOrderRefundEmail = async (order, refundAmount = null, refundRea
   let htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
       <div style="background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); padding: 30px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Refund Processed</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Rimborso elaborato</h1>
       </div>
       
       <div style="padding: 30px;">
         <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-          Hello ${orderData.customerName || 'Customer'},
+          Ciao ${orderData.customerName || 'Cliente'},
         </p>
         
         <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-          We have processed a refund for your order <strong>${orderData.orderNumber}</strong>.
+          Abbiamo elaborato un rimborso per il tuo ordine <strong>${orderData.orderNumber}</strong>.
         </p>
         
         <div style="background-color: #FEF3C7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F59E0B;">
           <p style="margin: 0; color: #92400E; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-            Refund Amount
+            Importo rimborso
           </p>
           <p style="margin: 10px 0 0 0; color: #78350F; font-size: 28px; font-weight: bold;">
             €${refundAmountDisplay}
@@ -382,7 +383,7 @@ export const sendOrderRefundEmail = async (order, refundAmount = null, refundRea
         
         ${refundReason ? `
         <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Refund Reason</h3>
+          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Motivo del rimborso</h3>
           <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0;">
             ${refundReason}
           </p>
@@ -390,18 +391,18 @@ export const sendOrderRefundEmail = async (order, refundAmount = null, refundRea
         ` : ''}
         
         <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Order Details</h3>
+          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Dettagli ordine</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Number:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Numero ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${orderData.orderNumber}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Original Amount:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Importo originale:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">€${orderData.total}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Payment Method:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Metodo di pagamento:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">${order.payment_method || 'N/A'}</td>
             </tr>
           </table>
@@ -409,48 +410,47 @@ export const sendOrderRefundEmail = async (order, refundAmount = null, refundRea
         
         <div style="background-color: #ECFDF5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981;">
           <p style="color: #065F46; font-size: 14px; line-height: 1.6; margin: 0;">
-            <strong>Important:</strong> The refund will be processed to your original payment method. 
-            Please allow 5-10 business days for the refund to appear in your account.
+            <strong>Importante:</strong> il rimborso verrà accreditato sul metodo di pagamento originale entro 5-10 giorni lavorativi.
           </p>
         </div>
         
         <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 30px;">
-          If you have any questions about this refund, please don't hesitate to contact us.
+          Per qualsiasi domanda su questo rimborso, non esitare a contattarci.
         </p>
         
         <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 20px;">
-          Thank you for your understanding.<br>
-          <strong>OptyShop Team</strong>
+          Grazie per la comprensione.<br>
+          <strong>Il team OptiShop</strong>
         </p>
       </div>
       
       <div style="background-color: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
         <p style="color: #9CA3AF; font-size: 12px; margin: 0;">
-          This is an automated notification. Please do not reply to this email.
+          Questa è una notifica automatica. Si prega di non rispondere a questa email.
         </p>
       </div>
     </div>
   `;
 
   const textContent = `
-Refund Processed
+Rimborso elaborato
 
-Hello ${orderData.customerName || 'Customer'},
+Ciao ${orderData.customerName || 'Cliente'},
 
 We have processed a refund for your order ${orderData.orderNumber}.
 
-Refund Amount: €${refundAmountDisplay}
+Importo rimborso: €${refundAmountDisplay}
 
-${refundReason ? `Refund Reason: ${refundReason}\n` : ''}
-Order Details:
-- Order Number: ${orderData.orderNumber}
-- Original Amount: €${orderData.total}
-- Payment Method: ${order.payment_method || 'N/A'}
+${refundReason ? `Motivo del rimborso: ${refundReason}\n` : ''}
+Dettagli ordine:
+- Numero ordine: ${orderData.orderNumber}
+- Importo originale: €${orderData.total}
+- Metodo di pagamento: ${order.payment_method || 'N/A'}
 
 Important: The refund will be processed to your original payment method. 
 Please allow 5-10 business days for the refund to appear in your account.
 
-If you have any questions about this refund, please don't hesitate to contact us.
+Per qualsiasi domanda su questo rimborso, non esitare a contattarci.
 
 Thank you for your understanding.
 OptyShop Team
@@ -458,7 +458,7 @@ OptyShop Team
 
   return await sendEmail({
     to: customerEmail,
-    subject: `Refund Processed for Order ${orderData.orderNumber}`,
+    subject: `Rimborso elaborato for Order ${orderData.orderNumber}`,
     html: htmlContent,
     text: textContent,
   });
@@ -487,21 +487,21 @@ export const sendTechnicianAssignmentEmail = async (order, technician = null) =>
   let htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
       <div style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); padding: 30px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Technician Assigned</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Tecnico assegnato</h1>
       </div>
       
       <div style="padding: 30px;">
         <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-          Hello ${orderData.customerName || 'Customer'},
+          Ciao ${orderData.customerName || 'Cliente'},
         </p>
         
         <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-          A technician has been assigned to your order <strong>${orderData.orderNumber}</strong>.
+          Un tecnico è stato assegnato al tuo ordine <strong>${orderData.orderNumber}</strong>.
         </p>
         
         <div style="background-color: #EFF6FF; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3B82F6;">
           <p style="margin: 0; color: #1E40AF; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-            Assigned Technician
+            Tecnico assegnato
           </p>
           <p style="margin: 10px 0 0 0; color: #1E3A8A; font-size: 24px; font-weight: bold;">
             ${technicianName}
@@ -509,18 +509,18 @@ export const sendTechnicianAssignmentEmail = async (order, technician = null) =>
         </div>
         
         <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Order Details</h3>
+          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Dettagli ordine</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Number:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Numero ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${orderData.orderNumber}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Status:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Stato ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">${orderData.status}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Date:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Data ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">${orderData.createdAt}</td>
             </tr>
           </table>
@@ -528,49 +528,48 @@ export const sendTechnicianAssignmentEmail = async (order, technician = null) =>
         
         <div style="background-color: #ECFDF5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981;">
           <p style="color: #065F46; font-size: 14px; line-height: 1.6; margin: 0;">
-            <strong>What's Next?</strong><br>
-            Your assigned technician will be working on your order and will ensure it meets our quality standards. 
-            You will receive updates as your order progresses.
+            <strong>Prossimi passi</strong><br>
+            Il tecnico assegnato lavorerà sul tuo ordine e garantirà gli standard di qualità. Riceverai aggiornamenti man mano che l'ordine procede.
           </p>
         </div>
         
         <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 30px;">
-          If you have any questions about your order, please don't hesitate to contact us.
+          Per qualsiasi domanda sul tuo ordine, non esitare a contattarci.
         </p>
         
         <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 20px;">
-          Thank you for your patience!<br>
-          <strong>OptyShop Team</strong>
+          Grazie per la pazienza.<br>
+          <strong>Il team OptiShop</strong>
         </p>
       </div>
       
       <div style="background-color: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
         <p style="color: #9CA3AF; font-size: 12px; margin: 0;">
-          This is an automated notification. Please do not reply to this email.
+          Questa è una notifica automatica. Si prega di non rispondere a questa email.
         </p>
       </div>
     </div>
   `;
 
   const textContent = `
-Technician Assigned
+Tecnico assegnato
 
-Hello ${orderData.customerName || 'Customer'},
+Ciao ${orderData.customerName || 'Cliente'},
 
 A technician has been assigned to your order ${orderData.orderNumber}.
 
-Assigned Technician: ${technicianName}
+Tecnico assegnato: ${technicianName}
 
-Order Details:
-- Order Number: ${orderData.orderNumber}
-- Order Status: ${orderData.status}
-- Order Date: ${orderData.createdAt}
+Dettagli ordine:
+- Numero ordine: ${orderData.orderNumber}
+- Stato ordine: ${orderData.status}
+- Data ordine: ${orderData.createdAt}
 
-What's Next?
+Prossimi passi
 Your assigned technician will be working on your order and will ensure it meets our quality standards. 
 You will receive updates as your order progresses.
 
-If you have any questions about your order, please don't hesitate to contact us.
+Per qualsiasi domanda sul tuo ordine, non esitare a contattarci.
 
 Thank you for your patience!
 OptyShop Team
@@ -578,7 +577,7 @@ OptyShop Team
 
   return await sendEmail({
     to: customerEmail,
-    subject: `Technician Assigned to Order ${orderData.orderNumber}`,
+    subject: `Tecnico assegnato to Order ${orderData.orderNumber}`,
     html: htmlContent,
     text: textContent,
   });
@@ -602,30 +601,30 @@ export const sendOrderCancellationEmail = async (order, cancellationReason = nul
   let htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
       <div style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); padding: 30px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Order Cancelled</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Ordine annullato</h1>
       </div>
       
       <div style="padding: 30px;">
         <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-          Hello ${orderData.customerName || 'Customer'},
+          Ciao ${orderData.customerName || 'Cliente'},
         </p>
         
         <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-          We regret to inform you that your order <strong>${orderData.orderNumber}</strong> has been cancelled.
+          Ti informiamo che il tuo ordine <strong>${orderData.orderNumber}</strong> è stato annullato.
         </p>
         
         <div style="background-color: #FEE2E2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #EF4444;">
           <p style="margin: 0; color: #991B1B; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-            Order Status
+            Stato ordine
           </p>
           <p style="margin: 10px 0 0 0; color: #7F1D1D; font-size: 24px; font-weight: bold;">
-            Cancelled
+            Annullato
           </p>
         </div>
         
         ${cancellationReason ? `
         <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Cancellation Reason</h3>
+          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Motivo dell'annullamento</h3>
           <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0;">
             ${cancellationReason}
           </p>
@@ -633,22 +632,22 @@ export const sendOrderCancellationEmail = async (order, cancellationReason = nul
         ` : ''}
         
         <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Order Details</h3>
+          <h3 style="color: #111827; margin-top: 0; font-size: 18px;">Dettagli ordine</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Number:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Numero ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${orderData.orderNumber}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Date:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Data ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">${orderData.createdAt}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Order Amount:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Importo ordine:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">€${orderData.total}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Payment Method:</td>
+              <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Metodo di pagamento:</td>
               <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">${order.payment_method || 'N/A'}</td>
             </tr>
           </table>
@@ -656,53 +655,53 @@ export const sendOrderCancellationEmail = async (order, cancellationReason = nul
         
         <div style="background-color: #FEF3C7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F59E0B;">
           <p style="color: #92400E; font-size: 14px; line-height: 1.6; margin: 0;">
-            <strong>Refund Information:</strong><br>
+            <strong>Informazioni sul rimborso:</strong><br>
             ${order.payment_status === 'paid' || order.payment_status === 'refunded' 
-              ? 'If payment was already processed, a refund will be issued to your original payment method within 5-10 business days.' 
-              : 'No payment was processed for this order, so no refund is necessary.'}
+              ? 'Se il pagamento era già stato effettuato, il rimborso verrà emesso sul metodo di pagamento originale entro 5-10 giorni lavorativi.' 
+              : 'Nessun pagamento è stato elaborato per questo ordine, quindi non è necessario alcun rimborso.'}
           </p>
         </div>
         
         <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 30px;">
-          If you have any questions about this cancellation or would like to place a new order, please don't hesitate to contact us.
+          Per domande su questo annullamento o per effettuare un nuovo ordine, non esitare a contattarci.
         </p>
         
         <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 20px;">
-          We apologize for any inconvenience this may have caused.<br>
-          <strong>OptyShop Team</strong>
+          Ci scusiamo per l'eventuale disagio.<br>
+          <strong>Il team OptiShop</strong>
         </p>
       </div>
       
       <div style="background-color: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
         <p style="color: #9CA3AF; font-size: 12px; margin: 0;">
-          This is an automated notification. Please do not reply to this email.
+          Questa è una notifica automatica. Si prega di non rispondere a questa email.
         </p>
       </div>
     </div>
   `;
 
   const textContent = `
-Order Cancelled
+Ordine annullato
 
-Hello ${orderData.customerName || 'Customer'},
+Ciao ${orderData.customerName || 'Cliente'},
 
 We regret to inform you that your order ${orderData.orderNumber} has been cancelled.
 
-Order Status: Cancelled
+Stato ordine: Annullato
 
-${cancellationReason ? `Cancellation Reason: ${cancellationReason}\n` : ''}
-Order Details:
-- Order Number: ${orderData.orderNumber}
-- Order Date: ${orderData.createdAt}
-- Order Amount: €${orderData.total}
-- Payment Method: ${order.payment_method || 'N/A'}
+${cancellationReason ? `Motivo dell'annullamento: ${cancellationReason}\n` : ''}
+Dettagli ordine:
+- Numero ordine: ${orderData.orderNumber}
+- Data ordine: ${orderData.createdAt}
+- Importo ordine: €${orderData.total}
+- Metodo di pagamento: ${order.payment_method || 'N/A'}
 
-Refund Information:
+Informazioni sul rimborso:
 ${order.payment_status === 'paid' || order.payment_status === 'refunded' 
-  ? 'If payment was already processed, a refund will be issued to your original payment method within 5-10 business days.' 
-  : 'No payment was processed for this order, so no refund is necessary.'}
+  ? 'Se il pagamento era già stato effettuato, il rimborso verrà emesso sul metodo di pagamento originale entro 5-10 giorni lavorativi.' 
+  : 'Nessun pagamento è stato elaborato per questo ordine, quindi non è necessario alcun rimborso.'}
 
-If you have any questions about this cancellation or would like to place a new order, please don't hesitate to contact us.
+Per domande su questo annullamento o per effettuare un nuovo ordine, non esitare a contattarci.
 
 We apologize for any inconvenience this may have caused.
 OptyShop Team
@@ -710,7 +709,7 @@ OptyShop Team
 
   return await sendEmail({
     to: customerEmail,
-    subject: `Order ${orderData.orderNumber} - Cancelled`,
+    subject: `Order ${orderData.orderNumber} - Annullato`,
     html: htmlContent,
     text: textContent,
   });
@@ -877,7 +876,7 @@ export const sendPrescriptionVerificationEmail = async (prescription, apiInstanc
         
         <div style="background-color: #ECFDF5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981;">
           <p style="color: #065F46; font-size: 14px; line-height: 1.6; margin: 0;">
-            <strong>What's Next?</strong><br>
+            <strong>Prossimi passi</strong><br>
             Your prescription is now verified and ready to use. You can proceed to place orders using this prescription.
           </p>
         </div>
@@ -894,7 +893,7 @@ export const sendPrescriptionVerificationEmail = async (prescription, apiInstanc
       
       <div style="background-color: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
         <p style="color: #9CA3AF; font-size: 12px; margin: 0;">
-          This is an automated notification. Please do not reply to this email.
+          Questa è una notifica automatica. Si prega di non rispondere a questa email.
         </p>
       </div>
     </div>
@@ -930,7 +929,7 @@ ${prescription.os_axis ? `  Axis: ${prescription.os_axis}°\n` : ''}
 ${prescription.os_add ? `  Add: ${prescription.os_add}\n` : ''}
 ${prescription.pd_binocular ? `\nPupillary Distance (PD): ${prescription.pd_binocular} mm\n` : ''}
 
-What's Next?
+Prossimi passi
 Your prescription is now verified and ready to use. You can proceed to place orders using this prescription.
 
 If you have any questions about your prescription, please don't hesitate to contact us.

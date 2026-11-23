@@ -30,9 +30,10 @@ export const mmCalibersApi = {
         return response.data;
     },
 
-    // Delete MM caliber from product (mm can be id or size; optional dims for combo match)
+    // Delete MM caliber option (mm can be id or size; pass dimension for independent lists)
     deleteCaliber: async (productId, mm, params = {}) => {
         const qs = new URLSearchParams();
+        if (params.dimension) qs.append('dimension', params.dimension);
         if (params.bridge_width) qs.append('bridge_width', params.bridge_width);
         if (params.temple_length) qs.append('temple_length', params.temple_length);
         if (params.frame_width) qs.append('frame_width', params.frame_width);

@@ -417,27 +417,15 @@ export const formatCaliberDisplay = (mmOrRow) => {
 };
 
 /**
- * Validate caliber data
+ * Validate caliber / independent dimension option
  */
 export const validateCaliberData = (caliberData) => {
   const errors = [];
 
-  const lens = caliberData.lens_width || caliberData.mm;
-  if (!lens || isNaN(Number(lens))) {
-    errors.push('Calibro / lens width (mm) is required and must be a number');
+  const val = caliberData.value || caliberData.lens_width || caliberData.mm;
+  if (!val || isNaN(Number(val))) {
+    errors.push('Size value (mm) is required and must be a number');
   }
-
-  const optionalNums = [
-    ['bridge_width', 'Ponte / bridge'],
-    ['temple_length', 'Asta / temple'],
-    ['frame_width', 'Frame width'],
-  ];
-  optionalNums.forEach(([key, label]) => {
-    const v = caliberData[key];
-    if (v != null && v !== '' && isNaN(Number(v))) {
-      errors.push(`${label} must be a number`);
-    }
-  });
 
   const imageUrl = typeof caliberData.image_url === 'string' ? caliberData.image_url.trim() : '';
   if (imageUrl) {

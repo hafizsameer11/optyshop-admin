@@ -1,30 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { FiPlus, FiTrash2, FiSave, FiX, FiMaximize2 } from 'react-icons/fi';
+import React, { useMemo, useState, useEffect } from 'react';
+import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { mmCalibersApi } from '../api/mmCalibers';
-import {
-  validateCaliberData,
-  formatCaliberDisplay,
-  supportsMMCalibers
-} from '../services/productsService';
+import { supportsMMCalibers } from '../services/productsService';
 
-const emptyForm = (productId) => ({
-  mm: '',
-  lens_width: '',
-  bridge_width: '',
-  temple_length: '',
-  frame_width: '',
+const DIMENSIONS = [
+  {
+    key: 'calibro',
+    title: 'Calibro (lens width)',
+    hint: 'Independent lens-width options for the PDP Calibro dropdown',
+    placeholder: 'e.g. 52',
+    allowPriceStock: true,
+  },
+  {
+    key: 'ponte',
+    title: 'Ponte (bridge)',
+    hint: 'Independent bridge options — not tied to a specific calibro',
+    placeholder: 'e.g. 18',
+    allowPriceStock: false,
+  },
+  {
+    key: 'asta',
+    title: 'Asta (temple)',
+    hint: 'Independent temple options — not tied to calibro or ponte',
+    placeholder: 'e.g. 140',
+    allowPriceStock: false,
+  },
+  {
+    key: 'frame_width',
+    title: 'Frame width',
+    hint: 'Independent frame-width options',
+    placeholder: 'e.g. 135',
+    allowPriceStock: false,
+  },
+];
+
+const emptyDraft = () => ({
+  value: '',
   price: '',
   stock_quantity: '',
-  product_id: productId || '',
 });
 
 const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   const [calibers, setCalibers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
   const [apiError, setApiError] = useState(null);
-  const [formData, setFormData] = useState(emptyForm(productId));
+  const [drafts, setDrafts] = useState({
+    calibro: emptyDraft(),
+    ponte: emptyDraft(),
+    asta: emptyDraft(),
+    frame_width: emptyDraft(),
+  });
 
   if (!supportsMMCalibers(productType)) {
     return (
@@ -35,17 +61,21 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   }
 
   useEffect(() => {
-    if (productId) {
-      loadCalibers();
-    }
+    if (productId) loadCalibers();
   }, [productId]);
 
-  useEffect(() => {
-    setFormData((prev) => ({
-      ...prev,
-      product_id: productId || '',
-    }));
-  }, [productId]);
+  const byDimension = useMemo(() => {
+    const groups = { calibro: [], ponte: [], asta: [], frame_width: [] };
+    (calibers || []).forEach((c) => {
+      const dim = String(c.dimension || 'calibro').toLowerCase();
+      if (groups[dim]) groups[dim].push(c);
+      else groups.calibro.push(c);
+    });
+    Object.keys(groups).forEach((k) => {
+      groups[k].sort((a, b) => Number(a.mm) - Number(b.mm));
+    });
+    return groups;
+  }, [calibers]);
 
   const loadCalibers = async () => {
     try {
@@ -54,116 +84,77 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
       const data = await mmCalibersApi.getProductCalibers(productId);
       const list = data.data || data.calibers || (Array.isArray(data) ? data : []);
       setCalibers(list);
-      if (onCalibersUpdate) {
-        onCalibersUpdate(list);
-      }
+      if (onCalibersUpdate) onCalibersUpdate(list);
     } catch (error) {
       console.error('Error loading calibers:', error);
       if (error.response?.status === 500) {
-        setApiError('Backend API not implemented - MM Calibers endpoint is not available on the server');
+        setApiError('Backend API not implemented for MM Calibers');
         toast.error('Backend API not implemented for MM Calibers');
       } else if (error.response?.status === 404) {
-        setApiError('Product not found - The product may not exist or has been deleted');
+        setApiError('Product not found');
         toast.error('Product not found');
-      } else if (error.message && error.message.includes('Caliber management is not yet available')) {
-        setApiError(error.message);
       } else {
-        toast.error('Failed to load calibers');
+        toast.error('Failed to load size options');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData(emptyForm(productId));
-    setShowAddForm(false);
+  const setDraftField = (dimension, field, value) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [dimension]: { ...prev[dimension], [field]: value },
+    }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleAdd = async (dimension) => {
     if (!productId) {
-      toast.error('Please save the product first before adding calibers');
+      toast.error('Please save the product first before adding options');
       return;
     }
-
-    const payload = {
-      mm: formData.lens_width || formData.mm,
-      lens_width: formData.lens_width || formData.mm,
-      bridge_width: formData.bridge_width || null,
-      temple_length: formData.temple_length || null,
-      frame_width: formData.frame_width || null,
-      price: formData.price === '' ? null : formData.price,
-      stock_quantity: formData.stock_quantity === '' ? null : formData.stock_quantity,
-    };
-
-    const errors = validateCaliberData(payload);
-    if (errors.length > 0) {
-      errors.forEach((error) => toast.error(error));
+    const draft = drafts[dimension] || emptyDraft();
+    const value = String(draft.value || '').trim();
+    if (!value || Number.isNaN(Number(value))) {
+      toast.error('Enter a valid mm value');
       return;
     }
 
     try {
       setLoading(true);
-      const response = await mmCalibersApi.addCaliberToProduct(productId, payload);
-      toast.success('Size option created successfully');
-
-      const created = response?.data?.caliber || response?.caliber || payload;
-      const nextCalibers = [...calibers, created];
-      setCalibers(nextCalibers);
-      if (onCalibersUpdate) {
-        onCalibersUpdate(nextCalibers);
+      const payload = {
+        dimension,
+        mm: value,
+        value,
+      };
+      if (dimension === 'calibro') {
+        if (draft.price !== '') payload.price = draft.price;
+        if (draft.stock_quantity !== '') payload.stock_quantity = draft.stock_quantity;
       }
-
-      resetForm();
-      setTimeout(() => loadCalibers(), 400);
+      await mmCalibersApi.addCaliberToProduct(productId, payload);
+      toast.success('Option added');
+      setDrafts((prev) => ({ ...prev, [dimension]: emptyDraft() }));
+      await loadCalibers();
     } catch (error) {
-      console.error('Error saving caliber:', error);
-      if (error.response?.status === 500) {
-        setApiError('Backend API not implemented - MM Calibers endpoint is not available on the server');
-        toast.error('Backend API not implemented for MM Calibers');
-      } else if (error.response?.status === 404) {
-        toast.error('Product not found');
-      } else if (error.message && error.message.includes('Caliber management is not yet available')) {
-        setApiError(error.message);
-        toast.error(error.message);
-      } else {
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to save caliber';
-        toast.error(errorMessage);
-      }
+      const msg = error.response?.data?.message || error.message || 'Failed to add option';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteKeyFor = (caliber) => {
-    if (caliber.id) return caliber.id;
-    return String(caliber.mm);
-  };
-
-  const handleDelete = async (caliber) => {
-    const label = formatCaliberDisplay(caliber);
-    if (!window.confirm(`Delete size option ${label}?`)) {
-      return;
-    }
-
+  const handleDelete = async (item) => {
+    const dim = item.dimension || 'calibro';
+    if (!window.confirm(`Delete ${dim} ${item.mm} mm?`)) return;
     try {
       setLoading(true);
-      const key = deleteKeyFor(caliber);
-      const params = {};
-      if (!caliber.id) {
-        if (caliber.bridge_width) params.bridge_width = caliber.bridge_width;
-        if (caliber.temple_length) params.temple_length = caliber.temple_length;
-        if (caliber.frame_width) params.frame_width = caliber.frame_width;
-      }
-      await mmCalibersApi.deleteCaliber(productId, key, params);
-      toast.success('Caliber deleted successfully');
-      loadCalibers();
+      const key = item.id || item.mm;
+      await mmCalibersApi.deleteCaliber(productId, key, { dimension: dim });
+      toast.success('Deleted');
+      await loadCalibers();
     } catch (error) {
-      console.error('Error deleting caliber:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete caliber';
-      toast.error(errorMessage);
+      const msg = error.response?.data?.message || error.message || 'Failed to delete';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -172,241 +163,129 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">MM Calibers / Frame sizes</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Add multiple size rows: Calibro (lens width), Ponte, Asta, and frame width. Each row is one option on the product page.
-            </p>
-          </div>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (!productId) {
-                toast.error('Please save the product first before adding calibers');
-                return;
-              }
-              setShowAddForm(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            type="button"
-          >
-            <FiPlus className="w-4 h-4" />
-            Add size
-          </button>
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900">MM Calibers / Frame sizes</h3>
+        <p className="text-sm text-gray-500 mt-1">
+          Calibro, Ponte, Asta and Frame width are <strong>separate</strong> lists — not linked to each other.
+          Customers pick each independently on the product page.
+        </p>
       </div>
 
       {apiError && (
-        <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
-          <p className="text-sm text-yellow-800">
-            <strong>Backend API:</strong> {apiError}
-          </p>
+        <div className="px-6 py-3 bg-yellow-50 border-b border-yellow-200 text-sm text-yellow-800">
+          {apiError}
         </div>
       )}
 
       {!productId && (
-        <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
-          <p className="text-sm text-yellow-800">
-            <strong>Product not saved:</strong> Please save the product first before you can add sizes.
-          </p>
+        <div className="px-6 py-3 bg-yellow-50 border-b border-yellow-200 text-sm text-yellow-800">
+          Save the product first before adding size options.
         </div>
       )}
 
-      {showAddForm && (
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-gray-900">Add size option</h4>
-              <button type="button" onClick={resetForm} className="text-gray-400 hover:text-gray-600">
-                <FiX className="w-5 h-5" />
-              </button>
-            </div>
+      <div className="px-6 py-5 space-y-6">
+        {DIMENSIONS.map((dim) => {
+          const items = byDimension[dim.key] || [];
+          const draft = drafts[dim.key] || emptyDraft();
+          return (
+            <div key={dim.key} className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-900">{dim.title}</h4>
+                <p className="text-xs text-gray-500 mt-0.5">{dim.hint}</p>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Calibro / Lens width (mm) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.lens_width || formData.mm}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lens_width: e.target.value,
-                      mm: e.target.value,
-                    }))
-                  }
-                  placeholder="e.g. 52"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ponte / Bridge (mm)</label>
-                <input
-                  type="text"
-                  value={formData.bridge_width}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, bridge_width: e.target.value }))}
-                  placeholder="e.g. 18"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Asta / Temple (mm)</label>
-                <input
-                  type="text"
-                  value={formData.temple_length}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, temple_length: e.target.value }))}
-                  placeholder="e.g. 140"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Frame width (mm)</label>
-                <input
-                  type="text"
-                  value={formData.frame_width}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, frame_width: e.target.value }))}
-                  placeholder="e.g. 135"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price adjustment (optional)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.price}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Stock qty (optional)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.stock_quantity}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, stock_quantity: e.target.value }))}
-                  placeholder="e.g. 10"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleSubmit(e);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                <FiSave className="w-4 h-4" />
-                Save size
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="px-6 py-4">
-        {loading && calibers.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-            <p className="text-gray-500 mt-2">Loading sizes...</p>
-          </div>
-        ) : calibers.length === 0 ? (
-          <div className="text-center py-8">
-            <FiMaximize2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No size options yet</p>
-            <p className="text-sm text-gray-400 mt-1">
-              {productId
-                ? 'Add Calibro / Ponte / Asta rows for customers to choose from'
-                : 'Save the product first to add sizes'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-200">
-                  <th className="py-2 pr-3">Calibro</th>
-                  <th className="py-2 pr-3">Ponte</th>
-                  <th className="py-2 pr-3">Asta</th>
-                  <th className="py-2 pr-3">Frame width</th>
-                  <th className="py-2 pr-3">Price</th>
-                  <th className="py-2 pr-3">Stock</th>
-                  <th className="py-2 w-10" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {calibers.map((caliber, idx) => (
-                  <tr key={caliber.id || `${caliber.mm}-${idx}`} className="hover:bg-gray-50">
-                    <td className="py-2.5 pr-3 font-medium text-gray-900">
-                      {caliber.lens_width || caliber.mm || '—'} mm
-                    </td>
-                    <td className="py-2.5 pr-3 text-gray-700">
-                      {caliber.bridge_width != null && caliber.bridge_width !== ''
-                        ? `${caliber.bridge_width} mm`
-                        : '—'}
-                    </td>
-                    <td className="py-2.5 pr-3 text-gray-700">
-                      {caliber.temple_length != null && caliber.temple_length !== ''
-                        ? `${caliber.temple_length} mm`
-                        : '—'}
-                    </td>
-                    <td className="py-2.5 pr-3 text-gray-700">
-                      {caliber.frame_width != null && caliber.frame_width !== ''
-                        ? `${caliber.frame_width} mm`
-                        : '—'}
-                    </td>
-                    <td className="py-2.5 pr-3 text-gray-700">
-                      {caliber.price != null && caliber.price !== '' ? `€${Number(caliber.price).toFixed(2)}` : '—'}
-                    </td>
-                    <td className="py-2.5 pr-3 text-gray-700">
-                      {caliber.stock_quantity != null && caliber.stock_quantity !== ''
-                        ? caliber.stock_quantity
-                        : '—'}
-                    </td>
-                    <td className="py-2.5">
-                      <button
-                        type="button"
-                        onClick={(e) => {
+              <div className="p-4 space-y-3">
+                <div className={`grid gap-2 ${dim.allowPriceStock ? 'grid-cols-1 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
+                  <div className={dim.allowPriceStock ? 'sm:col-span-2' : 'sm:col-span-2'}>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Value (mm)</label>
+                    <input
+                      type="text"
+                      value={draft.value}
+                      onChange={(e) => setDraftField(dim.key, 'value', e.target.value)}
+                      placeholder={dim.placeholder}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
                           e.preventDefault();
-                          e.stopPropagation();
-                          handleDelete(caliber);
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
-                        title="Delete"
+                          handleAdd(dim.key);
+                        }
+                      }}
+                    />
+                  </div>
+                  {dim.allowPriceStock && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Price ±</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={draft.price}
+                          onChange={(e) => setDraftField(dim.key, 'price', e.target.value)}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Stock</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={draft.stock_quantity}
+                          onChange={(e) => setDraftField(dim.key, 'stock_quantity', e.target.value)}
+                          placeholder="—"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={loading || !productId}
+                    onClick={() => handleAdd(dim.key)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    <FiPlus className="w-4 h-4" />
+                    Add {dim.key === 'frame_width' ? 'frame width' : dim.key}
+                  </button>
+                </div>
+
+                {items.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-3 border border-dashed border-gray-200 rounded-lg">
+                    No {dim.key === 'frame_width' ? 'frame width' : dim.key} values yet
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {items.map((item) => (
+                      <div
+                        key={item.id || `${dim.key}-${item.mm}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white pl-3 pr-1.5 py-1 text-sm"
                       >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                        <span className="font-medium text-gray-900">{item.mm} mm</span>
+                        {dim.allowPriceStock && item.price != null && item.price !== '' && (
+                          <span className="text-xs text-gray-500">€{Number(item.price).toFixed(2)}</span>
+                        )}
+                        {dim.allowPriceStock && item.stock_quantity != null && item.stock_quantity !== '' && (
+                          <span className="text-xs text-gray-500">qty {item.stock_quantity}</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item)}
+                          className="p-1 text-gray-400 hover:text-red-600 rounded-full"
+                          title="Delete"
+                        >
+                          <FiTrash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

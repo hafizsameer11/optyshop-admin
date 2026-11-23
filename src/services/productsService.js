@@ -10,10 +10,17 @@ export const ProductTypes = {
   ACCESSORY: 'accessory',
 };
 
-// MM Caliber Interface
+// MM Caliber Interface — one row = one size option (can be many per product)
 export const MMCaliber = {
-  mm: '',           // string - Caliber size (e.g., "58", "62")
-  image_url: ''     // string - URL to the image for this caliber
+  id: '',
+  mm: '',              // Calibro / lens width (primary)
+  lens_width: '',      // alias of mm
+  bridge_width: '',    // Ponte
+  temple_length: '',   // Asta
+  frame_width: '',
+  price: null,
+  stock_quantity: null,
+  image_url: ''
 };
 
 // Size/Volume Variant Interface
@@ -393,10 +400,20 @@ export const supportsSizeVolumeVariants = (productType) => {
 };
 
 /**
- * Format caliber display text
+ * Format caliber display text (supports object row or plain mm)
  */
-export const formatCaliberDisplay = (mm) => {
-  return `${mm}mm`;
+export const formatCaliberDisplay = (mmOrRow) => {
+  if (mmOrRow && typeof mmOrRow === 'object') {
+    const c = mmOrRow.lens_width || mmOrRow.mm || '';
+    const p = mmOrRow.bridge_width || '';
+    const a = mmOrRow.temple_length || '';
+    const parts = [];
+    if (c !== '' && c != null) parts.push(`${c}`);
+    if (p !== '' && p != null) parts.push(`${p}`);
+    if (a !== '' && a != null) parts.push(`${a}`);
+    return parts.length ? `${parts.join(' / ')} mm` : '—';
+  }
+  return `${mmOrRow}mm`;
 };
 
 /**
@@ -404,11 +421,24 @@ export const formatCaliberDisplay = (mm) => {
  */
 export const validateCaliberData = (caliberData) => {
   const errors = [];
-  
-  if (!caliberData.mm || isNaN(caliberData.mm)) {
-    errors.push('Caliber size (mm) is required and must be a number');
+
+  const lens = caliberData.lens_width || caliberData.mm;
+  if (!lens || isNaN(Number(lens))) {
+    errors.push('Calibro / lens width (mm) is required and must be a number');
   }
-  
+
+  const optionalNums = [
+    ['bridge_width', 'Ponte / bridge'],
+    ['temple_length', 'Asta / temple'],
+    ['frame_width', 'Frame width'],
+  ];
+  optionalNums.forEach(([key, label]) => {
+    const v = caliberData[key];
+    if (v != null && v !== '' && isNaN(Number(v))) {
+      errors.push(`${label} must be a number`);
+    }
+  });
+
   const imageUrl = typeof caliberData.image_url === 'string' ? caliberData.image_url.trim() : '';
   if (imageUrl) {
     const isRelativeOrData =
@@ -421,7 +451,7 @@ export const validateCaliberData = (caliberData) => {
       }
     }
   }
-  
+
   return errors;
 };
 

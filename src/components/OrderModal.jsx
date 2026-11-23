@@ -1153,14 +1153,25 @@ const OrderModal = ({ order, onClose }) => {
                                 if (typeof custom === 'string') {
                                   try { custom = JSON.parse(custom); } catch { custom = null; }
                                 }
-                                if (!custom || typeof custom !== 'object') return null;
+                                if (!custom || typeof custom !== 'object') custom = {};
                                 const colorLabel = custom.color_display_name || custom.color_name || custom.selected_color || custom.hex_code;
-                                const modelCode = custom.model_code || custom.model_name;
+                                const modelCode =
+                                  custom.model_code ||
+                                  custom.model_name ||
+                                  item.product?.model_code ||
+                                  item.product?.model_name ||
+                                  null;
+                                const calibro = custom.calibro || custom.lens_width || custom.selected_mm_caliber || null;
+                                const ponte = custom.ponte || custom.bridge_width || null;
+                                const asta = custom.asta || custom.temple_length || null;
                                 const barcode = custom.barcode || custom.bar_code;
                                 const purchaseCode = custom.purchase_code || custom.purchaseCode;
-                                if (!colorLabel && !modelCode && !barcode && !purchaseCode) return null;
+                                if (!colorLabel && !modelCode && !calibro && !ponte && !asta && !barcode && !purchaseCode) return null;
                                 return (
                                   <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                                    {modelCode && (
+                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Model:</span> <span className="font-mono">{modelCode}</span></div>
+                                    )}
                                     {colorLabel && (
                                       <div className="flex items-center gap-1.5">
                                         {custom.hex_code || custom.selected_color?.startsWith?.('#') ? (
@@ -1172,8 +1183,14 @@ const OrderModal = ({ order, onClose }) => {
                                         <span className="text-gray-600"><span className="font-semibold text-gray-800">Color:</span> {colorLabel}</span>
                                       </div>
                                     )}
-                                    {modelCode && (
-                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Model:</span> <span className="font-mono">{modelCode}</span></div>
+                                    {calibro && (
+                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Calibro:</span> {calibro} mm</div>
+                                    )}
+                                    {ponte && (
+                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Bridge (Ponte):</span> {ponte} mm</div>
+                                    )}
+                                    {asta && (
+                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Temple (Asta):</span> {asta} mm</div>
                                     )}
                                     {barcode && (
                                       <div className="text-gray-600"><span className="font-semibold text-gray-800">Barcode:</span> <span className="font-mono">{barcode}</span></div>

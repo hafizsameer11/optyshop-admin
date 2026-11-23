@@ -459,7 +459,7 @@ const OrderModal = ({ order, onClose }) => {
 
   const modalContent = (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
           <div>
             <h2 className="text-2xl font-extrabold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
@@ -1192,9 +1192,11 @@ const OrderModal = ({ order, onClose }) => {
                     {orderData?.items && orderData.items.length > 0 ? (
                       orderData.items.map((item, index) => (
                         <tr key={item.id || index} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 text-sm">
-                            <div className="space-y-2">
-                              <div className="font-semibold text-gray-900">{item.product_name || item.product?.name || 'Product'}</div>
+                          <td className="px-6 py-4 text-sm align-top min-w-[280px]">
+                            <div className="space-y-2.5">
+                              <div className="font-semibold text-gray-900 text-[15px] leading-snug">
+                                {item.product_name || item.product?.name || 'Product'}
+                              </div>
                               {(() => {
                                 let custom = item.customization;
                                 if (typeof custom === 'string') {
@@ -1202,6 +1204,11 @@ const OrderModal = ({ order, onClose }) => {
                                 }
                                 if (!custom || typeof custom !== 'object') custom = {};
                                 const colorLabel = custom.color_display_name || custom.color_name || custom.selected_color || custom.hex_code;
+                                const colorHex =
+                                  custom.hex_code ||
+                                  (typeof custom.selected_color === 'string' && custom.selected_color.startsWith('#')
+                                    ? custom.selected_color
+                                    : null);
                                 const modelCode =
                                   custom.model_code ||
                                   custom.model_name ||
@@ -1214,36 +1221,97 @@ const OrderModal = ({ order, onClose }) => {
                                 const barcode = custom.barcode || custom.bar_code;
                                 const purchaseCode = custom.purchase_code || custom.purchaseCode;
                                 if (!colorLabel && !modelCode && !calibro && !ponte && !asta && !barcode && !purchaseCode) return null;
+
+                                const specRow = (label, valueNode) => (
+                                  <div key={label} className="grid grid-cols-[100px_1fr] gap-x-3 items-center py-1.5 border-b border-slate-100 last:border-0">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                      {label}
+                                    </span>
+                                    <span className="text-[13px] text-slate-800 font-medium break-all">{valueNode}</span>
+                                  </div>
+                                );
+
                                 return (
-                                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
-                                    {modelCode && (
-                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Model:</span> <span className="font-mono">{modelCode}</span></div>
-                                    )}
-                                    {colorLabel && (
-                                      <div className="flex items-center gap-1.5">
-                                        {custom.hex_code || custom.selected_color?.startsWith?.('#') ? (
-                                          <span
-                                            className="inline-block w-3.5 h-3.5 rounded border border-gray-300 shrink-0"
-                                            style={{ backgroundColor: custom.hex_code || custom.selected_color }}
-                                          />
-                                        ) : null}
-                                        <span className="text-gray-600"><span className="font-semibold text-gray-800">Color:</span> {colorLabel}</span>
+                                  <div className="mt-1 rounded-xl border border-slate-200 bg-slate-50/80 overflow-hidden shadow-sm">
+                                    {(modelCode || colorLabel) && (
+                                      <div className="px-3.5 pt-3 pb-1.5">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                                          Product
+                                        </p>
+                                        {modelCode &&
+                                          specRow(
+                                            'Model',
+                                            <span className="font-mono text-[12px]">{modelCode}</span>
+                                          )}
+                                        {colorLabel &&
+                                          specRow(
+                                            'Color',
+                                            <span className="inline-flex items-center gap-2">
+                                              {colorHex ? (
+                                                <span
+                                                  className="inline-block w-4 h-4 rounded-md border border-slate-300 shadow-sm shrink-0"
+                                                  style={{ backgroundColor: colorHex }}
+                                                  title={colorHex}
+                                                />
+                                              ) : null}
+                                              <span className="capitalize">{colorLabel}</span>
+                                            </span>
+                                          )}
                                       </div>
                                     )}
-                                    {calibro && (
-                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Calibro:</span> {calibro} mm</div>
+
+                                    {(calibro || ponte || asta) && (
+                                      <div className="px-3.5 py-2.5 border-t border-slate-200 bg-white/70">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                          Frame size
+                                        </p>
+                                        <div className="grid grid-cols-3 gap-2">
+                                          {[
+                                            ['Calibro', calibro],
+                                            ['Bridge', ponte],
+                                            ['Temple', asta],
+                                          ].map(([lab, val]) =>
+                                            val ? (
+                                              <div
+                                                key={lab}
+                                                className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-center shadow-sm"
+                                              >
+                                                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                                                  {lab}
+                                                </div>
+                                                <div className="mt-0.5 text-sm font-bold text-slate-900 tabular-nums">
+                                                  {val}
+                                                  <span className="text-[10px] font-medium text-slate-500 ml-0.5">mm</span>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div key={lab} className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50" />
+                                            )
+                                          )}
+                                        </div>
+                                      </div>
                                     )}
-                                    {ponte && (
-                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Bridge (Ponte):</span> {ponte} mm</div>
-                                    )}
-                                    {asta && (
-                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Temple (Asta):</span> {asta} mm</div>
-                                    )}
-                                    {barcode && (
-                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Barcode:</span> <span className="font-mono">{barcode}</span></div>
-                                    )}
-                                    {purchaseCode && (
-                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Purchase code:</span> <span className="font-mono">{purchaseCode}</span></div>
+
+                                    {(barcode || purchaseCode) && (
+                                      <div className="px-3.5 pt-2.5 pb-3 border-t border-slate-200">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                                          Codes
+                                        </p>
+                                        {barcode &&
+                                          specRow(
+                                            'Barcode',
+                                            <span className="inline-block font-mono text-[12px] tracking-wide bg-white border border-slate-200 rounded-md px-2 py-0.5">
+                                              {barcode}
+                                            </span>
+                                          )}
+                                        {purchaseCode &&
+                                          specRow(
+                                            'Purchase',
+                                            <span className="inline-block font-mono text-[12px] tracking-wide bg-white border border-slate-200 rounded-md px-2 py-0.5">
+                                              {purchaseCode}
+                                            </span>
+                                          )}
+                                      </div>
                                     )}
                                   </div>
                                 );

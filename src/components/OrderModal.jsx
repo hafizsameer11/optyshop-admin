@@ -16,6 +16,34 @@ import {
 import AdminOrderTransactionsList from './admin/OrderTransactionsList';
 import { formatOrderAddressLines, normalizeOrderAddress } from '../utils/orderAddress';
 
+/** Resolve money fields from order payload (Prisma Decimal / alternate keys). */
+const money = (v) => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const getOrderPricing = (od) => {
+  if (!od) return { subtotal: 0, shipping: 0, discount: 0, tax: 0, total: 0 };
+  const itemsSum = Array.isArray(od.items)
+    ? od.items.reduce((s, it) => s + money(it.total_price ?? (money(it.unit_price) * money(it.quantity))), 0)
+    : 0;
+  const subtotal = money(od.subtotal) || itemsSum;
+  let shipping = money(
+    od.shipping ?? od.shipping_cost ?? od.shipping_amount ?? od.shipping_fee ?? od.shipping_price
+  );
+  const discount = money(od.discount ?? od.discount_amount);
+  const tax = money(od.tax ?? od.tax_amount);
+  let total = money(od.total ?? od.total_amount);
+  // If shipping missing but grand total > subtotal, infer shipping
+  if (shipping <= 0 && total > 0 && subtotal > 0 && total > subtotal + tax - discount + 0.001) {
+    shipping = Math.max(0, total - subtotal - tax + discount);
+  }
+  if (total <= 0) {
+    total = Math.max(0, subtotal + shipping + tax - discount);
+  }
+  return { subtotal, shipping, discount, tax, total };
+};
+
 const OrderModal = ({ order, onClose }) => {
   const { t } = useI18n();
   const isCreateMode = !order;
@@ -439,6 +467,14 @@ const OrderModal = ({ order, onClose }) => {
             </h2>
             {!isCreateMode && orderData?.order_number && (
               <p className="text-sm text-gray-500 mt-1">{t('orderNumber')}: {orderData.order_number}</p>
+            )}
+            {!isCreateMode && orderData && (
+              <p className="text-sm font-semibold text-indigo-700 mt-1">
+                {t('total') || 'Total'}: €{getOrderPricing(orderData).total.toFixed(2)}
+                <span className="ml-2 font-normal text-gray-500">
+                  ({t('shipping') || 'Shipping'} €{getOrderPricing(orderData).shipping.toFixed(2)})
+                </span>
+              </p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -944,33 +980,44 @@ const OrderModal = ({ order, onClose }) => {
               </div>
             </div>
 
-            {/* Pricing Breakdown */}
+            {/* Pricing Breakdown — includes shipping in grand total */}
+            {(() => {
+              const p = getOrderPricing(orderData);
+              return (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                 <FaEuroSign className="mr-2" />
-                {t('pricingBreakdown')}
+                {t('pricingBreakdown') || 'Pricing Breakdown'}
               </h3>
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-lg border border-blue-200 shadow-sm space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="font-medium text-gray-700">{t('subtotal')}:</span>
-                  <span className="font-semibold text-gray-900">€{parseFloat(orderData?.subtotal || 0).toFixed(2)}</span>
+                  <span className="font-medium text-gray-700">{t('subtotal') || 'Subtotal'}:</span>
+                  <span className="font-semibold text-gray-900">€{p.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="font-medium text-gray-700">{t('shipping')}:</span>
-                  <span className="font-semibold text-gray-900">€{parseFloat(orderData?.shipping || 0).toFixed(2)}</span>
+                  <span className="font-medium text-gray-700">{t('shipping') || 'Shipping'}:</span>
+                  <span className="font-semibold text-gray-900">€{p.shipping.toFixed(2)}</span>
                 </div>
-                {orderData?.discount && parseFloat(orderData.discount) > 0 && (
+                {p.discount > 0 && (
                   <div className="flex justify-between items-center text-sm text-red-600">
-                    <span className="font-medium">{t('discount')}:</span>
-                    <span className="font-bold">-€{parseFloat(orderData.discount).toFixed(2)}</span>
+                    <span className="font-medium">{t('discount') || 'Discount'}:</span>
+                    <span className="font-bold">-€{p.discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {p.tax > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-medium text-gray-700">{t('tax') || 'Tax'}:</span>
+                    <span className="font-semibold text-gray-900">€{p.tax.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center text-base font-bold border-t-2 border-blue-300 pt-3 mt-2">
-                  <span className="text-gray-900">{t('total')}:</span>
-                  <span className="text-indigo-700 text-lg">€{parseFloat(orderData?.total || orderData?.total_amount || 0).toFixed(2)}</span>
+                  <span className="text-gray-900">{t('total') || 'Total'} (incl. shipping):</span>
+                  <span className="text-indigo-700 text-lg">€{p.total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
+              );
+            })()}
 
             {/* Payment Flow Status */}
             {orderData?.id && (
@@ -1444,6 +1491,36 @@ const OrderModal = ({ order, onClose }) => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Totals under items — subtotal + shipping + grand total */}
+              {(() => {
+                const p = getOrderPricing(orderData);
+                return (
+                  <div className="mt-4 ml-auto w-full max-w-sm rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-4 shadow-sm">
+                    <div className="flex justify-between text-sm text-gray-700 mb-2">
+                      <span>{t('subtotal') || 'Subtotal'}</span>
+                      <span className="font-semibold tabular-nums">€{p.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-700 mb-2">
+                      <span>{t('shipping') || 'Shipping'}</span>
+                      <span className="font-semibold tabular-nums">€{p.shipping.toFixed(2)}</span>
+                    </div>
+                    {p.discount > 0 && (
+                      <div className="flex justify-between text-sm text-red-600 mb-2">
+                        <span>{t('discount') || 'Discount'}</span>
+                        <span className="font-semibold tabular-nums">-€{p.discount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center border-t border-indigo-200 pt-3 mt-1">
+                      <span className="font-bold text-gray-900">{t('total') || 'Total'}</span>
+                      <span className="text-xl font-bold text-indigo-700 tabular-nums">€{p.total.toFixed(2)}</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-gray-500 text-right">
+                      Subtotal €{p.subtotal.toFixed(2)} + Shipping €{p.shipping.toFixed(2)}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Prescription Details */}

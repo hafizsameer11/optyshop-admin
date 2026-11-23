@@ -1236,21 +1236,19 @@ const ProductModal = ({ product, onClose }) => {
       if (!imageToRemove) return prev;
       setColorImagesDirty(true);
       if (imageToRemove.isExisting && imageToRemove.hexCode) {
+        // Keep the color row even if photos are empty so barcode / purchase / stock survive
         setExistingColorImages((prevColors) =>
-          prevColors
-            .map((colorImg) => {
-              if (colorImg.hexCode?.toUpperCase() !== imageToRemove.hexCode?.toUpperCase()) {
-                return colorImg;
-              }
-              const updatedImages = (colorImg.images || []).filter(
-                (imgUrl) => imgUrl !== imageToRemove.preview
-              );
-              if (updatedImages.length === 0) return null;
-              return { ...colorImg, images: updatedImages };
-            })
-            .filter(Boolean)
-        );
+          prevColors.map((colorImg) => {
+            if (colorImg.hexCode?.toUpperCase() !== imageToRemove.hexCode?.toUpperCase()) {
+              return colorImg;
             }
+            return {
+              ...colorImg,
+              images: (colorImg.images || []).filter((imgUrl) => imgUrl !== imageToRemove.preview),
+            };
+          })
+        );
+      }
       if (!silent) toast.success('Image removed');
       return prev.filter((img) => img.id !== id);
         });

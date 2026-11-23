@@ -3203,69 +3203,23 @@ const ProductModal = ({ product, onClose }) => {
                   </div>
                 </div>
 
-                {/* SKU Generation Fields - Dynamic based on product type */}
-                {(formData.product_type === 'prescription_glasses' || formData.product_type === 'eyeglasses' || formData.product_type === 'sunglasses' || formData.product_type === 'frame') ? (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Lens Width (Caliber) <span className="text-xs text-gray-500">(for SKU)</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="lens_width"
-                          value={formData.lens_width}
-                          onChange={handleChange}
-                          className="input-modern"
-                          placeholder="e.g., 54"
-                        />
-                      </div>
-
-                      {(formData.product_type === 'prescription_glasses' || formData.product_type === 'eyeglasses') ? (
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Bridge Width <span className="text-xs text-gray-500">(for SKU)</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="bridge_width"
-                            value={formData.bridge_width}
-                            onChange={handleChange}
-                            className="input-modern"
-                            placeholder="e.g., 17"
-                          />
-                        </div>
-                      ) : formData.product_type === 'sunglasses' ? (
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Lens Material <span className="text-xs text-gray-500">(for SKU)</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="lens_material"
-                            value={formData.lens_material}
-                            onChange={handleChange}
-                            className="input-modern"
-                            placeholder="e.g., POLARIZED"
-                          />
-                        </div>
-                      ) : (
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Bridge Width <span className="text-xs text-gray-500">(optional)</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="bridge_width"
-                            value={formData.bridge_width}
-                            onChange={handleChange}
-                            className="input-modern"
-                            placeholder="e.g., 17"
-                          />
-                        </div>
-                      )}
+                {/* SKU helper fields — lens/bridge width live under MM Calibers / Ponte tabs */}
+                {formData.product_type === 'sunglasses' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Lens Material <span className="text-xs text-gray-500">(for SKU)</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="lens_material"
+                        value={formData.lens_material}
+                        onChange={handleChange}
+                        className="input-modern"
+                        placeholder="e.g., POLARIZED"
+                      />
                     </div>
-                  </>
+                  </div>
                 ) : formData.product_type === 'contact_lenses' || formData.product_type === 'contact_lens' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -3373,36 +3327,7 @@ const ProductModal = ({ product, onClose }) => {
                     </div>
                     <div></div> {/* Empty div for grid alignment */}
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Lens Width (Caliber) <span className="text-xs text-gray-500">(for SKU)</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="lens_width"
-                        value={formData.lens_width}
-                        onChange={handleChange}
-                        className="input-modern"
-                        placeholder="e.g., 54"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Bridge Width <span className="text-xs text-gray-500">(optional)</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="bridge_width"
-                        value={formData.bridge_width}
-                        onChange={handleChange}
-                        className="input-modern"
-                        placeholder="e.g., 17"
-                      />
-                    </div>
-                  </div>
-                )}
+                ) : null}
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">

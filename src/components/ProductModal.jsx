@@ -2238,6 +2238,9 @@ const ProductModal = ({ product, onClose }) => {
     { id: 'general', label: 'General' }, // Always shown - contains all basic product fields
     ...(isFrameOrSunglasses ? [
       { id: 'mm-calibers', label: 'MM Calibers' },
+      { id: 'ponte', label: 'Ponte' },
+      { id: 'asta', label: 'Asta' },
+      { id: 'frame-width', label: 'Frame Width' },
       { id: 'lens-management', label: 'Lens Management' },
     ] : []),
     ...(isContactLens ? [
@@ -3831,15 +3834,42 @@ const ProductModal = ({ product, onClose }) => {
               </>
             )}
 
-            {/* MM Calibers Tab */}
+            {/* MM Calibers Tab — size (Calibro) only */}
             {activeTab === 'mm-calibers' && (
               <MMCaliberManager
                 productId={getValidProductId()}
                 productType={formData.product_type}
+                dimension="calibro"
                 onCalibersUpdate={(calibers) => {
-                  // Update form data with calibers if needed
                   console.log('Calibers updated:', calibers);
                 }}
+              />
+            )}
+
+            {/* Ponte Tab */}
+            {activeTab === 'ponte' && (
+              <MMCaliberManager
+                productId={getValidProductId()}
+                productType={formData.product_type}
+                dimension="ponte"
+              />
+            )}
+
+            {/* Asta Tab */}
+            {activeTab === 'asta' && (
+              <MMCaliberManager
+                productId={getValidProductId()}
+                productType={formData.product_type}
+                dimension="asta"
+              />
+            )}
+
+            {/* Frame Width Tab */}
+            {activeTab === 'frame-width' && (
+              <MMCaliberManager
+                productId={getValidProductId()}
+                productType={formData.product_type}
+                dimension="frame_width"
               />
             )}
 

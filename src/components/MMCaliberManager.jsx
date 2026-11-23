@@ -4,36 +4,44 @@ import toast from 'react-hot-toast';
 import { mmCalibersApi } from '../api/mmCalibers';
 import { supportsMMCalibers } from '../services/productsService';
 
-const DIMENSIONS = [
-  {
+const DIMENSION_META = {
+  calibro: {
     key: 'calibro',
-    title: 'Calibro (lens width)',
-    hint: 'Independent lens-width options for the PDP Calibro dropdown',
+    title: 'MM Caliber (size)',
+    hint: 'Lens width / size options for the PDP Calibro dropdown',
     placeholder: 'e.g. 52',
     allowPriceStock: true,
+    addLabel: 'Add size',
+    emptyLabel: 'No size values yet',
   },
-  {
+  ponte: {
     key: 'ponte',
     title: 'Ponte (bridge)',
-    hint: 'Independent bridge options — not tied to a specific calibro',
+    hint: 'Bridge options for the PDP Ponte dropdown — independent from size',
     placeholder: 'e.g. 18',
     allowPriceStock: false,
+    addLabel: 'Add ponte',
+    emptyLabel: 'No ponte values yet',
   },
-  {
+  asta: {
     key: 'asta',
     title: 'Asta (temple)',
-    hint: 'Independent temple options — not tied to calibro or ponte',
+    hint: 'Temple options for the PDP Asta dropdown — independent from size',
     placeholder: 'e.g. 140',
     allowPriceStock: false,
+    addLabel: 'Add asta',
+    emptyLabel: 'No asta values yet',
   },
-  {
+  frame_width: {
     key: 'frame_width',
     title: 'Frame width',
-    hint: 'Independent frame-width options',
+    hint: 'Frame-width options for the PDP — independent from size',
     placeholder: 'e.g. 135',
     allowPriceStock: false,
+    addLabel: 'Add frame width',
+    emptyLabel: 'No frame width values yet',
   },
-];
+};
 
 const emptyDraft = () => ({
   value: '',
@@ -41,41 +49,22 @@ const emptyDraft = () => ({
   stock_quantity: '',
 });
 
-const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
+/**
+ * Single-dimension manager used by separate ProductModal tabs.
+ * @param {'calibro'|'ponte'|'asta'|'frame_width'} dimension
+ */
+const MMCaliberManager = ({
+  productId,
+  productType,
+  dimension = 'calibro',
+  onCalibersUpdate,
+}) => {
+  const meta = DIMENSION_META[dimension] || DIMENSION_META.calibro;
+  const supported = supportsMMCalibers(productType);
   const [calibers, setCalibers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
-  const [drafts, setDrafts] = useState({
-    calibro: emptyDraft(),
-    ponte: emptyDraft(),
-    asta: emptyDraft(),
-    frame_width: emptyDraft(),
-  });
-
-  if (!supportsMMCalibers(productType)) {
-    return (
-      <div className="bg-gray-50 rounded-lg p-6 text-center">
-        <p className="text-gray-500">MM Calibers are only available for sunglasses and eyeglasses products.</p>
-      </div>
-    );
-  }
-
-  useEffect(() => {
-    if (productId) loadCalibers();
-  }, [productId]);
-
-  const byDimension = useMemo(() => {
-    const groups = { calibro: [], ponte: [], asta: [], frame_width: [] };
-    (calibers || []).forEach((c) => {
-      const dim = String(c.dimension || 'calibro').toLowerCase();
-      if (groups[dim]) groups[dim].push(c);
-      else groups.calibro.push(c);
-    });
-    Object.keys(groups).forEach((k) => {
-      groups[k].sort((a, b) => Number(a.mm) - Number(b.mm));
-    });
-    return groups;
-  }, [calibers]);
+  const [draft, setDraft] = useState(emptyDraft());
 
   const loadCalibers = async () => {
     try {
@@ -94,26 +83,43 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
         setApiError('Product not found');
         toast.error('Product not found');
       } else {
-        toast.error('Failed to load size options');
+        toast.error('Failed to load options');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const setDraftField = (dimension, field, value) => {
-    setDrafts((prev) => ({
-      ...prev,
-      [dimension]: { ...prev[dimension], [field]: value },
-    }));
+  useEffect(() => {
+    if (supported && productId) loadCalibers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, dimension, supported]);
+
+  const items = useMemo(() => {
+    const list = (calibers || []).filter((c) => {
+      const dim = String(c.dimension || 'calibro').toLowerCase();
+      return dim === meta.key;
+    });
+    return list.slice().sort((a, b) => Number(a.mm) - Number(b.mm));
+  }, [calibers, meta.key]);
+
+  if (!supported) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-6 text-center">
+        <p className="text-gray-500">These options are only available for sunglasses and eyeglasses products.</p>
+      </div>
+    );
+  }
+
+  const setDraftField = (field, value) => {
+    setDraft((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAdd = async (dimension) => {
+  const handleAdd = async () => {
     if (!productId) {
       toast.error('Please save the product first before adding options');
       return;
     }
-    const draft = drafts[dimension] || emptyDraft();
     const value = String(draft.value || '').trim();
     if (!value || Number.isNaN(Number(value))) {
       toast.error('Enter a valid mm value');
@@ -123,17 +129,17 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
     try {
       setLoading(true);
       const payload = {
-        dimension,
+        dimension: meta.key,
         mm: value,
         value,
       };
-      if (dimension === 'calibro') {
+      if (meta.allowPriceStock) {
         if (draft.price !== '') payload.price = draft.price;
         if (draft.stock_quantity !== '') payload.stock_quantity = draft.stock_quantity;
       }
       await mmCalibersApi.addCaliberToProduct(productId, payload);
       toast.success('Option added');
-      setDrafts((prev) => ({ ...prev, [dimension]: emptyDraft() }));
+      setDraft(emptyDraft());
       await loadCalibers();
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Failed to add option';
@@ -144,7 +150,7 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   };
 
   const handleDelete = async (item) => {
-    const dim = item.dimension || 'calibro';
+    const dim = item.dimension || meta.key;
     if (!window.confirm(`Delete ${dim} ${item.mm} mm?`)) return;
     try {
       setLoading(true);
@@ -163,11 +169,8 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">MM Calibers / Frame sizes</h3>
-        <p className="text-sm text-gray-500 mt-1">
-          Calibro, Ponte, Asta and Frame width are <strong>separate</strong> lists — not linked to each other.
-          Customers pick each independently on the product page.
-        </p>
+        <h3 className="text-lg font-semibold text-gray-900">{meta.title}</h3>
+        <p className="text-sm text-gray-500 mt-1">{meta.hint}</p>
       </div>
 
       {apiError && (
@@ -178,114 +181,103 @@ const MMCaliberManager = ({ productId, productType, onCalibersUpdate }) => {
 
       {!productId && (
         <div className="px-6 py-3 bg-yellow-50 border-b border-yellow-200 text-sm text-yellow-800">
-          Save the product first before adding size options.
+          Save the product first before adding options.
         </div>
       )}
 
-      <div className="px-6 py-5 space-y-6">
-        {DIMENSIONS.map((dim) => {
-          const items = byDimension[dim.key] || [];
-          const draft = drafts[dim.key] || emptyDraft();
-          return (
-            <div key={dim.key} className="rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-900">{dim.title}</h4>
-                <p className="text-xs text-gray-500 mt-0.5">{dim.hint}</p>
+      <div className="px-6 py-5 space-y-3">
+        <div
+          className={`grid gap-2 ${
+            meta.allowPriceStock ? 'grid-cols-1 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'
+          }`}
+        >
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Value (mm)</label>
+            <input
+              type="text"
+              value={draft.value}
+              onChange={(e) => setDraftField('value', e.target.value)}
+              placeholder={meta.placeholder}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAdd();
+                }
+              }}
+            />
+          </div>
+          {meta.allowPriceStock && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Price ±</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={draft.price}
+                  onChange={(e) => setDraftField('price', e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Stock</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={draft.stock_quantity}
+                  onChange={(e) => setDraftField('stock_quantity', e.target.value)}
+                  placeholder="—"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </>
+          )}
+        </div>
 
-              <div className="p-4 space-y-3">
-                <div className={`grid gap-2 ${dim.allowPriceStock ? 'grid-cols-1 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
-                  <div className={dim.allowPriceStock ? 'sm:col-span-2' : 'sm:col-span-2'}>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Value (mm)</label>
-                    <input
-                      type="text"
-                      value={draft.value}
-                      onChange={(e) => setDraftField(dim.key, 'value', e.target.value)}
-                      placeholder={dim.placeholder}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAdd(dim.key);
-                        }
-                      }}
-                    />
-                  </div>
-                  {dim.allowPriceStock && (
-                    <>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Price ±</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={draft.price}
-                          onChange={(e) => setDraftField(dim.key, 'price', e.target.value)}
-                          placeholder="0.00"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Stock</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={draft.stock_quantity}
-                          onChange={(e) => setDraftField(dim.key, 'stock_quantity', e.target.value)}
-                          placeholder="—"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            disabled={loading || !productId}
+            onClick={handleAdd}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            <FiPlus className="w-4 h-4" />
+            {meta.addLabel}
+          </button>
+        </div>
 
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    disabled={loading || !productId}
-                    onClick={() => handleAdd(dim.key)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    <FiPlus className="w-4 h-4" />
-                    Add {dim.key === 'frame_width' ? 'frame width' : dim.key}
-                  </button>
-                </div>
-
-                {items.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-3 border border-dashed border-gray-200 rounded-lg">
-                    No {dim.key === 'frame_width' ? 'frame width' : dim.key} values yet
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {items.map((item) => (
-                      <div
-                        key={item.id || `${dim.key}-${item.mm}`}
-                        className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white pl-3 pr-1.5 py-1 text-sm"
-                      >
-                        <span className="font-medium text-gray-900">{item.mm} mm</span>
-                        {dim.allowPriceStock && item.price != null && item.price !== '' && (
-                          <span className="text-xs text-gray-500">€{Number(item.price).toFixed(2)}</span>
-                        )}
-                        {dim.allowPriceStock && item.stock_quantity != null && item.stock_quantity !== '' && (
-                          <span className="text-xs text-gray-500">qty {item.stock_quantity}</span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(item)}
-                          className="p-1 text-gray-400 hover:text-red-600 rounded-full"
-                          title="Delete"
-                        >
-                          <FiTrash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+        {items.length === 0 ? (
+          <p className="text-xs text-gray-400 text-center py-3 border border-dashed border-gray-200 rounded-lg">
+            {meta.emptyLabel}
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {items.map((item) => (
+              <div
+                key={item.id || `${meta.key}-${item.mm}`}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white pl-3 pr-1.5 py-1 text-sm"
+              >
+                <span className="font-medium text-gray-900">{item.mm} mm</span>
+                {meta.allowPriceStock && item.price != null && item.price !== '' && (
+                  <span className="text-xs text-gray-500">€{Number(item.price).toFixed(2)}</span>
                 )}
+                {meta.allowPriceStock && item.stock_quantity != null && item.stock_quantity !== '' && (
+                  <span className="text-xs text-gray-500">qty {item.stock_quantity}</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(item)}
+                  className="p-1 text-gray-400 hover:text-red-600 rounded-full"
+                  title="Delete"
+                >
+                  <FiTrash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

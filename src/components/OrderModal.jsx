@@ -1148,6 +1148,42 @@ const OrderModal = ({ order, onClose }) => {
                           <td className="px-6 py-4 text-sm">
                             <div className="space-y-2">
                               <div className="font-semibold text-gray-900">{item.product_name || item.product?.name || 'Product'}</div>
+                              {(() => {
+                                let custom = item.customization;
+                                if (typeof custom === 'string') {
+                                  try { custom = JSON.parse(custom); } catch { custom = null; }
+                                }
+                                if (!custom || typeof custom !== 'object') return null;
+                                const colorLabel = custom.color_display_name || custom.color_name || custom.selected_color || custom.hex_code;
+                                const modelCode = custom.model_code || custom.model_name;
+                                const barcode = custom.barcode || custom.bar_code;
+                                const purchaseCode = custom.purchase_code || custom.purchaseCode;
+                                if (!colorLabel && !modelCode && !barcode && !purchaseCode) return null;
+                                return (
+                                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                                    {colorLabel && (
+                                      <div className="flex items-center gap-1.5">
+                                        {custom.hex_code || custom.selected_color?.startsWith?.('#') ? (
+                                          <span
+                                            className="inline-block w-3.5 h-3.5 rounded border border-gray-300 shrink-0"
+                                            style={{ backgroundColor: custom.hex_code || custom.selected_color }}
+                                          />
+                                        ) : null}
+                                        <span className="text-gray-600"><span className="font-semibold text-gray-800">Color:</span> {colorLabel}</span>
+                                      </div>
+                                    )}
+                                    {modelCode && (
+                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Model:</span> <span className="font-mono">{modelCode}</span></div>
+                                    )}
+                                    {barcode && (
+                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Barcode:</span> <span className="font-mono">{barcode}</span></div>
+                                    )}
+                                    {purchaseCode && (
+                                      <div className="text-gray-600"><span className="font-semibold text-gray-800">Purchase code:</span> <span className="font-mono">{purchaseCode}</span></div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                               {item.lens_index && (
                                 <div className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
                                   {t('lensIndex')}: {item.lens_index}

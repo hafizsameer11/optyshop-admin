@@ -321,7 +321,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('lensWidth')} <span className="text-red-500">*</span>
+                Calibro ({t('lensWidth')}) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -336,7 +336,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('bridgeWidth')} <span className="text-red-500">*</span>
+                Ponte ({t('bridgeWidth')}) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -352,7 +352,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('templeLength')} <span className="text-red-500">*</span>
+              Asta ({t('templeLength')}) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -368,7 +368,7 @@ const FrameSizeModal = ({ frameSize, onClose }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('frameWidth')}
+                {t('frameWidth')} (larghezza montatura)
               </label>
               <input
                 type="number"

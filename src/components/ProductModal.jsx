@@ -493,7 +493,7 @@ const ProductModal = ({ product, onClose }) => {
           sub_category_id: productToUse.sub_category_id || productToUse.subcategory_id || '',
           parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
           brand_id: productToUse.brand_id || '',
-          model_name: productToUse.model_name || '',
+          model_name: productToUse.model_name || productToUse.model_code || '',
           lens_width: productToUse.lens_width || '', // Added for prescription glasses SKU generation
           bridge_width: productToUse.bridge_width || '', // Added for prescription glasses SKU generation
           lens_material: productToUse.lens_material || '', // Added for sunglasses SKU generation
@@ -1074,6 +1074,8 @@ const ProductModal = ({ product, onClose }) => {
         price: null,
         stock_quantity: null,
         stock_status: null,
+        barcode: null,
+        purchase_code: null,
         images: [],
       },
     ]);
@@ -1118,6 +1120,8 @@ const ProductModal = ({ product, onClose }) => {
                 ? 'in_stock'
                 : 'out_of_stock'
               : null,
+          barcode: patch.barcode != null ? patch.barcode : null,
+          purchase_code: patch.purchase_code != null ? patch.purchase_code : null,
           images: [],
         },
       ];
@@ -1246,10 +1250,10 @@ const ProductModal = ({ product, onClose }) => {
             })
             .filter(Boolean)
         );
-      }
+            }
       if (!silent) toast.success('Image removed');
       return prev.filter((img) => img.id !== id);
-    });
+        });
   };
 
   const handleModel3DChange = (e) => {
@@ -1636,8 +1640,8 @@ const ProductModal = ({ product, onClose }) => {
         }
       }
       if (formData.stock_status) dataToSend.stock_status = formData.stock_status;
-      // Send frame_shape as-is (API accepts any string value)
-      if (formData.frame_shape) {
+      // Send frame_shape as-is (API accepts any string value); ignore sentinel
+      if (formData.frame_shape && formData.frame_shape !== '__custom__') {
         dataToSend.frame_shape = formData.frame_shape.trim();
       }
       // Send frame_material - API accepts single string or JSON array for multiple materials
@@ -1674,7 +1678,20 @@ const ProductModal = ({ product, onClose }) => {
         dataToSend.brand_id = parseInt(formData.brand_id);
       }
       if (formData.model_name) {
-        dataToSend.model_name = formData.model_name.trim();
+        const modelCode = formData.model_name.trim();
+        dataToSend.model_name = modelCode;
+        dataToSend.model_code = modelCode;
+      }
+
+      // Auto total stock = sum of per-color stocks when any color has stock set
+      {
+        const colorStocks = (existingColorImages || [])
+          .map((c) => (c.stock_quantity != null && c.stock_quantity !== '' ? Number(c.stock_quantity) : null))
+          .filter((n) => n != null && !Number.isNaN(n));
+        if (colorStocks.length > 0) {
+          dataToSend.stock_quantity = colorStocks.reduce((a, b) => a + b, 0);
+          dataToSend.stock_status = dataToSend.stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
+        }
       }
       if (formData.lens_width) {
         dataToSend.lens_width = formData.lens_width.trim();
@@ -3667,8 +3684,23 @@ const ProductModal = ({ product, onClose }) => {
                         </label>
                         <select
                           name="frame_shape"
-                          value={formData.frame_shape}
-                          onChange={handleChange}
+                          value={
+                            formData.frame_shape &&
+                            formData.frame_shape !== '__custom__' &&
+                            frameShapes.includes(String(formData.frame_shape).toLowerCase())
+                              ? String(formData.frame_shape).toLowerCase()
+                              : formData.frame_shape
+                                ? '__custom__'
+                                : ''
+                          }
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === '__custom__') {
+                              setFormData({ ...formData, frame_shape: '__custom__' });
+                            } else {
+                              setFormData({ ...formData, frame_shape: v });
+                            }
+                          }}
                           className="input-modern"
                         >
                           <option value="">Select Frame Shape</option>
@@ -3677,7 +3709,26 @@ const ProductModal = ({ product, onClose }) => {
                               {shape.charAt(0).toUpperCase() + shape.slice(1)}
                             </option>
                           ))}
+                          <option value="__custom__">Custom / new shape…</option>
                         </select>
+                        {formData.frame_shape &&
+                          (formData.frame_shape === '__custom__' ||
+                            !frameShapes.includes(String(formData.frame_shape).toLowerCase())) && (
+                          <input
+                            type="text"
+                            value={
+                              formData.frame_shape === '__custom__' ? '' : formData.frame_shape || ''
+                            }
+                            onChange={(e) =>
+                              setFormData({ ...formData, frame_shape: e.target.value || '__custom__' })
+                            }
+                            placeholder="e.g. butterfly, cat-eye custom"
+                            className="input-modern mt-2"
+                          />
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Pick a known shape or type a custom shape name (saved as-is).
+                        </p>
                       </div>
 
                       <div>

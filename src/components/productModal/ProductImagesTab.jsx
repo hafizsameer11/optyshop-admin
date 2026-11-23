@@ -1,8 +1,8 @@
-import React from 'react';
-import { FiX, FiUpload, FiPlus } from 'react-icons/fi';
+import React, { useMemo, useState } from 'react';
+import { FiX, FiUpload, FiPlus, FiSearch } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import {
-  PRESET_VARIANT_COLORS,
+  filterColorLibrary,
   getColorNameFromHex,
   isSavedImageUrl,
   isUsableImageUrl,
@@ -50,6 +50,9 @@ const ProductImagesTab = ({
   variantHexListOrdered,
   variantUploadHex,
 }) => {
+  const [paletteQuery, setPaletteQuery] = useState('');
+  const filteredPalette = useMemo(() => filterColorLibrary(paletteQuery), [paletteQuery]);
+
   return (
     <>
       <div className="space-y-4">
@@ -226,18 +229,49 @@ const ProductImagesTab = ({
 
           <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 space-y-3">
             <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wide">1 · Add a color</p>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_VARIANT_COLORS.map(({ hex, name }) => (
-                <button
-                  key={hex}
-                  type="button"
-                  onClick={() => addVariantRow(hex)}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-800 hover:border-indigo-400 hover:bg-indigo-50/80 transition-colors"
-                >
-                  <span className="w-5 h-5 rounded border border-gray-300 shadow-inner" style={{ backgroundColor: hex }} />
-                  {name}
-                </button>
-              ))}
+            <div className="relative">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="search"
+                value={paletteQuery}
+                onChange={(e) => setPaletteQuery(e.target.value)}
+                placeholder="Search color palette (name or hex)…"
+                className="w-full text-sm pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              />
+            </div>
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+              {filteredPalette.length === 0 ? (
+                <p className="text-xs text-gray-500 p-3 text-center">No colors match</p>
+              ) : (
+                filteredPalette.map((group) => (
+                  <div key={group.group} className="p-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 px-1 mb-1">
+                      {group.group}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.colors.map(({ hex, name }) => (
+                        <button
+                          key={`${group.group}-${hex}`}
+                          type="button"
+                          onClick={() => {
+                            addVariantRow(hex, name);
+                            setCustomVariantHexInput(hex);
+                            setCustomVariantLabelInput(name);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-800 hover:border-indigo-400 hover:bg-indigo-50/80 transition-colors"
+                          title={`${name} ${hex}`}
+                        >
+                          <span
+                            className="w-4 h-4 rounded border border-gray-300 shadow-inner shrink-0"
+                            style={{ backgroundColor: hex }}
+                          />
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex-1 min-w-[140px]">
@@ -296,7 +330,7 @@ const ProductImagesTab = ({
                         className="w-11 h-11 rounded-lg border-2 border-white shadow shrink-0 ring-1 ring-gray-200"
                         style={{ backgroundColor: hex }}
                       />
-                      <div className="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                         <div>
                           <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Color label</label>
                           <input
@@ -326,6 +360,31 @@ const ProductImagesTab = ({
                             }
                             placeholder="0"
                             className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Barcode</label>
+                          <input
+                            type="text"
+                            value={
+                              existingColorImages.find((c) => String(c.hexCode).toUpperCase() === hex)?.barcode ?? ''
+                            }
+                            onChange={(e) => updateVariantMeta(hex, { barcode: e.target.value })}
+                            placeholder="EAN / barcode"
+                            className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Purchase code</label>
+                          <input
+                            type="text"
+                            value={
+                              existingColorImages.find((c) => String(c.hexCode).toUpperCase() === hex)?.purchase_code ??
+                              ''
+                            }
+                            onChange={(e) => updateVariantMeta(hex, { purchase_code: e.target.value })}
+                            placeholder="Purchase / supplier code"
+                            className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
                           />
                         </div>
                       </div>

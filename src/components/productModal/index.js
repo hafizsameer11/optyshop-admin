@@ -5,6 +5,8 @@ export {
   getHexFromColorName,
   getColorNameFromHex,
   PRESET_VARIANT_COLORS,
+  COLOR_LIBRARY,
+  filterColorLibrary,
   normalizeColorImagesList,
   buildColorImagesToKeep,
   colorListToUiState,

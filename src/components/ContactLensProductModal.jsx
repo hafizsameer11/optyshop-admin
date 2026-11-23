@@ -9,6 +9,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../context/I18nContext';
 import SphericalConfigModal from './SphericalConfigModal';
 import AstigmatismConfigModal from './AstigmatismConfigModal';
+import { PRESET_VARIANT_COLORS as SHARED_PRESET_VARIANT_COLORS } from './productModal/colorUtils';
 
 /** Hex swatches for PDP / storefront colour variants (#RRGGBB only). */
 const isValidHexCode = (hex) => {
@@ -58,12 +59,8 @@ const getHexFromColorName = (colorName) => {
 };
 
 const PRESET_VARIANT_COLORS = [
-  { hex: '#000000', name: 'Black' },
-  { hex: '#4A3728', name: 'Brown' },
-  { hex: '#1E3A5F', name: 'Blue' },
-  { hex: '#2D5016', name: 'Green' },
+  ...SHARED_PRESET_VARIANT_COLORS,
   { hex: '#5C4033', name: 'Hazel' },
-  { hex: '#708090', name: 'Gray' },
   { hex: '#C9A961', name: 'Honey' },
   { hex: '#8B4789', name: 'Amethyst' },
   { hex: '#2F4F4F', name: 'Sterling Gray' },

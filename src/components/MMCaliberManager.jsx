@@ -10,7 +10,7 @@ const DIMENSION_META = {
     title: 'MM Caliber (size)',
     hint: 'Lens width / size options for the PDP Calibro dropdown',
     placeholder: 'e.g. 52',
-    allowPriceStock: true,
+    allowPriceStock: false,
     addLabel: 'Add size',
     emptyLabel: 'No size values yet',
   },

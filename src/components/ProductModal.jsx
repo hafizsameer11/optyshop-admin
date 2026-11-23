@@ -492,7 +492,7 @@ const ProductModal = ({ product, onClose }) => {
           category_id: productToUse.category_id || '',
           sub_category_id: productToUse.sub_category_id || productToUse.subcategory_id || '',
           parent_subcategory_id: '', // Will be set after checking if subcategory is a sub-subcategory
-          brand_id: productToUse.brand_id || '',
+          brand_id: productToUse.brand_id || productToUse.brand?.id || '',
           model_name: productToUse.model_name || productToUse.model_code || '',
           lens_width: productToUse.lens_width || '', // Added for prescription glasses SKU generation
           bridge_width: productToUse.bridge_width || '', // Added for prescription glasses SKU generation
@@ -1674,8 +1674,12 @@ const ProductModal = ({ product, onClose }) => {
           dataToSend.compare_at_price = comparePrice;
         }
       }
-      if (formData.brand_id) {
-        dataToSend.brand_id = parseInt(formData.brand_id);
+      // Always send brand_id on save so edit persists (null clears)
+      if (formData.brand_id !== undefined && formData.brand_id !== '') {
+        const brandId = parseInt(formData.brand_id, 10);
+        if (!Number.isNaN(brandId)) dataToSend.brand_id = brandId;
+      } else if (product?.id) {
+        dataToSend.brand_id = null;
       }
       if (formData.model_name) {
         const modelCode = formData.model_name.trim();
